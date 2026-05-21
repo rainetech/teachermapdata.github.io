@@ -1,0 +1,4593 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NWEA MAP ASG Teacher Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #f9fbff;
+      --text: #172033;
+      --muted: #5d6a7e;
+      --line: #dbe2ee;
+      --line-strong: #c7d1e1;
+      --brand: #2454a6;
+      --brand-dark: #173d7d;
+      --brand-soft: #e9f0ff;
+      --red: #dc2626;
+      --red-soft: #fee2e2;
+      --orange: #ea580c;
+      --orange-soft: #ffedd5;
+      --yellow: #ca8a04;
+      --yellow-soft: #fef3c7;
+      --green: #16a34a;
+      --green-soft: #dcfce7;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --purple: #7c3aed;
+      --purple-soft: #ede9fe;
+      --slate-soft: #eef2f7;
+      --shadow: 0 16px 40px rgba(23, 32, 51, 0.08);
+      --radius: 8px;
+      --radius-sm: 6px;
+      --focus: 0 0 0 3px rgba(36, 84, 166, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      max-width: 100%;
+      overflow-x: clip;
+    }
+
+    body {
+      margin: 0;
+      max-width: 100%;
+      overflow-x: clip;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.45;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .app {
+      width: min(1680px, 100%);
+      margin: 0 auto;
+      padding: 24px 16px 48px;
+      min-width: 0;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: minmax(260px, 1fr) minmax(320px, 620px);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .topbar > *,
+    .filters > *,
+    .grid > *,
+    main > *,
+    .subject-chart-section,
+    .table-shell,
+    .table-scroll {
+      min-width: 0;
+    }
+
+    .brand-panel,
+    .upload-panel,
+    .section,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .brand-panel {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 190px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .brand-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      background: linear-gradient(90deg, var(--blue), var(--green), var(--yellow), var(--orange), var(--red));
+    }
+
+    .eyebrow {
+      color: var(--brand);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 2.6vw, 3rem);
+      line-height: 1.03;
+    }
+
+    h2 {
+      font-size: 1.18rem;
+      line-height: 1.2;
+    }
+
+    h3 {
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .subtle {
+      color: var(--muted);
+      margin: 8px 0 0;
+      max-width: 74ch;
+    }
+
+    .quick-questions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .question-chip {
+      background: var(--slate-soft);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: #334155;
+      font-size: 0.78rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    .upload-panel {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+      align-content: start;
+    }
+
+    .upload-controls {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .file-label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 50px;
+      padding: 10px 12px;
+      background: var(--brand-soft);
+      color: var(--brand-dark);
+      border: 1px dashed #87a4dc;
+      border-radius: var(--radius-sm);
+      font-weight: 800;
+    }
+
+    .file-label input {
+      width: 100%;
+      min-width: 0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 8px 11px;
+      font-weight: 800;
+      font-size: 0.86rem;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: #9aabc4;
+      background: #fbfdff;
+    }
+
+    .btn:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .btn.primary {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .btn.primary:hover {
+      background: var(--brand-dark);
+      border-color: var(--brand-dark);
+    }
+
+    .btn.ghost {
+      background: var(--panel-2);
+    }
+
+    .btn.small {
+      min-height: 32px;
+      padding: 6px 9px;
+      font-size: 0.78rem;
+    }
+
+    .upload-meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .mini-stat {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      min-width: 0;
+    }
+
+    .mini-stat .label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .mini-stat .value {
+      display: block;
+      margin-top: 3px;
+      font-size: 1.05rem;
+      font-weight: 900;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .status-line {
+      color: var(--muted);
+      font-size: 0.9rem;
+      min-height: 22px;
+    }
+
+    .filter-bar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(245, 247, 251, 0.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 28px rgba(23, 32, 51, 0.08);
+      backdrop-filter: blur(12px);
+      padding: 12px;
+      margin-bottom: 18px;
+    }
+
+    @supports not (overflow-x: clip) {
+      html,
+      body {
+        overflow-x: hidden;
+      }
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.3fr) repeat(7, minmax(130px, 1fr)) auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .field {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .field label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .field .hint {
+      color: var(--muted);
+      font-size: 0.74rem;
+      line-height: 1.2;
+    }
+
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 7px 9px;
+      min-width: 0;
+    }
+
+    main {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .section {
+      padding: 18px;
+      overflow: hidden;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .section-header p {
+      margin: 5px 0 0;
+      color: var(--muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .overview-grid {
+      grid-template-columns: repeat(4, minmax(230px, 1fr));
+    }
+
+    .card {
+      box-shadow: none;
+      padding: 14px;
+      min-width: 0;
+    }
+
+    .subject-card {
+      border-top: 5px solid var(--brand);
+    }
+
+    .subject-card.Language {
+      border-top-color: var(--purple);
+    }
+
+    .subject-card.Reading {
+      border-top-color: var(--blue);
+    }
+
+    .subject-card.Mathematics {
+      border-top-color: var(--green);
+    }
+
+    .subject-card.Science {
+      border-top-color: var(--orange);
+    }
+
+    .card-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 11px;
+    }
+
+    .metric-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .metric {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .metric .label {
+      color: var(--muted);
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 800;
+      line-height: 1.15;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: 1.03rem;
+      font-weight: 900;
+      margin-top: 3px;
+      word-break: break-word;
+    }
+
+    .summary-grid {
+      grid-template-columns: repeat(8, minmax(130px, 1fr));
+      margin-bottom: 12px;
+    }
+
+    .summary-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .summary-card .label {
+      color: var(--muted);
+      display: block;
+      font-size: 0.73rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .summary-card .value {
+      display: block;
+      font-size: clamp(1.15rem, 1.5vw, 1.65rem);
+      font-weight: 950;
+      margin-top: 4px;
+    }
+
+    .charts-wrap {
+      display: grid;
+      gap: 14px;
+    }
+
+    .subject-chart-section {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      padding: 14px;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(210px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .chart-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      min-height: 260px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-width: 0;
+    }
+
+    .chart-title {
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+
+    .chart-box {
+      position: relative;
+      min-height: 205px;
+    }
+
+    .chart-note {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .analysis-grid {
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+    }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(210px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .explain-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 11px;
+      min-width: 0;
+    }
+
+    .explain-card strong {
+      display: block;
+      font-size: 0.86rem;
+      margin-bottom: 4px;
+    }
+
+    .explain-card span {
+      color: var(--muted);
+      display: block;
+      font-size: 0.83rem;
+    }
+
+    .subsection-title {
+      color: #26364d;
+      font-size: 0.9rem;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      margin: 14px 0 9px;
+      text-transform: uppercase;
+    }
+
+    .quadrant-card,
+    .gap-card {
+      border-left: 5px solid var(--brand);
+    }
+
+    .quadrant-card strong,
+    .gap-card strong {
+      display: block;
+      font-size: 1.55rem;
+      line-height: 1;
+      margin: 7px 0 3px;
+    }
+
+    .quadrant-card span,
+    .gap-card span {
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .gap-grid {
+      grid-template-columns: repeat(8, minmax(130px, 1fr));
+    }
+
+    .subject-breakdown {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    #quadrantSubjectBreakdown {
+      grid-template-columns: repeat(2, minmax(340px, 1fr));
+    }
+
+    .subject-mini-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .subject-mini-card h3 {
+      margin-bottom: 8px;
+    }
+
+    .mini-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .mini-metric {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .mini-metric span {
+      color: var(--muted);
+      display: block;
+      font-size: 0.69rem;
+      font-weight: 900;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .mini-metric strong {
+      display: block;
+      font-size: 1rem;
+      margin-top: 2px;
+    }
+
+    .mini-metric.wide {
+      grid-column: 1 / -1;
+    }
+
+    .quadrant-subject-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .quadrant-legend {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .quadrant-map {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .quadrant-axis-note {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .quadrant-cell {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 9px;
+      min-height: 112px;
+      display: grid;
+      align-content: space-between;
+      gap: 7px;
+      min-width: 0;
+    }
+
+    .quadrant-cell.good {
+      background: var(--green-soft);
+      border-color: #bbf7d0;
+    }
+
+    .quadrant-cell.catchup {
+      background: var(--blue-soft);
+      border-color: #bfdbfe;
+    }
+
+    .quadrant-cell.watch {
+      background: var(--yellow-soft);
+      border-color: #fde68a;
+    }
+
+    .quadrant-cell.risk {
+      background: var(--red-soft);
+      border-color: #fecaca;
+    }
+
+    .quadrant-cell .q-title {
+      color: #1f2937;
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 950;
+      line-height: 1.15;
+    }
+
+    .quadrant-cell .q-value {
+      display: block;
+      font-size: 1.35rem;
+      font-weight: 950;
+      line-height: 1;
+    }
+
+    .quadrant-cell .q-note {
+      color: #334155;
+      display: block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .student-scatter-wrap {
+      display: grid;
+      gap: 8px;
+    }
+
+    .scatter-title {
+      color: #26364d;
+      font-size: 0.82rem;
+      font-weight: 950;
+    }
+
+    .student-scatter {
+      position: relative;
+      height: 300px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background:
+        linear-gradient(90deg, rgba(37, 99, 235, 0.08) 0 50%, rgba(22, 163, 74, 0.08) 50% 100%),
+        linear-gradient(0deg, rgba(220, 38, 38, 0.08) 0 50%, rgba(22, 163, 74, 0.08) 50% 100%);
+      overflow: hidden;
+    }
+
+    .student-scatter::before,
+    .student-scatter::after {
+      content: "";
+      position: absolute;
+      background: rgba(71, 85, 105, 0.45);
+      z-index: 1;
+    }
+
+    .student-scatter::before {
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+    }
+
+    .student-scatter::after {
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 1px;
+    }
+
+    .scatter-axis {
+      position: absolute;
+      z-index: 2;
+      color: #334155;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 950;
+      padding: 3px 7px;
+    }
+
+    .scatter-axis.growth-high {
+      left: 8px;
+      top: 8px;
+    }
+
+    .scatter-axis.growth-low {
+      left: 8px;
+      bottom: 8px;
+    }
+
+    .scatter-axis.achievement-low {
+      left: 8px;
+      top: calc(50% + 8px);
+    }
+
+    .scatter-axis.achievement-high {
+      right: 8px;
+      top: calc(50% + 8px);
+    }
+
+    .scatter-quadrant-label {
+      position: absolute;
+      z-index: 2;
+      color: rgba(30, 41, 59, 0.72);
+      font-size: 0.68rem;
+      font-weight: 950;
+      pointer-events: none;
+    }
+
+    .scatter-quadrant-label.tl {
+      left: 10px;
+      top: 38px;
+    }
+
+    .scatter-quadrant-label.tr {
+      right: 10px;
+      top: 38px;
+      text-align: right;
+    }
+
+    .scatter-quadrant-label.bl {
+      left: 10px;
+      bottom: 38px;
+    }
+
+    .scatter-quadrant-label.br {
+      right: 10px;
+      bottom: 38px;
+      text-align: right;
+    }
+
+    .scatter-point {
+      position: absolute;
+      z-index: 4;
+      width: 22px;
+      height: 22px;
+      transform: translate(-50%, 50%);
+      border: 2px solid #fff;
+      border-radius: 999px;
+      padding: 0;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 0.58rem;
+      font-weight: 950;
+      line-height: 1;
+      cursor: help;
+    }
+
+    .scatter-point:hover,
+    .scatter-point:focus-visible {
+      z-index: 8;
+      width: 28px;
+      height: 28px;
+      box-shadow: 0 0 0 4px rgba(36, 84, 166, 0.22), 0 7px 18px rgba(15, 23, 42, 0.28);
+    }
+
+    .scatter-help {
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .movement-row,
+    .gap-story {
+      display: grid;
+      gap: 8px;
+    }
+
+    .movement-row {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .story-line {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 9px;
+      min-width: 0;
+    }
+
+    .story-line span {
+      color: var(--muted);
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .story-line strong {
+      display: block;
+      font-size: 0.98rem;
+      margin-top: 3px;
+    }
+
+    .teacher-read {
+      border-left: 4px solid var(--brand);
+      background: var(--brand-soft);
+      color: #1e3a67;
+      font-size: 0.86rem;
+      font-weight: 750;
+      line-height: 1.3;
+      padding: 10px;
+      border-radius: var(--radius-sm);
+    }
+
+    .group-controls {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(150px, 1fr)) auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .table-groups {
+      display: grid;
+      grid-template-columns: minmax(220px, 290px) minmax(780px, 1fr);
+      gap: 12px;
+      align-items: start;
+    }
+
+    .classroom-board {
+      --room-ratio: 4 / 3;
+      --room-grid-size: 44px;
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--room-ratio);
+      min-height: clamp(760px, 78vh, 1180px);
+      border: 2px solid var(--line-strong);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, rgba(219, 226, 238, 0.55) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(219, 226, 238, 0.55) 1px, transparent 1px),
+        #fbfdff;
+      background-size: var(--room-grid-size) var(--room-grid-size);
+      overflow: hidden;
+    }
+
+    .classroom-front-board {
+      position: absolute;
+      width: 52%;
+      min-height: 46px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #2f4f3a;
+      border-radius: var(--radius-sm);
+      background: #31553f;
+      color: #fff;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+      cursor: grab;
+      user-select: none;
+      z-index: 6;
+    }
+
+    .classroom-door {
+      position: absolute;
+      z-index: 6;
+      width: 86px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #9a6b38;
+      border-radius: 8px;
+      background: #f5d29c;
+      color: #5b3412;
+      cursor: grab;
+      font-size: 0.78rem;
+      font-weight: 950;
+      user-select: none;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
+    }
+
+    .classroom-door::before {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border: 2px dashed rgba(154, 107, 56, 0.45);
+      border-radius: 10px;
+      pointer-events: none;
+    }
+
+    .teacher-desk {
+      position: absolute;
+      z-index: 6;
+      width: min(160px, 24%);
+      min-height: 58px;
+      display: grid;
+      place-items: center;
+      border: 2px solid #8b5e34;
+      border-radius: var(--radius-sm);
+      background: #ead7b7;
+      color: #4b2e16;
+      cursor: grab;
+      font-size: 0.78rem;
+      font-weight: 950;
+      text-align: center;
+      user-select: none;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
+    }
+
+    .teacher-desk::before {
+      content: "";
+      position: absolute;
+      inset: 7px 10px auto;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(75, 46, 22, 0.22);
+      pointer-events: none;
+    }
+
+    .classroom-door:active,
+    .classroom-front-board:active,
+    .teacher-desk:active,
+    .table-move-handle:active {
+      cursor: grabbing;
+    }
+
+    .table-layout-note {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      max-width: 230px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .manual-pool-card,
+    .table-group-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .classroom-table {
+      position: absolute;
+      z-index: 5;
+      width: min(280px, 29%);
+      max-height: 300px;
+      overflow: auto;
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+    }
+
+    .classroom-table.layout-dragging,
+    .classroom-door.layout-dragging,
+    .classroom-front-board.layout-dragging,
+    .teacher-desk.layout-dragging {
+      opacity: 0.78;
+      box-shadow: 0 0 0 4px rgba(36, 84, 166, 0.18), 0 18px 34px rgba(15, 23, 42, 0.18);
+    }
+
+    .table-move-handle {
+      border: 1px solid var(--line-strong);
+      background: #fff;
+      border-radius: 999px;
+      color: var(--muted);
+      cursor: grab;
+      font-size: 0.76rem;
+      font-weight: 950;
+      padding: 4px 8px;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .manual-pool-card {
+      position: sticky;
+      top: 118px;
+      border-color: #c4b5fd;
+      background: #fbfaff;
+    }
+
+    .manual-pool-card header,
+    .table-group-card header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .table-group-card header[data-layout-handle] {
+      cursor: grab;
+      user-select: none;
+    }
+
+    .table-group-card header[data-layout-handle]:active {
+      cursor: grabbing;
+    }
+
+    .table-group-card .mini-metrics {
+      margin-bottom: 10px;
+    }
+
+    .drop-zone {
+      border: 1px dashed transparent;
+      border-radius: var(--radius-sm);
+      min-height: 56px;
+      transition: background 0.12s ease, border-color 0.12s ease;
+    }
+
+    .drop-zone.drop-active {
+      background: var(--brand-soft);
+      border-color: #87a4dc;
+    }
+
+    .table-group-card ol {
+      display: grid;
+      gap: 7px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .drag-card,
+    .table-group-card li {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      min-width: 0;
+    }
+
+    .drag-card {
+      cursor: grab;
+      margin-bottom: 7px;
+    }
+
+    .drag-card:active {
+      cursor: grabbing;
+    }
+
+    .drag-card.dragging {
+      opacity: 0.5;
+    }
+
+    .pool-empty {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin: 0;
+      padding: 8px;
+    }
+
+    #printLayout {
+      display: none;
+    }
+
+    .student-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .student-line strong {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .group-detail {
+      color: var(--muted);
+      display: block;
+      font-size: 0.78rem;
+      margin-top: 3px;
+    }
+
+    .band-pill,
+    .status-pill,
+    .group-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.74rem;
+      font-weight: 900;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .band-red {
+      background: var(--red-soft);
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    .band-orange {
+      background: var(--orange-soft);
+      color: #9a3412;
+      border-color: #fed7aa;
+    }
+
+    .band-yellow {
+      background: var(--yellow-soft);
+      color: #854d0e;
+      border-color: #fde68a;
+    }
+
+    .band-green {
+      background: var(--green-soft);
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .band-blue {
+      background: var(--blue-soft);
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+
+    .band-missing {
+      background: var(--slate-soft);
+      color: #475569;
+      border-color: var(--line);
+    }
+
+    .status-good,
+    .group-enrichment,
+    .group-secure {
+      background: var(--green-soft);
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .status-watch,
+    .group-watch,
+    .group-catch {
+      background: var(--yellow-soft);
+      color: #854d0e;
+      border-color: #fde68a;
+    }
+
+    .status-risk,
+    .group-intensive,
+    .group-regressing {
+      background: var(--red-soft);
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    .status-mid,
+    .group-targeted,
+    .group-incomplete {
+      background: var(--orange-soft);
+      color: #9a3412;
+      border-color: #fed7aa;
+    }
+
+    .status-neutral {
+      background: var(--slate-soft);
+      color: #475569;
+      border-color: var(--line);
+    }
+
+    .table-shell {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .table-tools {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .table-tools strong {
+      font-size: 0.92rem;
+    }
+
+    .table-scroll {
+      overflow: auto;
+      max-height: 560px;
+      width: 100%;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      width: 100%;
+      min-width: 1120px;
+      font-size: 0.83rem;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+      white-space: nowrap;
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      background: #edf3fb;
+      color: #2c3a50;
+      font-size: 0.72rem;
+      font-weight: 950;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      user-select: none;
+    }
+
+    th.sortable {
+      cursor: pointer;
+    }
+
+    th.sortable::after {
+      content: "  ";
+      color: var(--brand);
+    }
+
+    th.sortable.sorted-asc::after {
+      content: " ^";
+    }
+
+    th.sortable.sorted-desc::after {
+      content: " v";
+    }
+
+    tr:hover td {
+      background: #fbfdff;
+    }
+
+    td.wrap {
+      white-space: normal;
+      min-width: 220px;
+      max-width: 360px;
+    }
+
+    .student-name {
+      font-weight: 900;
+    }
+
+    .empty-state {
+      display: grid;
+      place-items: center;
+      min-height: 210px;
+      color: var(--muted);
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+      text-align: center;
+      padding: 22px;
+    }
+
+    .summary-report {
+      width: 100%;
+      min-height: 230px;
+      resize: vertical;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      background: #fff;
+      color: var(--text);
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 0.82rem;
+      margin: 12px 0 0;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1320px) {
+      .filters {
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+      }
+
+      .overview-grid,
+      .chart-grid {
+        grid-template-columns: repeat(2, minmax(230px, 1fr));
+      }
+
+      .summary-grid,
+      .gap-grid,
+      .subject-breakdown,
+      #quadrantSubjectBreakdown,
+      .table-groups,
+      .explain-grid {
+        grid-template-columns: repeat(4, minmax(150px, 1fr));
+      }
+
+      .table-groups {
+        grid-template-columns: 1fr;
+      }
+
+      .classroom-board {
+        min-height: 760px;
+      }
+
+      .classroom-table {
+        width: min(280px, 44%);
+      }
+
+      .manual-pool-card {
+        position: static;
+      }
+
+      .group-controls {
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+      }
+    }
+
+    @media (max-width: 860px) {
+      .app {
+        width: 100%;
+        padding: 10px 10px 32px;
+      }
+
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .upload-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .filters,
+      .overview-grid,
+      .summary-grid,
+      .chart-grid,
+      .analysis-grid,
+      .gap-grid,
+      .subject-breakdown,
+      #quadrantSubjectBreakdown,
+      .table-groups,
+      .explain-grid,
+      .group-controls {
+        grid-template-columns: 1fr;
+      }
+
+      .classroom-board {
+        min-height: 700px;
+      }
+
+      .classroom-table {
+        width: min(280px, 86%);
+      }
+
+      .teacher-desk {
+        width: min(160px, 48%);
+      }
+
+      .section-header {
+        display: grid;
+      }
+
+      .metric-list {
+        grid-template-columns: 1fr;
+      }
+
+      .quadrant-map,
+      .movement-row {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        min-width: 980px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <section class="brand-panel">
+        <div>
+          <p class="eyebrow">NWEA MAP ASG</p>
+          <h1>Teacher Dashboard</h1>
+          <p class="subtle">Upload an ASG CSV and turn growth, achievement, gap closure, intervention, and enrichment data into a classroom-ready planning view.</p>
+        </div>
+        <div class="quick-questions" aria-label="Planning questions">
+          <span class="question-chip">Who grew?</span>
+          <span class="question-chip">Who needs support?</span>
+          <span class="question-chip">Who closed gaps?</span>
+          <span class="question-chip">Who needs extension?</span>
+        </div>
+      </section>
+
+      <section class="upload-panel" aria-labelledby="uploadTitle">
+        <div>
+          <p class="eyebrow">Local CSV Upload</p>
+          <h2 id="uploadTitle">Load ASG Data</h2>
+        </div>
+        <div class="upload-controls">
+          <label class="file-label">
+            <span>CSV</span>
+            <input id="csvInput" type="file" accept=".csv,text/csv">
+          </label>
+          <button class="btn ghost" id="sampleBtn" type="button">Load Sample</button>
+        </div>
+        <div class="upload-meta">
+          <div class="mini-stat">
+            <span class="label">Records</span>
+            <span class="value" id="recordCount">0</span>
+          </div>
+          <div class="mini-stat">
+            <span class="label">Students</span>
+            <span class="value" id="studentCount">0</span>
+          </div>
+          <div class="mini-stat">
+            <span class="label">File</span>
+            <span class="value" id="fileName">None</span>
+          </div>
+        </div>
+        <div class="status-line" id="statusLine">Waiting for a CSV file.</div>
+      </section>
+    </header>
+
+    <section class="filter-bar" aria-label="Filters">
+      <div class="filters">
+        <div class="field">
+          <label for="searchInput">Search</label>
+          <input id="searchInput" type="search" placeholder="Student name or ID">
+        </div>
+        <div class="field">
+          <label for="subjectFilter">Subject</label>
+          <select id="subjectFilter"></select>
+        </div>
+        <div class="field">
+          <label for="teacherFilter">Teacher</label>
+          <select id="teacherFilter"></select>
+        </div>
+        <div class="field">
+          <label for="classFilter">Class</label>
+          <select id="classFilter"></select>
+        </div>
+        <div class="field">
+          <label for="gradeFilter">Grade</label>
+          <select id="gradeFilter"></select>
+        </div>
+        <div class="field">
+          <label for="bandFilter">End Band</label>
+          <select id="bandFilter"></select>
+        </div>
+        <div class="field">
+          <label for="metFilter">Met Growth</label>
+          <select id="metFilter">
+            <option value="">All</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+            <option value="Missing">Missing</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="groupFilter">Group</label>
+          <select id="groupFilter"></select>
+        </div>
+        <div class="field">
+          <label for="gapFilter">Gap Status</label>
+          <select id="gapFilter"></select>
+        </div>
+        <button class="btn" id="resetFiltersBtn" type="button">Reset</button>
+      </div>
+    </section>
+
+    <main>
+      <section class="section" aria-labelledby="snapshotTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="snapshotTitle">Class Snapshot</h2>
+            <p id="filterContext">No data loaded.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportSummaryBtn" type="button">Export Summary TXT</button>
+          </div>
+        </div>
+        <div class="summary-grid grid" id="summaryCards"></div>
+      </section>
+
+      <section class="section" aria-labelledby="overviewTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="overviewTitle">Subject Overview</h2>
+            <p>Subject areas are grouped from the Course column. Language Arts and Language Usage are reported as Language.</p>
+          </div>
+        </div>
+        <div class="overview-grid grid" id="subjectOverview"></div>
+      </section>
+
+      <section class="section" aria-labelledby="chartsTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="chartsTitle">Subject Charts</h2>
+            <p>Start/end achievement, projected/observed growth, met/exceeded rates, and band distribution.</p>
+          </div>
+        </div>
+        <div class="charts-wrap" id="chartsWrap"></div>
+      </section>
+
+      <section class="section" aria-labelledby="growthAchievementTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="growthAchievementTitle">Growth and Achievement</h2>
+            <p>Uses NWEA growth/achievement quadrants when present, with an overall view and a subject breakdown.</p>
+          </div>
+        </div>
+        <div class="explain-grid">
+          <div class="explain-card">
+            <strong>What the quadrants mean</strong>
+            <span>High-G/High-A students are growing strongly and achieving highly. Low-G/Low-A students need the most immediate instructional attention.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Why this matters</strong>
+            <span>This separates achievement from growth, so a lower-scoring student with strong growth is not treated the same as a lower-scoring student with low growth.</span>
+          </div>
+          <div class="explain-card">
+            <strong>How to read movement</strong>
+            <span>Improved, declined, and stayed same compare StartGrowthandAchievement to EndGrowthandAchievement for the same student-subject record.</span>
+          </div>
+        </div>
+        <div class="subsection-title">Overall</div>
+        <div class="analysis-grid grid" id="quadrantCards"></div>
+        <p class="footer-note" id="quadrantMovement"></p>
+        <div class="subsection-title">By Subject</div>
+        <div class="subject-breakdown" id="quadrantSubjectBreakdown"></div>
+      </section>
+
+      <section class="section" aria-labelledby="gapTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="gapTitle">Gap Closure</h2>
+            <p>Secure benchmark: 61st percentile. Overall cards are followed by subject-level gap patterns.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportGapBtn" type="button">Export Gap CSV</button>
+          </div>
+        </div>
+        <div class="explain-grid">
+          <div class="explain-card">
+            <strong>For students below 61</strong>
+            <span>Gap closure measures how much of the distance to the secure benchmark was closed from start to end percentile.</span>
+          </div>
+          <div class="explain-card">
+            <strong>For students at 61+</strong>
+            <span>The dashboard checks whether secure students extended, maintained, regressed, or dropped below the secure benchmark.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Band movement</strong>
+            <span>Moved up or moved down compares the start and end percentile color bands for each student-subject record.</span>
+          </div>
+        </div>
+        <div class="subsection-title">Overall</div>
+        <div class="gap-grid grid" id="gapCards"></div>
+        <div class="subsection-title">By Subject</div>
+        <div class="subject-breakdown" id="gapSubjectBreakdown"></div>
+      </section>
+
+      <section class="section" aria-labelledby="summaryTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="summaryTitle">Class Summary Report</h2>
+            <p>Copy-ready text for planning or PLC notes.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="copySummaryBtn" type="button">Copy</button>
+            <button class="btn small" id="exportSummaryBtn2" type="button">Export TXT</button>
+          </div>
+        </div>
+        <textarea class="summary-report" id="summaryReport" readonly></textarea>
+      </section>
+
+      <section class="section" aria-labelledby="tableGroupsTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="tableGroupsTitle">Flexible Table Groups</h2>
+            <p id="tableGroupContext">Choose a group size and strategy to create classroom table assignments.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportTableGroupsBtn" type="button">Export Table Groups CSV</button>
+            <button class="btn small" id="printA4LayoutBtn" type="button">Print A4 Layout</button>
+          </div>
+        </div>
+        <div class="group-controls">
+          <div class="field">
+            <label for="groupSizeInput">Table size pattern</label>
+            <input id="groupSizeInput" type="text" value="5" placeholder="5 or 6,6,5,5 or 2x6,2x5">
+            <span class="hint">Use one number for even tables, or a pattern for uneven tables.</span>
+          </div>
+          <div class="field">
+            <label for="groupStrategySelect">Grouping strategy</label>
+            <select id="groupStrategySelect">
+              <option value="mixed">Balanced mixed tables</option>
+              <option value="score">Similar-score skill groups</option>
+              <option value="priority">Highest-need first</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="groupScoreSelect">Score used</label>
+            <select id="groupScoreSelect">
+              <option value="endPercentile">End percentile</option>
+              <option value="growth">Growth strength</option>
+              <option value="gap">Gap/intervention need</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="roomRatioInput">Room ratio (W:H)</label>
+            <input id="roomRatioInput" type="text" value="4:3" placeholder="4:3, 16:10, 3:2">
+            <span class="hint">Bigger second number makes the room taller.</span>
+          </div>
+          <div class="field">
+            <label for="layoutSnapSelect">Drag snap</label>
+            <select id="layoutSnapSelect">
+              <option value="0">Free drag</option>
+              <option value="1">Fine (1%)</option>
+              <option value="2" selected>Medium (2%)</option>
+              <option value="5">Strong (5%)</option>
+              <option value="10">Very strong (10%)</option>
+            </select>
+          </div>
+          <button class="btn" id="refreshGroupsBtn" type="button">Refresh Groups</button>
+        </div>
+        <div class="explain-grid">
+          <div class="explain-card">
+            <strong>Subject-aware grouping</strong>
+            <span>If a subject filter is selected, each table uses that subject. If no subject is selected, each student's visible records are averaged into one planning profile.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Balanced mixed tables</strong>
+            <span>Spreads higher, middle, and lower complete profiles across tables. Missing-data students start in the manual pool.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Similar-score skill groups</strong>
+            <span>Clusters nearby scores for targeted small-group instruction. Highest-need first intentionally places the most urgent profiles into the first tables.</span>
+          </div>
+        </div>
+        <div class="table-groups" id="tableGroups"></div>
+      </section>
+
+      <section class="section" aria-labelledby="groupingTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="groupingTitle">Student Grouping Report</h2>
+            <p>Groups are based on achievement band, growth projection, conditional growth, and gap status.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportGroupingBtn" type="button">Export Grouping CSV</button>
+          </div>
+        </div>
+        <div class="table-shell">
+          <div class="table-tools">
+            <strong id="groupingCount">0 records</strong>
+            <span class="status-line">Click a column header to sort.</span>
+          </div>
+          <div class="table-scroll" id="groupingTable"></div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="priorityTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="priorityTitle">Priority Students</h2>
+            <p>Students with missed growth, band drops, missing end scores, negative growth, low end achievement, secure regression, or widened gaps.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportPriorityBtn" type="button">Export Priority CSV</button>
+          </div>
+        </div>
+        <div class="table-shell">
+          <div class="table-tools">
+            <strong id="priorityCount">0 students</strong>
+          </div>
+          <div class="table-scroll" id="priorityTable"></div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="celebrationTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="celebrationTitle">Celebration Students</h2>
+            <p>Students showing exceeded growth, band movement, gap closure, strong RIT improvement, or quadrant improvement.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportCelebrationBtn" type="button">Export Celebration CSV</button>
+          </div>
+        </div>
+        <div class="table-shell">
+          <div class="table-tools">
+            <strong id="celebrationCount">0 students</strong>
+          </div>
+          <div class="table-scroll" id="celebrationTable"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const SUBJECTS = ["Language", "Reading", "Mathematics", "Science"];
+    const US_NORM_SEASON_LABELS = {
+      fall: "Fall",
+      winter: "Winter",
+      spring: "Spring"
+    };
+    const US_NORMS = {
+      Reading: {
+        K: { fall: 138, winter: 146, spring: 152 },
+        "1": { fall: 155, winter: 163, spring: 168 },
+        "2": { fall: 170, winter: 177, spring: 182 },
+        "3": { fall: 184, winter: 190, spring: 194 },
+        "4": { fall: 195, winter: 199, spring: 202 },
+        "5": { fall: 204, winter: 206, spring: 208 },
+        "6": { fall: 209, winter: 211, spring: 212 },
+        "7": { fall: 212, winter: 214, spring: 215 },
+        "8": { fall: 216, winter: 217, spring: 218 },
+        "9": { fall: 216, winter: 217, spring: 217 },
+        "10": { fall: 218, winter: 218, spring: 218 },
+        "11": { fall: 218, winter: 218, spring: 218 },
+        "12": { fall: 218, winter: 217, spring: 216 }
+      },
+      Mathematics: {
+        K: { fall: 141, winter: 151, spring: 158 },
+        "1": { fall: 159, winter: 168, spring: 175 },
+        "2": { fall: 173, winter: 181, spring: 187 },
+        "3": { fall: 184, winter: 193, spring: 199 },
+        "4": { fall: 197, winter: 204, spring: 210 },
+        "5": { fall: 206, winter: 212, spring: 216 },
+        "6": { fall: 210, winter: 216, spring: 220 },
+        "7": { fall: 217, winter: 221, spring: 224 },
+        "8": { fall: 222, winter: 226, spring: 229 },
+        "9": { fall: 225, winter: 226, spring: 229 },
+        "10": { fall: 227, winter: 227, spring: 231 },
+        "11": { fall: 229, winter: 231, spring: 233 },
+        "12": { fall: 228, winter: 230, spring: 231 }
+      },
+      Language: {
+        "2": { fall: 170, winter: 178, spring: 183 },
+        "3": { fall: 184, winter: 190, spring: 193 },
+        "4": { fall: 195, winter: 198, spring: 201 },
+        "5": { fall: 202, winter: 205, spring: 207 },
+        "6": { fall: 206, winter: 209, spring: 210 },
+        "7": { fall: 210, winter: 212, spring: 213 },
+        "8": { fall: 214, winter: 215, spring: 217 },
+        "9": { fall: 214, winter: 215, spring: 216 },
+        "10": { fall: 216, winter: 217, spring: 217 }
+      },
+      Science: {
+        "2": { fall: 176, winter: 181, spring: 185 },
+        "3": { fall: 187, winter: 191, spring: 194 },
+        "4": { fall: 195, winter: 198, spring: 200 },
+        "5": { fall: 201, winter: 204, spring: 207 },
+        "6": { fall: 204, winter: 206, spring: 207 },
+        "7": { fall: 207, winter: 209, spring: 210 },
+        "8": { fall: 210, winter: 211, spring: 213 },
+        "9": { fall: 212, winter: 213, spring: 213 },
+        "10": { fall: 213, winter: 214, spring: 215 }
+      }
+    };
+    const BANDS = [
+      { name: "Red", min: 0, max: 20, rank: 1, className: "band-red", color: "#dc2626" },
+      { name: "Orange", min: 21, max: 40, rank: 2, className: "band-orange", color: "#ea580c" },
+      { name: "Yellow", min: 41, max: 60, rank: 3, className: "band-yellow", color: "#ca8a04" },
+      { name: "Green", min: 61, max: 80, rank: 4, className: "band-green", color: "#16a34a" },
+      { name: "Blue", min: 81, max: 100, rank: 5, className: "band-blue", color: "#2563eb" }
+    ];
+
+    const MISSING_BAND = { name: "Missing", min: null, max: null, rank: null, className: "band-missing", color: "#64748b" };
+    const QUADRANTS = ["High-G/High-A", "High-G/Low-A", "Low-G/High-A", "Low-G/Low-A"];
+
+    const GROUP_ACTIONS = {
+      "Intensive Support": "Use immediate reteaching, prerequisite checks, short-cycle monitoring, and small-group intervention.",
+      "Targeted Support": "Plan focused small-group lessons around the highest-impact skills and check progress frequently.",
+      "Watch Group": "Keep core instruction tight, add quick checks, and respond before flat growth becomes a larger gap.",
+      "Secure / Maintain": "Maintain grade-level access, spiral key skills, and monitor for steady progress.",
+      "Enrichment": "Provide extension tasks, advanced problem solving, independent reading or inquiry, and leadership opportunities.",
+      "Catch-Up Growth": "Protect the successful supports already working and keep pushing toward the secure benchmark.",
+      "Secure but Regressing": "Check for unfinished learning, engagement changes, or assessment conditions before assigning extension.",
+      "Incomplete Data": "Confirm testing status and avoid making placement decisions from incomplete growth data."
+    };
+
+    const SAMPLE_CSV = `TermTested,TermRostered,DistrictName,SchoolName,Teacher,ClassName,Subject,Course,ASGType,StudentID,StudentLastName,StudentFirstName,StudentGrade,TestDate,StartRIT,StartPercentile,StartTestDuration,EndTestDate,EndRIT,EndPercentile,EndTestDuration,ProjectedRIT,ProjectedGrowth,ObservedGrowth,GrowthIndex,MetGrowthProjection?,ConditionalGrowthIndex,ConditionalGrowthPercentile,PercentageofStudentswhoMetorExceededtheirProjectedRIT,PercentageofProjectedGrowthMet,MedianConditionalGrowthPercentile,StartGrowthandAchievement,EndGrowthandAchievement,ConditionalGrowthPercentileAxis,AchievementPercentileAxis
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Reading,Reading,Class,1001,Baker,Ava,5,2025-09-12,196,35,48,2026-04-18,207,55,44,205,9,11,2,Yes*,1.2,68,62%,122%,55,High Growth / Low Achievement,High Growth / Low Achievement,68,55
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Reading,Reading,Class,1002,Chen,Leo,5,2025-09-12,214,76,51,2026-04-18,219,74,46,220,6,5,-1,No,-0.5,32,62%,83%,55,Low Growth / High Achievement,Low Growth / High Achievement,32,74
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Reading,Reading,Class,1003,Diaz,Mia,5,2025-09-12,183,18,42,2026-04-18,188,19,38,193,10,5,-5,No*,-1.1,18,62%,50%,55,Low Growth / Low Achievement,Low Growth / Low Achievement,18,19
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Reading,Reading,Class,1004,Evans,Noah,5,2025-09-12,205,52,39,2026-04-18,216,72,41,213,8,11,3,Yes,1.4,75,62%,138%,55,High Growth / Average Achievement,High Growth / High Achievement,75,72
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Mathematics,Math,Class,1001,Baker,Ava,5,2025-09-13,204,44,45,2026-04-19,217,69,43,214,10,13,3,Yes,1.3,71,67%,130%,58,High Growth / Low Achievement,High Growth / High Achievement,71,69
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Mathematics,Math,Class,1002,Chen,Leo,5,2025-09-13,224,82,50,2026-04-19,229,83,47,230,6,5,-1,No,-0.3,38,67%,83%,58,Low Growth / High Achievement,Low Growth / High Achievement,38,83
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Mathematics,Math,Class,1003,Diaz,Mia,5,2025-09-13,189,22,44,2026-04-19,199,39,39,198,9,10,1,Yes,0.8,61,67%,111%,58,High Growth / Low Achievement,High Growth / Low Achievement,61,39
+Spring 2026,Fall 2025,North Valley,Maple School,Adams,Period 1,Mathematics,Math,Class,1004,Evans,Noah,5,2025-09-13,210,60,40,2026-04-19,208,50,37,218,8,-2,-10,No,-2.0,9,67%,***,58,Low Growth / Average Achievement,Low Growth / Low Achievement,9,50
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Language Arts,Language Arts,Class,1005,Foster,Emma,5,2025-09-14,193,28,41,2026-04-20,207,62,42,203,9,14,5,Yes*,1.8,84,75%,156%,63,High Growth / Low Achievement,High Growth / High Achievement,84,62
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Language Arts,Language Arts,Class,1006,Garcia,Lucas,5,2025-09-14,216,73,47,2026-04-20,213,58,45,222,6,-3,-9,No,-1.8,12,75%,<1,63,Low Growth / High Achievement,Low Growth / Low Achievement,12,58
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Language Arts,Language Arts,Class,1007,Harris,Sofia,5,2025-09-14,229,91,52,2026-04-20,236,94,49,234,5,7,2,Yes,1.1,66,75%,140%,63,High Growth / High Achievement,High Growth / High Achievement,66,94
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Language Arts,Language Arts,Class,1008,Irwin,Ethan,5,2025-09-14,181,12,46,,,43,202,,8,***,,***,*,***,75%,,63,Low Growth / Low Achievement,,,
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,Class,1005,Foster,Emma,5,2025-09-15,201,49,43,2026-04-21,211,65,41,210,9,10,1,Yes,0.9,58,50%,111%,44,Expected Growth / Average Achievement,High Growth / High Achievement,58,65
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,Class,1006,Garcia,Lucas,5,2025-09-15,218,79,45,2026-04-21,216,71,40,225,7,-2,-9,No,-1.5,21,50%,Below 80%,44,Low Growth / High Achievement,Low Growth / High Achievement,21,71
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,Class,1007,Harris,Sofia,5,2025-09-15,235,96,51,2026-04-21,242,98,47,240,5,7,2,Yes,1.3,72,50%,140%,44,High Growth / High Achievement,High Growth / High Achievement,72,98
+Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,Class,1008,Irwin,Ethan,5,2025-09-15,184,<1,39,2026-04-21,190,15,35,193,9,6,-3,No,-0.8,27,50%,67%,44,Low Growth / Low Achievement,Low Growth / Low Achievement,27,15`;
+
+    const HEADER_ALIASES = {
+      termtested: "termTested",
+      termrostered: "termRostered",
+      districtname: "districtName",
+      schoolname: "schoolName",
+      teacher: "teacher",
+      teachername: "teacher",
+      classname: "className",
+      subject: "subjectRaw",
+      course: "course",
+      asgtype: "asgType",
+      studentid: "studentID",
+      studentlastname: "studentLastName",
+      studentfirstname: "studentFirstName",
+      studentgrade: "studentGrade",
+      grade: "studentGrade",
+      testdate: "testDate",
+      startrit: "startRITRaw",
+      startpercentile: "startPercentileRaw",
+      starttestduration: "startTestDuration",
+      endtestdate: "endTestDate",
+      endrit: "endRITRaw",
+      endpercentile: "endPercentileRaw",
+      endtestduration: "endTestDuration",
+      projectedrit: "projectedRITRaw",
+      projectedgrowth: "projectedGrowthRaw",
+      observedgrowth: "observedGrowthRaw",
+      growthindex: "growthIndexRaw",
+      metgrowthprojection: "metGrowthRaw",
+      conditionalgrowthindex: "conditionalGrowthIndexRaw",
+      conditionalgrowthpercentile: "conditionalGrowthPercentileRaw",
+      percentageofstudentswhometorexceededtheirprojectedrit: "pctStudentsMetOrExceededRaw",
+      percentageofprojectedgrowthmet: "pctProjectedGrowthMetRaw",
+      medianconditionalgrowthpercentile: "medianConditionalGrowthPercentileRaw",
+      startgrowthandachievement: "startGrowthAchievementRaw",
+      endgrowthandachievement: "endGrowthAchievementRaw",
+      conditionalgrowthpercentileaxis: "conditionalGrowthPercentileAxisRaw",
+      achievementpercentileaxis: "achievementPercentileAxisRaw"
+    };
+
+    const state = {
+      allRows: [],
+      filteredRows: [],
+      tableGroups: [],
+      tableManualPool: [],
+      tableGroupPlanLabel: "",
+      draggedProfileKey: "",
+      classroomLayout: {
+        tables: [],
+        door: { x: 0, y: 70 },
+        teacherDesk: { x: 4, y: 11 },
+        frontBoard: { x: 24, y: 1 },
+        roomRatio: { width: 4, height: 3 },
+        snapPercent: 2
+      },
+      layoutDrag: null,
+      fileName: "None",
+      charts: {},
+      sort: {
+        grouping: { key: "studentName", dir: "asc" },
+        priority: { key: "studentName", dir: "asc" },
+        celebration: { key: "studentName", dir: "asc" },
+        gap: { key: "studentName", dir: "asc" }
+      }
+    };
+
+    const els = {};
+
+    document.addEventListener("DOMContentLoaded", () => {
+      cacheElements();
+      attachEvents();
+      renderAll();
+    });
+
+    function cacheElements() {
+      [
+        "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
+        "searchInput", "subjectFilter", "teacherFilter", "classFilter", "gradeFilter",
+        "bandFilter", "metFilter", "groupFilter", "gapFilter", "resetFiltersBtn",
+        "filterContext", "summaryCards", "subjectOverview", "chartsWrap", "quadrantCards",
+        "quadrantMovement", "quadrantSubjectBreakdown", "gapCards", "gapSubjectBreakdown",
+        "summaryReport", "tableGroupContext", "groupSizeInput", "groupStrategySelect",
+        "groupScoreSelect", "roomRatioInput", "layoutSnapSelect", "refreshGroupsBtn", "tableGroups", "groupingCount", "groupingTable",
+        "priorityCount", "priorityTable", "celebrationCount", "celebrationTable",
+        "exportGroupingBtn", "exportPriorityBtn", "exportCelebrationBtn", "exportGapBtn",
+        "exportSummaryBtn", "exportSummaryBtn2", "copySummaryBtn", "exportTableGroupsBtn",
+        "printA4LayoutBtn"
+      ].forEach((id) => {
+        els[id] = document.getElementById(id);
+      });
+    }
+
+    function attachEvents() {
+      els.csvInput.addEventListener("change", handleFileUpload);
+      els.sampleBtn.addEventListener("click", () => loadCSVText(SAMPLE_CSV, "sample-asg.csv"));
+      [
+        els.searchInput, els.subjectFilter, els.teacherFilter, els.classFilter, els.gradeFilter,
+        els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter
+      ].forEach((control) => control.addEventListener("input", renderAll));
+      [els.groupSizeInput, els.groupStrategySelect, els.groupScoreSelect].forEach((control) => control.addEventListener("input", renderTableGroups));
+      [els.roomRatioInput, els.layoutSnapSelect].forEach((control) => control.addEventListener("input", refreshLayoutControlsOnly));
+      els.refreshGroupsBtn.addEventListener("click", renderTableGroups);
+      els.resetFiltersBtn.addEventListener("click", resetFilters);
+      els.exportGroupingBtn.addEventListener("click", () => exportGrouping());
+      els.exportPriorityBtn.addEventListener("click", () => exportPriority());
+      els.exportCelebrationBtn.addEventListener("click", () => exportCelebration());
+      els.exportGapBtn.addEventListener("click", () => exportGap());
+      els.exportTableGroupsBtn.addEventListener("click", () => exportTableGroups());
+      els.printA4LayoutBtn.addEventListener("click", () => printA4Layout());
+      els.exportSummaryBtn.addEventListener("click", exportSummary);
+      els.exportSummaryBtn2.addEventListener("click", exportSummary);
+      els.copySummaryBtn.addEventListener("click", copySummary);
+
+      document.addEventListener("click", (event) => {
+        const header = event.target.closest("th[data-table][data-key]");
+        if (!header) return;
+        const table = header.dataset.table;
+        const key = header.dataset.key;
+        const current = state.sort[table] || { key, dir: "asc" };
+        state.sort[table] = {
+          key,
+          dir: current.key === key && current.dir === "asc" ? "desc" : "asc"
+        };
+        renderTables();
+      });
+      document.addEventListener("dragstart", handleTableGroupDragStart);
+      document.addEventListener("dragover", handleTableGroupDragOver);
+      document.addEventListener("dragleave", handleTableGroupDragLeave);
+      document.addEventListener("drop", handleTableGroupDrop);
+      document.addEventListener("dragend", handleTableGroupDragEnd);
+      document.addEventListener("pointerdown", handleLayoutPointerDown);
+      document.addEventListener("pointermove", handleLayoutPointerMove);
+      document.addEventListener("pointerup", handleLayoutPointerUp);
+      document.addEventListener("pointercancel", handleLayoutPointerUp);
+    }
+
+    function handleFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => loadCSVText(String(reader.result || ""), file.name);
+      reader.onerror = () => setStatus("Could not read that file.", true);
+      reader.readAsText(file);
+    }
+
+    function loadCSVText(text, fileName) {
+      try {
+        const parsed = parseCSV(text);
+        state.allRows = parsed.map(normalizeRecord).filter(Boolean);
+        state.fileName = fileName || "Uploaded CSV";
+        populateFilters();
+        resetFilters(false);
+        renderAll();
+        setStatus(state.allRows.length ? "CSV loaded and cleaned." : "No usable rows found.", !state.allRows.length);
+      } catch (error) {
+        console.error(error);
+        state.allRows = [];
+        state.fileName = "None";
+        populateFilters();
+        renderAll();
+        setStatus("CSV could not be parsed. Check the file format.", true);
+      }
+    }
+
+    function setStatus(message, isError) {
+      els.statusLine.textContent = message;
+      els.statusLine.style.color = isError ? "var(--red)" : "var(--muted)";
+    }
+
+    function parseCSV(text) {
+      const rows = [];
+      let row = [];
+      let value = "";
+      let inQuotes = false;
+      const input = String(text || "").replace(/^\uFEFF/, "");
+
+      for (let i = 0; i < input.length; i += 1) {
+        const char = input[i];
+        const next = input[i + 1];
+        if (char === '"') {
+          if (inQuotes && next === '"') {
+            value += '"';
+            i += 1;
+          } else {
+            inQuotes = !inQuotes;
+          }
+          continue;
+        }
+        if (char === "," && !inQuotes) {
+          row.push(value);
+          value = "";
+          continue;
+        }
+        if ((char === "\n" || char === "\r") && !inQuotes) {
+          if (char === "\r" && next === "\n") i += 1;
+          row.push(value);
+          if (row.some((cell) => cleanString(cell) !== "")) rows.push(row);
+          row = [];
+          value = "";
+          continue;
+        }
+        value += char;
+      }
+
+      row.push(value);
+      if (row.some((cell) => cleanString(cell) !== "")) rows.push(row);
+      if (!rows.length) return [];
+
+      const headers = rows.shift().map((header) => mapHeader(header));
+      return rows.map((cells, index) => {
+        const record = { _rowNumber: index + 2 };
+        headers.forEach((header, colIndex) => {
+          if (!header) return;
+          record[header] = cleanString(cells[colIndex]);
+        });
+        return record;
+      });
+    }
+
+    function mapHeader(header) {
+      const normalized = normalizeKey(header);
+      return HEADER_ALIASES[normalized] || normalized;
+    }
+
+    function normalizeKey(value) {
+      return cleanString(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+    }
+
+    function normalizeRecord(raw) {
+      const startRIT = cleanNumber(raw.startRITRaw);
+      const endRIT = cleanNumber(raw.endRITRaw);
+      const startPercentile = cleanNumber(raw.startPercentileRaw);
+      const endPercentile = cleanNumber(raw.endPercentileRaw);
+      const projectedGrowth = cleanNumber(raw.projectedGrowthRaw);
+      const observedGrowth = cleanNumber(raw.observedGrowthRaw);
+      const projectedRIT = cleanNumber(raw.projectedRITRaw);
+      const growthIndex = cleanNumber(raw.growthIndexRaw);
+      const conditionalGrowthIndex = cleanNumber(raw.conditionalGrowthIndexRaw);
+      const conditionalGrowthPercentile = cleanNumber(raw.conditionalGrowthPercentileRaw);
+      const conditionalGrowthPercentileAxis = cleanNumber(raw.conditionalGrowthPercentileAxisRaw);
+      const achievementPercentileAxis = cleanNumber(raw.achievementPercentileAxisRaw);
+      const classPctMet = cleanNumber(raw.pctStudentsMetOrExceededRaw);
+      const classPctProjectedGrowthMet = cleanNumber(raw.pctProjectedGrowthMetRaw);
+      const medianConditionalGrowthPercentile = cleanNumber(raw.medianConditionalGrowthPercentileRaw);
+      const metGrowthClean = cleanYesNo(raw.metGrowthRaw);
+      const metGrowth = metGrowthClean === null && isFiniteNumber(observedGrowth) && isFiniteNumber(projectedGrowth)
+        ? observedGrowth >= projectedGrowth
+        : metGrowthClean;
+      const exceededGrowth = isFiniteNumber(observedGrowth) && isFiniteNumber(projectedGrowth)
+        ? observedGrowth > projectedGrowth
+        : false;
+      const growthEfficiency = isFiniteNumber(observedGrowth) && isFiniteNumber(projectedGrowth) && projectedGrowth !== 0
+        ? observedGrowth / projectedGrowth
+        : null;
+      const startBand = getBand(startPercentile);
+      const endBand = getBand(endPercentile);
+      const ritChange = isFiniteNumber(startRIT) && isFiniteNumber(endRIT) ? endRIT - startRIT : null;
+      const percentileChange = isFiniteNumber(startPercentile) && isFiniteNumber(endPercentile) ? endPercentile - startPercentile : null;
+      const bandMovement = getBandMovement(startBand, endBand);
+      const startQuadrant = parseQuadrant(raw.startGrowthAchievementRaw);
+      const endQuadrant = parseQuadrant(raw.endGrowthAchievementRaw);
+      const gap = computeGap(startPercentile, endPercentile, metGrowth, exceededGrowth);
+      const subject = subjectFromCourse(raw.course, raw.subjectRaw);
+      const studentName = formatStudentName(raw.studentFirstName, raw.studentLastName);
+      const usNormSeason = inferUSNormSeason(raw.termTested, raw.termRostered, raw.endTestDate, raw.testDate);
+      const usNormStudentGrade = normalizeUSNormGrade(raw.studentGrade);
+      const usNormBenchmarkRIT = getUSNormRIT(subject, usNormStudentGrade, usNormSeason);
+      const usNormEquivalent = estimateUSNormEquivalentGrade(subject, usNormSeason, endRIT);
+      const usNormDeltaRIT = isFiniteNumber(endRIT) && isFiniteNumber(usNormBenchmarkRIT)
+        ? endRIT - usNormBenchmarkRIT
+        : null;
+      const usNormGradeGap = usNormEquivalent && usNormStudentGrade
+        ? usNormEquivalent.gradeValue - gradeKeyToValue(usNormStudentGrade)
+        : null;
+      const usNormAtOrAbove = isFiniteNumber(usNormDeltaRIT) ? usNormDeltaRIT >= 0 : null;
+
+      const record = {
+        rowNumber: raw._rowNumber,
+        termTested: emptyToMissing(raw.termTested),
+        termRostered: emptyToMissing(raw.termRostered),
+        districtName: emptyToMissing(raw.districtName),
+        schoolName: emptyToMissing(raw.schoolName),
+        teacher: emptyToMissing(raw.teacher),
+        className: emptyToMissing(raw.className),
+        subject,
+        subjectRaw: emptyToMissing(raw.subjectRaw),
+        course: emptyToMissing(raw.course),
+        asgType: emptyToMissing(raw.asgType),
+        studentID: emptyToMissing(raw.studentID),
+        studentLastName: emptyToMissing(raw.studentLastName),
+        studentFirstName: emptyToMissing(raw.studentFirstName),
+        studentName,
+        studentGrade: emptyToMissing(raw.studentGrade),
+        testDate: emptyToMissing(raw.testDate),
+        endTestDate: emptyToMissing(raw.endTestDate),
+        startRIT,
+        endRIT,
+        usNormSeason: usNormSeason || "Missing",
+        usNormSeasonLabel: US_NORM_SEASON_LABELS[usNormSeason] || "Missing",
+        usNormStudentGrade,
+        usNormBenchmarkRIT,
+        usNormDeltaRIT,
+        usNormAtOrAbove,
+        usNormEquivalentGrade: usNormEquivalent ? usNormEquivalent.gradeKey : null,
+        usNormEquivalentGradeValue: usNormEquivalent ? usNormEquivalent.gradeValue : null,
+        usNormGradeGap,
+        projectedRIT,
+        startPercentile,
+        endPercentile,
+        projectedGrowth,
+        observedGrowth,
+        growthIndex,
+        conditionalGrowthIndex,
+        conditionalGrowthPercentile,
+        conditionalGrowthPercentileAxis,
+        achievementPercentileAxis,
+        classPctMet,
+        classPctProjectedGrowthMet,
+        medianConditionalGrowthPercentile,
+        metGrowth,
+        exceededGrowth,
+        growthEfficiency,
+        growthEfficiencyLabel: growthEfficiencyLabel(growthEfficiency),
+        startBand,
+        endBand,
+        bandMovement,
+        ritChange,
+        percentileChange,
+        startQuadrant,
+        endQuadrant,
+        quadrantMovement: getQuadrantMovement(startQuadrant, endQuadrant),
+        gapStart: gap.startGap,
+        gapEnd: gap.endGap,
+        gapClosed: gap.gapClosed,
+        gapClosurePct: gap.gapClosurePct,
+        gapStatus: gap.status,
+        secureStatus: gap.secureStatus,
+        hasMissingEndScore: !isFiniteNumber(endRIT) || !isFiniteNumber(endPercentile)
+      };
+
+      record.growthChallenge = classifyGrowthChallenge(record);
+      record.suggestedGroup = suggestGroup(record);
+      record.suggestedAction = GROUP_ACTIONS[record.suggestedGroup] || "Review the student's full profile before deciding next steps.";
+      record.priorityReasons = getPriorityReasons(record);
+      record.celebrationReasons = getCelebrationReasons(record);
+      record.extensionAction = getExtensionAction(record);
+      return record;
+    }
+
+    function cleanString(value) {
+      return String(value ?? "").replace(/^\uFEFF/, "").trim();
+    }
+
+    function emptyToMissing(value) {
+      const cleaned = cleanString(value);
+      return cleaned === "" ? "Missing" : cleaned;
+    }
+
+    function isBlankLike(value) {
+      const cleaned = cleanString(value).replace(/\s+/g, "");
+      return cleaned === "" || cleaned === "*" || cleaned === "**" || cleaned === "***" || cleaned === "****" || cleaned === "--" || cleaned.toLowerCase() === "na" || cleaned.toLowerCase() === "n/a";
+    }
+
+    function cleanNumber(value) {
+      if (isBlankLike(value)) return null;
+      let cleaned = cleanString(value).replace(/\*/g, "").replace(/,/g, "");
+      if (cleaned === "") return null;
+      if (/^<\s*1$/i.test(cleaned)) return 0.5;
+      cleaned = cleaned.replace(/%/g, "");
+      const match = cleaned.match(/-?\d+(\.\d+)?/);
+      if (!match) return null;
+      const number = Number(match[0]);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function cleanYesNo(value) {
+      if (isBlankLike(value)) return null;
+      const cleaned = cleanString(value).replace(/\*/g, "").trim().toLowerCase();
+      if (["yes", "y", "true", "met", "1"].includes(cleaned)) return true;
+      if (["no", "n", "false", "notmet", "not met", "0"].includes(cleaned)) return false;
+      return null;
+    }
+
+    function inferUSNormSeason(termTested, termRostered, endTestDate, testDate) {
+      return detectSeasonFromText(termTested) ||
+        detectSeasonFromText(termRostered) ||
+        seasonFromMonth(monthFromDateText(endTestDate)) ||
+        seasonFromMonth(monthFromDateText(testDate)) ||
+        null;
+    }
+
+    function detectSeasonFromText(value) {
+      const text = cleanString(value).toLowerCase();
+      if (!text || isBlankLike(text)) return null;
+      if (text.includes("fall") || text.includes("autumn")) return "fall";
+      if (text.includes("winter")) return "winter";
+      if (text.includes("spring")) return "spring";
+      return null;
+    }
+
+    function monthFromDateText(value) {
+      const text = cleanString(value);
+      if (!text || isBlankLike(text)) return null;
+      const parsed = new Date(text);
+      if (!Number.isNaN(parsed.getTime())) return parsed.getMonth() + 1;
+      const match = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+      if (!match) return null;
+      const first = Number(match[1]);
+      const second = Number(match[2]);
+      if (!Number.isFinite(first) || !Number.isFinite(second)) return null;
+      if (first > 12 && second <= 12) return second;
+      if (first <= 12) return first;
+      return null;
+    }
+
+    function seasonFromMonth(month) {
+      if (!Number.isFinite(month)) return null;
+      if (month >= 8 && month <= 11) return "fall";
+      if (month === 12 || month <= 3) return "winter";
+      if (month >= 4 && month <= 7) return "spring";
+      return null;
+    }
+
+    function normalizeUSNormGrade(value) {
+      const cleaned = cleanString(value).toUpperCase();
+      if (!cleaned || cleaned === "MISSING") return null;
+      if (["K", "KG", "KINDERGARTEN", "KINDER"].includes(cleaned)) return "K";
+      const match = cleaned.match(/\d{1,2}/);
+      if (!match) return null;
+      const grade = Number(match[0]);
+      if (!Number.isFinite(grade) || grade < 0 || grade > 12) return null;
+      return grade === 0 ? "K" : String(grade);
+    }
+
+    function gradeKeyToValue(gradeKey) {
+      if (!gradeKey) return null;
+      if (gradeKey === "K") return 0;
+      const number = Number(gradeKey);
+      return Number.isFinite(number) ? number : null;
+    }
+
+    function formatUSNormGradeLabel(gradeKey) {
+      if (!gradeKey) return "N/A";
+      return gradeKey === "K" ? "K" : String(gradeKey);
+    }
+
+    function getUSNormRIT(subject, gradeKey, seasonKey) {
+      if (!subject || !gradeKey || !seasonKey) return null;
+      const subjectNorms = US_NORMS[subject];
+      if (!subjectNorms) return null;
+      const gradeNorms = subjectNorms[gradeKey];
+      if (!gradeNorms) return null;
+      const rit = gradeNorms[seasonKey];
+      return isFiniteNumber(rit) ? rit : null;
+    }
+
+    function estimateUSNormEquivalentGrade(subject, seasonKey, rit) {
+      if (!subject || !seasonKey || !isFiniteNumber(rit)) return null;
+      const subjectNorms = US_NORMS[subject];
+      if (!subjectNorms) return null;
+      const points = Object.entries(subjectNorms)
+        .map(([gradeKey, seasons]) => ({
+          gradeKey,
+          gradeValue: gradeKeyToValue(gradeKey),
+          rit: seasons[seasonKey]
+        }))
+        .filter((point) => isFiniteNumber(point.gradeValue) && isFiniteNumber(point.rit))
+        .sort((a, b) => a.gradeValue - b.gradeValue);
+      if (!points.length) return null;
+
+      let best = points[0];
+      let bestDistance = Math.abs(rit - points[0].rit);
+      for (let index = 1; index < points.length; index += 1) {
+        const point = points[index];
+        const distance = Math.abs(rit - point.rit);
+        if (distance < bestDistance || (distance === bestDistance && point.gradeValue > best.gradeValue)) {
+          best = point;
+          bestDistance = distance;
+        }
+      }
+      return {
+        gradeKey: best.gradeKey,
+        gradeValue: best.gradeValue,
+        rit: best.rit
+      };
+    }
+
+    function isFiniteNumber(value) {
+      return typeof value === "number" && Number.isFinite(value);
+    }
+
+    function subjectFromCourse(course, subjectRaw) {
+      const courseValue = cleanString(course);
+      if (courseValue && !isBlankLike(courseValue)) return canonicalSubject(courseValue);
+      return canonicalSubject(subjectRaw);
+    }
+
+    function canonicalSubject(value) {
+      const cleaned = cleanString(value);
+      const lower = cleaned.toLowerCase();
+      if (!cleaned) return "Unlisted";
+      if (lower.includes("language arts") || lower.includes("english language") || lower === "language" || lower.includes("language usage")) return "Language";
+      if (lower.includes("reading")) return "Reading";
+      if (lower.includes("math")) return "Mathematics";
+      if (lower.includes("science")) return "Science";
+      return titleCase(cleaned);
+    }
+
+    function titleCase(value) {
+      return cleanString(value).toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
+    }
+
+    function formatStudentName(first, last) {
+      const parts = [cleanString(first), cleanString(last)].filter(Boolean);
+      if (parts.length) return parts.join(" ");
+      return "Unnamed Student";
+    }
+
+    function getBand(percentile) {
+      if (!isFiniteNumber(percentile)) return MISSING_BAND;
+      const clamped = Math.max(0, Math.min(100, percentile));
+      return BANDS.find((band) => clamped >= band.min && clamped <= band.max) || MISSING_BAND;
+    }
+
+    function getBandMovement(startBand, endBand) {
+      if (!startBand.rank || !endBand.rank) return "Missing End";
+      if (endBand.rank > startBand.rank) return "Moved Up";
+      if (endBand.rank < startBand.rank) return "Moved Down";
+      return "Stayed Same";
+    }
+
+    function computeGap(startPercentile, endPercentile, metGrowth, exceededGrowth) {
+      const result = {
+        startGap: null,
+        endGap: null,
+        gapClosed: null,
+        gapClosurePct: null,
+        status: "Missing",
+        secureStatus: "Missing"
+      };
+      if (!isFiniteNumber(startPercentile) || !isFiniteNumber(endPercentile)) return result;
+
+      if (startPercentile < 61) {
+        result.startGap = 61 - startPercentile;
+        result.endGap = 61 - endPercentile;
+        result.gapClosed = result.startGap - result.endGap;
+        result.gapClosurePct = result.startGap !== 0 ? result.gapClosed / result.startGap : null;
+        if (endPercentile >= 61) result.status = "Gap Closed";
+        else if (result.gapClosurePct > 0) result.status = "Gap Reduced";
+        else if (result.gapClosurePct === 0) result.status = "Gap Maintained";
+        else result.status = "Gap Widened";
+        return result;
+      }
+
+      result.startGap = 0;
+      result.endGap = Math.max(0, 61 - endPercentile);
+      result.gapClosed = startPercentile - endPercentile;
+      result.gapClosurePct = null;
+      if (endPercentile < 61) result.status = "Dropped Below Secure";
+      else if (endPercentile > startPercentile && (metGrowth === true || exceededGrowth)) result.status = "Secure and Extending";
+      else if (endPercentile >= 61 && endPercentile - startPercentile >= 0) result.status = "Secure and Maintaining";
+      else if (endPercentile < startPercentile) result.status = "Secure but Regressing";
+      result.secureStatus = result.status;
+      return result;
+    }
+
+    function growthEfficiencyLabel(value) {
+      if (!isFiniteNumber(value)) return "Missing";
+      if (value >= 1.2) return "Exceeded strongly";
+      if (value >= 1) return "Exceeded";
+      if (value >= 0.8) return "Nearly met";
+      return "Below expected";
+    }
+
+    function classifyGrowthChallenge(row) {
+      const missing = !isFiniteNumber(row.startPercentile) ||
+        !isFiniteNumber(row.endPercentile) ||
+        !isFiniteNumber(row.observedGrowth) ||
+        !isFiniteNumber(row.projectedGrowth) ||
+        !isFiniteNumber(row.conditionalGrowthPercentile) ||
+        row.metGrowth === null;
+      if (missing) return "Missing Growth Data";
+      if (row.startPercentile < 41 && row.conditionalGrowthPercentile >= 60) return "Strong Catch-Up Growth";
+      if (row.startPercentile < 41 && row.conditionalGrowthPercentile < 40) return "Urgent Support";
+      if (row.startPercentile >= 61 && row.conditionalGrowthPercentile >= 60) return "Strong Extension";
+      if (row.startPercentile >= 61 && row.conditionalGrowthPercentile < 40) return "Monitor for Coasting";
+      if (row.conditionalGrowthPercentile >= 40 && row.conditionalGrowthPercentile <= 59) return "Expected Growth";
+      return "Needs Review";
+    }
+
+    function lowGrowth(row) {
+      return row.metGrowth === false ||
+        (isFiniteNumber(row.conditionalGrowthPercentile) && row.conditionalGrowthPercentile < 40) ||
+        (isFiniteNumber(row.growthEfficiency) && row.growthEfficiency < 0.8) ||
+        (isFiniteNumber(row.observedGrowth) && row.observedGrowth <= 0);
+    }
+
+    function suggestGroup(row) {
+      if (row.hasMissingEndScore || !isFiniteNumber(row.endPercentile)) return "Incomplete Data";
+      const startedSecure = isFiniteNumber(row.startPercentile) && row.startPercentile >= 61;
+      const regressedSecure = startedSecure && (row.endPercentile < 61 || (isFiniteNumber(row.percentileChange) && row.percentileChange < 0));
+      if (regressedSecure) return "Secure but Regressing";
+      if (row.endPercentile < 41 && isFiniteNumber(row.conditionalGrowthPercentile) && row.conditionalGrowthPercentile >= 60) return "Catch-Up Growth";
+      if (row.endPercentile <= 20 && row.metGrowth !== true) return "Intensive Support";
+      if (row.endPercentile >= 81 || row.exceededGrowth) return "Enrichment";
+      if ((row.endPercentile >= 21 && row.endPercentile <= 40) || lowGrowth(row)) return "Targeted Support";
+      if (row.endPercentile >= 41 && row.endPercentile <= 60 && (lowGrowth(row) || row.percentileChange <= 0)) return "Watch Group";
+      if (row.endPercentile >= 61 && row.endPercentile <= 80 && row.metGrowth === true) return "Secure / Maintain";
+      if (row.endPercentile >= 61 && row.endPercentile <= 80) return "Secure / Maintain";
+      if (row.endPercentile >= 41 && row.endPercentile <= 60) return "Watch Group";
+      return "Targeted Support";
+    }
+
+    function parseQuadrant(value) {
+      const cleaned = cleanString(value).toLowerCase();
+      if (!cleaned || isBlankLike(cleaned)) return "Missing";
+      const highGrowth = /high[^a-z0-9]*g|high growth/.test(cleaned);
+      const lowGrowthText = /low[^a-z0-9]*g|low growth/.test(cleaned);
+      const highAchievement = /high[^a-z0-9]*a|high achievement/.test(cleaned);
+      const lowAchievement = /low[^a-z0-9]*a|low achievement/.test(cleaned);
+      if (highGrowth && highAchievement) return "High-G/High-A";
+      if (highGrowth && lowAchievement) return "High-G/Low-A";
+      if (lowGrowthText && highAchievement) return "Low-G/High-A";
+      if (lowGrowthText && lowAchievement) return "Low-G/Low-A";
+      if (cleaned.includes("high") && cleaned.includes("growth") && cleaned.includes("average")) return "High-G/Low-A";
+      if (cleaned.includes("low") && cleaned.includes("growth") && cleaned.includes("average")) return "Low-G/Low-A";
+      return "Missing";
+    }
+
+    function quadrantScore(quadrant) {
+      return {
+        "Low-G/Low-A": 0,
+        "Low-G/High-A": 1,
+        "High-G/Low-A": 1.25,
+        "High-G/High-A": 2
+      }[quadrant] ?? null;
+    }
+
+    function getQuadrantMovement(startQuadrant, endQuadrant) {
+      const startScore = quadrantScore(startQuadrant);
+      const endScore = quadrantScore(endQuadrant);
+      if (!isFiniteNumber(startScore) || !isFiniteNumber(endScore)) return "Missing";
+      if (endScore > startScore) return "Improved";
+      if (endScore < startScore) return "Declined";
+      return "Stayed Same";
+    }
+
+    function hasLowToHighAchievement(row) {
+      return row.startQuadrant.includes("Low-A") && row.endQuadrant.includes("High-A");
+    }
+
+    function hasLowToHighGrowth(row) {
+      return row.startQuadrant.includes("Low-G") && row.endQuadrant.includes("High-G");
+    }
+
+    function getPriorityReasons(row) {
+      const reasons = [];
+      if (row.metGrowth === false) reasons.push("Did not meet growth");
+      if (row.bandMovement === "Moved Down") reasons.push("Dropped percentile band");
+      if (row.endQuadrant === "Low-G/Low-A") reasons.push("Low-G/Low-A at end");
+      if (row.hasMissingEndScore) reasons.push("Missing end score");
+      if (isFiniteNumber(row.observedGrowth) && row.observedGrowth < 0) reasons.push("Negative observed growth");
+      if (isFiniteNumber(row.endPercentile) && row.endPercentile < 21) reasons.push("EndPercentile below 21");
+      if (isFiniteNumber(row.startPercentile) && row.startPercentile >= 61 && isFiniteNumber(row.endPercentile) && row.endPercentile < row.startPercentile) reasons.push("Started secure but regressed");
+      if (row.gapStatus === "Gap Widened") reasons.push("Widened the gap");
+      return reasons;
+    }
+
+    function getCelebrationReasons(row) {
+      const reasons = [];
+      if (row.exceededGrowth) reasons.push("Exceeded projected growth");
+      if (row.bandMovement === "Moved Up") reasons.push("Moved up a band");
+      if (row.gapStatus === "Gap Closed") reasons.push("Closed the gap");
+      if (row.gapStatus === "Gap Reduced" && isFiniteNumber(row.gapClosurePct) && row.gapClosurePct >= 0.5) reasons.push("Reduced gap significantly");
+      if (isFiniteNumber(row.ritChange)) {
+        const strongRit = isFiniteNumber(row.projectedGrowth) ? Math.max(8, row.projectedGrowth * 1.2) : 8;
+        if (row.ritChange >= strongRit) reasons.push("Improved RIT strongly");
+      }
+      if (hasLowToHighAchievement(row)) reasons.push("Moved from Low-A to High-A");
+      if (hasLowToHighGrowth(row)) reasons.push("Moved from Low-G to High-G");
+      return reasons;
+    }
+
+    function getExtensionAction(row) {
+      if (row.suggestedGroup === "Enrichment") return "Assign extension work and track whether high achievement is still paired with high growth.";
+      if (row.suggestedGroup === "Catch-Up Growth") return "Celebrate the growth and keep the intervention plan consistent.";
+      if (row.gapStatus === "Gap Closed") return "Move toward grade-level stretch tasks while monitoring retention.";
+      return "Name the success, then set the next measurable goal.";
+    }
+
+    function populateFilters() {
+      const current = getFilters();
+      setOptions(els.subjectFilter, ["", ...unique([...SUBJECTS, ...state.allRows.map((row) => row.subject)])], "All Subjects", current.subject);
+      setOptions(els.teacherFilter, ["", ...unique(state.allRows.map((row) => row.teacher))], "All Teachers", current.teacher);
+      setOptions(els.classFilter, ["", ...unique(state.allRows.map((row) => row.className))], "All Classes", current.className);
+      setOptions(els.gradeFilter, ["", ...unique(state.allRows.map((row) => row.studentGrade))], "All Grades", current.grade);
+      setOptions(els.bandFilter, ["", ...unique(["Red", "Orange", "Yellow", "Green", "Blue", "Missing", ...state.allRows.map((row) => row.endBand.name)])], "All Bands", current.band);
+      setOptions(els.groupFilter, ["", ...unique(Object.keys(GROUP_ACTIONS).concat(state.allRows.map((row) => row.suggestedGroup)))], "All Groups", current.group);
+      setOptions(els.gapFilter, ["", ...unique(state.allRows.map((row) => row.gapStatus))], "All Gap Statuses", current.gap);
+    }
+
+    function setOptions(select, values, allLabel, currentValue) {
+      const normalizedValues = values.filter((value, index, arr) => value !== undefined && value !== null && arr.indexOf(value) === index);
+      select.innerHTML = normalizedValues.map((value, index) => {
+        const label = index === 0 && value === "" ? allLabel : value;
+        return `<option value="${escapeAttr(value)}">${escapeHTML(label)}</option>`;
+      }).join("");
+      if (normalizedValues.includes(currentValue)) select.value = currentValue;
+    }
+
+    function unique(values) {
+      return [...new Set(values.filter((value) => cleanString(value) !== ""))].sort(naturalCompare);
+    }
+
+    function resetFilters(shouldRender = true) {
+      els.searchInput.value = "";
+      [els.subjectFilter, els.teacherFilter, els.classFilter, els.gradeFilter, els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter].forEach((select) => {
+        select.value = "";
+      });
+      if (shouldRender) renderAll();
+    }
+
+    function getFilters() {
+      return {
+        search: cleanString(els.searchInput?.value).toLowerCase(),
+        subject: els.subjectFilter?.value || "",
+        teacher: els.teacherFilter?.value || "",
+        className: els.classFilter?.value || "",
+        grade: els.gradeFilter?.value || "",
+        band: els.bandFilter?.value || "",
+        met: els.metFilter?.value || "",
+        group: els.groupFilter?.value || "",
+        gap: els.gapFilter?.value || ""
+      };
+    }
+
+    function applyFilters(rows) {
+      const filters = getFilters();
+      return rows.filter((row) => {
+        if (filters.search) {
+          const haystack = `${row.studentName} ${row.studentID} ${row.studentLastName} ${row.studentFirstName}`.toLowerCase();
+          if (!haystack.includes(filters.search)) return false;
+        }
+        if (filters.subject && row.subject !== filters.subject) return false;
+        if (filters.teacher && row.teacher !== filters.teacher) return false;
+        if (filters.className && row.className !== filters.className) return false;
+        if (filters.grade && row.studentGrade !== filters.grade) return false;
+        if (filters.band && row.endBand.name !== filters.band) return false;
+        if (filters.met) {
+          const metLabel = row.metGrowth === true ? "Yes" : row.metGrowth === false ? "No" : "Missing";
+          if (metLabel !== filters.met) return false;
+        }
+        if (filters.group && row.suggestedGroup !== filters.group) return false;
+        if (filters.gap && row.gapStatus !== filters.gap) return false;
+        return true;
+      });
+    }
+
+    function renderAll() {
+      state.filteredRows = applyFilters(state.allRows);
+      renderUploadStats();
+      renderFilterContext();
+      renderSummaryCards();
+      renderSubjectOverview();
+      renderCharts();
+      renderQuadrants();
+      renderGapCards();
+      renderSummaryReport();
+      renderTables();
+    }
+
+    function renderUploadStats() {
+      els.recordCount.textContent = formatInteger(state.allRows.length);
+      els.studentCount.textContent = formatInteger(new Set(state.allRows.map((row) => row.studentID || row.studentName)).size);
+      els.fileName.textContent = state.fileName;
+    }
+
+    function renderFilterContext() {
+      const total = state.allRows.length;
+      const filtered = state.filteredRows.length;
+      if (!total) {
+        els.filterContext.textContent = "No data loaded.";
+        return;
+      }
+      els.filterContext.textContent = `${formatInteger(filtered)} of ${formatInteger(total)} records shown after filters.`;
+    }
+
+    function renderSummaryCards() {
+      const rows = state.filteredRows;
+      const metrics = aggregateRows(rows);
+      const priorityCount = rows.filter((row) => row.priorityReasons.length).length;
+      const celebrationCount = rows.filter((row) => row.celebrationReasons.length).length;
+      const cards = [
+        ["Records", formatInteger(rows.length)],
+        ["Met Growth", formatPercentWhole(metrics.metPct)],
+        ["Exceeded", formatPercentWhole(metrics.exceededPct)],
+        ["Avg Start %ile", formatNumber(metrics.avgStartPercentile)],
+        ["Avg End %ile", formatNumber(metrics.avgEndPercentile)],
+        ["Avg Gap Closure", formatFractionPercent(metrics.avgGapClosurePct)],
+        ["Priority", formatInteger(priorityCount)],
+        ["Celebration", formatInteger(celebrationCount)]
+      ];
+      els.summaryCards.innerHTML = cards.map(([label, value]) => `
+        <div class="summary-card">
+          <span class="label">${escapeHTML(label)}</span>
+          <span class="value">${escapeHTML(value)}</span>
+        </div>
+      `).join("");
+    }
+
+    function renderSubjectOverview() {
+      els.subjectOverview.innerHTML = SUBJECTS.map((subject) => {
+        const rows = state.filteredRows.filter((row) => row.subject === subject);
+        const metrics = aggregateRows(rows);
+        return `
+          <article class="card subject-card ${escapeAttr(subject)}">
+            <div class="card-title">
+              <h3>${escapeHTML(subject)}</h3>
+              <span class="status-pill status-neutral">${formatInteger(metrics.validCount)} valid</span>
+            </div>
+            <div class="metric-list">
+              ${metricHTML("% met", formatPercentWhole(metrics.metPct))}
+              ${metricHTML("% exceeded", formatPercentWhole(metrics.exceededPct))}
+              ${metricHTML("Avg Start RIT", formatNumber(metrics.avgStartRIT))}
+              ${metricHTML("Avg End RIT", formatNumber(metrics.avgEndRIT))}
+              ${metricHTML("Avg RIT Change", formatSignedNumber(metrics.avgRITChange))}
+              ${metricHTML("Avg Start %ile", formatNumber(metrics.avgStartPercentile))}
+              ${metricHTML("Avg End %ile", formatNumber(metrics.avgEndPercentile))}
+              ${metricHTML("Avg %ile Change", formatSignedNumber(metrics.avgPercentileChange))}
+              ${metricHTML("Median CGP", formatNumber(metrics.medianConditionalGrowthPercentile))}
+              ${metricHTML("Avg Gap Closure", formatFractionPercent(metrics.avgGapClosurePct))}
+              ${metricHTML("Avg vs US Norm (RIT)", formatSignedNumber(metrics.avgUSNormDeltaRIT))}
+              ${metricHTML("At/Above US Norm", formatPercentWhole(metrics.atOrAboveUSNormPct))}
+              ${metricHTML("Moved Up", formatInteger(metrics.movedUpCount))}
+              ${metricHTML("Moved Down", formatInteger(metrics.movedDownCount))}
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function metricHTML(label, value) {
+      return `<div class="metric"><span class="label">${escapeHTML(label)}</span><span class="value">${escapeHTML(value)}</span></div>`;
+    }
+
+    function renderCharts() {
+      Object.values(state.charts).forEach((chart) => chart.destroy());
+      state.charts = {};
+
+      els.chartsWrap.innerHTML = SUBJECTS.map((subject) => {
+        const slug = slugify(subject);
+        return `
+          <section class="subject-chart-section">
+            <h3>${escapeHTML(subject)}</h3>
+            <div class="chart-grid">
+              ${chartCard(`${slug}-achievement`, "Start vs End Achievement Percentile")}
+              ${chartCard(`${slug}-growth`, "Projected Growth vs Observed Growth")}
+              ${chartCard(`${slug}-met`, "% Met and % Exceeded Growth")}
+              ${chartCard(`${slug}-bands`, "Band Distribution at Start and End")}
+            </div>
+          </section>
+        `;
+      }).join("");
+
+      if (!window.Chart) {
+        document.querySelectorAll(".chart-note").forEach((note) => {
+          note.textContent = "Charts require Chart.js from the CDN. Metrics and tables are still available.";
+        });
+        return;
+      }
+
+      SUBJECTS.forEach((subject) => {
+        const rows = state.filteredRows.filter((row) => row.subject === subject);
+        const metrics = aggregateRows(rows);
+        const slug = slugify(subject);
+        const bandStart = BANDS.map((band) => rows.filter((row) => row.startBand.name === band.name).length);
+        const bandEnd = BANDS.map((band) => rows.filter((row) => row.endBand.name === band.name).length);
+        createChart(`${slug}-achievement`, {
+          type: "bar",
+          data: {
+            labels: ["Start", "End"],
+            datasets: [{
+              label: "Average Percentile",
+              data: [safeChartNumber(metrics.avgStartPercentile), safeChartNumber(metrics.avgEndPercentile)],
+              backgroundColor: ["#93c5fd", "#2454a6"],
+              borderRadius: 6
+            }]
+          },
+          options: chartOptions({ max: 100 })
+        });
+        createChart(`${slug}-growth`, {
+          type: "bar",
+          data: {
+            labels: ["Projected", "Observed"],
+            datasets: [{
+              label: "Average Growth",
+              data: [safeChartNumber(metrics.avgProjectedGrowth), safeChartNumber(metrics.avgObservedGrowth)],
+              backgroundColor: ["#c4b5fd", "#16a34a"],
+              borderRadius: 6
+            }]
+          },
+          options: chartOptions({})
+        });
+        createChart(`${slug}-met`, {
+          type: "bar",
+          data: {
+            labels: ["Met Growth", "Exceeded Growth"],
+            datasets: [{
+              label: "Percent",
+              data: [safeChartNumber(metrics.metPct), safeChartNumber(metrics.exceededPct)],
+              backgroundColor: ["#2563eb", "#16a34a"],
+              borderRadius: 6
+            }]
+          },
+          options: chartOptions({ max: 100 })
+        });
+        createChart(`${slug}-bands`, {
+          type: "bar",
+          data: {
+            labels: BANDS.map((band) => band.name),
+            datasets: [
+              { label: "Start", data: bandStart, backgroundColor: "#94a3b8", borderRadius: 6 },
+              { label: "End", data: bandEnd, backgroundColor: BANDS.map((band) => band.color), borderRadius: 6 }
+            ]
+          },
+          options: chartOptions({ beginAtZero: true })
+        });
+      });
+    }
+
+    function chartCard(id, title) {
+      return `
+        <div class="chart-card">
+          <div class="chart-title">${escapeHTML(title)}</div>
+          <div class="chart-box"><canvas id="${escapeAttr(id)}"></canvas></div>
+          <div class="chart-note" aria-live="polite"></div>
+        </div>
+      `;
+    }
+
+    function createChart(id, config) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return;
+      state.charts[id] = new Chart(canvas, config);
+    }
+
+    function chartOptions({ max, beginAtZero = true }) {
+      return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: true, labels: { boxWidth: 12, font: { weight: "700" } } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatNumber(ctx.parsed.y ?? ctx.parsed)}` } }
+        },
+        scales: {
+          y: {
+            beginAtZero,
+            suggestedMax: max,
+            max,
+            grid: { color: "#e5ebf3" },
+            ticks: { precision: 0 }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { weight: "700" } }
+          }
+        }
+      };
+    }
+
+    function safeChartNumber(value) {
+      return isFiniteNumber(value) ? value : 0;
+    }
+
+    function renderQuadrants() {
+      const rows = state.filteredRows;
+      const total = rows.filter((row) => row.endQuadrant !== "Missing").length;
+      els.quadrantCards.innerHTML = QUADRANTS.map((quadrant) => {
+        const count = rows.filter((row) => row.endQuadrant === quadrant).length;
+        const pct = total ? count / total * 100 : null;
+        const className = quadrant.includes("High-G") && quadrant.includes("High-A")
+          ? "status-good"
+          : quadrant.includes("Low-G") && quadrant.includes("Low-A")
+            ? "status-risk"
+            : "status-watch";
+        return `
+          <div class="card quadrant-card">
+            <span class="status-pill ${className}">${escapeHTML(quadrant)}</span>
+            <strong>${formatInteger(count)}</strong>
+            <span>${formatPercentWhole(pct)} of students with quadrant data</span>
+          </div>
+        `;
+      }).join("");
+      const improved = rows.filter((row) => row.quadrantMovement === "Improved").length;
+      const declined = rows.filter((row) => row.quadrantMovement === "Declined").length;
+      const stayed = rows.filter((row) => row.quadrantMovement === "Stayed Same").length;
+      const missing = rows.filter((row) => row.quadrantMovement === "Missing").length;
+      els.quadrantMovement.textContent = `Quadrant movement: ${formatInteger(improved)} improved, ${formatInteger(declined)} declined, ${formatInteger(stayed)} stayed the same, ${formatInteger(missing)} missing.`;
+      els.quadrantSubjectBreakdown.innerHTML = getBreakdownSubjects(rows).map((subject) => {
+        const subjectRows = rows.filter((row) => row.subject === subject);
+        return renderQuadrantSubjectCard(subject, subjectRows);
+      }).join("");
+    }
+
+    function renderGapCards() {
+      const rows = state.filteredRows;
+      const belowSecure = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < 61 && isFiniteNumber(row.endPercentile));
+      const secureStart = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile >= 61 && isFiniteNumber(row.endPercentile));
+      const validMovement = rows.filter((row) => row.bandMovement !== "Missing End");
+      const cards = [
+        ["% Closed Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Closed"), "status-good"],
+        ["% Reduced Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Reduced"), "status-watch"],
+        ["% Widened Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Widened"), "status-risk"],
+        ["Avg Gap Closure", formatFractionPercent(avg(belowSecure.map((row) => row.gapClosurePct))), "status-neutral"],
+        ["% Moved Up", percentOf(validMovement, (row) => row.bandMovement === "Moved Up"), "status-good"],
+        ["% Moved Down", percentOf(validMovement, (row) => row.bandMovement === "Moved Down"), "status-risk"],
+        ["% Secure Extended", percentOf(secureStart, (row) => row.gapStatus === "Secure and Extending"), "status-good"],
+        ["% Secure Regressed", percentOf(secureStart, (row) => row.gapStatus === "Secure but Regressing" || row.gapStatus === "Dropped Below Secure"), "status-risk"]
+      ];
+      els.gapCards.innerHTML = cards.map(([label, value, className]) => `
+        <div class="card gap-card">
+          <span class="status-pill ${className}">${escapeHTML(label)}</span>
+          <strong>${escapeHTML(value)}</strong>
+          <span>${escapeHTML(gapCardSubtext(label))}</span>
+        </div>
+      `).join("");
+      els.gapSubjectBreakdown.innerHTML = getBreakdownSubjects(rows).map((subject) => {
+        const subjectRows = rows.filter((row) => row.subject === subject);
+        return renderGapSubjectCard(subject, subjectRows);
+      }).join("");
+    }
+
+    function gapCardSubtext(label) {
+      if (label.includes("Secure")) return "Among students who started at 61+";
+      if (label.includes("Moved")) return "Among records with start and end bands";
+      return "Among students who started below 61";
+    }
+
+    function renderQuadrantSubjectCard(subject, subjectRows) {
+      const subjectTotal = subjectRows.filter((row) => row.endQuadrant !== "Missing").length;
+      const counts = countBy(subjectRows, (row) => row.endQuadrant);
+      const subjectImproved = subjectRows.filter((row) => row.quadrantMovement === "Improved").length;
+      const subjectDeclined = subjectRows.filter((row) => row.quadrantMovement === "Declined").length;
+      const subjectStayed = subjectRows.filter((row) => row.quadrantMovement === "Stayed Same").length;
+      const subjectMissing = subjectRows.filter((row) => row.endQuadrant === "Missing").length;
+      return `
+        <article class="subject-mini-card quadrant-subject-card">
+          <div>
+            <h3>${escapeHTML(subject)}</h3>
+            <div class="quadrant-legend">${formatInteger(subjectRows.length)} records | ${formatInteger(subjectTotal)} with quadrant data${subjectMissing ? ` | ${formatInteger(subjectMissing)} missing` : ""}</div>
+          </div>
+          <div class="quadrant-axis-note">
+            <span>Achievement: Low -> High</span>
+            <span>Growth: Low -> High</span>
+          </div>
+          <div class="quadrant-map">
+            ${quadrantCell("High Growth / Low Achievement", "High-G/Low-A", counts["High-G/Low-A"] || 0, subjectTotal, "catchup", "Catch-up growth is working")}
+            ${quadrantCell("High Growth / High Achievement", "High-G/High-A", counts["High-G/High-A"] || 0, subjectTotal, "good", "Extend and keep challenge high")}
+            ${quadrantCell("Low Growth / Low Achievement", "Low-G/Low-A", counts["Low-G/Low-A"] || 0, subjectTotal, "risk", "Highest priority for support")}
+            ${quadrantCell("Low Growth / High Achievement", "Low-G/High-A", counts["Low-G/High-A"] || 0, subjectTotal, "watch", "Achievement is strong; restart growth")}
+          </div>
+          ${renderStudentQuadrantScatter(subjectRows)}
+          <div class="movement-row">
+            ${storyLine("Improved", formatInteger(subjectImproved))}
+            ${storyLine("Declined", formatInteger(subjectDeclined))}
+            ${storyLine("Stayed same", formatInteger(subjectStayed))}
+          </div>
+          <div class="teacher-read">${escapeHTML(quadrantSubjectNote(counts, subjectTotal))}</div>
+        </article>
+      `;
+    }
+
+    function quadrantCell(title, shortLabel, count, total, className, note) {
+      return `
+        <div class="quadrant-cell ${className}">
+          <span class="q-title">${escapeHTML(title)}</span>
+          <span class="q-value">${formatInteger(count)}</span>
+          <span class="q-note">${escapeHTML(shortLabel)} | ${formatPercentWhole(percentValue(count, total))}<br>${escapeHTML(note)}</span>
+        </div>
+      `;
+    }
+
+    function renderStudentQuadrantScatter(subjectRows) {
+      const scatterSource = getScatterSource(subjectRows);
+      const points = subjectRows
+        .map((row, index) => {
+          const rawX = scatterAchievementValue(row, scatterSource.xSource);
+          const rawY = scatterGrowthValue(row, scatterSource.ySource);
+          const x = scatterCoordinate(row, rawX, "x", scatterSource.xSource, index);
+          const y = scatterCoordinate(row, rawY, "y", scatterSource.ySource, index);
+          if (!isFiniteNumber(x) || !isFiniteNumber(y)) return null;
+          return { row, x: clampPercent(x), y: clampPercent(y), rawX, rawY };
+        })
+        .filter(Boolean);
+      const missing = subjectRows.length - points.length;
+      return `
+        <div class="student-scatter-wrap">
+          <div class="scatter-title">Student Scatter: Growth Up, Achievement Right</div>
+          <div class="student-scatter" aria-label="Student growth and achievement scatter plot">
+            <span class="scatter-axis growth-high">High Growth</span>
+            <span class="scatter-axis growth-low">Low Growth</span>
+            <span class="scatter-axis achievement-low">Low Achievement</span>
+            <span class="scatter-axis achievement-high">High Achievement</span>
+            <span class="scatter-quadrant-label tl">High-G / Low-A</span>
+            <span class="scatter-quadrant-label tr">High-G / High-A</span>
+            <span class="scatter-quadrant-label bl">Low-G / Low-A</span>
+            <span class="scatter-quadrant-label br">Low-G / High-A</span>
+            ${points.map((point) => scatterPoint(point.row, point.x, point.y, point.rawX, point.rawY, scatterSource)).join("")}
+          </div>
+          <div class="scatter-help">${formatInteger(points.length)} students plotted. Coordinates: ${escapeHTML(scatterSource.label)}. Hover a point for name, RIT, percentile, CGP, growth, and quadrant.${missing ? ` ${formatInteger(missing)} missing plot coordinates.` : ""}</div>
+        </div>
+      `;
+    }
+
+    function getScatterSource(rows) {
+      const xSource = chooseScatterSource(rows, "achievementPercentileAxis", "endPercentile");
+      const ySource = chooseScatterSource(rows, "conditionalGrowthPercentileAxis", "conditionalGrowthPercentile");
+      const xLabel = xSource === "axis" ? "NWEA achievement axis" : xSource === "fallback" ? "End Percentile" : "quadrant placement";
+      const yLabel = ySource === "axis" ? "NWEA growth axis" : ySource === "fallback" ? "Conditional Growth Percentile" : "quadrant placement";
+      return { xSource, ySource, label: `${xLabel} x ${yLabel}` };
+    }
+
+    function chooseScatterSource(rows, axisKey, fallbackKey) {
+      const axisValues = rows.map((row) => row[axisKey]).filter(isUsefulScatterNumber);
+      const fallbackValues = rows.map((row) => row[fallbackKey]).filter(isUsefulScatterNumber);
+      if (hasUsefulScatterSpread(axisValues)) return "axis";
+      if (hasUsefulScatterSpread(fallbackValues)) return "fallback";
+      if (axisValues.length && !axisValues.every((value) => value === 50) && axisValues.length > 1) return "axis";
+      if (fallbackValues.length && fallbackValues.length > 1) return "fallback";
+      return "quadrant";
+    }
+
+    function hasUsefulScatterSpread(values) {
+      if (values.length < 2) return false;
+      return Math.max(...values) - Math.min(...values) >= 5;
+    }
+
+    function isUsefulScatterNumber(value) {
+      return isFiniteNumber(value) && value >= 0 && value <= 100;
+    }
+
+    function scatterAchievementValue(row, source) {
+      if (source === "axis" && isUsefulScatterNumber(row.achievementPercentileAxis)) return row.achievementPercentileAxis;
+      if ((source === "fallback" || source === "axis") && isUsefulScatterNumber(row.endPercentile)) return row.endPercentile;
+      return null;
+    }
+
+    function scatterGrowthValue(row, source) {
+      if (source === "axis" && isUsefulScatterNumber(row.conditionalGrowthPercentileAxis)) return row.conditionalGrowthPercentileAxis;
+      if ((source === "fallback" || source === "axis") && isUsefulScatterNumber(row.conditionalGrowthPercentile)) return row.conditionalGrowthPercentile;
+      return null;
+    }
+
+    function scatterCoordinate(row, value, axis, source, index) {
+      if (source !== "quadrant" && isUsefulScatterNumber(value)) {
+        return value + deterministicJitter(`${row.studentID}|${row.studentName}|${axis}`, 2.4);
+      }
+      const base = quadrantCoordinate(row.endQuadrant, axis);
+      if (!isFiniteNumber(base)) return null;
+      return base + deterministicJitter(`${row.studentID}|${row.studentName}|${axis}|${index}`, 15);
+    }
+
+    function quadrantCoordinate(quadrant, axis) {
+      const map = {
+        "High-G/High-A": { x: 75, y: 75 },
+        "High-G/Low-A": { x: 25, y: 75 },
+        "Low-G/High-A": { x: 75, y: 25 },
+        "Low-G/Low-A": { x: 25, y: 25 }
+      };
+      return map[quadrant]?.[axis] ?? null;
+    }
+
+    function deterministicJitter(seed, spread) {
+      let hash = 0;
+      for (let i = 0; i < seed.length; i += 1) {
+        hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+      }
+      return ((hash % 1000) / 999 - 0.5) * spread;
+    }
+
+    function scatterPoint(row, x, y, rawX, rawY, scatterSource) {
+      const title = [
+        row.studentName,
+        `Subject: ${row.subject}`,
+        `End RIT: ${formatNumber(row.endRIT)}`,
+        `End percentile: ${formatNumber(row.endPercentile)}`,
+        `Plotted achievement: ${formatNumber(rawX)}`,
+        `Achievement source: ${scatterSource.xSource === "axis" ? "NWEA axis" : scatterSource.xSource === "fallback" ? "End Percentile" : "Quadrant placement"}`,
+        `Conditional Growth Percentile: ${formatNumber(row.conditionalGrowthPercentile)}`,
+        `Plotted growth: ${formatNumber(rawY)}`,
+        `Growth source: ${scatterSource.ySource === "axis" ? "NWEA axis" : scatterSource.ySource === "fallback" ? "CGP" : "Quadrant placement"}`,
+        `Projected growth: ${formatNumber(row.projectedGrowth)}`,
+        `Observed growth: ${formatSignedNumber(row.observedGrowth)}`,
+        `Met growth: ${row.metGrowth === true ? "Yes" : row.metGrowth === false ? "No" : "Missing"}`,
+        `End quadrant: ${row.endQuadrant}`
+      ].join("\n");
+      return `
+        <button class="scatter-point" style="left:${x}%; bottom:${y}%; background:${escapeAttr(row.endBand.color)};" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
+          ${escapeHTML(studentInitials(row.studentName))}
+        </button>
+      `;
+    }
+
+    function clampPercent(value) {
+      if (!isFiniteNumber(value)) return null;
+      return Math.max(2, Math.min(98, value));
+    }
+
+    function studentInitials(name) {
+      return cleanString(name)
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase() || "?";
+    }
+
+    function renderGapSubjectCard(subject, subjectRows) {
+      const below = subjectRows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < 61 && isFiniteNumber(row.endPercentile));
+      const secure = subjectRows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile >= 61 && isFiniteNumber(row.endPercentile));
+      const movement = subjectRows.filter((row) => row.bandMovement !== "Missing End");
+      const closed = below.filter((row) => row.gapStatus === "Gap Closed").length;
+      const reduced = below.filter((row) => row.gapStatus === "Gap Reduced").length;
+      const widened = below.filter((row) => row.gapStatus === "Gap Widened").length;
+      const maintained = below.filter((row) => row.gapStatus === "Gap Maintained").length;
+      const movedUp = movement.filter((row) => row.bandMovement === "Moved Up").length;
+      const movedDown = movement.filter((row) => row.bandMovement === "Moved Down").length;
+      const secureExtended = secure.filter((row) => row.gapStatus === "Secure and Extending").length;
+      const secureRegressed = secure.filter((row) => row.gapStatus === "Secure but Regressing" || row.gapStatus === "Dropped Below Secure").length;
+      const avgClosure = avg(below.map((row) => row.gapClosurePct));
+      return `
+        <article class="subject-mini-card">
+          <h3>${escapeHTML(subject)}</h3>
+          <div class="gap-story">
+            ${storyLine("Starting point", `${formatInteger(below.length)} below 61; ${formatInteger(secure.length)} secure`)}
+            ${storyLine("Catch-up result", below.length ? `${countPct(closed, below.length)} closed, ${countPct(reduced, below.length)} reduced, ${countPct(widened, below.length)} widened${maintained ? `, ${countPct(maintained, below.length)} maintained` : ""}` : "No students started below 61")}
+            ${storyLine("Average gap closure", formatFractionPercent(avgClosure))}
+            ${storyLine("Band movement", movement.length ? `${countPct(movedUp, movement.length)} moved up; ${countPct(movedDown, movement.length)} moved down` : "No complete band movement data")}
+            ${storyLine("Secure students", secure.length ? `${countPct(secureExtended, secure.length)} extended; ${countPct(secureRegressed, secure.length)} regressed` : "No students started secure")}
+            <div class="teacher-read">${escapeHTML(gapSubjectNote({ below, secure, closed, reduced, widened, movedUp, movedDown, secureExtended, secureRegressed, avgClosure }))}</div>
+          </div>
+        </article>
+      `;
+    }
+
+    function storyLine(label, value) {
+      return `<div class="story-line"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`;
+    }
+
+    function countPct(count, total) {
+      return `${formatInteger(count)} (${formatPercentWhole(percentValue(count, total))})`;
+    }
+
+    function gapSubjectNote(data) {
+      if (!data.below.length && !data.secure.length) return "There is not enough complete percentile data to judge gap closure in this subject.";
+      if (data.below.length && data.widened / data.below.length >= 0.3) return "Many students who started below secure lost ground. Prioritize reteaching and progress checks for this subject.";
+      if (data.below.length && (data.closed + data.reduced) / data.below.length >= 0.6 && isFiniteNumber(data.avgClosure) && data.avgClosure > 0) return "Most below-secure students are moving toward the benchmark. Keep the current supports and push toward full closure.";
+      if (data.secure.length && data.secureRegressed / data.secure.length >= 0.5) return "Secure starters are slipping in this subject. Add challenge, review missed skills, and monitor high starters.";
+      if (data.movedUp > data.movedDown) return "Band movement is net positive. Celebrate growth and identify which routines helped.";
+      return "Mixed pattern. Use the student grouping report to separate catch-up students from students whose gaps widened.";
+    }
+
+    function getBreakdownSubjects(rows) {
+      const selected = getFilters().subject;
+      if (selected) return [selected];
+      const present = unique(rows.map((row) => row.subject));
+      const main = SUBJECTS.filter((subject) => present.includes(subject));
+      const extra = present.filter((subject) => !SUBJECTS.includes(subject));
+      return main.concat(extra);
+    }
+
+    function miniMetric(label, value, wide = false) {
+      return `<div class="mini-metric${wide ? " wide" : ""}"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`;
+    }
+
+    function percentValue(count, total) {
+      return total ? count / total * 100 : null;
+    }
+
+    function quadrantSubjectNote(counts, total) {
+      if (!total) return "No quadrant data";
+      const lowLow = counts["Low-G/Low-A"] || 0;
+      const highLow = counts["High-G/Low-A"] || 0;
+      const highHigh = counts["High-G/High-A"] || 0;
+      if (lowLow / total >= 0.4) return "Prioritize low growth and low achievement";
+      if (highLow / total >= 0.3) return "Catch-up growth is happening";
+      if (highHigh / total >= 0.3) return "Strong extension area";
+      return "Mixed pattern; review groups";
+    }
+
+    function renderSummaryReport() {
+      els.summaryReport.value = buildSummaryText(state.filteredRows);
+    }
+
+    function buildSummaryText(rows) {
+      if (!rows.length) {
+        return "Upload an NWEA ASG CSV to generate a class summary report.";
+      }
+      const metrics = aggregateRows(rows);
+      const subjectMetrics = SUBJECTS
+        .map((subject) => ({ subject, metrics: aggregateRows(rows.filter((row) => row.subject === subject)) }))
+        .filter((item) => item.metrics.validCount > 0);
+      const strongest = subjectMetrics.length
+        ? subjectMetrics.slice().sort((a, b) => supportScore(b.metrics) - supportScore(a.metrics))[0]
+        : null;
+      const needsSupport = subjectMetrics.length
+        ? subjectMetrics.slice().sort((a, b) => supportScore(a.metrics) - supportScore(b.metrics))[0]
+        : null;
+      const countsByGroup = countBy(rows, (row) => row.suggestedGroup);
+      const interventionGroups = ["Intensive Support", "Targeted Support", "Watch Group", "Secure but Regressing"]
+        .map((group) => `${group}: ${countsByGroup[group] || 0}`)
+        .join("; ");
+      const enrichmentGroups = ["Enrichment", "Catch-Up Growth", "Secure / Maintain"]
+        .map((group) => `${group}: ${countsByGroup[group] || 0}`)
+        .join("; ");
+      const lowCatchUp = rows.filter((row) => row.growthChallenge === "Strong Catch-Up Growth").length;
+      const urgent = rows.filter((row) => row.growthChallenge === "Urgent Support").length;
+      const highExtension = rows.filter((row) => row.growthChallenge === "Strong Extension").length;
+      const coasting = rows.filter((row) => row.growthChallenge === "Monitor for Coasting").length;
+
+      return `This class view includes ${formatInteger(rows.length)} student-subject records. The group began with an average percentile of ${formatNumber(metrics.avgStartPercentile)} and ended with ${formatNumber(metrics.avgEndPercentile)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed an average of ${formatFractionPercent(metrics.avgGapClosurePct)} of the gap toward the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm.
+
+Growth was strongest in ${strongest ? strongest.subject : "the available subject data"}, while ${needsSupport ? needsSupport.subject : "the available subject data"} requires the most targeted support. ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
+
+Key intervention groups are ${interventionGroups}. Key enrichment and extension groups are ${enrichmentGroups}. Low starters showing strong catch-up growth: ${formatInteger(lowCatchUp)}. Low starters needing urgent support: ${formatInteger(urgent)}. Secure starters showing strong extension: ${formatInteger(highExtension)}. Secure starters who may be coasting: ${formatInteger(coasting)}.
+
+Suggested next steps: prioritize Intensive Support and Targeted Support students for small-group instruction and progress checks; review Secure but Regressing students for skill gaps or engagement changes; keep successful supports in place for Catch-Up Growth students; and provide Enrichment students with extension tasks that continue measuring growth, not only high achievement.`;
+    }
+
+    function supportScore(metrics) {
+      const met = isFiniteNumber(metrics.metPct) ? metrics.metPct : 0;
+      const end = isFiniteNumber(metrics.avgEndPercentile) ? metrics.avgEndPercentile : 0;
+      const gap = isFiniteNumber(metrics.avgGapClosurePct) ? metrics.avgGapClosurePct * 100 : 0;
+      return met * 0.45 + end * 0.35 + gap * 0.2;
+    }
+
+    function renderTables() {
+      renderTableGroups();
+      renderGroupingTable();
+      renderPriorityTable();
+      renderCelebrationTable();
+    }
+
+    function applyLayoutControlSettings() {
+      state.classroomLayout.roomRatio = parseRoomRatio(els.roomRatioInput?.value);
+      state.classroomLayout.snapPercent = parseSnapPercent(els.layoutSnapSelect?.value);
+    }
+
+    function refreshLayoutControlsOnly() {
+      applyLayoutControlSettings();
+      const strategy = els.groupStrategySelect.value || "mixed";
+      const scoreMode = els.groupScoreSelect.value || "endPercentile";
+      if (!state.tableGroups.length && !state.tableManualPool.length) {
+        renderTableGroups();
+        return;
+      }
+      const subjectContext = getFilters().subject
+        ? `${getFilters().subject} only`
+        : "averaged across visible subjects";
+      const totalProfiles = state.tableGroups.reduce((sum, group) => sum + group.length, 0) + state.tableManualPool.length;
+      updateTableGroupContext(totalProfiles, subjectContext, strategy);
+      renderTableGroupLayout(scoreMode, strategy);
+    }
+
+    function renderTableGroups() {
+      applyLayoutControlSettings();
+      const profiles = buildStudentProfiles(state.filteredRows);
+      const strategy = els.groupStrategySelect.value || "mixed";
+      const scoreMode = els.groupScoreSelect.value || "endPercentile";
+      const subjectContext = getFilters().subject
+        ? `${getFilters().subject} only`
+        : "averaged across visible subjects";
+      const manualPool = profiles.filter((profile) => shouldManualPlaceProfile(profile, scoreMode));
+      const autoProfiles = profiles.filter((profile) => !shouldManualPlaceProfile(profile, scoreMode));
+      const groupPlan = getGroupPlan(profiles.length);
+
+      if (!profiles.length) {
+        state.tableGroups = [];
+        state.tableManualPool = [];
+        els.tableGroupContext.textContent = "Upload data or adjust filters to create table groups.";
+        els.tableGroups.innerHTML = `<div class="empty-state">No students match the current view.</div>`;
+        return;
+      }
+
+      let groups = buildGroups(autoProfiles, groupPlan.capacities, strategy, scoreMode);
+      if (!groups.length && profiles.length) groups = groupPlan.capacities.map(() => []);
+
+      state.tableGroups = groups;
+      state.tableManualPool = manualPool;
+      state.tableGroupPlanLabel = groupPlan.label;
+      initializeClassroomLayout(groups.length, true);
+      updateTableGroupContext(profiles.length, subjectContext, strategy);
+      renderTableGroupLayout(scoreMode, strategy);
+    }
+
+    function updateTableGroupContext(totalProfiles, subjectContext, strategy) {
+      const assigned = state.tableGroups.reduce((sum, group) => sum + group.length, 0);
+      const manual = state.tableManualPool.length;
+      const tableWord = state.tableGroups.length === 1 ? "table" : "tables";
+      const poolText = manual
+        ? `${formatInteger(manual)} student${manual === 1 ? "" : "s"} needing manual placement`
+        : "no students waiting for manual placement";
+      const ratio = roomRatioText(state.classroomLayout.roomRatio);
+      const snap = state.classroomLayout.snapPercent > 0 ? `${formatInteger(state.classroomLayout.snapPercent)}% snap` : "free drag";
+      els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students assigned to ${formatInteger(state.tableGroups.length)} ${tableWord} using ${strategyLabel(strategy)}; table sizes: ${state.tableGroupPlanLabel}; ${poolText}; data source is ${subjectContext}. Room ratio: ${ratio}; ${snap}. Table averages ignore N/A values.`;
+    }
+
+    function renderTableGroupLayout(scoreMode, strategy) {
+      applyLayoutControlSettings();
+      initializeClassroomLayout(state.tableGroups.length, false);
+      els.tableGroups.innerHTML = `
+        ${renderManualPool(scoreMode)}
+        <div class="classroom-board" data-classroom-board style="${classroomBoardStyle()}">
+          <div class="classroom-front-board" data-layout-kind="frontBoard" style="${layoutStyle(state.classroomLayout.frontBoard)}">Board</div>
+          <div class="classroom-door" data-layout-kind="door" style="${layoutStyle(state.classroomLayout.door)}">Door</div>
+          <div class="teacher-desk" data-layout-kind="teacherDesk" style="${layoutStyle(state.classroomLayout.teacherDesk)}">Teacher Desk</div>
+          <div class="table-layout-note">Drag the board, door, teacher desk, and table headers to match the room. Door stays on the room border. Snap strength and room ratio can be changed above.</div>
+          ${state.tableGroups.map((group, index) => renderTableGroupCard(group, index, scoreMode, strategy)).join("")}
+        </div>
+      `;
+    }
+
+    function initializeClassroomLayout(tableCount, reset = false) {
+      if (reset || !state.classroomLayout.tables) state.classroomLayout.tables = [];
+      if (!state.classroomLayout.door) state.classroomLayout.door = { x: 0, y: 70 };
+      if (!state.classroomLayout.teacherDesk) state.classroomLayout.teacherDesk = { x: 4, y: 11 };
+      if (!state.classroomLayout.frontBoard || reset) state.classroomLayout.frontBoard = { x: 24, y: 1 };
+      state.classroomLayout.frontBoard = clampFrontBoardPosition(state.classroomLayout.frontBoard);
+      state.classroomLayout.door = snapDoorToBorder(state.classroomLayout.door);
+      state.classroomLayout.teacherDesk = clampDeskPosition(state.classroomLayout.teacherDesk);
+      for (let index = 0; index < tableCount; index += 1) {
+        if (!state.classroomLayout.tables[index] || reset) {
+          state.classroomLayout.tables[index] = defaultTablePosition(index, tableCount);
+        }
+        state.classroomLayout.tables[index] = clampTablePosition(state.classroomLayout.tables[index]);
+      }
+      state.classroomLayout.tables = state.classroomLayout.tables.slice(0, tableCount);
+    }
+
+    function defaultTablePosition(index, tableCount) {
+      const columns = tableCount <= 4 ? 2 : tableCount <= 9 ? 3 : 4;
+      const rows = Math.ceil(tableCount / columns);
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const x = 6 + col * (86 / Math.max(1, columns));
+      const y = 24 + row * (58 / Math.max(1, rows));
+      return clampTablePosition({ x, y });
+    }
+
+    function classroomBoardStyle() {
+      const ratio = state.classroomLayout.roomRatio || { width: 4, height: 3 };
+      const width = clampBetween(finiteLayoutNumber(ratio.width, 4), 1, 30);
+      const height = clampBetween(finiteLayoutNumber(ratio.height, 3), 1, 30);
+      const snap = getLayoutSnapPercent();
+      const gridSize = 26 + snap * 5;
+      return `--room-ratio:${width} / ${height}; --room-grid-size:${gridSize}px;`;
+    }
+
+    function roomRatioText(ratio) {
+      if (!ratio) return "4:3";
+      return `${formatRatioNumber(ratio.width)}:${formatRatioNumber(ratio.height)}`;
+    }
+
+    function formatRatioNumber(value) {
+      const number = finiteLayoutNumber(value, 0);
+      if (Number.isInteger(number)) return String(number);
+      return String(Number(number.toFixed(2)));
+    }
+
+    function parseRoomRatio(value) {
+      const fallback = { width: 4, height: 3 };
+      const text = cleanString(value).replace(/\s+/g, "");
+      if (!text) return fallback;
+      const fraction = text.match(/^(\d+(?:\.\d+)?)[\:\/xX](\d+(?:\.\d+)?)$/);
+      if (fraction) return normalizeRoomRatio(fraction[1], fraction[2], fallback);
+      const decimal = Number(text);
+      if (Number.isFinite(decimal) && decimal > 0) return normalizeRoomRatio(decimal, 1, fallback);
+      return fallback;
+    }
+
+    function normalizeRoomRatio(widthValue, heightValue, fallback = { width: 4, height: 3 }) {
+      const width = finiteLayoutNumber(widthValue, fallback.width);
+      const height = finiteLayoutNumber(heightValue, fallback.height);
+      if (width <= 0 || height <= 0) return fallback;
+      return {
+        width: clampBetween(width, 1, 30),
+        height: clampBetween(height, 1, 30)
+      };
+    }
+
+    function parseSnapPercent(value) {
+      const numeric = finiteLayoutNumber(value, 2);
+      return Math.round(clampBetween(numeric, 0, 20));
+    }
+
+    function getLayoutSnapPercent() {
+      return parseSnapPercent(state.classroomLayout.snapPercent);
+    }
+
+    function layoutStyle(position) {
+      return `left:${clampLayout(position.x)}%; top:${clampLayout(position.y)}%;`;
+    }
+
+    function clampLayout(value) {
+      return Math.max(0, Math.min(98, Number(value) || 0));
+    }
+
+    function clampTablePosition(position, metrics = {}) {
+      const widthPct = metrics.widthPct || 29;
+      const heightPct = metrics.heightPct || 26;
+      return clampLayoutBox(position, {
+        minX: 1,
+        minY: 10,
+        maxX: 100 - widthPct - 1,
+        maxY: 100 - heightPct - 1
+      });
+    }
+
+    function clampFrontBoardPosition(position, metrics = {}) {
+      const widthPct = metrics.widthPct || 52;
+      const heightPct = metrics.heightPct || 8;
+      return clampLayoutBox(position, {
+        minX: 1,
+        minY: 1,
+        maxX: 100 - widthPct - 1,
+        maxY: 100 - heightPct - 1
+      });
+    }
+
+    function clampDeskPosition(position, metrics = {}) {
+      const widthPct = metrics.widthPct || 24;
+      const heightPct = metrics.heightPct || 8;
+      return clampLayoutBox(position, {
+        minX: 1,
+        minY: 9,
+        maxX: 100 - widthPct - 1,
+        maxY: 100 - heightPct - 1
+      });
+    }
+
+    function clampLayoutBox(position, bounds) {
+      const x = finiteLayoutNumber(position?.x);
+      const y = finiteLayoutNumber(position?.y);
+      const minX = finiteLayoutNumber(bounds.minX);
+      const minY = finiteLayoutNumber(bounds.minY);
+      const maxX = Math.max(minX, finiteLayoutNumber(bounds.maxX, 98));
+      const maxY = Math.max(minY, finiteLayoutNumber(bounds.maxY, 98));
+      const step = getLayoutSnapPercent();
+      return {
+        x: snapLayoutValue(x, minX, maxX, step),
+        y: snapLayoutValue(y, minY, maxY, step)
+      };
+    }
+
+    function snapDoorToBorder(position, metrics = {}) {
+      const widthPct = metrics.widthPct || 12;
+      const heightPct = metrics.heightPct || 6;
+      const maxX = Math.max(0, 100 - widthPct);
+      const maxY = Math.max(0, 100 - heightPct);
+      const step = getLayoutSnapPercent();
+      const x = snapLayoutValue(finiteLayoutNumber(position?.x), 0, maxX, step);
+      const y = snapLayoutValue(finiteLayoutNumber(position?.y), 0, maxY, step);
+      const options = [
+        { distance: x, position: { x: 0, y } },
+        { distance: Math.abs(maxX - x), position: { x: maxX, y } },
+        { distance: y, position: { x, y: 0 } },
+        { distance: Math.abs(maxY - y), position: { x, y: maxY } }
+      ];
+      const snapped = options.sort((a, b) => a.distance - b.distance)[0].position;
+      return {
+        x: snapLayoutValue(snapped.x, 0, maxX, step),
+        y: snapLayoutValue(snapped.y, 0, maxY, step)
+      };
+    }
+
+    function snapLayoutValue(value, min, max, step) {
+      let next = clampBetween(value, min, max);
+      if (step > 0) next = clampBetween(Math.round(next / step) * step, min, max);
+      return next;
+    }
+
+    function finiteLayoutNumber(value, fallback = 0) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number : fallback;
+    }
+
+    function clampBetween(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function getGroupPlan(totalStudents) {
+      const raw = cleanString(els.groupSizeInput.value);
+      const parsed = parseGroupSizePattern(raw);
+      const baseSizes = parsed.length ? parsed : [5];
+      const capacities = [];
+      let seats = 0;
+      let index = 0;
+      const fallbackSize = baseSizes[baseSizes.length - 1] || 5;
+      while (seats < totalStudents && index < 80) {
+        const size = baseSizes[index] || fallbackSize;
+        capacities.push(size);
+        seats += size;
+        index += 1;
+      }
+      const label = parsed.length > 1
+        ? `${capacities.join(", ")}${capacities.length > parsed.length ? " (extra table added)" : ""}`
+        : `up to ${formatInteger(capacities[0] || fallbackSize)} per table`;
+      if (!raw) els.groupSizeInput.value = "5";
+      return { capacities, label };
+    }
+
+    function parseGroupSizePattern(rawValue) {
+      const raw = cleanString(rawValue).toLowerCase();
+      if (!raw) return [5];
+      const repeated = [];
+      const phraseRegex = /(\d+)\s*(?:groups?|tables?)?\s*(?:of|x)\s*(\d+)/g;
+      let match;
+      while ((match = phraseRegex.exec(raw)) !== null) {
+        const count = clampInteger(Number(match[1]), 1, 20);
+        const size = clampInteger(Number(match[2]), 1, 12);
+        for (let i = 0; i < count; i += 1) repeated.push(size);
+      }
+      if (repeated.length) return repeated;
+      return raw
+        .split(/[,\s;|/]+/)
+        .map((part) => clampInteger(Number(part), 1, 12))
+        .filter((value) => Number.isFinite(value));
+    }
+
+    function clampInteger(value, min, max) {
+      if (!Number.isFinite(value)) return NaN;
+      return Math.max(min, Math.min(max, Math.round(value)));
+    }
+
+    function buildStudentProfiles(rows) {
+      const map = new Map();
+      rows.forEach((row) => {
+        const id = row.studentID && row.studentID !== "Missing" ? row.studentID : `${row.studentName}|${row.studentGrade}|${row.className}`;
+        if (!map.has(id)) {
+          map.set(id, {
+            key: id,
+            studentName: row.studentName,
+            studentID: row.studentID,
+            studentGrade: row.studentGrade,
+            classNames: [],
+            subjects: [],
+            rows: []
+          });
+        }
+        const profile = map.get(id);
+        profile.rows.push(row);
+        profile.classNames.push(row.className);
+        profile.subjects.push(row.subject);
+      });
+
+      return [...map.values()].map((profile) => {
+        const rowsForStudent = profile.rows;
+        const metValues = rowsForStudent.filter((row) => row.metGrowth !== null);
+        const groupCounts = countBy(rowsForStudent, (row) => row.suggestedGroup);
+        const priorityReasons = unique(rowsForStudent.flatMap((row) => row.priorityReasons));
+        const celebrationReasons = unique(rowsForStudent.flatMap((row) => row.celebrationReasons));
+        const gapStatuses = unique(rowsForStudent.map((row) => row.gapStatus));
+        const avgEndPercentile = avg(rowsForStudent.map((row) => row.endPercentile));
+        const avgStartPercentile = avg(rowsForStudent.map((row) => row.startPercentile));
+        const avgConditionalGrowthPercentile = avg(rowsForStudent.map((row) => row.conditionalGrowthPercentile));
+        const normRows = rowsForStudent.filter((row) => isFiniteNumber(row.usNormDeltaRIT));
+        const normGradeRows = rowsForStudent.filter((row) => isFiniteNumber(row.usNormGradeGap));
+        const metRate = metValues.length ? metValues.filter((row) => row.metGrowth === true).length / metValues.length : null;
+        const dominantGroup = mostCommon(groupCounts) || "Needs Review";
+        const missingDataReasons = getProfileMissingDataReasons(rowsForStudent);
+        const result = {
+          key: profile.key,
+          studentName: profile.studentName,
+          studentID: profile.studentID,
+          studentGrade: profile.studentGrade,
+          className: unique(profile.classNames).join(", "),
+          subjects: unique(profile.subjects).join(", "),
+          recordCount: rowsForStudent.length,
+          avgStartPercentile,
+          avgEndPercentile,
+          avgRITChange: avg(rowsForStudent.map((row) => row.ritChange)),
+          avgUSNormDeltaRIT: avg(normRows.map((row) => row.usNormDeltaRIT)),
+          avgUSNormGradeGap: avg(normGradeRows.map((row) => row.usNormGradeGap)),
+          atOrAboveUSNormRate: normRows.length ? normRows.filter((row) => row.usNormAtOrAbove === true).length / normRows.length : null,
+          avgConditionalGrowthPercentile,
+          metRate,
+          endBand: getBand(avgEndPercentile),
+          suggestedGroup: dominantGroup,
+          priorityReasons,
+          celebrationReasons,
+          gapStatuses,
+          missingDataReasons,
+          hasIncompleteData: missingDataReasons.length > 0
+        };
+        result.priorityScore = profilePriorityScore(result);
+        return result;
+      });
+    }
+
+    function mostCommon(counts) {
+      return Object.entries(counts).sort((a, b) => b[1] - a[1] || naturalCompare(a[0], b[0]))[0]?.[0] || "";
+    }
+
+    function getProfileMissingDataReasons(rows) {
+      const reasons = [];
+      if (rows.some((row) => row.hasMissingEndScore)) reasons.push("Missing end score");
+      if (rows.some((row) => row.metGrowth === null)) reasons.push("Missing growth flag");
+      if (rows.some((row) => !isFiniteNumber(row.conditionalGrowthPercentile))) reasons.push("Missing conditional growth");
+      if (rows.some((row) => row.suggestedGroup === "Incomplete Data")) reasons.push("Incomplete subject record");
+      return unique(reasons);
+    }
+
+    function profilePriorityScore(profile) {
+      let score = isFiniteNumber(profile.avgEndPercentile) ? 100 - profile.avgEndPercentile : 45;
+      if (isFiniteNumber(profile.avgConditionalGrowthPercentile)) score += Math.max(0, 40 - profile.avgConditionalGrowthPercentile) * 0.8;
+      else score += 10;
+      if (isFiniteNumber(profile.metRate)) score += (1 - profile.metRate) * 20;
+      score += profile.priorityReasons.length * 8;
+      if (profile.gapStatuses.includes("Gap Widened")) score += 12;
+      if (profile.gapStatuses.includes("Dropped Below Secure")) score += 14;
+      if (profile.suggestedGroup === "Intensive Support") score += 25;
+      if (profile.suggestedGroup === "Targeted Support") score += 15;
+      if (profile.suggestedGroup === "Secure but Regressing") score += 18;
+      if (profile.suggestedGroup === "Watch Group") score += 8;
+      return score;
+    }
+
+    function profileScore(profile, scoreMode) {
+      if (scoreMode === "growth") {
+        if (isFiniteNumber(profile.avgConditionalGrowthPercentile)) return profile.avgConditionalGrowthPercentile;
+        if (isFiniteNumber(profile.metRate)) return profile.metRate * 100;
+        return -1;
+      }
+      if (scoreMode === "gap") return profile.priorityScore;
+      return isFiniteNumber(profile.avgEndPercentile) ? profile.avgEndPercentile : -1;
+    }
+
+    function sortProfilesForGrouping(profiles, strategy, scoreMode) {
+      const copy = profiles.slice();
+      if (strategy === "priority") {
+        return copy.sort((a, b) => b.priorityScore - a.priorityScore || naturalCompare(a.studentName, b.studentName));
+      }
+      if (strategy === "score") {
+        const direction = scoreMode === "gap" ? -1 : 1;
+        return copy.sort((a, b) => (profileScore(a, scoreMode) - profileScore(b, scoreMode)) * direction || naturalCompare(a.studentName, b.studentName));
+      }
+      const direction = scoreMode === "gap" ? -1 : -1;
+      return copy.sort((a, b) => (profileScore(a, scoreMode) - profileScore(b, scoreMode)) * direction || naturalCompare(a.studentName, b.studentName));
+    }
+
+    function buildGroups(profiles, capacities, strategy, scoreMode) {
+      const groups = capacities.map(() => []);
+      const sorted = sortProfilesForGrouping(profiles, strategy, scoreMode);
+      if (strategy === "priority") {
+        fillGroupsSequentially(sorted, groups, capacities);
+        return groups;
+      }
+      if (strategy === "score") {
+        buildSimilarScoreGroups(sorted, groups, capacities, scoreMode);
+        return groups;
+      }
+      buildBalancedMixedGroups(sorted, groups, capacities, scoreMode);
+      return groups;
+    }
+
+    function buildBalancedMixedGroups(sortedProfiles, groups, capacities, scoreMode) {
+      const missing = sortedProfiles.filter((profile) => profileHasMissingScore(profile, scoreMode));
+      const complete = sortedProfiles.filter((profile) => !profileHasMissingScore(profile, scoreMode));
+      placeEvenly(missing, groups, capacities);
+      placeSnake(complete, groups, capacities);
+    }
+
+    function buildSimilarScoreGroups(sortedProfiles, groups, capacities, scoreMode) {
+      const missing = sortedProfiles.filter((profile) => profileHasMissingScore(profile, scoreMode));
+      const complete = sortedProfiles.filter((profile) => !profileHasMissingScore(profile, scoreMode));
+      const reserved = Array.from({ length: groups.length }, () => 0);
+      missing.forEach((_, index) => {
+        reserved[index % reserved.length] += 1;
+      });
+      const effectiveCapacities = capacities.map((capacity, index) => Math.max(0, capacity - reserved[index]));
+      fillGroupsSequentially(complete, groups, effectiveCapacities);
+      placeEvenly(missing, groups, capacities);
+    }
+
+    function fillGroupsSequentially(items, groups, capacities) {
+      let groupIndex = 0;
+      items.forEach((item) => {
+        while (groupIndex < groups.length && groups[groupIndex].length >= capacities[groupIndex]) {
+          groupIndex += 1;
+        }
+        if (groupIndex < groups.length) groups[groupIndex].push(item);
+      });
+    }
+
+    function placeSnake(items, groups, capacities) {
+      items.forEach((item, index) => {
+        const available = groups.map((group, groupIndex) => group.length < capacities[groupIndex] ? groupIndex : null).filter((groupIndex) => groupIndex !== null);
+        if (!available.length) return;
+        const cycle = Math.floor(index / available.length);
+        const position = index % available.length;
+        const groupIndex = cycle % 2 === 0 ? available[position] : available[available.length - 1 - position];
+        groups[groupIndex].push(item);
+      });
+    }
+
+    function placeEvenly(items, groups, capacities) {
+      items.forEach((item) => {
+        const groupIndex = groups
+          .map((group, index) => ({ index, open: group.length < capacities[index], fill: capacities[index] ? group.length / capacities[index] : 1 }))
+          .filter((candidate) => candidate.open)
+          .sort((a, b) => a.fill - b.fill || a.index - b.index)[0]?.index;
+        if (groupIndex !== undefined) groups[groupIndex].push(item);
+      });
+    }
+
+    function profileHasMissingScore(profile, scoreMode) {
+      if (scoreMode === "growth") return !isFiniteNumber(profile.avgConditionalGrowthPercentile) && !isFiniteNumber(profile.metRate);
+      if (scoreMode === "gap") return !isFiniteNumber(profile.priorityScore);
+      return !isFiniteNumber(profile.avgEndPercentile);
+    }
+
+    function shouldManualPlaceProfile(profile, scoreMode) {
+      return profileHasMissingScore(profile, scoreMode);
+    }
+
+    function renderTableGroupCard(group, index, scoreMode, strategy) {
+      const avgEnd = avg(group.map((profile) => profile.avgEndPercentile));
+      const avgGrowth = avg(group.map((profile) => profile.avgConditionalGrowthPercentile));
+      const priorityCount = group.filter((profile) => profile.priorityReasons.length).length;
+      const scoreLabel = scoreModeLabel(scoreMode);
+      return `
+        <article class="table-group-card classroom-table" data-layout-kind="table" data-table-index="${escapeAttr(index)}" style="${layoutStyle(state.classroomLayout.tables[index] || defaultTablePosition(index, state.tableGroups.length))}">
+          <header data-layout-handle>
+            <div>
+              <h3>Table ${formatInteger(index + 1)}</h3>
+              <span class="group-detail">${escapeHTML(strategyFocus(strategy))}</span>
+            </div>
+            <div class="btn-row">
+              <span class="status-pill status-neutral">${formatInteger(group.length)} students</span>
+              <button class="table-move-handle" type="button" data-layout-handle>Move</button>
+            </div>
+          </header>
+          <div class="mini-metrics">
+            ${miniMetric("Avg End %ile", formatNumber(avgEnd))}
+            ${miniMetric("Avg CGP", formatNumber(avgGrowth))}
+            ${miniMetric("Priority flags", formatInteger(priorityCount))}
+            ${miniMetric("Score used", scoreLabel)}
+          </div>
+          <ol class="drop-zone" data-drop-zone="table" data-table-index="${escapeAttr(index)}">
+            ${group.map((profile) => `
+              ${renderProfileDragItem(profile)}
+            `).join("")}
+          </ol>
+        </article>
+      `;
+    }
+
+    function renderManualPool(scoreMode) {
+      const count = state.tableManualPool.length;
+      return `
+        <aside class="manual-pool-card">
+          <header>
+            <h3>Manual Placement Pool</h3>
+            <span class="status-pill status-neutral">${formatInteger(count)} students</span>
+          </header>
+          <p class="group-detail">Students here do not have a usable score for the selected grouping setting. Drag them into a table after reviewing what you know about them.</p>
+          <div class="drop-zone" data-drop-zone="pool">
+            ${count ? state.tableManualPool.map((profile) => renderProfileDragItem(profile, true, scoreMode)).join("") : `<p class="pool-empty">No students are waiting for manual placement.</p>`}
+          </div>
+        </aside>
+      `;
+    }
+
+    function renderProfileDragItem(profile, isPool = false) {
+      const tag = isPool ? "div" : "li";
+      const missing = profile.missingDataReasons && profile.missingDataReasons.length
+        ? ` | ${profile.missingDataReasons.join(", ")}`
+        : "";
+      return `
+        <${tag} class="drag-card" draggable="true" data-profile-key="${escapeAttr(profile.key)}">
+          <div class="student-line">
+            <strong>${escapeHTML(profile.studentName)}</strong>
+            ${bandPill(profile.endBand)}
+          </div>
+          <span class="group-detail">${escapeHTML(profile.subjects)} | End %ile ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)} | ${escapeHTML(profile.suggestedGroup)}${escapeHTML(isPool ? missing : "")}</span>
+        </${tag}>
+      `;
+    }
+
+    function handleTableGroupDragStart(event) {
+      const item = event.target.closest("[data-profile-key]");
+      if (!item) return;
+      state.draggedProfileKey = item.dataset.profileKey;
+      item.classList.add("dragging");
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/plain", state.draggedProfileKey);
+      }
+    }
+
+    function handleTableGroupDragOver(event) {
+      const zone = event.target.closest("[data-drop-zone]");
+      if (!zone || !state.draggedProfileKey) return;
+      event.preventDefault();
+      zone.classList.add("drop-active");
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    }
+
+    function handleTableGroupDragLeave(event) {
+      const zone = event.target.closest("[data-drop-zone]");
+      if (!zone) return;
+      const related = event.relatedTarget;
+      if (related && zone.contains(related)) return;
+      zone.classList.remove("drop-active");
+    }
+
+    function handleTableGroupDrop(event) {
+      const zone = event.target.closest("[data-drop-zone]");
+      if (!zone || !state.draggedProfileKey) return;
+      event.preventDefault();
+      const profile = removeProfileFromTableGroups(state.draggedProfileKey);
+      if (!profile) return;
+      if (zone.dataset.dropZone === "pool") {
+        state.tableManualPool.push(profile);
+      } else {
+        const tableIndex = Number(zone.dataset.tableIndex);
+        if (Number.isFinite(tableIndex) && state.tableGroups[tableIndex]) {
+          state.tableGroups[tableIndex].push(profile);
+        } else {
+          state.tableManualPool.push(profile);
+        }
+      }
+      finishManualTableMove();
+    }
+
+    function handleTableGroupDragEnd() {
+      document.querySelectorAll(".dragging, .drop-active").forEach((el) => el.classList.remove("dragging", "drop-active"));
+      state.draggedProfileKey = "";
+    }
+
+    function removeProfileFromTableGroups(profileKey) {
+      const poolIndex = state.tableManualPool.findIndex((profile) => profile.key === profileKey);
+      if (poolIndex >= 0) return state.tableManualPool.splice(poolIndex, 1)[0];
+      for (const group of state.tableGroups) {
+        const groupIndex = group.findIndex((profile) => profile.key === profileKey);
+        if (groupIndex >= 0) return group.splice(groupIndex, 1)[0];
+      }
+      return null;
+    }
+
+    function finishManualTableMove() {
+      const strategy = els.groupStrategySelect.value || "mixed";
+      const scoreMode = els.groupScoreSelect.value || "endPercentile";
+      const subjectContext = getFilters().subject
+        ? `${getFilters().subject} only`
+        : "averaged across visible subjects";
+      const totalProfiles = state.tableGroups.reduce((sum, group) => sum + group.length, 0) + state.tableManualPool.length;
+      updateTableGroupContext(totalProfiles, subjectContext, strategy);
+      renderTableGroupLayout(scoreMode, strategy);
+      state.draggedProfileKey = "";
+    }
+
+    function handleLayoutPointerDown(event) {
+      const fixture = event.target.closest("[data-layout-kind='door'], [data-layout-kind='teacherDesk'], [data-layout-kind='frontBoard']");
+      const tableHandle = event.target.closest("[data-layout-handle]");
+      if (!fixture && !tableHandle) return;
+      const element = fixture || tableHandle.closest("[data-layout-kind='table']");
+      const board = element.closest("[data-classroom-board]");
+      if (!element || !board) return;
+      event.preventDefault();
+      const boardRect = board.getBoundingClientRect();
+      const elementRect = element.getBoundingClientRect();
+      const kind = element.dataset.layoutKind;
+      state.layoutDrag = {
+        kind,
+        index: kind === "table" ? Number(element.dataset.tableIndex) : null,
+        offsetX: event.clientX - elementRect.left,
+        offsetY: event.clientY - elementRect.top,
+        widthPct: elementRect.width / boardRect.width * 100,
+        heightPct: elementRect.height / boardRect.height * 100,
+        boardRect
+      };
+      element.classList.add("layout-dragging");
+      element.setPointerCapture?.(event.pointerId);
+    }
+
+    function handleLayoutPointerMove(event) {
+      if (!state.layoutDrag) return;
+      event.preventDefault();
+      const drag = state.layoutDrag;
+      const boardRect = drag.boardRect;
+      const x = (event.clientX - boardRect.left - drag.offsetX) / boardRect.width * 100;
+      const y = (event.clientY - boardRect.top - drag.offsetY) / boardRect.height * 100;
+      if (drag.kind === "door") {
+        const position = snapDoorToBorder({ x, y }, drag);
+        state.classroomLayout.door = position;
+        const door = document.querySelector("[data-layout-kind='door']");
+        if (door) door.setAttribute("style", layoutStyle(position));
+      } else if (drag.kind === "frontBoard") {
+        const position = clampFrontBoardPosition({ x, y }, drag);
+        state.classroomLayout.frontBoard = position;
+        const frontBoard = document.querySelector("[data-layout-kind='frontBoard']");
+        if (frontBoard) frontBoard.setAttribute("style", layoutStyle(position));
+      } else if (drag.kind === "teacherDesk") {
+        const position = clampDeskPosition({ x, y }, drag);
+        state.classroomLayout.teacherDesk = position;
+        const desk = document.querySelector("[data-layout-kind='teacherDesk']");
+        if (desk) desk.setAttribute("style", layoutStyle(position));
+      } else if (Number.isFinite(drag.index) && state.classroomLayout.tables[drag.index]) {
+        const position = clampTablePosition({ x, y }, drag);
+        state.classroomLayout.tables[drag.index] = position;
+        const table = document.querySelector(`[data-layout-kind='table'][data-table-index='${drag.index}']`);
+        if (table) table.setAttribute("style", layoutStyle(position));
+      }
+    }
+
+    function handleLayoutPointerUp() {
+      if (!state.layoutDrag) return;
+      document.querySelectorAll(".layout-dragging").forEach((el) => el.classList.remove("layout-dragging"));
+      state.layoutDrag = null;
+    }
+
+    function strategyLabel(strategy) {
+      if (strategy === "score") return "similar-score skill groups";
+      if (strategy === "priority") return "highest-need first";
+      return "balanced mixed tables";
+    }
+
+    function strategyFocus(strategy) {
+      if (strategy === "score") return "Similar-score skill group";
+      if (strategy === "priority") return "Intervention priority order";
+      return "Balanced mix of higher, middle, and lower complete profiles";
+    }
+
+    function scoreModeLabel(scoreMode) {
+      if (scoreMode === "growth") return "Growth";
+      if (scoreMode === "gap") return "Gap need";
+      return "End %ile";
+    }
+
+    const GROUPING_COLUMNS = [
+      ["Student", "studentName", (row) => `<span class="student-name">${escapeHTML(row.studentName)}</span>`],
+      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)],
+      ["Subject", "subject", (row) => escapeHTML(row.subject)],
+      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["Start RIT", "startRIT", (row) => formatNumber(row.startRIT)],
+      ["End RIT", "endRIT", (row) => formatNumber(row.endRIT)],
+      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
+      ["RIT Change", "ritChange", (row) => formatSignedNumber(row.ritChange)],
+      ["Start %ile", "startPercentile", (row) => formatNumber(row.startPercentile)],
+      ["End %ile", "endPercentile", (row) => formatNumber(row.endPercentile)],
+      ["%ile Change", "percentileChange", (row) => formatSignedNumber(row.percentileChange)],
+      ["Start Band", "startBand.name", (row) => bandPill(row.startBand)],
+      ["End Band", "endBand.name", (row) => bandPill(row.endBand)],
+      ["Band Movement", "bandMovement", (row) => escapeHTML(row.bandMovement)],
+      ["Projected Growth", "projectedGrowth", (row) => formatNumber(row.projectedGrowth)],
+      ["Observed Growth", "observedGrowth", (row) => formatSignedNumber(row.observedGrowth)],
+      ["Growth Efficiency", "growthEfficiency", (row) => `${formatFractionPercent(row.growthEfficiency)}<br><span class="status-pill ${efficiencyClass(row.growthEfficiency)}">${escapeHTML(row.growthEfficiencyLabel)}</span>`],
+      ["CGP", "conditionalGrowthPercentile", (row) => formatNumber(row.conditionalGrowthPercentile)],
+      ["Met Growth", "metGrowth", (row) => metPill(row.metGrowth)],
+      ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
+      ["Suggested Group", "suggestedGroup", (row) => groupPill(row.suggestedGroup)],
+      ["Suggested Teacher Action", "suggestedAction", (row) => escapeHTML(row.suggestedAction), "wrap"]
+    ];
+
+    function renderGroupingTable() {
+      const rows = sortRows(state.filteredRows, state.sort.grouping);
+      els.groupingCount.textContent = `${formatInteger(rows.length)} records`;
+      els.groupingTable.innerHTML = renderTable("grouping", GROUPING_COLUMNS, rows);
+    }
+
+    const PRIORITY_COLUMNS = [
+      ["Student", "studentName", (row) => `<span class="student-name">${escapeHTML(row.studentName)}</span>`],
+      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)],
+      ["Subject", "subject", (row) => escapeHTML(row.subject)],
+      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
+      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["End %ile", "endPercentile", (row) => formatNumber(row.endPercentile)],
+      ["RIT Change", "ritChange", (row) => formatSignedNumber(row.ritChange)],
+      ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
+      ["Suggested Group", "suggestedGroup", (row) => groupPill(row.suggestedGroup)],
+      ["Priority Reason", "priorityReasons", (row) => escapeHTML(row.priorityReasons.join("; ")), "wrap"],
+      ["Action", "suggestedAction", (row) => escapeHTML(row.suggestedAction), "wrap"]
+    ];
+
+    function renderPriorityTable() {
+      const rows = sortRows(state.filteredRows.filter((row) => row.priorityReasons.length), state.sort.priority);
+      els.priorityCount.textContent = `${formatInteger(rows.length)} students`;
+      els.priorityTable.innerHTML = renderTable("priority", PRIORITY_COLUMNS, rows);
+    }
+
+    const CELEBRATION_COLUMNS = [
+      ["Student", "studentName", (row) => `<span class="student-name">${escapeHTML(row.studentName)}</span>`],
+      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)],
+      ["Subject", "subject", (row) => escapeHTML(row.subject)],
+      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
+      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["Growth Efficiency", "growthEfficiency", (row) => `${formatFractionPercent(row.growthEfficiency)}<br><span class="status-pill ${efficiencyClass(row.growthEfficiency)}">${escapeHTML(row.growthEfficiencyLabel)}</span>`],
+      ["%ile Change", "percentileChange", (row) => formatSignedNumber(row.percentileChange)],
+      ["Band Movement", "bandMovement", (row) => escapeHTML(row.bandMovement)],
+      ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
+      ["Celebration Reason", "celebrationReasons", (row) => escapeHTML(row.celebrationReasons.join("; ")), "wrap"],
+      ["Next Extension", "extensionAction", (row) => escapeHTML(row.extensionAction), "wrap"]
+    ];
+
+    function renderCelebrationTable() {
+      const rows = sortRows(state.filteredRows.filter((row) => row.celebrationReasons.length), state.sort.celebration);
+      els.celebrationCount.textContent = `${formatInteger(rows.length)} students`;
+      els.celebrationTable.innerHTML = renderTable("celebration", CELEBRATION_COLUMNS, rows);
+    }
+
+    const GAP_COLUMNS = [
+      ["Student", "studentName", (row) => row.studentName],
+      ["Student ID", "studentID", (row) => row.studentID],
+      ["Subject", "subject", (row) => row.subject],
+      ["Grade", "studentGrade", (row) => row.studentGrade],
+      ["Start Percentile", "startPercentile", (row) => formatNumber(row.startPercentile)],
+      ["End Percentile", "endPercentile", (row) => formatNumber(row.endPercentile)],
+      ["Start Gap", "gapStart", (row) => formatNumber(row.gapStart)],
+      ["End Gap", "gapEnd", (row) => formatNumber(row.gapEnd)],
+      ["Gap Closed", "gapClosed", (row) => formatSignedNumber(row.gapClosed)],
+      ["Gap Closure %", "gapClosurePct", (row) => formatFractionPercent(row.gapClosurePct)],
+      ["Gap Status", "gapStatus", (row) => row.gapStatus],
+      ["Start Band", "startBand.name", (row) => row.startBand.name],
+      ["End Band", "endBand.name", (row) => row.endBand.name]
+    ];
+
+    function renderTable(tableName, columns, rows) {
+      if (!rows.length) {
+        return `<div class="empty-state">No records match the current view.</div>`;
+      }
+      const sort = state.sort[tableName] || {};
+      const header = columns.map(([label, key]) => {
+        const sortedClass = sort.key === key ? `sorted-${sort.dir}` : "";
+        return `<th class="sortable ${sortedClass}" data-table="${escapeAttr(tableName)}" data-key="${escapeAttr(key)}">${escapeHTML(label)}</th>`;
+      }).join("");
+      const body = rows.map((row) => `
+        <tr>${columns.map((column) => {
+          const [, , render, cellClass] = column;
+          return `<td class="${cellClass || ""}">${render(row)}</td>`;
+        }).join("")}</tr>
+      `).join("");
+      return `<table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    function sortRows(rows, sort) {
+      const copy = rows.slice();
+      copy.sort((a, b) => {
+        const av = getValue(a, sort.key);
+        const bv = getValue(b, sort.key);
+        const direction = sort.dir === "desc" ? -1 : 1;
+        return naturalCompareValues(av, bv) * direction;
+      });
+      return copy;
+    }
+
+    function getValue(object, path) {
+      if (path === "priorityReasons") return object.priorityReasons.join("; ");
+      if (path === "celebrationReasons") return object.celebrationReasons.join("; ");
+      return String(path || "").split(".").reduce((acc, part) => acc == null ? acc : acc[part], object);
+    }
+
+    function bandPill(band) {
+      return `<span class="band-pill ${band.className}">${escapeHTML(band.name)}</span>`;
+    }
+
+    function metPill(value) {
+      if (value === true) return `<span class="status-pill status-good">Yes</span>`;
+      if (value === false) return `<span class="status-pill status-risk">No</span>`;
+      return `<span class="status-pill status-neutral">Missing</span>`;
+    }
+
+    function usNormGradeCell(row) {
+      if (!row) return `<span class="status-pill status-neutral">N/A</span>`;
+      if (!isFiniteNumber(row.endRIT)) return `<span class="status-pill status-neutral">Missing end RIT</span>`;
+      if (!row.usNormSeason || row.usNormSeason === "Missing") return `<span class="status-pill status-neutral">Missing season</span>`;
+      if (!row.usNormEquivalentGrade && !isFiniteNumber(row.usNormBenchmarkRIT)) return `<span class="status-pill status-neutral">No norm match</span>`;
+
+      const equivalent = formatUSNormGradeLabel(row.usNormEquivalentGrade);
+      const student = formatUSNormGradeLabel(row.usNormStudentGrade);
+      const gradeGap = formatUSNormGradeGap(row.usNormGradeGap);
+      const ritDelta = formatSignedNumber(row.usNormDeltaRIT);
+      const benchmarkText = isFiniteNumber(row.usNormBenchmarkRIT)
+        ? `${row.usNormSeasonLabel} norm ${formatNumber(row.usNormBenchmarkRIT)}`
+        : `${row.usNormSeasonLabel} norm unavailable`;
+      return `<span class="status-pill ${usNormGapClass(row.usNormGradeGap)}">Norm level ${escapeHTML(equivalent)}</span><br><span>vs grade ${escapeHTML(student)} (${escapeHTML(gradeGap)})</span><br><span>${escapeHTML(`Delta RIT ${ritDelta} | ${benchmarkText}`)}</span>`;
+    }
+
+    function usNormGapClass(gradeGap) {
+      if (!isFiniteNumber(gradeGap)) return "status-neutral";
+      if (gradeGap >= 0.5) return "status-good";
+      if (gradeGap <= -0.5) return "status-risk";
+      return "status-watch";
+    }
+
+    function formatUSNormGradeGap(gradeGap) {
+      if (!isFiniteNumber(gradeGap)) return "N/A";
+      if (Math.abs(gradeGap) < 0.05) return "at grade level";
+      const absGap = formatNumber(Math.abs(gradeGap), 1);
+      if (gradeGap > 0) return `+${absGap} grade${Math.abs(gradeGap) >= 1.5 ? "s" : ""}`;
+      return `-${absGap} grade${Math.abs(gradeGap) >= 1.5 ? "s" : ""}`;
+    }
+
+    function statusPill(status) {
+      const className = statusClass(status);
+      return `<span class="status-pill ${className}">${escapeHTML(status)}</span>`;
+    }
+
+    function groupPill(group) {
+      return `<span class="group-pill ${groupClass(group)}">${escapeHTML(group)}</span>`;
+    }
+
+    function statusClass(status) {
+      if (["Gap Closed", "Secure and Extending", "Secure and Maintaining"].includes(status)) return "status-good";
+      if (["Gap Reduced", "Gap Maintained"].includes(status)) return "status-watch";
+      if (["Gap Widened", "Secure but Regressing", "Dropped Below Secure"].includes(status)) return "status-risk";
+      return "status-neutral";
+    }
+
+    function groupClass(group) {
+      if (group === "Enrichment") return "group-enrichment";
+      if (group === "Secure / Maintain") return "group-secure";
+      if (group === "Catch-Up Growth") return "group-catch";
+      if (group === "Watch Group") return "group-watch";
+      if (group === "Intensive Support") return "group-intensive";
+      if (group === "Secure but Regressing") return "group-regressing";
+      if (group === "Incomplete Data") return "group-incomplete";
+      return "group-targeted";
+    }
+
+    function efficiencyClass(value) {
+      if (!isFiniteNumber(value)) return "status-neutral";
+      if (value >= 1) return "status-good";
+      if (value >= 0.8) return "status-watch";
+      return "status-risk";
+    }
+
+    function aggregateRows(rows) {
+      const validGrowth = rows.filter((row) => row.metGrowth !== null);
+      const validExceeded = rows.filter((row) => isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth));
+      const validRows = rows.filter((row) =>
+        (isFiniteNumber(row.startRIT) || isFiniteNumber(row.startPercentile)) &&
+        (isFiniteNumber(row.endRIT) || isFiniteNumber(row.endPercentile))
+      );
+      const gapRows = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < 61 && isFiniteNumber(row.gapClosurePct));
+      const usNormRows = rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT));
+      const usNormGradeRows = rows.filter((row) => isFiniteNumber(row.usNormGradeGap));
+      return {
+        count: rows.length,
+        validCount: validRows.length,
+        metPct: validGrowth.length ? validGrowth.filter((row) => row.metGrowth === true).length / validGrowth.length * 100 : null,
+        exceededPct: validExceeded.length ? validExceeded.filter((row) => row.exceededGrowth).length / validExceeded.length * 100 : null,
+        avgStartRIT: avg(rows.map((row) => row.startRIT)),
+        avgEndRIT: avg(rows.map((row) => row.endRIT)),
+        avgRITChange: avg(rows.map((row) => row.ritChange)),
+        avgStartPercentile: avg(rows.map((row) => row.startPercentile)),
+        avgEndPercentile: avg(rows.map((row) => row.endPercentile)),
+        avgPercentileChange: avg(rows.map((row) => row.percentileChange)),
+        avgProjectedGrowth: avg(rows.map((row) => row.projectedGrowth)),
+        avgObservedGrowth: avg(rows.map((row) => row.observedGrowth)),
+        medianConditionalGrowthPercentile: median(rows.map((row) => row.conditionalGrowthPercentile)),
+        avgGapClosurePct: avg(gapRows.map((row) => row.gapClosurePct)),
+        avgUSNormDeltaRIT: avg(usNormRows.map((row) => row.usNormDeltaRIT)),
+        atOrAboveUSNormPct: usNormRows.length ? usNormRows.filter((row) => row.usNormAtOrAbove === true).length / usNormRows.length * 100 : null,
+        avgUSNormGradeGap: avg(usNormGradeRows.map((row) => row.usNormGradeGap)),
+        movedUpCount: rows.filter((row) => row.bandMovement === "Moved Up").length,
+        movedDownCount: rows.filter((row) => row.bandMovement === "Moved Down").length
+      };
+    }
+
+    function avg(values) {
+      const numeric = values.filter(isFiniteNumber);
+      if (!numeric.length) return null;
+      return numeric.reduce((sum, value) => sum + value, 0) / numeric.length;
+    }
+
+    function median(values) {
+      const numeric = values.filter(isFiniteNumber).sort((a, b) => a - b);
+      if (!numeric.length) return null;
+      const mid = Math.floor(numeric.length / 2);
+      return numeric.length % 2 ? numeric[mid] : (numeric[mid - 1] + numeric[mid]) / 2;
+    }
+
+    function countBy(rows, getter) {
+      return rows.reduce((acc, row) => {
+        const key = getter(row);
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+    }
+
+    function percentOf(rows, predicate) {
+      if (!rows.length) return "N/A";
+      return formatPercentWhole(rows.filter(predicate).length / rows.length * 100);
+    }
+
+    function formatInteger(value) {
+      if (!isFiniteNumber(value)) return "0";
+      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+    }
+
+    function formatNumber(value, digits = 1) {
+      if (!isFiniteNumber(value)) return "N/A";
+      return new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
+    }
+
+    function formatSignedNumber(value) {
+      if (!isFiniteNumber(value)) return "N/A";
+      const formatted = formatNumber(Math.abs(value));
+      if (value > 0) return `+${formatted}`;
+      if (value < 0) return `-${formatted}`;
+      return "0";
+    }
+
+    function formatPercentWhole(value) {
+      if (!isFiniteNumber(value)) return "N/A";
+      return `${formatNumber(value, 0)}%`;
+    }
+
+    function formatFractionPercent(value) {
+      if (!isFiniteNumber(value)) return "N/A";
+      return `${formatNumber(value * 100, 0)}%`;
+    }
+
+    function naturalCompare(a, b) {
+      return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+    }
+
+    function naturalCompareValues(a, b) {
+      const aMissing = a === null || a === undefined || a === "N/A" || a === "Missing";
+      const bMissing = b === null || b === undefined || b === "N/A" || b === "Missing";
+      if (aMissing && bMissing) return 0;
+      if (aMissing) return 1;
+      if (bMissing) return -1;
+      if (isFiniteNumber(a) && isFiniteNumber(b)) return a - b;
+      return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
+    }
+
+    function slugify(value) {
+      return String(value).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    }
+
+    function exportGrouping() {
+      exportCSV("nwea-student-grouping-report.csv", state.filteredRows, GROUPING_EXPORT_COLUMNS);
+    }
+
+    function exportPriority() {
+      exportCSV("nwea-priority-students.csv", state.filteredRows.filter((row) => row.priorityReasons.length), PRIORITY_EXPORT_COLUMNS);
+    }
+
+    function exportCelebration() {
+      exportCSV("nwea-celebration-students.csv", state.filteredRows.filter((row) => row.celebrationReasons.length), CELEBRATION_EXPORT_COLUMNS);
+    }
+
+    function exportGap() {
+      exportCSV("nwea-gap-closure-report.csv", state.filteredRows, GAP_EXPORT_COLUMNS);
+    }
+
+    function exportTableGroups() {
+      if (!state.tableGroups.length) renderTableGroups();
+      const assignedRows = state.tableGroups.flatMap((group, groupIndex) => group.map((profile, profileIndex) => ({
+        ...profile,
+        tableNumber: groupIndex + 1,
+        tablePosition: profileIndex + 1,
+        layoutX: state.classroomLayout.tables[groupIndex]?.x ?? "",
+        layoutY: state.classroomLayout.tables[groupIndex]?.y ?? ""
+      })));
+      const poolRows = state.tableManualPool.map((profile, profileIndex) => ({
+        ...profile,
+        tableNumber: "Manual Pool",
+        tablePosition: profileIndex + 1,
+        layoutX: "",
+        layoutY: ""
+      }));
+      const rows = assignedRows.concat(poolRows);
+      exportCSV("nwea-table-groups.csv", rows, TABLE_GROUP_EXPORT_COLUMNS);
+    }
+
+    function printA4Layout() {
+      if (!state.tableGroups.length && !state.tableManualPool.length) renderTableGroups();
+      const printWindow = window.open("", "_blank");
+      const html = buildA4LayoutHTML();
+      if (!printWindow) {
+        downloadText("nwea-a4-classroom-layout.html", html);
+        setStatus("Popup blocked. Downloaded A4 layout HTML instead.", false);
+        return;
+      }
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 250);
+    }
+
+    function buildA4LayoutHTML() {
+      const filters = getFilters();
+      const context = filters.subject ? `${filters.subject} only` : "averaged across visible subjects";
+      const date = new Date().toLocaleDateString();
+      const ratio = state.classroomLayout.roomRatio || { width: 4, height: 3 };
+      const isPortrait = finiteLayoutNumber(ratio.height, 3) > finiteLayoutNumber(ratio.width, 4);
+      const pageOrientation = isPortrait ? "portrait" : "landscape";
+      const orientationLabel = isPortrait ? "Portrait" : "Landscape";
+      const pageWidthMm = isPortrait ? 190 : 277;
+      const pageMinHeightMm = isPortrait ? 277 : 190;
+      const boardMinHeightMm = isPortrait ? 248 : 170;
+      const tableWidthMm = isPortrait ? 42 : 48;
+      const tableMaxHeightMm = isPortrait ? 46 : 52;
+      const poolWidthMm = isPortrait ? 52 : 62;
+      const poolMaxHeightMm = isPortrait ? 34 : 38;
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>NWEA Table Layout</title>
+  <style>
+    @page { size: A4 ${pageOrientation}; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: #172033; font-family: Arial, sans-serif; }
+    .print-page { width: ${pageWidthMm}mm; min-height: ${pageMinHeightMm}mm; display: grid; grid-template-rows: auto 1fr; gap: 8px; }
+    .print-header { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; border-bottom: 2px solid #c7d1e1; padding-bottom: 6px; }
+    h1 { font-size: 18px; margin: 0 0 3px; }
+    .meta { color: #5d6a7e; font-size: 10px; line-height: 1.35; }
+    .print-board { position: relative; border: 2px solid #94a3b8; border-radius: 8px; background: #fbfdff; overflow: hidden; min-height: ${boardMinHeightMm}mm; }
+    .front-board { position: absolute; width: 52%; min-height: 11mm; display: grid; place-items: center; background: #31553f; color: #fff; border: 1px solid #243b2e; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .door { position: absolute; width: 22mm; height: 10mm; display: grid; place-items: center; border: 1px solid #9a6b38; border-radius: 4px; background: #f5d29c; color: #5b3412; font-size: 9px; font-weight: 700; }
+    .teacher-desk { position: absolute; width: 39mm; min-height: 14mm; display: grid; place-items: center; border: 1px solid #8b5e34; border-radius: 5px; background: #ead7b7; color: #4b2e16; font-size: 9px; font-weight: 700; text-align: center; }
+    .print-table { position: absolute; width: ${tableWidthMm}mm; max-height: ${tableMaxHeightMm}mm; overflow: hidden; border: 1px solid #c7d1e1; border-radius: 6px; background: #fff; padding: 4px; }
+    .print-table h2 { margin: 0 0 3px; font-size: 10px; }
+    .table-meta { color: #5d6a7e; font-size: 7px; margin-bottom: 3px; }
+    ol { margin: 0; padding-left: 14px; }
+    li { font-size: 7.4px; line-height: 1.15; margin-bottom: 2px; }
+    .name { font-weight: 700; }
+    .pool { position: absolute; left: 3mm; bottom: 3mm; width: ${poolWidthMm}mm; max-height: ${poolMaxHeightMm}mm; overflow: hidden; border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 4px; }
+    .pool h2 { margin: 0 0 3px; font-size: 9px; }
+  </style>
+</head>
+<body>
+  <section class="print-page">
+    <header class="print-header">
+      <div>
+        <h1>NWEA MAP ASG Table Layout</h1>
+        <div class="meta">${escapeHTML(context)} | ${escapeHTML(state.tableGroupPlanLabel || "table layout")} | ${escapeHTML(date)} | ${orientationLabel}</div>
+      </div>
+      <div class="meta">Averages ignore N/A values. Missing-data students may appear in the manual pool.</div>
+    </header>
+    <main class="print-board">
+      <div class="front-board" style="${printPositionStyle(state.classroomLayout.frontBoard || { x: 24, y: 1 })}">Board</div>
+      <div class="door" style="${printPositionStyle(state.classroomLayout.door)}">Door</div>
+      <div class="teacher-desk" style="${printPositionStyle(state.classroomLayout.teacherDesk)}">Teacher Desk</div>
+      ${state.tableGroups.map((group, index) => renderPrintTable(group, index)).join("")}
+      ${state.tableManualPool.length ? renderPrintPool() : ""}
+    </main>
+  </section>
+</body>
+</html>`;
+    }
+
+    function renderPrintTable(group, index) {
+      const position = state.classroomLayout.tables[index] || defaultTablePosition(index, state.tableGroups.length);
+      return `
+        <article class="print-table" style="${printPositionStyle(position)}">
+          <h2>Table ${formatInteger(index + 1)}</h2>
+          <div class="table-meta">${formatInteger(group.length)} students | Avg End %ile ${formatNumber(avg(group.map((profile) => profile.avgEndPercentile)))} | Avg CGP ${formatNumber(avg(group.map((profile) => profile.avgConditionalGrowthPercentile)))}</div>
+          <ol>
+            ${group.map((profile) => `<li><span class="name">${escapeHTML(profile.studentName)}</span> | ${escapeHTML(profile.endBand.name)} | End ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)}</li>`).join("")}
+          </ol>
+        </article>
+      `;
+    }
+
+    function renderPrintPool() {
+      return `
+        <aside class="pool">
+          <h2>Manual Placement Pool</h2>
+          <ol>
+            ${state.tableManualPool.map((profile) => `<li><span class="name">${escapeHTML(profile.studentName)}</span> | ${escapeHTML(profile.missingDataReasons.join("; ") || "Missing data")}</li>`).join("")}
+          </ol>
+        </aside>
+      `;
+    }
+
+    function printPositionStyle(position) {
+      return `left:${clampLayout(position.x)}%; top:${clampLayout(position.y)}%;`;
+    }
+
+    function exportSummary() {
+      downloadText("nwea-class-summary.txt", els.summaryReport.value || "");
+    }
+
+    async function copySummary() {
+      const text = els.summaryReport.value || "";
+      try {
+        await navigator.clipboard.writeText(text);
+        setStatus("Summary copied.", false);
+      } catch {
+        const temp = document.createElement("textarea");
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        temp.remove();
+        setStatus("Summary copied.", false);
+      }
+    }
+
+    const TABLE_GROUP_EXPORT_COLUMNS = [
+      ["Table", (row) => row.tableNumber],
+      ["Position", (row) => row.tablePosition],
+      ["Student name", (row) => row.studentName],
+      ["Student ID", (row) => row.studentID],
+      ["Grade", (row) => row.studentGrade],
+      ["ClassName", (row) => row.className],
+      ["Subjects used", (row) => row.subjects],
+      ["Records averaged", (row) => row.recordCount],
+      ["Avg start percentile", (row) => row.avgStartPercentile],
+      ["Avg end percentile", (row) => row.avgEndPercentile],
+      ["Avg RIT change", (row) => row.avgRITChange],
+      ["Avg US norm delta RIT", (row) => row.avgUSNormDeltaRIT],
+      ["Avg US norm grade gap", (row) => row.avgUSNormGradeGap],
+      ["At/Above US norm rate", (row) => isFiniteNumber(row.atOrAboveUSNormRate) ? row.atOrAboveUSNormRate : ""],
+      ["Avg Conditional Growth Percentile", (row) => row.avgConditionalGrowthPercentile],
+      ["Met growth rate", (row) => isFiniteNumber(row.metRate) ? row.metRate : ""],
+      ["Band", (row) => row.endBand.name],
+      ["Planning group", (row) => row.suggestedGroup],
+      ["Layout X %", (row) => row.layoutX],
+      ["Layout Y %", (row) => row.layoutY],
+      ["Missing data notes", (row) => row.missingDataReasons.join("; ")],
+      ["Priority reasons", (row) => row.priorityReasons.join("; ")],
+      ["Celebration reasons", (row) => row.celebrationReasons.join("; ")]
+    ];
+
+    const GROUPING_EXPORT_COLUMNS = [
+      ["Student name", (row) => row.studentName],
+      ["Student ID", (row) => row.studentID],
+      ["Subject", (row) => row.subject],
+      ["Grade", (row) => row.studentGrade],
+      ["ClassName", (row) => row.className],
+      ["Start RIT", (row) => row.startRIT],
+      ["End RIT", (row) => row.endRIT],
+      ["RIT change", (row) => row.ritChange],
+      ["US norm season", (row) => row.usNormSeasonLabel],
+      ["US norm benchmark RIT", (row) => row.usNormBenchmarkRIT],
+      ["US norm delta RIT", (row) => row.usNormDeltaRIT],
+      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm grade gap", (row) => row.usNormGradeGap],
+      ["Start Percentile", (row) => row.startPercentile],
+      ["End Percentile", (row) => row.endPercentile],
+      ["Percentile change", (row) => row.percentileChange],
+      ["Start band", (row) => row.startBand.name],
+      ["End band", (row) => row.endBand.name],
+      ["Band movement", (row) => row.bandMovement],
+      ["Projected Growth", (row) => row.projectedGrowth],
+      ["Observed Growth", (row) => row.observedGrowth],
+      ["Growth efficiency", (row) => isFiniteNumber(row.growthEfficiency) ? row.growthEfficiency : ""],
+      ["Growth efficiency label", (row) => row.growthEfficiencyLabel],
+      ["Conditional Growth Percentile", (row) => row.conditionalGrowthPercentile],
+      ["MetGrowthProjection?", (row) => row.metGrowth === true ? "Yes" : row.metGrowth === false ? "No" : ""],
+      ["Growth Challenge Index", (row) => row.growthChallenge],
+      ["Gap status", (row) => row.gapStatus],
+      ["Suggested group", (row) => row.suggestedGroup],
+      ["Suggested teacher action", (row) => row.suggestedAction]
+    ];
+
+    const PRIORITY_EXPORT_COLUMNS = [
+      ["Student name", (row) => row.studentName],
+      ["Student ID", (row) => row.studentID],
+      ["Subject", (row) => row.subject],
+      ["Grade", (row) => row.studentGrade],
+      ["ClassName", (row) => row.className],
+      ["US norm season", (row) => row.usNormSeasonLabel],
+      ["US norm delta RIT", (row) => row.usNormDeltaRIT],
+      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm grade gap", (row) => row.usNormGradeGap],
+      ["End Percentile", (row) => row.endPercentile],
+      ["RIT change", (row) => row.ritChange],
+      ["Gap status", (row) => row.gapStatus],
+      ["Suggested group", (row) => row.suggestedGroup],
+      ["Priority reasons", (row) => row.priorityReasons.join("; ")],
+      ["Suggested teacher action", (row) => row.suggestedAction]
+    ];
+
+    const CELEBRATION_EXPORT_COLUMNS = [
+      ["Student name", (row) => row.studentName],
+      ["Student ID", (row) => row.studentID],
+      ["Subject", (row) => row.subject],
+      ["Grade", (row) => row.studentGrade],
+      ["ClassName", (row) => row.className],
+      ["US norm season", (row) => row.usNormSeasonLabel],
+      ["US norm delta RIT", (row) => row.usNormDeltaRIT],
+      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm grade gap", (row) => row.usNormGradeGap],
+      ["Growth efficiency", (row) => isFiniteNumber(row.growthEfficiency) ? row.growthEfficiency : ""],
+      ["Percentile change", (row) => row.percentileChange],
+      ["Band movement", (row) => row.bandMovement],
+      ["Gap status", (row) => row.gapStatus],
+      ["Celebration reasons", (row) => row.celebrationReasons.join("; ")],
+      ["Next extension", (row) => row.extensionAction]
+    ];
+
+    const GAP_EXPORT_COLUMNS = [
+      ["Student name", (row) => row.studentName],
+      ["Student ID", (row) => row.studentID],
+      ["Subject", (row) => row.subject],
+      ["Grade", (row) => row.studentGrade],
+      ["US norm season", (row) => row.usNormSeasonLabel],
+      ["US norm delta RIT", (row) => row.usNormDeltaRIT],
+      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm grade gap", (row) => row.usNormGradeGap],
+      ["Start Percentile", (row) => row.startPercentile],
+      ["End Percentile", (row) => row.endPercentile],
+      ["Start Gap", (row) => row.gapStart],
+      ["End Gap", (row) => row.gapEnd],
+      ["Gap Closed", (row) => row.gapClosed],
+      ["Gap Closure %", (row) => isFiniteNumber(row.gapClosurePct) ? row.gapClosurePct : ""],
+      ["Gap status", (row) => row.gapStatus],
+      ["Start band", (row) => row.startBand.name],
+      ["End band", (row) => row.endBand.name]
+    ];
+
+    function exportCSV(filename, rows, columns) {
+      const header = columns.map(([label]) => csvEscape(label)).join(",");
+      const body = rows.map((row) => columns.map(([, getter]) => csvEscape(getter(row))).join(",")).join("\n");
+      downloadText(filename, `${header}\n${body}`);
+    }
+
+    function csvEscape(value) {
+      const text = value === null || value === undefined ? "" : String(value);
+      if (/[",\n\r]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
+      return text;
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHTML(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[char]);
+    }
+
+    function escapeAttr(value) {
+      return escapeHTML(value);
+    }
+  </script>
+</body>
+</html>
