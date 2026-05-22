@@ -327,7 +327,7 @@
 
     .filters {
       display: grid;
-      grid-template-columns: minmax(220px, 1.3fr) repeat(7, minmax(130px, 1fr)) auto;
+      grid-template-columns: minmax(220px, 1.3fr) repeat(8, minmax(130px, 1fr)) auto;
       gap: 8px;
       align-items: end;
     }
@@ -1561,6 +1561,13 @@
           <select id="subjectFilter"></select>
         </div>
         <div class="field">
+          <label for="dashboardLensSelect">Overview Lens</label>
+          <select id="dashboardLensSelect">
+            <option value="subject">By Subject</option>
+            <option value="class">By Class</option>
+          </select>
+        </div>
+        <div class="field">
           <label for="teacherFilter">Teacher</label>
           <select id="teacherFilter"></select>
         </div>
@@ -1615,7 +1622,7 @@
         <div class="section-header">
           <div>
             <h2 id="overviewTitle">Subject Overview</h2>
-            <p>Subject areas are grouped from the Course column. Language Arts and Language Usage are reported as Language.</p>
+            <p id="overviewNote">Subject areas are grouped from the Course column. Language Arts and Language Usage are reported as Language.</p>
           </div>
         </div>
         <div class="overview-grid grid" id="subjectOverview"></div>
@@ -1625,7 +1632,7 @@
         <div class="section-header">
           <div>
             <h2 id="chartsTitle">Subject Charts</h2>
-            <p>Start/end achievement, projected/observed growth, met/exceeded rates, and band distribution.</p>
+            <p id="chartsNote">Start/end achievement, projected/observed growth, met/exceeded rates, and band distribution.</p>
           </div>
         </div>
         <div class="charts-wrap" id="chartsWrap"></div>
@@ -1655,7 +1662,7 @@
         <div class="subsection-title">Overall</div>
         <div class="analysis-grid grid" id="quadrantCards"></div>
         <p class="footer-note" id="quadrantMovement"></p>
-        <div class="subsection-title">By Subject</div>
+        <div class="subsection-title" id="quadrantBreakdownTitle">By Subject</div>
         <div class="subject-breakdown" id="quadrantSubjectBreakdown"></div>
       </section>
 
@@ -1685,7 +1692,7 @@
         </div>
         <div class="subsection-title">Overall</div>
         <div class="gap-grid grid" id="gapCards"></div>
-        <div class="subsection-title">By Subject</div>
+        <div class="subsection-title" id="gapBreakdownTitle">By Subject</div>
         <div class="subject-breakdown" id="gapSubjectBreakdown"></div>
       </section>
 
@@ -2005,7 +2012,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function cacheElements() {
       [
         "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
-        "searchInput", "subjectFilter", "teacherFilter", "classFilter", "gradeFilter",
+        "searchInput", "subjectFilter", "dashboardLensSelect", "teacherFilter", "classFilter", "gradeFilter",
         "bandFilter", "metFilter", "groupFilter", "gapFilter", "resetFiltersBtn",
         "filterContext", "summaryCards", "subjectOverview", "chartsWrap", "quadrantCards",
         "quadrantMovement", "quadrantSubjectBreakdown", "gapCards", "gapSubjectBreakdown",
@@ -2024,7 +2031,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       els.csvInput.addEventListener("change", handleFileUpload);
       els.sampleBtn.addEventListener("click", () => loadCSVText(SAMPLE_CSV, "sample-asg.csv"));
       [
-        els.searchInput, els.subjectFilter, els.teacherFilter, els.classFilter, els.gradeFilter,
+        els.searchInput, els.subjectFilter, els.dashboardLensSelect, els.teacherFilter, els.classFilter, els.gradeFilter,
         els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter
       ].forEach((control) => control.addEventListener("input", renderAll));
       [els.groupSizeInput, els.groupStrategySelect, els.groupScoreSelect].forEach((control) => control.addEventListener("input", renderTableGroups));
@@ -2644,9 +2651,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     function resetFilters(shouldRender = true) {
       els.searchInput.value = "";
-      [els.subjectFilter, els.teacherFilter, els.classFilter, els.gradeFilter, els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter].forEach((select) => {
+      [els.subjectFilter, els.dashboardLensSelect, els.teacherFilter, els.classFilter, els.gradeFilter, els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter].forEach((select) => {
         select.value = "";
       });
+      if (els.dashboardLensSelect) els.dashboardLensSelect.value = "subject";
       if (shouldRender) renderAll();
     }
 
@@ -2738,14 +2746,63 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       `).join("");
     }
 
+    function currentOverviewLens() {
+      return els.dashboardLensSelect?.value === "class" ? "class" : "subject";
+    }
+
+    function overviewLensLabel(lens = currentOverviewLens()) {
+      return lens === "class" ? "class" : "subject";
+    }
+
+    function getOverviewBuckets(rows, lens = currentOverviewLens()) {
+      if (lens === "class") return unique(rows.map((row) => row.className));
+      const present = unique(rows.map((row) => row.subject));
+      const main = SUBJECTS.filter((subject) => present.includes(subject));
+      const extra = present.filter((subject) => !SUBJECTS.includes(subject));
+      return main.concat(extra);
+    }
+
+    function bucketRows(rows, bucket, lens = currentOverviewLens()) {
+      if (lens === "class") return rows.filter((row) => row.className === bucket);
+      return rows.filter((row) => row.subject === bucket);
+    }
+
+    function renderOverviewHeadings() {
+      const lens = currentOverviewLens();
+      const overviewTitle = document.getElementById("overviewTitle");
+      const overviewNote = document.getElementById("overviewNote");
+      const chartsTitle = document.getElementById("chartsTitle");
+      const chartsNote = document.getElementById("chartsNote");
+      const quadrantBreakdownTitle = document.getElementById("quadrantBreakdownTitle");
+      const gapBreakdownTitle = document.getElementById("gapBreakdownTitle");
+      if (lens === "class") {
+        if (overviewTitle) overviewTitle.textContent = "Class Overview";
+        if (overviewNote) overviewNote.textContent = "Secondary-friendly view: cards are grouped by class/period so subject-based teachers can focus on their sections.";
+        if (chartsTitle) chartsTitle.textContent = "Class Charts";
+        if (chartsNote) chartsNote.textContent = "Start/end achievement, projected/observed growth, met/exceeded rates, and band distribution grouped by class.";
+        if (quadrantBreakdownTitle) quadrantBreakdownTitle.textContent = "By Class";
+        if (gapBreakdownTitle) gapBreakdownTitle.textContent = "By Class";
+        return;
+      }
+      if (overviewTitle) overviewTitle.textContent = "Subject Overview";
+      if (overviewNote) overviewNote.textContent = "Subject areas are grouped from the Course column. Language Arts and Language Usage are reported as Language.";
+      if (chartsTitle) chartsTitle.textContent = "Subject Charts";
+      if (chartsNote) chartsNote.textContent = "Start/end achievement, projected/observed growth, met/exceeded rates, and band distribution.";
+      if (quadrantBreakdownTitle) quadrantBreakdownTitle.textContent = "By Subject";
+      if (gapBreakdownTitle) gapBreakdownTitle.textContent = "By Subject";
+    }
+
     function renderSubjectOverview() {
-      els.subjectOverview.innerHTML = SUBJECTS.map((subject) => {
-        const rows = state.filteredRows.filter((row) => row.subject === subject);
+      renderOverviewHeadings();
+      const lens = currentOverviewLens();
+      const buckets = getOverviewBuckets(state.filteredRows, lens);
+      els.subjectOverview.innerHTML = buckets.map((bucket) => {
+        const rows = bucketRows(state.filteredRows, bucket, lens);
         const metrics = aggregateRows(rows);
         return `
-          <article class="card subject-card ${escapeAttr(subject)}">
+          <article class="card subject-card ${lens === "subject" ? escapeAttr(bucket) : ""}">
             <div class="card-title">
-              <h3>${escapeHTML(subject)}</h3>
+              <h3>${escapeHTML(bucket)}</h3>
               <span class="status-pill status-neutral">${formatInteger(metrics.validCount)} valid</span>
             </div>
             <div class="metric-list">
@@ -2776,12 +2833,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function renderCharts() {
       Object.values(state.charts).forEach((chart) => chart.destroy());
       state.charts = {};
+      renderOverviewHeadings();
+      const lens = currentOverviewLens();
+      const buckets = getOverviewBuckets(state.filteredRows, lens);
 
-      els.chartsWrap.innerHTML = SUBJECTS.map((subject) => {
-        const slug = slugify(subject);
+      els.chartsWrap.innerHTML = buckets.map((bucket) => {
+        const slug = `${overviewLensLabel(lens)}-${slugify(bucket)}`;
         return `
           <section class="subject-chart-section">
-            <h3>${escapeHTML(subject)}</h3>
+            <h3>${escapeHTML(bucket)}</h3>
             <div class="chart-grid">
               ${chartCard(`${slug}-achievement`, "Start vs End Achievement Percentile")}
               ${chartCard(`${slug}-growth`, "Projected Growth vs Observed Growth")}
@@ -2799,10 +2859,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         return;
       }
 
-      SUBJECTS.forEach((subject) => {
-        const rows = state.filteredRows.filter((row) => row.subject === subject);
+      buckets.forEach((bucket) => {
+        const rows = bucketRows(state.filteredRows, bucket, lens);
         const metrics = aggregateRows(rows);
-        const slug = slugify(subject);
+        const slug = `${overviewLensLabel(lens)}-${slugify(bucket)}`;
         const bandStart = BANDS.map((band) => rows.filter((row) => row.startBand.name === band.name).length);
         const bandEnd = BANDS.map((band) => rows.filter((row) => row.endBand.name === band.name).length);
         createChart(`${slug}-achievement`, {
@@ -2903,6 +2963,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function renderQuadrants() {
+      renderOverviewHeadings();
       const rows = state.filteredRows;
       const total = rows.filter((row) => row.endQuadrant !== "Missing").length;
       els.quadrantCards.innerHTML = QUADRANTS.map((quadrant) => {
@@ -2926,13 +2987,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const stayed = rows.filter((row) => row.quadrantMovement === "Stayed Same").length;
       const missing = rows.filter((row) => row.quadrantMovement === "Missing").length;
       els.quadrantMovement.textContent = `Quadrant movement: ${formatInteger(improved)} improved, ${formatInteger(declined)} declined, ${formatInteger(stayed)} stayed the same, ${formatInteger(missing)} missing.`;
-      els.quadrantSubjectBreakdown.innerHTML = getBreakdownSubjects(rows).map((subject) => {
-        const subjectRows = rows.filter((row) => row.subject === subject);
-        return renderQuadrantSubjectCard(subject, subjectRows);
+      const lens = currentOverviewLens();
+      els.quadrantSubjectBreakdown.innerHTML = getBreakdownSubjects(rows, lens).map((bucket) => {
+        const subjectRows = bucketRows(rows, bucket, lens);
+        return renderQuadrantSubjectCard(bucket, subjectRows);
       }).join("");
     }
 
     function renderGapCards() {
+      renderOverviewHeadings();
       const rows = state.filteredRows;
       const belowSecure = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < 61 && isFiniteNumber(row.endPercentile));
       const secureStart = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile >= 61 && isFiniteNumber(row.endPercentile));
@@ -2954,9 +3017,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           <span>${escapeHTML(gapCardSubtext(label))}</span>
         </div>
       `).join("");
-      els.gapSubjectBreakdown.innerHTML = getBreakdownSubjects(rows).map((subject) => {
-        const subjectRows = rows.filter((row) => row.subject === subject);
-        return renderGapSubjectCard(subject, subjectRows);
+      const lens = currentOverviewLens();
+      els.gapSubjectBreakdown.innerHTML = getBreakdownSubjects(rows, lens).map((bucket) => {
+        const subjectRows = bucketRows(rows, bucket, lens);
+        return renderGapSubjectCard(bucket, subjectRows);
       }).join("");
     }
 
@@ -3109,9 +3173,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function scatterPoint(row, x, y, rawX, rawY, scatterSource) {
+      const lens = currentOverviewLens();
+      const groupingLabel = lens === "class" ? "Class" : "Subject";
+      const groupingValue = lens === "class" ? row.className : row.subject;
       const title = [
         row.studentName,
-        `Subject: ${row.subject}`,
+        `${groupingLabel}: ${groupingValue}`,
         `End RIT: ${formatNumber(row.endRIT)}`,
         `End percentile: ${formatNumber(row.endPercentile)}`,
         `Plotted achievement: ${formatNumber(rawX)}`,
@@ -3191,9 +3258,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return "Mixed pattern. Use the student grouping report to separate catch-up students from students whose gaps widened.";
     }
 
-    function getBreakdownSubjects(rows) {
-      const selected = getFilters().subject;
-      if (selected) return [selected];
+    function getBreakdownSubjects(rows, lens = currentOverviewLens()) {
+      if (lens === "class") {
+        const selectedClass = getFilters().className;
+        if (selectedClass) return [selectedClass];
+        return unique(rows.map((row) => row.className));
+      }
+      const selectedSubject = getFilters().subject;
+      if (selectedSubject) return [selectedSubject];
       const present = unique(rows.map((row) => row.subject));
       const main = SUBJECTS.filter((subject) => present.includes(subject));
       const extra = present.filter((subject) => !SUBJECTS.includes(subject));
@@ -3227,9 +3299,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (!rows.length) {
         return "Upload an NWEA ASG CSV to generate a class summary report.";
       }
+      const lens = currentOverviewLens();
+      const lensLabel = overviewLensLabel(lens);
+      const lensTitle = lens === "class" ? "class" : "subject";
       const metrics = aggregateRows(rows);
-      const subjectMetrics = SUBJECTS
-        .map((subject) => ({ subject, metrics: aggregateRows(rows.filter((row) => row.subject === subject)) }))
+      const subjectMetrics = getOverviewBuckets(rows, lens)
+        .map((bucket) => ({ bucket, metrics: aggregateRows(bucketRows(rows, bucket, lens)) }))
         .filter((item) => item.metrics.validCount > 0);
       const strongest = subjectMetrics.length
         ? subjectMetrics.slice().sort((a, b) => supportScore(b.metrics) - supportScore(a.metrics))[0]
@@ -3249,9 +3324,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const highExtension = rows.filter((row) => row.growthChallenge === "Strong Extension").length;
       const coasting = rows.filter((row) => row.growthChallenge === "Monitor for Coasting").length;
 
-      return `This class view includes ${formatInteger(rows.length)} student-subject records. The group began with an average percentile of ${formatNumber(metrics.avgStartPercentile)} and ended with ${formatNumber(metrics.avgEndPercentile)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed an average of ${formatFractionPercent(metrics.avgGapClosurePct)} of the gap toward the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm.
+      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records. The group began with an average percentile of ${formatNumber(metrics.avgStartPercentile)} and ended with ${formatNumber(metrics.avgEndPercentile)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed an average of ${formatFractionPercent(metrics.avgGapClosurePct)} of the gap toward the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm.
 
-Growth was strongest in ${strongest ? strongest.subject : "the available subject data"}, while ${needsSupport ? needsSupport.subject : "the available subject data"} requires the most targeted support. ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
+Growth was strongest in ${strongest ? strongest.bucket : `the available ${lensTitle} data`}, while ${needsSupport ? needsSupport.bucket : `the available ${lensTitle} data`} requires the most targeted support. ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
 
 Key intervention groups are ${interventionGroups}. Key enrichment and extension groups are ${enrichmentGroups}. Low starters showing strong catch-up growth: ${formatInteger(lowCatchUp)}. Low starters needing urgent support: ${formatInteger(urgent)}. Secure starters showing strong extension: ${formatInteger(highExtension)}. Secure starters who may be coasting: ${formatInteger(coasting)}.
 
