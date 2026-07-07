@@ -1501,6 +1501,334 @@
         min-width: 980px;
       }
     }
+
+    /* --- Usability enhancements --- */
+    .question-chip {
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+    }
+
+    .question-chip:hover {
+      background: var(--brand-soft);
+      border-color: #9fb6df;
+      color: var(--brand-dark);
+      transform: translateY(-1px);
+    }
+
+    .question-chip:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .file-label {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .file-label.is-dragover {
+      background: #dbeafe;
+      border-color: var(--brand);
+      border-style: solid;
+    }
+
+    .file-label-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    .file-label-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
+    }
+
+    .file-label-text small {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .file-label input[type="file"] {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .upload-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .upload-controls .btn {
+      flex: 1 1 auto;
+    }
+
+    .privacy-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .privacy-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 3px var(--green-soft);
+      flex: none;
+    }
+
+    .onboarding {
+      background: linear-gradient(135deg, #ffffff, var(--brand-soft));
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 22px;
+      margin-bottom: 18px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 22px;
+      align-items: center;
+      position: relative;
+    }
+
+    .onboarding-intro h2 {
+      font-size: 1.5rem;
+      line-height: 1.15;
+    }
+
+    .onboarding-intro .btn-row {
+      margin-top: 16px;
+    }
+
+    .onboarding-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 1.4rem;
+      line-height: 1;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .onboarding-close:hover {
+      background: rgba(23, 32, 51, 0.06);
+      color: var(--text);
+    }
+
+    .onboarding-steps {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+
+    .onboarding-steps li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .onboarding-steps .step-num {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--brand);
+      color: #fff;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    .onboarding-steps strong {
+      display: block;
+    }
+
+    .onboarding-steps span {
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .help-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      padding: 4px 18px;
+    }
+
+    .help-panel summary {
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--brand-dark);
+      padding: 14px 0;
+      list-style: none;
+    }
+
+    .help-panel summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .help-panel summary::before {
+      content: "+ ";
+      font-weight: 900;
+      color: var(--brand);
+    }
+
+    .help-panel[open] summary::before {
+      content: "\2212 ";
+    }
+
+    .help-body {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      padding: 0 0 18px;
+    }
+
+    .help-body strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .help-body ol,
+    .help-body ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+      display: grid;
+      gap: 5px;
+    }
+
+    .help-body code {
+      background: var(--slate-soft);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.85em;
+    }
+
+    .section-nav {
+      position: sticky;
+      top: var(--stick-top, 90px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(245, 247, 251, 0.94);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 28px rgba(23, 32, 51, 0.06);
+      padding: 8px 12px;
+      margin-bottom: 18px;
+    }
+
+    .section-nav-label {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      flex: none;
+    }
+
+    .section-nav-links {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      scrollbar-width: thin;
+    }
+
+    .section-nav-links button {
+      flex: none;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+
+    .section-nav-links button:hover,
+    .section-nav-links button.active {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+    }
+
+    .section-nav-links button:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    /* Offset scroll targets so the sticky bars don't cover section headings */
+    main > .section {
+      scroll-margin-top: var(--scroll-offset, 160px);
+    }
+
+    .back-to-top {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 1200;
+      border: 1px solid var(--brand);
+      background: var(--brand);
+      color: #fff;
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      box-shadow: 0 10px 24px rgba(23, 32, 51, 0.22);
+      opacity: 0;
+      transform: translateY(12px);
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.2s ease, background 0.12s ease;
+    }
+
+    .back-to-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .back-to-top:hover {
+      background: var(--brand-dark);
+    }
+
+    .back-to-top:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    @media (max-width: 860px) {
+      .onboarding,
+      .help-body {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1512,11 +1840,11 @@
           <h1>Teacher Dashboard</h1>
           <p class="subtle">Upload an ASG CSV and turn growth, achievement, gap closure, intervention, and enrichment data into a classroom-ready planning view.</p>
         </div>
-        <div class="quick-questions" aria-label="Planning questions">
-          <span class="question-chip">Who grew?</span>
-          <span class="question-chip">Who needs support?</span>
-          <span class="question-chip">Who closed gaps?</span>
-          <span class="question-chip">Who needs extension?</span>
+        <div class="quick-questions" aria-label="Jump to a planning question">
+          <button class="question-chip" type="button" data-jump="sec-celebration">Who grew?</button>
+          <button class="question-chip" type="button" data-jump="sec-priority">Who needs support?</button>
+          <button class="question-chip" type="button" data-jump="sec-gap">Who closed gaps?</button>
+          <button class="question-chip" type="button" data-jump="sec-tables">How do I group them?</button>
         </div>
       </section>
 
@@ -1525,12 +1853,17 @@
           <p class="eyebrow">Local CSV Upload</p>
           <h2 id="uploadTitle">Load ASG Data</h2>
         </div>
+        <label class="file-label" id="dropZone">
+          <span class="file-label-icon" aria-hidden="true">&#8682;</span>
+          <span class="file-label-text">
+            <strong>Choose or drop your ASG CSV</strong>
+            <small>Click to browse, or drag a file here</small>
+          </span>
+          <input id="csvInput" type="file" accept=".csv,text/csv">
+        </label>
         <div class="upload-controls">
-          <label class="file-label">
-            <span>CSV</span>
-            <input id="csvInput" type="file" accept=".csv,text/csv">
-          </label>
-          <button class="btn ghost" id="sampleBtn" type="button">Load Sample</button>
+          <button class="btn ghost" id="sampleBtn" type="button">Load Sample Data</button>
+          <button class="btn small ghost" id="helpBtn" type="button">How do I get this file?</button>
         </div>
         <div class="upload-meta">
           <div class="mini-stat">
@@ -1547,8 +1880,68 @@
           </div>
         </div>
         <div class="status-line" id="statusLine">Waiting for a CSV file.</div>
+        <p class="privacy-note"><span class="privacy-dot" aria-hidden="true"></span>100% private &mdash; your file is read in this browser and never uploaded to any server.</p>
       </section>
     </header>
+
+    <section class="onboarding" id="onboarding" aria-labelledby="onboardingTitle">
+      <button class="onboarding-close" id="onboardingClose" type="button" aria-label="Hide getting started">&times;</button>
+      <div class="onboarding-intro">
+        <p class="eyebrow">Getting Started</p>
+        <h2 id="onboardingTitle">Turn your MAP data into a plan in under a minute</h2>
+        <p class="subtle">No sign-in, no setup. Upload your NWEA ASG export and this dashboard instantly shows who grew, who needs support, who closed gaps, and how to group your class &mdash; all in your browser.</p>
+        <div class="btn-row">
+          <button class="btn primary" id="onboardSampleBtn" type="button">Try it with sample data</button>
+          <button class="btn ghost" id="onboardUploadBtn" type="button">Upload my CSV</button>
+        </div>
+      </div>
+      <ol class="onboarding-steps">
+        <li>
+          <span class="step-num">1</span>
+          <div>
+            <strong>Export from NWEA MAP</strong>
+            <span>In MAP Growth reports, open your ASG (Achievement Status &amp; Growth) report and download it as a CSV.</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">2</span>
+          <div>
+            <strong>Upload it here</strong>
+            <span>Drag the file onto the upload box, or click to browse. Your data stays on your device.</span>
+          </div>
+        </li>
+        <li>
+          <span class="step-num">3</span>
+          <div>
+            <strong>Plan with confidence</strong>
+            <span>Explore growth, gap closure, priority &amp; celebration lists, then build seating groups and export or print.</span>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <details class="help-panel" id="helpPanel">
+      <summary>Where do I find my ASG CSV? &amp; what does this tool read?</summary>
+      <div class="help-body">
+        <div>
+          <strong>Exporting from NWEA MAP Growth</strong>
+          <ol>
+            <li>Sign in to MAP Growth and open <em>MAP Reports</em>.</li>
+            <li>Choose the <em>Achievement Status and Growth (ASG)</em> report for your class and terms.</li>
+            <li>Use the export/download option and select <em>CSV</em>.</li>
+            <li>Return here and upload that file &mdash; nothing is sent anywhere.</li>
+          </ol>
+        </div>
+        <div>
+          <strong>Good to know</strong>
+          <ul>
+            <li>Column names are matched automatically, so slightly different exports still work.</li>
+            <li>Suppressed values (<code>***</code>) and missing scores are handled gracefully.</li>
+            <li>Not ready to export? Click <em>Load Sample Data</em> to explore every feature first.</li>
+          </ul>
+        </div>
+      </div>
+    </details>
 
     <section class="filter-bar" aria-label="Filters">
       <div class="filters">
@@ -1604,8 +1997,24 @@
       </div>
     </section>
 
+    <nav class="section-nav" id="sectionNav" aria-label="Jump to section" hidden>
+      <span class="section-nav-label">Jump to</span>
+      <div class="section-nav-links">
+        <button type="button" data-jump="sec-snapshot">Snapshot</button>
+        <button type="button" data-jump="sec-overview">Overview</button>
+        <button type="button" data-jump="sec-charts">Charts</button>
+        <button type="button" data-jump="sec-growth">Growth</button>
+        <button type="button" data-jump="sec-gap">Gap Closure</button>
+        <button type="button" data-jump="sec-summary">Summary</button>
+        <button type="button" data-jump="sec-tables">Table Groups</button>
+        <button type="button" data-jump="sec-grouping">Grouping</button>
+        <button type="button" data-jump="sec-priority">Priority</button>
+        <button type="button" data-jump="sec-celebration">Celebration</button>
+      </div>
+    </nav>
+
     <main>
-      <section class="section" aria-labelledby="snapshotTitle">
+      <section class="section" id="sec-snapshot" aria-labelledby="snapshotTitle">
         <div class="section-header">
           <div>
             <h2 id="snapshotTitle">Class Snapshot</h2>
@@ -1618,7 +2027,7 @@
         <div class="summary-grid grid" id="summaryCards"></div>
       </section>
 
-      <section class="section" aria-labelledby="overviewTitle">
+      <section class="section" id="sec-overview" aria-labelledby="overviewTitle">
         <div class="section-header">
           <div>
             <h2 id="overviewTitle">Subject Overview</h2>
@@ -1628,7 +2037,7 @@
         <div class="overview-grid grid" id="subjectOverview"></div>
       </section>
 
-      <section class="section" aria-labelledby="chartsTitle">
+      <section class="section" id="sec-charts" aria-labelledby="chartsTitle">
         <div class="section-header">
           <div>
             <h2 id="chartsTitle">Subject Charts</h2>
@@ -1638,7 +2047,7 @@
         <div class="charts-wrap" id="chartsWrap"></div>
       </section>
 
-      <section class="section" aria-labelledby="growthAchievementTitle">
+      <section class="section" id="sec-growth" aria-labelledby="growthAchievementTitle">
         <div class="section-header">
           <div>
             <h2 id="growthAchievementTitle">Growth and Achievement</h2>
@@ -1666,7 +2075,7 @@
         <div class="subject-breakdown" id="quadrantSubjectBreakdown"></div>
       </section>
 
-      <section class="section" aria-labelledby="gapTitle">
+      <section class="section" id="sec-gap" aria-labelledby="gapTitle">
         <div class="section-header">
           <div>
             <h2 id="gapTitle">Gap Closure</h2>
@@ -1696,7 +2105,7 @@
         <div class="subject-breakdown" id="gapSubjectBreakdown"></div>
       </section>
 
-      <section class="section" aria-labelledby="summaryTitle">
+      <section class="section" id="sec-summary" aria-labelledby="summaryTitle">
         <div class="section-header">
           <div>
             <h2 id="summaryTitle">Class Summary Report</h2>
@@ -1710,7 +2119,7 @@
         <textarea class="summary-report" id="summaryReport" readonly></textarea>
       </section>
 
-      <section class="section" aria-labelledby="tableGroupsTitle">
+      <section class="section" id="sec-tables" aria-labelledby="tableGroupsTitle">
         <div class="section-header">
           <div>
             <h2 id="tableGroupsTitle">Flexible Table Groups</h2>
@@ -1777,7 +2186,7 @@
         <div class="table-groups" id="tableGroups"></div>
       </section>
 
-      <section class="section" aria-labelledby="groupingTitle">
+      <section class="section" id="sec-grouping" aria-labelledby="groupingTitle">
         <div class="section-header">
           <div>
             <h2 id="groupingTitle">Student Grouping Report</h2>
@@ -1796,7 +2205,7 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="priorityTitle">
+      <section class="section" id="sec-priority" aria-labelledby="priorityTitle">
         <div class="section-header">
           <div>
             <h2 id="priorityTitle">Priority Students</h2>
@@ -1814,7 +2223,7 @@
         </div>
       </section>
 
-      <section class="section" aria-labelledby="celebrationTitle">
+      <section class="section" id="sec-celebration" aria-labelledby="celebrationTitle">
         <div class="section-header">
           <div>
             <h2 id="celebrationTitle">Celebration Students</h2>
@@ -1833,6 +2242,8 @@
       </section>
     </main>
   </div>
+
+  <button class="back-to-top" id="backToTop" type="button" aria-label="Back to top">&#8593; Top</button>
 
   <script>
     const SUBJECTS = ["Language", "Reading", "Mathematics", "Science"];
@@ -2021,7 +2432,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "priorityCount", "priorityTable", "celebrationCount", "celebrationTable",
         "exportGroupingBtn", "exportPriorityBtn", "exportCelebrationBtn", "exportGapBtn",
         "exportSummaryBtn", "exportSummaryBtn2", "copySummaryBtn", "exportTableGroupsBtn",
-        "printA4LayoutBtn"
+        "printA4LayoutBtn",
+        "dropZone", "helpBtn", "helpPanel", "onboarding", "onboardingClose",
+        "onboardSampleBtn", "onboardUploadBtn", "sectionNav", "backToTop"
       ].forEach((id) => {
         els[id] = document.getElementById(id);
       });
@@ -2069,6 +2482,115 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       document.addEventListener("pointermove", handleLayoutPointerMove);
       document.addEventListener("pointerup", handleLayoutPointerUp);
       document.addEventListener("pointercancel", handleLayoutPointerUp);
+
+      attachUsabilityEvents();
+    }
+
+    function attachUsabilityEvents() {
+      document.querySelectorAll("[data-jump]").forEach((btn) => {
+        btn.addEventListener("click", () => jumpToSection(btn.dataset.jump));
+      });
+
+      const openFileDialog = () => els.csvInput && els.csvInput.click();
+      if (els.onboardUploadBtn) els.onboardUploadBtn.addEventListener("click", openFileDialog);
+      if (els.onboardSampleBtn) els.onboardSampleBtn.addEventListener("click", () => loadCSVText(SAMPLE_CSV, "sample-asg.csv"));
+      if (els.helpBtn) els.helpBtn.addEventListener("click", () => {
+        if (!els.helpPanel) return;
+        els.helpPanel.open = true;
+        els.helpPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+      if (els.onboardingClose) els.onboardingClose.addEventListener("click", () => {
+        if (els.onboarding) {
+          els.onboarding.hidden = true;
+          els.onboarding.dataset.dismissed = "true";
+        }
+      });
+
+      if (els.dropZone) {
+        ["dragenter", "dragover"].forEach((type) => {
+          els.dropZone.addEventListener(type, (event) => {
+            event.preventDefault();
+            els.dropZone.classList.add("is-dragover");
+          });
+        });
+        ["dragleave", "dragend"].forEach((type) => {
+          els.dropZone.addEventListener(type, () => els.dropZone.classList.remove("is-dragover"));
+        });
+        els.dropZone.addEventListener("drop", (event) => {
+          event.preventDefault();
+          els.dropZone.classList.remove("is-dragover");
+          const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => loadCSVText(String(reader.result || ""), file.name);
+          reader.onerror = () => setStatus("Could not read that file.", true);
+          reader.readAsText(file);
+        });
+      }
+
+      if (els.backToTop) {
+        els.backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+      }
+      window.addEventListener("scroll", handleWindowScroll, { passive: true });
+      window.addEventListener("resize", updateStickyOffsets, { passive: true });
+      handleWindowScroll();
+      updateStickyOffsets();
+      setupSectionSpy();
+    }
+
+    function setupSectionSpy() {
+      if (!("IntersectionObserver" in window)) return;
+      const navButtons = new Map();
+      document.querySelectorAll(".section-nav-links [data-jump]").forEach((btn) => {
+        navButtons.set(btn.dataset.jump, btn);
+      });
+      if (!navButtons.size) return;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          navButtons.forEach((btn) => btn.classList.remove("active"));
+          const active = navButtons.get(entry.target.id);
+          if (active) active.classList.add("active");
+        });
+      }, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
+      navButtons.forEach((_, id) => {
+        const section = document.getElementById(id);
+        if (section) observer.observe(section);
+      });
+    }
+
+    function updateStickyOffsets() {
+      const filterBar = document.querySelector(".filter-bar");
+      const filterH = filterBar ? Math.round(filterBar.getBoundingClientRect().height) : 88;
+      const navH = els.sectionNav && !els.sectionNav.hidden
+        ? Math.round(els.sectionNav.getBoundingClientRect().height)
+        : 0;
+      const root = document.documentElement.style;
+      root.setProperty("--stick-top", (filterH + 6) + "px");
+      root.setProperty("--scroll-offset", (filterH + navH + 28) + "px");
+    }
+
+    function jumpToSection(id) {
+      const target = document.getElementById(id);
+      if (!target) return;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function handleWindowScroll() {
+      if (els.backToTop) {
+        els.backToTop.classList.toggle("visible", window.scrollY > 500);
+      }
+    }
+
+    function updateOnboardingVisibility() {
+      const hasData = state.allRows.length > 0;
+      if (els.onboarding && !els.onboarding.dataset.dismissed) {
+        els.onboarding.hidden = hasData;
+      }
+      if (els.sectionNav) {
+        els.sectionNav.hidden = !hasData;
+      }
+      if (typeof updateStickyOffsets === "function") updateStickyOffsets();
     }
 
     function handleFileUpload(event) {
@@ -2696,6 +3218,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     function renderAll() {
       state.filteredRows = applyFilters(state.allRows);
+      updateOnboardingVisibility();
       renderUploadStats();
       renderFilterContext();
       renderSummaryCards();
