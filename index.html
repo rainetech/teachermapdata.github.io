@@ -18,7 +18,14 @@
       --muted-strong: #475569;
       --line: #dbe2ee;
       --line-strong: #c7d1e1;
-      --line-accent: var(--line-accent);
+      --line-accent: #87a4dc;
+      /* Ink that actually reads on each band fill in this theme. */
+      --on-red: #ffffff;
+      --on-orange: #10182b;
+      --on-yellow: #10182b;
+      --on-green: #10182b;
+      --on-blue: #ffffff;
+      --on-slate: #ffffff;
       --brand: #2454a6;
       --brand-dark: #173d7d;
       --brand-soft: #e9f0ff;
@@ -81,6 +88,12 @@
       --line: #2a3648;
       --line-strong: #3a4860;
       --line-accent: #4c6da8;
+      --on-red: #10182b;
+      --on-orange: #10182b;
+      --on-yellow: #10182b;
+      --on-green: #10182b;
+      --on-blue: #10182b;
+      --on-slate: #10182b;
       --brand: #6c9cf0;
       --brand-dark: #8fb6f8;
       --brand-soft: rgba(108, 156, 240, 0.16);
@@ -134,6 +147,12 @@
         --line: #2a3648;
         --line-strong: #3a4860;
         --line-accent: #4c6da8;
+        --on-red: #10182b;
+        --on-orange: #10182b;
+        --on-yellow: #10182b;
+        --on-green: #10182b;
+        --on-blue: #10182b;
+        --on-slate: #10182b;
         --brand: #6c9cf0;
         --brand-dark: #8fb6f8;
         --brand-soft: rgba(108, 156, 240, 0.16);
@@ -185,6 +204,7 @@
 
     html {
       scroll-behavior: smooth;
+      /* html.no-motion and the reduced-motion query below both reset this. */
       max-width: 100%;
       overflow-x: clip;
     }
@@ -385,7 +405,8 @@
     input:focus-visible,
     select:focus-visible,
     textarea:focus-visible {
-      outline: none;
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
       box-shadow: var(--focus);
     }
 
@@ -1671,7 +1692,8 @@
     }
 
     .question-chip:focus-visible {
-      outline: none;
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
       box-shadow: var(--focus);
     }
 
@@ -1935,7 +1957,8 @@
     }
 
     .section-nav-links button:focus-visible {
-      outline: none;
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
       box-shadow: var(--focus);
     }
 
@@ -1974,7 +1997,8 @@
     }
 
     .back-to-top:focus-visible {
-      outline: none;
+      outline: 2px solid #fff;
+      outline-offset: 2px;
       box-shadow: var(--focus);
     }
 
@@ -2287,7 +2311,7 @@
        Charts
        ===================================================================== */
     .chart-svg { width: 100%; height: auto; display: block; overflow: visible; }
-    .chart-grid { stroke: var(--line); stroke-width: 1; opacity: 0.55; }
+    .chart-gridline { stroke: var(--line); stroke-width: 1; opacity: 0.55; }
     .chart-axis { stroke: var(--line-strong); stroke-width: 1.4; }
     .chart-benchmark { stroke: var(--brand); stroke-width: 1.5; stroke-dasharray: 4 3; opacity: 0.8; }
     .chart-benchmark-text { fill: var(--brand); font-size: 8px; font-weight: 800; }
@@ -2382,6 +2406,9 @@
     .tier-name small { color: var(--text-soft); font-size: 11px; }
     .tier-bar { height: 12px; border-radius: 999px; background: var(--slate-soft); overflow: hidden; }
     .tier-fill { display: block; height: 100%; width: var(--fill, 0%); border-radius: 999px; }
+    .spotlight-avatar,
+    .subject-dot,
+    .scatter-point { background: var(--tint, var(--brand)); }
     .tier-count { text-align: right; }
     .tier-count b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
     .tier-count small { color: var(--text-soft); font-size: 11px; }
@@ -2891,6 +2918,19 @@
   </style>
 </head>
 <body>
+  <script>
+    // Runs before first paint so a stored dark preference does not flash light.
+    // Kept tiny and defensive: a locked-down profile throws on localStorage.
+    (function () {
+      try {
+        var stored = JSON.parse(window.localStorage.getItem("asg-dashboard-preferences") || "{}");
+        if (stored.theme === "dark" || stored.theme === "light") document.documentElement.setAttribute("data-theme", stored.theme);
+        if (stored.reducedMotion === true) document.documentElement.classList.add("no-motion");
+      } catch (error) {
+        /* preferences are optional */
+      }
+    })();
+  </script>
   <div class="app">
     <header class="topbar">
       <section class="brand-panel">
@@ -3486,26 +3526,26 @@
     // fractional percentile (an averaged profile, or the 0.5 that "<1" becomes)
     // always lands in a band instead of falling through to Missing.
     const BANDS = [
-      { name: "Red", min: 0, max: 20, upper: 21, rank: 1, className: "band-red", color: "#dc2626" },
-      { name: "Orange", min: 21, max: 40, upper: 41, rank: 2, className: "band-orange", color: "#ea580c" },
-      { name: "Yellow", min: 41, max: 60, upper: 61, rank: 3, className: "band-yellow", color: "#ca8a04" },
-      { name: "Green", min: 61, max: 80, upper: 81, rank: 4, className: "band-green", color: "#16a34a" },
-      { name: "Blue", min: 81, max: 100, upper: 101, rank: 5, className: "band-blue", color: "#2563eb" }
+      { name: "Red", min: 0, max: 20, upper: 21, rank: 1, className: "band-red", color: "var(--red)", ink: "var(--on-red)" },
+      { name: "Orange", min: 21, max: 40, upper: 41, rank: 2, className: "band-orange", color: "var(--orange)", ink: "var(--on-orange)" },
+      { name: "Yellow", min: 41, max: 60, upper: 61, rank: 3, className: "band-yellow", color: "var(--yellow)", ink: "var(--on-yellow)" },
+      { name: "Green", min: 61, max: 80, upper: 81, rank: 4, className: "band-green", color: "var(--green)", ink: "var(--on-green)" },
+      { name: "Blue", min: 81, max: 100, upper: 101, rank: 5, className: "band-blue", color: "var(--blue)", ink: "var(--on-blue)" }
     ];
 
-    const MISSING_BAND = { name: "Missing", min: null, max: null, upper: null, rank: null, className: "band-missing", color: "#64748b" };
+    const MISSING_BAND = { name: "Missing", min: null, max: null, upper: null, rank: null, className: "band-missing", color: "var(--muted)", ink: "var(--on-slate)" };
     const QUADRANTS = ["High-G/High-A", "High-G/Low-A", "Low-G/High-A", "Low-G/Low-A"];
 
     // Instructional tiers used for start-of-year (baseline) planning. They reuse
     // the band cut points so tier colour and band colour never disagree.
     const ACHIEVEMENT_TIERS = [
-      { key: "intensive", name: "Intensive", tierLabel: "Tier 3", min: 0, upper: 21, className: "tier-intensive", color: "#dc2626", blurb: "At or below the 20th percentile" },
-      { key: "strategic", name: "Strategic", tierLabel: "Tier 2", min: 21, upper: 41, className: "tier-strategic", color: "#ea580c", blurb: "21st to 40th percentile" },
-      { key: "core", name: "On Track", tierLabel: "Tier 1", min: 41, upper: 61, className: "tier-core", color: "#ca8a04", blurb: "41st to 60th percentile" },
-      { key: "secure", name: "Secure", tierLabel: "Tier 1", min: 61, upper: 81, className: "tier-secure", color: "#16a34a", blurb: "61st to 80th percentile" },
-      { key: "advanced", name: "Advanced", tierLabel: "Extend", min: 81, upper: 101, className: "tier-advanced", color: "#2563eb", blurb: "81st percentile and above" }
+      { key: "intensive", name: "Intensive", tierLabel: "Tier 3", min: 0, upper: 21, className: "tier-intensive", color: "var(--red)", ink: "var(--on-red)", blurb: "At or below the 20th percentile" },
+      { key: "strategic", name: "Strategic", tierLabel: "Tier 2", min: 21, upper: 41, className: "tier-strategic", color: "var(--orange)", ink: "var(--on-orange)", blurb: "21st to 40th percentile" },
+      { key: "core", name: "On Track", tierLabel: "Tier 1", min: 41, upper: 61, className: "tier-core", color: "var(--yellow)", ink: "var(--on-yellow)", blurb: "41st to 60th percentile" },
+      { key: "secure", name: "Secure", tierLabel: "Tier 1", min: 61, upper: 81, className: "tier-secure", color: "var(--green)", ink: "var(--on-green)", blurb: "61st to 80th percentile" },
+      { key: "advanced", name: "Advanced", tierLabel: "Extend", min: 81, upper: 101, className: "tier-advanced", color: "var(--blue)", ink: "var(--on-blue)", blurb: "81st percentile and above" }
     ];
-    const MISSING_TIER = { key: "missing", name: "No Score", tierLabel: "Missing", min: null, upper: null, className: "tier-missing", color: "#64748b", blurb: "No usable score in this window" };
+    const MISSING_TIER = { key: "missing", name: "No Score", tierLabel: "Missing", min: null, upper: null, className: "tier-missing", color: "var(--muted)", ink: "var(--on-slate)", blurb: "No usable score in this window" };
 
     // A MAP Growth test that finishes far faster than the rest of the class is a
     // recognised disengagement ("rapid guessing") signal. Both conditions must
@@ -3536,7 +3576,10 @@
       keepPace: "Keep-pace targets add the gain a typical student at this grade makes between these two seasons (the difference between the two US norm means). They describe typical peer progress, not an NWEA projected RIT.",
       gradeLevel: "Grade-level targets are the US norm mean RIT for this grade and season, which sits near the 50th percentile. Reaching it from below requires more than typical growth.",
       shortTest: "Flagged tests finished in under " + SHORT_TEST_ABSOLUTE_MINUTES + " minutes and in less than half the median time for this file. Short tests are worth confirming with the proctor before the score is used for placement; they are not automatically invalid.",
-      baseline: "This file has one test window, so no growth can be measured. Everything below describes where students are starting, not how far they have moved."
+      baseline: "This file has one test window, so no growth can be measured. Everything below describes where students are starting, not how far they have moved.",
+      normSource: "US norm figures are grade-level mean RIT values rounded to whole points, used here as an approximate reference. They are not a substitute for the official NWEA norms study, and a school with its own norm tables should read the comparisons as indicative. Every norm-referenced figure on this page is derived from this table, never from anything in your file.",
+      medianCGP: "Median conditional growth percentile is recalculated from the records currently visible, so it moves with your filters. Your export also carries NWEA's own class-level median, which is fixed for the whole class.",
+      nweaProjection: "NWEA's projected RIT in an ASG export describes the window that has already been measured, so it cannot serve as a target for the next window. The targets below are derived from norm means instead."
     };
 
     const SAMPLE_CSV = `TermTested,TermRostered,DistrictName,SchoolName,Teacher,ClassName,Subject,Course,ASGType,StudentID,StudentLastName,StudentFirstName,StudentGrade,TestDate,StartRIT,StartPercentile,StartTestDuration,EndTestDate,EndRIT,EndPercentile,EndTestDuration,ProjectedRIT,ProjectedGrowth,ObservedGrowth,GrowthIndex,MetGrowthProjection?,ConditionalGrowthIndex,ConditionalGrowthPercentile,PercentageofStudentswhoMetorExceededtheirProjectedRIT,PercentageofProjectedGrowthMet,MedianConditionalGrowthPercentile,StartGrowthandAchievement,EndGrowthandAchievement,ConditionalGrowthPercentileAxis,AchievementPercentileAxis
@@ -3652,6 +3695,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       diagnostics: null,
       profileCache: null,
       tableLimits: {},
+      unseatedCount: 0,
+      animateNextRender: false,
+      manualArrangement: false,
+      groupSignature: "",
       spotlightKey: "",
       prefs: { theme: "auto", reducedMotion: false },
       tableGroups: [],
@@ -3727,9 +3774,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       ].filter(Boolean).forEach((control) => control.addEventListener("input", renderAll));
       // Typing in a large file should not re-render on every keystroke.
       els.searchInput.addEventListener("input", debounce(renderAll, 180));
-      [els.groupSizeInput, els.groupStrategySelect, els.groupScoreSelect].forEach((control) => control.addEventListener("input", renderTableGroups));
+      [els.groupSizeInput, els.groupStrategySelect, els.groupScoreSelect].forEach((control) => control.addEventListener("input", () => {
+        state.manualArrangement = false;
+        renderTableGroups();
+      }));
       [els.roomRatioInput, els.layoutSnapSelect].forEach((control) => control.addEventListener("input", refreshLayoutControlsOnly));
-      els.refreshGroupsBtn.addEventListener("click", renderTableGroups);
+      els.refreshGroupsBtn.addEventListener("click", () => {
+        state.manualArrangement = false;
+        renderTableGroups();
+      });
       els.resetFiltersBtn.addEventListener("click", resetFilters);
       els.exportGroupingBtn.addEventListener("click", () => exportGrouping());
       els.exportPriorityBtn.addEventListener("click", () => exportPriority());
@@ -3830,7 +3883,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (els.helpBtn) els.helpBtn.addEventListener("click", () => {
         if (!els.helpPanel) return;
         els.helpPanel.open = true;
-        els.helpPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+        els.helpPanel.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
       });
       if (els.onboardingClose) els.onboardingClose.addEventListener("click", () => {
         if (els.onboarding) {
@@ -3859,7 +3912,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
 
       if (els.backToTop) {
-        els.backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+        els.backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: scrollBehavior() }));
       }
       window.addEventListener("scroll", handleWindowScroll, { passive: true });
       window.addEventListener("resize", updateStickyOffsets, { passive: true });
@@ -3927,7 +3980,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function jumpToSection(id) {
       const target = document.getElementById(id);
       if (!target) return;
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      target.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
     }
 
     function handleWindowScroll() {
@@ -4003,55 +4056,76 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function loadCSVText(text, fileName) {
+      let parsed;
       try {
-        const parsed = parseCSV(text);
-        const scoreColumns = ["startRITRaw", "endRITRaw", "startPercentileRaw", "endPercentileRaw"];
-        if (parsed.rows.length && !scoreColumns.some((key) => parsed.headers.includes(key))) {
-          state.allRows = [];
-          state.fileName = fileName || "Uploaded CSV";
-          state.dataWindow = { ...DEFAULT_DATA_WINDOW };
-          state.diagnostics = null;
-          populateFilters();
-          applyModeToChrome();
-          renderAll();
-          setStatus("No RIT or percentile columns were found. This does not look like an NWEA ASG export.", true);
-          toast("No RIT or percentile columns found in that file.", "error");
-          return;
-        }
-        state.allRows = parsed.rows.map(normalizeRecord).filter(Boolean);
-        state.fileName = fileName || "Uploaded CSV";
-        const testQuality = flagShortTests(state.allRows);
-        state.dataWindow = state.allRows.length ? detectDataMode(state.allRows) : { ...DEFAULT_DATA_WINDOW };
-        cacheBaselineDerivations(state.allRows);
-        state.tableLimits = {};
-        state.diagnostics = buildDiagnostics(parsed, state.allRows, testQuality);
-        state.spotlightKey = "";
-        populateFilters();
-        resetFilters(false);
-        applyModeToChrome();
-        renderAll();
-        if (!state.allRows.length) {
-          setStatus("No usable rows found. Check that this is an NWEA ASG CSV export.", true);
-          toast("No usable rows found in that file.", "error");
-          return;
-        }
-        const modeNote = isBaselineMode()
-          ? currentWindowName() + " baseline loaded - single test window, so growth is not measured."
-          : "Growth file loaded - " + state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel + ".";
-        setStatus(modeNote, false);
-        toast(formatInteger(state.allRows.length) + " records ready. " + modeNote, "success");
-        celebrateLoad();
+        parsed = parseCSV(text);
       } catch (error) {
         console.error(error);
-        state.allRows = [];
-        state.fileName = "None";
-        state.dataWindow = { ...DEFAULT_DATA_WINDOW };
-        state.diagnostics = null;
-        populateFilters();
-        applyModeToChrome();
-        renderAll();
+        resetToEmpty(fileName);
         setStatus("CSV could not be parsed. Check the file format.", true);
         toast("That file could not be parsed as a CSV.", "error");
+        return;
+      }
+
+      const scoreColumns = ["startRITRaw", "endRITRaw", "startPercentileRaw", "endPercentileRaw"];
+      if (parsed.rows.length && !scoreColumns.some((key) => parsed.headers.includes(key))) {
+        resetToEmpty(fileName);
+        setStatus("No RIT or percentile columns were found. This does not look like an NWEA ASG export.", true);
+        toast("No RIT or percentile columns found in that file.", "error");
+        return;
+      }
+
+      state.allRows = parsed.rows.map(normalizeRecord).filter(Boolean);
+      state.fileName = fileName || "Uploaded CSV";
+      const testQuality = flagShortTests(state.allRows);
+      state.dataWindow = state.allRows.length ? detectDataMode(state.allRows) : { ...DEFAULT_DATA_WINDOW };
+      cacheBaselineDerivations(state.allRows);
+      state.tableLimits = {};
+      state.animateNextRender = true;
+      state.manualArrangement = false;
+      state.diagnostics = buildDiagnostics(parsed, state.allRows, testQuality);
+      state.spotlightKey = "";
+      populateFilters();
+      resetFilters(false);
+      applyModeToChrome();
+      const rendered = safeRenderAll();
+
+      if (!state.allRows.length) {
+        setStatus("No usable rows found. Check that this is an NWEA ASG CSV export.", true);
+        toast("No usable rows found in that file.", "error");
+        return;
+      }
+      if (!rendered) return;
+      const modeNote = isBaselineMode()
+        ? currentWindowName() + " baseline loaded - single test window, so growth is not measured."
+        : "Growth file loaded - " + state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel + ".";
+      setStatus(modeNote, false);
+      toast(formatInteger(state.allRows.length) + " records ready. " + modeNote, "success");
+      celebrateLoad();
+    }
+
+    function resetToEmpty(fileName) {
+      state.allRows = [];
+      state.fileName = fileName ? "Unreadable file" : "None";
+      state.dataWindow = { ...DEFAULT_DATA_WINDOW };
+      state.diagnostics = null;
+      state.spotlightKey = "";
+      populateFilters();
+      applyModeToChrome();
+      safeRenderAll();
+    }
+
+    // A rendering failure must not be reported as a bad file, and must not
+    // discard data that parsed correctly.
+    function safeRenderAll() {
+      try {
+        renderAll();
+        return true;
+      } catch (error) {
+        console.error(error);
+        setStatus("The data loaded, but part of the dashboard could not be drawn. Try resetting the filters.", true);
+        toast("Something went wrong drawing the dashboard. The data is still loaded.", "error");
+        return false;
       }
     }
 
@@ -4718,16 +4792,27 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function monthFromDateText(value) {
       const text = cleanString(value);
       if (!text || isBlankLike(text)) return null;
+      // ISO first: unambiguous, and what NWEA exports by default.
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (iso) {
+        const month = Number(iso[2]);
+        return month >= 1 && month <= 12 ? month : null;
+      }
+      // A slash or dash date is genuinely ambiguous between US and the rest of
+      // the world. Only trust it when one component rules out the other order.
+      const match = text.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+      if (match) {
+        const first = Number(match[1]);
+        const second = Number(match[2]);
+        if (!Number.isFinite(first) || !Number.isFinite(second)) return null;
+        if (first > 12 && second <= 12) return second;
+        if (second > 12 && first <= 12) return first;
+        // Both readings are possible. The term label is a better signal than a
+        // coin flip, so decline rather than guess.
+        return null;
+      }
       const parsed = new Date(text);
-      if (!Number.isNaN(parsed.getTime())) return parsed.getMonth() + 1;
-      const match = text.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-      if (!match) return null;
-      const first = Number(match[1]);
-      const second = Number(match[2]);
-      if (!Number.isFinite(first) || !Number.isFinite(second)) return null;
-      if (first > 12 && second <= 12) return second;
-      if (first <= 12) return first;
-      return null;
+      return Number.isNaN(parsed.getTime()) ? null : parsed.getMonth() + 1;
     }
 
     function seasonFromMonth(month) {
@@ -4933,7 +5018,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (regressedSecure) return "Secure but Regressing";
       if (row.endPercentile < 41 && isFiniteNumber(row.conditionalGrowthPercentile) && row.conditionalGrowthPercentile >= 60) return "Catch-Up Growth";
       if (row.endPercentile <= 20 && row.metGrowth !== true) return "Intensive Support";
-      if (row.endPercentile >= 81 || row.exceededGrowth) return "Enrichment";
+      // Beating a projection while still well below the benchmark is catch-up
+      // growth to protect, not a reason to move a student onto extension work.
+      if (row.exceededGrowth && row.endPercentile < 61) return "Catch-Up Growth";
+      if (row.endPercentile >= 81) return "Enrichment";
+      if (row.exceededGrowth && row.endPercentile >= 61) return "Enrichment";
       if ((row.endPercentile >= 21 && row.endPercentile <= 40) || lowGrowth(row)) return "Targeted Support";
       if (row.endPercentile >= 41 && row.endPercentile <= 60 && (lowGrowth(row) || row.percentileChange <= 0)) return "Watch Group";
       if (row.endPercentile >= 61 && row.endPercentile <= 80 && row.metGrowth === true) return "Secure / Maintain";
@@ -4942,20 +5031,34 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return "Targeted Support";
     }
 
+    // NWEA writes these labels as "<growth phrase> / <achievement phrase>", for
+    // example "Average Growth / High Achievement" or "High-G/Low-A". Reading the
+    // two halves separately is the only way to avoid matching the wrong axis:
+    // the previous single-string test read "Average Growth / High Achievement"
+    // as High growth AND Low achievement, inverting both.
+    function quadrantLevel(text) {
+      if (/high/.test(text)) return "high";
+      if (/\blow\b|\bl\b/.test(text)) return "low";
+      if (/average|avg|expected|typical|middle|mid/.test(text)) return "average";
+      return null;
+    }
+
     function parseQuadrant(value) {
       const cleaned = cleanString(value).toLowerCase();
       if (!cleaned || isBlankLike(cleaned)) return "Missing";
-      const highGrowth = /high[^a-z0-9]*g|high growth/.test(cleaned);
-      const lowGrowthText = /low[^a-z0-9]*g|low growth/.test(cleaned);
-      const highAchievement = /high[^a-z0-9]*a|high achievement/.test(cleaned);
-      const lowAchievement = /low[^a-z0-9]*a|low achievement/.test(cleaned);
-      if (highGrowth && highAchievement) return "High-G/High-A";
-      if (highGrowth && lowAchievement) return "High-G/Low-A";
-      if (lowGrowthText && highAchievement) return "Low-G/High-A";
-      if (lowGrowthText && lowAchievement) return "Low-G/Low-A";
-      if (cleaned.includes("high") && cleaned.includes("growth") && cleaned.includes("average")) return "High-G/Low-A";
-      if (cleaned.includes("low") && cleaned.includes("growth") && cleaned.includes("average")) return "Low-G/Low-A";
-      return "Missing";
+      const halves = cleaned.split("/").map((part) => part.trim()).filter(Boolean);
+      if (halves.length !== 2) return "Missing";
+      // Whichever half names growth is the growth axis; the other is achievement.
+      const growthFirst = /growth|\bg\b|-g/.test(halves[0]) || !/growth|\bg\b|-g/.test(halves[1]);
+      const growthText = growthFirst ? halves[0] : halves[1];
+      const achievementText = growthFirst ? halves[1] : halves[0];
+      const growth = quadrantLevel(growthText);
+      const achievement = quadrantLevel(achievementText);
+      if (!growth || !achievement) return "Missing";
+      // NWEA's own four-cell summary folds average in with low on both axes.
+      const growthKey = growth === "high" ? "High-G" : "Low-G";
+      const achievementKey = achievement === "high" ? "High-A" : "Low-A";
+      return growthKey + "/" + achievementKey;
     }
 
     function quadrantScore(quadrant) {
@@ -5122,7 +5225,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // the section headings and the filter bar can never disagree with the data.
     const SECTION_PLAN = [
       { id: "sec-snapshot", label: "Snapshot", modes: ["growth", "mixed", "baseline"] },
-      { id: "sec-baseline", label: "Starting Point", modes: ["baseline"] },
+      { id: "sec-baseline", label: "Tiers", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-overview", label: "Overview", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-charts", label: "Charts", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-growth", label: "Growth", modes: ["growth", "mixed"] },
@@ -5325,14 +5428,21 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // Starting Point (baseline mode)
     // ---------------------------------------------------------------------
     function renderBaselineSection() {
-      if (!isBaselineMode() || !els.tierLadder) return;
+      if (!els.tierLadder) return;
       const rows = state.filteredRows;
       const metrics = aggregateRows(rows);
       const scored = rows.filter((row) => isFiniteNumber(row.currentPercentile));
+      const baseline = isBaselineMode();
 
-      setText("baselineNote", "Where this group is beginning, from the " + currentWindowName() + " window in this file. " +
+      setText("baselineTitle", baseline ? "Starting Point" : "Achievement Profile");
+      setText("baselineNote", (baseline ? "Where this group is beginning, from the " : "Where this group stands at the end of the ") +
+        currentWindowName() + " window. " +
         formatInteger(scored.length) + " of " + formatInteger(rows.length) + " visible records have a percentile.");
-      setText("baselineWhy", METHOD_NOTES.baseline);
+      setText("baselineWhy", baseline ? METHOD_NOTES.baseline
+        : "Tiers describe achievement only. They say where a student is, not how far they moved - the Growth and Gap Closure sections answer that.");
+      const whyCard = document.querySelector("#sec-baseline .explain-card strong");
+      if (whyCard) whyCard.textContent = baseline ? "Why there is no growth here" : "What tiers do and do not say";
+      setText("exportBaselineBtn", baseline ? "Export Baseline CSV" : "Export Achievement CSV");
 
       els.tierLadder.innerHTML = ACHIEVEMENT_TIERS.map((tier, index) => {
         const tierRows = scored.filter((row) => row.currentTier.key === tier.key);
@@ -5475,12 +5585,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Avg start %ile", formatNumber(metrics.avgStartPercentile)],
               ["Avg end %ile", formatNumber(metrics.avgEndPercentile)],
               ["Avg %ile change", formatSignedNumber(metrics.avgPercentileChange)],
-              ["Median CGP", formatNumber(metrics.medianConditionalGrowthPercentile)],
+              ["Median CGP (visible)", formatNumber(metrics.medianConditionalGrowthPercentile)],
               ["Avg gap closure", formatFractionPercent(metrics.avgGapClosurePct)],
               ["vs US norm (RIT)", formatSignedNumber(metrics.avgUSNormDeltaRIT)],
               ["Ground vs norm", formatSignedNumber(metrics.avgNormDeltaChange)],
               ["Moved up", formatInteger(metrics.movedUpCount)],
-              ["Moved down", formatInteger(metrics.movedDownCount)]
+              ["Moved down", formatInteger(metrics.movedDownCount)],
+              ["Class % met (from file)", formatPercentWhole(avg(rows.map((row) => row.classPctMet)))],
+              ["Class median CGP (from file)", formatNumber(avg(rows.map((row) => row.medianConditionalGrowthPercentile)))]
             ];
         return '<article class="card subject-card reveal ' + (lens === "subject" ? escapeAttr(slugify(bucket)) : "") + '" style="--i:' + index + '">' +
           '<div class="card-title"><h3>' + escapeHTML(bucket) + "</h3>" +
@@ -5506,32 +5618,6 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     const CHART_H = 190;
     const CHART_PAD = { top: 16, right: 12, bottom: 30, left: 34 };
 
-    // Text sitting directly on a band colour needs a foreground picked from the
-    // fill, not a fixed white: white on the yellow and green bands falls below
-    // the 4.5:1 contrast minimum.
-    function relativeLuminance(hex) {
-      const cleaned = String(hex || "").replace("#", "");
-      if (cleaned.length !== 6) return 1;
-      const channels = [0, 2, 4].map((offset) => {
-        const value = parseInt(cleaned.slice(offset, offset + 2), 16) / 255;
-        return value <= 0.03928 ? value / 12.92 : Math.pow((value + 0.055) / 1.055, 2.4);
-      });
-      return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
-    }
-
-    const INK_DARK = "#10182b";
-    const INK_LIGHT = "#ffffff";
-
-    function contrastRatio(a, b) {
-      const first = relativeLuminance(a);
-      const second = relativeLuminance(b);
-      return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
-    }
-
-    function readableInk(fill) {
-      return contrastRatio(fill, INK_DARK) >= contrastRatio(fill, INK_LIGHT) ? INK_DARK : INK_LIGHT;
-    }
-
     function niceCeiling(value) {
       if (!isFiniteNumber(value) || value <= 0) return 1;
       const magnitude = Math.pow(10, Math.floor(Math.log10(value)));
@@ -5551,7 +5637,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       for (let i = 0; i <= ticks; i += 1) {
         const value = max * (i / ticks);
         const y = plotTop + plotHeight - plotHeight * (i / ticks);
-        out += '<line class="chart-grid" x1="' + plotLeft + '" x2="' + plotRight + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" />';
+        out += '<line class="chart-gridline" x1="' + plotLeft + '" x2="' + plotRight + '" y1="' + y.toFixed(1) + '" y2="' + y.toFixed(1) + '" />';
         out += '<text class="chart-tick" x="' + (plotLeft - 5) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end">' + escapeHTML(format(value)) + "</text>";
       }
       return out;
@@ -5637,7 +5723,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         if (!value) return "";
         return '<span class="stack-seg" style="' + escapeAttr(style) + '" title="' +
           escapeAttr(segment.label + ": " + formatInteger(value) + " (" + formatPercentWhole(share) + ")") + '">' +
-          (share >= 9 ? '<span class="stack-seg-text" style="color:' + readableInk(segment.color) + '">' +
+          (share >= 9 ? '<span class="stack-seg-text" style="color:' + escapeAttr(segment.ink || "var(--on-slate)") + '">' +
             escapeHTML(formatInteger(value)) + "</span>" : "") + "</span>";
       }).join("");
       const legend = segments.filter((segment) => segment.value).map((segment) =>
@@ -5696,12 +5782,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     const NORM_DELTA_BINS = [
-      { label: "-15 or less", min: -Infinity, max: -15, color: "#dc2626" },
-      { label: "-14 to -8", min: -15, max: -8, color: "#ea580c" },
-      { label: "-7 to -1", min: -8, max: 0, color: "#ca8a04" },
-      { label: "0 to +7", min: 0, max: 8, color: "#16a34a" },
-      { label: "+8 to +14", min: 8, max: 15, color: "#15803d" },
-      { label: "+15 or more", min: 15, max: Infinity, color: "#2563eb" }
+      { label: "-15 or less", min: -Infinity, max: -15, color: "var(--red)" },
+      { label: "-14 to -8", min: -15, max: -8, color: "var(--orange)" },
+      { label: "-7 to -1", min: -8, max: 0, color: "var(--yellow)" },
+      { label: "0 to +7", min: 0, max: 8, color: "var(--green)" },
+      { label: "+8 to +14", min: 8, max: 15, color: "var(--green-text)" },
+      { label: "+15 or more", min: 15, max: Infinity, color: "var(--blue)" }
     ];
 
     // Diverging distribution of RIT distance from the grade/season norm mean.
@@ -5767,7 +5853,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return ACHIEVEMENT_TIERS.map((tier) => ({
         label: tier.name + " (" + tier.tierLabel + ")",
         value: metrics.tierCounts[tier.key] || 0,
-        color: tier.color
+        color: tier.color,
+        ink: tier.ink
       }));
     }
 
@@ -5775,7 +5862,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return BANDS.map((band) => ({
         label: band.name,
         value: rows.filter((row) => (row[key] || MISSING_BAND).name === band.name).length,
-        color: band.color
+        color: band.color,
+        ink: band.ink
       }));
     }
 
@@ -5840,6 +5928,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             (isFiniteNumber(metrics.avgNormDeltaChange)
               ? "Across the two windows the group moved " + formatSignedNumber(metrics.avgNormDeltaChange) + " RIT relative to those norms."
               : "")),
+        chartCard(currentWindowName() + " percentile distribution",
+          histogramSVG(rows.map((row) => row.currentPercentile), "Percentile distribution"),
+          "Averages hide the shape of a class. The marker shows the 61st-percentile secure benchmark."),
         chartCard("Band distribution",
           stackedBarSVG(bandSegments(rows, "endBand"), {}) +
             '<div class="stack-compare"><span class="stack-compare-label">' + escapeHTML(state.dataWindow.priorWindowLabel) + "</span>" +
@@ -5960,6 +6051,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       `;
     }
 
+    const SCATTER_POINT_CAP = 300;
+
     function renderStudentQuadrantScatter(subjectRows) {
       const scatterSource = getScatterSource(subjectRows);
       const points = subjectRows
@@ -5973,6 +6066,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         })
         .filter(Boolean);
       const missing = subjectRows.length - points.length;
+      // Past a few hundred markers the plot is unreadable anyway, and every
+      // marker is a tab stop.
+      const plotted = points.length > SCATTER_POINT_CAP ? points.slice(0, SCATTER_POINT_CAP) : points;
+      const capped = points.length - plotted.length;
       return `
         <div class="student-scatter-wrap">
           <div class="scatter-title">Student Scatter: Growth Up, Achievement Right</div>
@@ -5985,9 +6082,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             <span class="scatter-quadrant-label tr">High-G / High-A</span>
             <span class="scatter-quadrant-label bl">Low-G / Low-A</span>
             <span class="scatter-quadrant-label br">Low-G / High-A</span>
-            ${points.map((point) => scatterPoint(point.row, point.x, point.y, point.rawX, point.rawY, scatterSource)).join("")}
+            ${plotted.map((point) => scatterPoint(point.row, point.x, point.y, point.rawX, point.rawY, scatterSource)).join("")}
           </div>
-          <div class="scatter-help">${formatInteger(points.length)} students plotted. Coordinates: ${escapeHTML(scatterSource.label)}. Hover a point for name, RIT, percentile, CGP, growth, and quadrant.${missing ? ` ${formatInteger(missing)} missing plot coordinates.` : ""}</div>
+          <div class="scatter-help">${formatInteger(plotted.length)} students plotted. Coordinates: ${escapeHTML(scatterSource.label)}. Select a point to open that student's profile.${missing ? ` ${formatInteger(missing)} missing plot coordinates.` : ""}${capped ? ` ${formatInteger(capped)} more are not drawn - filter to a single class to see them.` : ""}</div>
         </div>
       `;
     }
@@ -6077,8 +6174,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         `Met growth: ${row.metGrowth === true ? "Yes" : row.metGrowth === false ? "No" : "Missing"}`,
         `End quadrant: ${row.endQuadrant}`
       ].join("\n");
+      const shortLabel = `${row.studentName}, ${groupingValue}, percentile ${formatNumber(row.endPercentile, 0)}, ${row.endQuadrant}`;
       return `
-        <button class="scatter-point" data-student="${escapeAttr(row.studentName)}" style="left:${x}%; bottom:${y}%; background:${escapeAttr(row.endBand.color)}; color:${readableInk(row.endBand.color)};" title="${escapeAttr(title)}" aria-label="${escapeAttr(title)}">
+        <button class="scatter-point" data-student="${escapeAttr(row.studentName)}" style="left:${x}%; bottom:${y}%; background:${escapeAttr(row.endBand.color)}; color:${escapeAttr(row.endBand.ink)};" title="${escapeAttr(title)}" aria-label="${escapeAttr(shortLabel)}">
           ${escapeHTML(studentInitials(row.studentName))}
         </button>
       `;
@@ -6221,7 +6319,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         statCard("Largest stretch", formatSignedNumber(needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null), { raw: needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null, format: "signed", hint: "Extra RIT above typical for the furthest-behind record" })
       ].join("");
       applyStagger(els.goalCards);
-      setText("goalMethodNote", METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel);
+      setText("goalMethodNote", METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
+        (hasGrowthContext() ? " " + METHOD_NOTES.nweaProjection : "") + " " + METHOD_NOTES.normSource);
       els.goalCount.textContent = formatInteger(rows.length) + " records with a norm-referenced target";
       if (!rows.length) {
         els.goalTable.innerHTML = '<div class="empty-state">Targets need a student grade, a subject with US norms, and a RIT score. None of the visible records have all three.</div>';
@@ -6408,7 +6507,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           '<td><span class="spread-pill' + (spread >= UNEVEN_SPREAD ? " spread-wide" : "") + '">' + formatNumber(spread, 0) + "</span></td>" +
           '<td class="wrap">' + profile.subjectPercentiles.map((entry) =>
             '<span class="subject-dot" title="' + escapeAttr(entry.subject + ": " + formatNumber(entry.percentile, 0)) + '" style="background:' +
-            escapeAttr(entry.band.color) + ";color:" + readableInk(entry.band.color) + '">' + escapeHTML(entry.subject.slice(0, 1)) + "</span>").join("") + "</td>" +
+            escapeAttr(entry.band.color) + ";color:" + escapeAttr(entry.band.ink) + '">' + escapeHTML(entry.subject.slice(0, 1)) + "</span>").join("") + "</td>" +
           '<td class="wrap">' + escapeHTML(meaning) + "</td>" +
           "</tr>";
       }).join("");
@@ -6449,6 +6548,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (diagnostics.noScoreStudents.length) notes.push(["Students without a score", diagnostics.noScoreStudents.slice(0, 25).join(", ") + (diagnostics.noScoreStudents.length > 25 ? " and " + (diagnostics.noScoreStudents.length - 25) + " more" : "") + "."]);
       if (diagnostics.noNormCount) notes.push(["No US norm available", formatInteger(diagnostics.noNormCount) + " scored records could not be matched to a norm. NWEA publishes norms for Reading and Mathematics from kindergarten, and for Language and Science from grade 2."]);
       if (isFiniteNumber(diagnostics.medianDuration)) notes.push(["Median test duration", formatNumber(diagnostics.medianDuration, 0) + " minutes. " + METHOD_NOTES.shortTest]);
+      notes.push(["How norms are used", METHOD_NOTES.normSource]);
+      if (hasGrowthContext()) notes.push(["Median conditional growth percentile", METHOD_NOTES.medianCGP]);
       if (diagnostics.missingColumns.length) {
         const friendly = diagnostics.missingColumns.map(friendlyColumnName).filter(Boolean);
         if (friendly.length) notes.push(["Columns not present in this export", friendly.slice(0, 20).join(", ") + (friendly.length > 20 ? " and " + (friendly.length - 20) + " more" : "") + ". Anything that depends on them is hidden rather than shown as zero."]);
@@ -6530,7 +6631,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const percentiles = rows.map((row) => row.currentPercentile).filter(isFiniteNumber);
       const overall = avg(percentiles);
       const header = '<header class="spotlight-head">' +
-        '<span class="spotlight-avatar" style="--tint:' + escapeAttr(getBand(overall).color) + ";color:" + readableInk(getBand(overall).color) + '">' +
+        '<span class="spotlight-avatar" style="--tint:' + escapeAttr(getBand(overall).color) + ";color:" + escapeAttr(getBand(overall).ink) + '">' +
         escapeHTML(studentInitials(first.studentName)) + "</span>" +
         "<div><h3 id=\"spotlightName\">" + escapeHTML(first.studentName) + "</h3>" +
         '<p class="spotlight-meta">' + escapeHTML([
@@ -6756,6 +6857,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       renderTableGroupLayout(scoreMode, strategy);
     }
 
+    function groupSignature(profiles, strategy, scoreMode) {
+      return profiles.map((profile) => profile.key).sort().join("|") + "::" + strategy + "::" + scoreMode + "::" + els.groupSizeInput.value;
+    }
+
     function renderTableGroups() {
       applyLayoutControlSettings();
       const profiles = filteredProfiles();
@@ -6764,6 +6869,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const subjectContext = getFilters().subject
         ? `${getFilters().subject} only`
         : "averaged across visible subjects";
+      const signature = groupSignature(profiles, strategy, scoreMode);
+
+      // Sorting a table or typing in the search box re-renders everything. If
+      // the same students are still in view and the teacher has arranged them
+      // by hand, keep that arrangement instead of shuffling the room.
+      if (state.manualArrangement && state.groupSignature === signature && state.tableGroups.length) {
+        const byKey = new Map(profiles.map((profile) => [profile.key, profile]));
+        state.tableGroups = state.tableGroups.map((group) => group.map((profile) => byKey.get(profile.key)).filter(Boolean));
+        state.tableManualPool = state.tableManualPool.map((profile) => byKey.get(profile.key)).filter(Boolean);
+        updateTableGroupContext(profiles.length, subjectContext, strategy);
+        renderTableGroupLayout(scoreMode, strategy);
+        return;
+      }
+      state.groupSignature = signature;
       const manualPool = profiles.filter((profile) => shouldManualPlaceProfile(profile, scoreMode));
       const autoProfiles = profiles.filter((profile) => !shouldManualPlaceProfile(profile, scoreMode));
       const groupPlan = getGroupPlan(profiles.length);
@@ -6779,10 +6898,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       let groups = buildGroups(autoProfiles, groupPlan.capacities, strategy, scoreMode);
       if (!groups.length && profiles.length) groups = groupPlan.capacities.map(() => []);
 
+      const tableCountChanged = state.tableGroups.length !== groups.length;
       state.tableGroups = groups;
       state.tableManualPool = manualPool;
       state.tableGroupPlanLabel = groupPlan.label;
-      initializeClassroomLayout(groups.length, true);
+      // Only reset the room arrangement when the number of tables actually changes.
+      initializeClassroomLayout(groups.length, tableCountChanged);
       updateTableGroupContext(profiles.length, subjectContext, strategy);
       renderTableGroupLayout(scoreMode, strategy);
     }
@@ -6796,7 +6917,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         : "no students waiting for manual placement";
       const ratio = roomRatioText(state.classroomLayout.roomRatio);
       const snap = state.classroomLayout.snapPercent > 0 ? `${formatInteger(state.classroomLayout.snapPercent)}% snap` : "free drag";
-      els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students assigned to ${formatInteger(state.tableGroups.length)} ${tableWord} using ${strategyLabel(strategy)}; table sizes: ${state.tableGroupPlanLabel}; ${poolText}; data source is ${subjectContext}. Room ratio: ${ratio}; ${snap}. Table averages ignore N/A values.`;
+      const unseated = state.unseatedCount
+        ? ` ${formatInteger(state.unseatedCount)} student${state.unseatedCount === 1 ? " is" : "s are"} unseated because the layout is capped at 80 tables - increase the table size to fit everyone.`
+        : "";
+      els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students assigned to ${formatInteger(state.tableGroups.length)} ${tableWord} using ${strategyLabel(strategy)}; table sizes: ${state.tableGroupPlanLabel}; ${poolText}; data source is ${subjectContext}. Room ratio: ${ratio}; ${snap}. Table averages ignore N/A values.${unseated}`;
     }
 
     function renderTableGroupLayout(scoreMode, strategy) {
@@ -6996,10 +7120,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         seats += size;
         index += 1;
       }
+      const truncated = seats < totalStudents;
       const label = parsed.length > 1
         ? `${capacities.join(", ")}${capacities.length > parsed.length ? " (extra table added)" : ""}`
         : `up to ${formatInteger(capacities[0] || fallbackSize)} per table`;
-      if (!raw) els.groupSizeInput.value = "5";
+      // The 80-table cap can leave students unseated. Record how many so the
+      // context line can say so rather than dropping them silently.
+      const seated = capacities.reduce((sum, size) => sum + size, 0);
+      state.unseatedCount = truncated ? Math.max(0, totalStudents - seated) : 0;
       return { capacities, label };
     }
 
@@ -7457,6 +7585,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       updateTableGroupContext(totalProfiles, subjectContext, strategy);
       renderTableGroupLayout(scoreMode, strategy);
       state.draggedProfileKey = "";
+      state.manualArrangement = true;
     }
 
     // Arrow keys nudge a focused table, desk, door or board by one step, so the
@@ -7601,6 +7730,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       ["Start Band", "startBand.name", (row) => bandPill(row.startBand)],
       ["End Band", "endBand.name", (row) => bandPill(row.endBand)],
       ["Band Movement", "bandMovement", (row) => escapeHTML(row.bandMovement)],
+      ["Projected RIT", "projectedRIT", (row) => formatNumber(row.projectedRIT, 0)],
       ["Projected Growth", "projectedGrowth", (row) => formatNumber(row.projectedGrowth)],
       ["Observed Growth", "observedGrowth", (row) => formatSignedNumber(row.observedGrowth)],
       ["Growth Efficiency", "growthEfficiency", (row) => `${formatFractionPercent(row.growthEfficiency)}<br><span class="status-pill ${efficiencyClass(row.growthEfficiency)}">${escapeHTML(row.growthEfficiencyLabel)}</span>`],
@@ -7801,7 +7931,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function usNormGradeCell(row) {
       if (!row) return `<span class="status-pill status-neutral">N/A</span>`;
-      if (!isFiniteNumber(row.endRIT)) return `<span class="status-pill status-neutral">Missing end RIT</span>`;
+      if (!isFiniteNumber(row.currentRIT)) return `<span class="status-pill status-neutral">No RIT this window</span>`;
       if (!row.usNormSeason || row.usNormSeason === "Missing") return `<span class="status-pill status-neutral">Missing season</span>`;
       if (!row.usNormEquivalentGrade && !isFiniteNumber(row.usNormBenchmarkRIT)) return `<span class="status-pill status-neutral">No norm match</span>`;
 
@@ -7947,14 +8077,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return formatPercentWhole(rows.filter(predicate).length / rows.length * 100);
     }
 
+    const NUMBER_FORMATTERS = new Map();
+
+    function numberFormatter(digits) {
+      if (!NUMBER_FORMATTERS.has(digits)) {
+        NUMBER_FORMATTERS.set(digits, new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }));
+      }
+      return NUMBER_FORMATTERS.get(digits);
+    }
+
     function formatInteger(value) {
       if (!isFiniteNumber(value)) return "0";
-      return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+      return numberFormatter(0).format(value);
     }
 
     function formatNumber(value, digits = 1) {
       if (!isFiniteNumber(value)) return "N/A";
-      return new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
+      return numberFormatter(digits).format(value);
     }
 
     function formatSignedNumber(value) {
@@ -8487,6 +8626,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     const systemReducedMotion = window.matchMedia ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
 
+    function scrollBehavior() {
+      return prefersReducedMotion() ? "auto" : "smooth";
+    }
+
     function prefersReducedMotion() {
       return state.prefs.reducedMotion || Boolean(systemReducedMotion && systemReducedMotion.matches);
     }
@@ -8535,6 +8678,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function observeReveals(force) {
       const root = document.documentElement;
+      if (!state.animateNextRender && !force) {
+        root.classList.remove("js-reveal");
+        document.querySelectorAll(".reveal").forEach((node) => node.classList.add("is-revealed"));
+        return;
+      }
+      state.animateNextRender = false;
       if (prefersReducedMotion() || !("IntersectionObserver" in window)) {
         // Without the js-reveal class the .reveal rule never hides anything, so
         // dropping it here is enough to show every section immediately.
