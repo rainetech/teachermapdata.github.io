@@ -3672,7 +3672,6 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         grouping: { key: "studentName", dir: "asc" },
         priority: { key: "studentName", dir: "asc" },
         celebration: { key: "studentName", dir: "asc" },
-        gap: { key: "studentName", dir: "asc" },
         goal: { key: "currentPercentile", dir: "asc" },
         baseline: { key: "studentName", dir: "asc" }
       }
@@ -5134,8 +5133,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-grouping", label: "Grouping", modes: ["growth", "mixed", "baseline"] },
-      { id: "sec-priority", label: "Focus", modes: ["growth", "mixed", "baseline"] },
-      { id: "sec-celebration", label: "Strengths", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-priority", label: "Priority", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-celebration", label: "Celebration", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-quality", label: "Data Check", modes: ["growth", "mixed", "baseline"] }
     ];
 
@@ -5506,12 +5505,6 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     const CHART_W = 320;
     const CHART_H = 190;
     const CHART_PAD = { top: 16, right: 12, bottom: 30, left: 34 };
-
-    let chartSeq = 0;
-    function nextChartId() {
-      chartSeq += 1;
-      return "cx" + chartSeq;
-    }
 
     // Text sitting directly on a band colour needs a foreground picked from the
     // fill, not a fixed white: white on the yellow and green bands falls below
@@ -6359,6 +6352,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           students: namesFor(rows, (row) => row.hasMissingEndScore || row.shortTest),
           why: "These students have a missing end score or a very short test, so no placement decision is safe either way.",
           move: "Confirm testing status before this record is used in a grouping or an intervention referral."
+        },
+        {
+          tone: "watch",
+          title: "No prior window to compare",
+          students: namesFor(rows, (row) => row.hasCurrentScore && !row.hasGrowthPair),
+          why: "These students only tested in " + currentWindowName() + ", so they are absent from every growth figure on this page. Usually they joined after the previous window.",
+          move: "Read them from the achievement and norm columns instead, and set a goal now so the next window has a baseline."
         }
       ];
     }
@@ -7731,21 +7731,6 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       els.celebrationTable.innerHTML = renderTable("celebration", columns, rows);
     }
 
-    const GAP_COLUMNS = [
-      ["Student", "studentName", (row) => row.studentName],
-      ["Student ID", "studentID", (row) => row.studentID],
-      ["Subject", "subject", (row) => row.subject],
-      ["Grade", "studentGrade", (row) => row.studentGrade],
-      ["Start Percentile", "startPercentile", (row) => formatNumber(row.startPercentile)],
-      ["End Percentile", "endPercentile", (row) => formatNumber(row.endPercentile)],
-      ["Start Gap", "gapStart", (row) => formatNumber(row.gapStart)],
-      ["End Gap", "gapEnd", (row) => formatNumber(row.gapEnd)],
-      ["Gap Closed", "gapClosed", (row) => formatSignedNumber(row.gapClosed)],
-      ["Gap Closure %", "gapClosurePct", (row) => formatFractionPercent(row.gapClosurePct)],
-      ["Gap Status", "gapStatus", (row) => row.gapStatus],
-      ["Start Band", "startBand.name", (row) => row.startBand.name],
-      ["End Band", "endBand.name", (row) => row.endBand.name]
-    ];
 
     // Rendering every row of a whole-school upload builds hundreds of thousands
     // of DOM nodes and locks the tab for seconds. Tables render a window of rows
@@ -8264,10 +8249,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function printHeader(title, subtitle) {
       const filters = getFilters();
-      const context = [filters.className, filters.subject, filters.teacher].filter(Boolean).join(" | ") || "All visible records";
+      const context = [subtitle, filters.className, filters.subject, filters.teacher]
+        .filter(Boolean)
+        .filter((part, index, all) => all.indexOf(part) === index)
+        .join(" | ") || "All visible records";
       return "<h1>" + escapeHTML(title) + "</h1><div class=\"doc-meta\">" +
-        escapeHTML(context + " | " + currentWindowName() + " | " + new Date().toLocaleDateString()) +
-        (subtitle ? " | " + escapeHTML(subtitle) : "") + "</div>";
+        escapeHTML(context + " | " + currentWindowName() + " | " + new Date().toLocaleDateString()) + "</div>";
     }
 
     // One goal-setting sheet per student, sized for a conference or a
