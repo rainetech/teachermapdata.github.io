@@ -26,6 +26,7 @@
       --on-green: #10182b;
       --on-blue: #ffffff;
       --on-slate: #ffffff;
+      --on-brand: #ffffff;
       --brand: #2454a6;
       --brand-dark: #173d7d;
       --brand-soft: #e9f0ff;
@@ -94,6 +95,7 @@
       --on-green: #10182b;
       --on-blue: #10182b;
       --on-slate: #10182b;
+      --on-brand: #10182b;
       --brand: #6c9cf0;
       --brand-dark: #8fb6f8;
       --brand-soft: rgba(108, 156, 240, 0.16);
@@ -153,6 +155,7 @@
         --on-green: #10182b;
         --on-blue: #10182b;
         --on-slate: #10182b;
+        --on-brand: #10182b;
         --brand: #6c9cf0;
         --brand-dark: #8fb6f8;
         --brand-soft: rgba(108, 156, 240, 0.16);
@@ -413,7 +416,7 @@
     .btn.primary {
       background: var(--brand);
       border-color: var(--brand);
-      color: #fff;
+      color: var(--on-brand);
     }
 
     .btn.primary:hover {
@@ -1842,7 +1845,7 @@
       height: 28px;
       border-radius: 50%;
       background: var(--brand);
-      color: #fff;
+      color: var(--on-brand);
       font-weight: 900;
       display: flex;
       align-items: center;
@@ -1967,7 +1970,7 @@
     .section-nav-links button.active {
       background: var(--brand);
       border-color: var(--brand);
-      color: #fff;
+      color: var(--on-brand);
     }
 
     .section-nav-links button:focus-visible {
@@ -1988,7 +1991,7 @@
       z-index: 1200;
       border: 1px solid var(--brand);
       background: var(--brand);
-      color: #fff;
+      color: var(--on-brand);
       border-radius: 999px;
       padding: 10px 16px;
       font-weight: 800;
@@ -3128,6 +3131,150 @@
       .equity-change { grid-area: change; }
     }
 
+
+    /* =====================================================================
+       Support dock and coffee prompt
+       ===================================================================== */
+    /* Bottom-left: back-to-top owns bottom-right and the toasts stack above it. */
+    .support-dock {
+      position: fixed;
+      left: 18px;
+      bottom: 20px;
+      z-index: 1200;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-width: calc(100vw - 130px);
+    }
+
+    .support-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 15px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      box-shadow: 0 8px 22px rgba(23, 32, 51, 0.16);
+      transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-soft),
+        border-color var(--dur-fast) var(--ease-soft), color var(--dur-fast) var(--ease-soft);
+    }
+
+    .support-chip:hover { transform: translateY(-2px); border-color: var(--line-accent); }
+    .support-chip:active { transform: translateY(0); }
+    .support-chip.coffee:hover { background: var(--yellow-soft); color: var(--yellow-ink); }
+    .support-chip.feedback:hover { background: var(--brand-soft); color: var(--brand-ink); }
+
+    .support-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 1400;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: rgba(9, 15, 26, 0.5);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      transition: opacity var(--dur) var(--ease-soft);
+    }
+
+    .support-backdrop.is-open { opacity: 1; }
+
+    .support-prompt {
+      position: relative;
+      width: min(460px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lift);
+      padding: 30px 28px 22px;
+      text-align: center;
+      transform: translateY(14px) scale(0.98);
+      transition: transform var(--dur) var(--ease-out);
+    }
+
+    .support-backdrop.is-open .support-prompt { transform: none; }
+
+    .support-prompt::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 5px;
+      border-radius: var(--radius) var(--radius) 0 0;
+      background: linear-gradient(90deg, var(--yellow), var(--orange));
+    }
+
+    .support-emoji { font-size: 34px; line-height: 1; display: block; margin-bottom: 8px; }
+    .support-prompt h2 { margin: 0 0 8px; font-size: 20px; }
+    .support-prompt p { margin: 0 0 18px; font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+    .support-actions {
+      display: flex;
+      gap: 9px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .support-actions .btn { text-decoration: none; }
+
+    .support-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .support-close:hover { background: var(--slate-soft); color: var(--text); }
+
+    .support-footnote {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    .link-button {
+      background: none;
+      border: 0;
+      padding: 2px 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+    }
+
+    .link-button:hover { color: var(--text); }
+
+    @media (max-width: 620px) {
+      .support-dock { left: 12px; bottom: 14px; max-width: calc(100vw - 110px); }
+      .support-chip { padding: 8px 12px; font-size: 0.76rem; }
+      .support-chip span:last-child { display: none; }
+      .support-chip span[aria-hidden] { font-size: 1.05rem; }
+      .support-prompt { padding: 26px 20px 18px; }
+    }
+
+    @media print {
+      .support-dock, .support-backdrop { display: none !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -3716,9 +3863,56 @@
 
   <div class="celebrate-layer" id="celebrateLayer" aria-hidden="true"></div>
 
+  <div class="support-dock" id="supportDock" hidden>
+    <a class="support-chip coffee" id="supportDockCoffee" href="#" target="_blank" rel="noopener noreferrer" hidden>
+      <span aria-hidden="true">&#9749;</span><span>Buy me a coffee</span>
+    </a>
+    <button class="support-chip feedback" id="supportDockFeedback" type="button" hidden>
+      <span aria-hidden="true">&#128172;</span><span>Feedback</span>
+    </button>
+  </div>
+
+  <div class="support-backdrop" id="supportBackdrop" hidden>
+    <div class="support-prompt" id="supportPrompt" role="dialog" aria-modal="true" aria-labelledby="supportPromptTitle" aria-describedby="supportPromptBody">
+      <button class="support-close" id="supportClose" type="button" aria-label="Close">&times;</button>
+      <span class="support-emoji" aria-hidden="true">&#9749;</span>
+      <h2 id="supportPromptTitle">Was this useful?</h2>
+      <p id="supportPromptBody">This dashboard is free, has no accounts, and never sends your students&rsquo; data anywhere. It is built and maintained in spare time. If it saved you an evening, a coffee helps keep it going.</p>
+      <div class="support-actions">
+        <a class="btn primary" id="supportPromptCoffee" href="#" target="_blank" rel="noopener noreferrer">&#9749; Buy me a coffee</a>
+        <button class="btn ghost" id="supportPromptFeedback" type="button">&#128172; Send feedback instead</button>
+      </div>
+      <div class="support-footnote">
+        <button class="link-button" id="supportPromptLater" type="button">Not now</button>
+        <button class="link-button" id="supportPromptNever" type="button">Don&rsquo;t show this again</button>
+      </div>
+    </div>
+  </div>
+
   <button class="back-to-top" id="backToTop" type="button" aria-label="Back to top">&#8593; Top</button>
 
   <script>
+    // ---------------------------------------------------------------------
+    // Support links
+    // ---------------------------------------------------------------------
+    // Put your real URLs here. Any entry left empty hides its button and, for
+    // the coffee link, stops the prompt from ever appearing - so the page is
+    // safe to ship before these are filled in.
+    //
+    // These are plain links, opened in a new tab. No third-party widget or
+    // script is loaded, which is what keeps the "no third-party scripts, works
+    // offline and behind a school firewall" promise on the upload panel true.
+    const SUPPORT_LINKS = {
+      coffee: "",
+      feedback: ""
+    };
+
+    // How long to leave the prompt alone after it is dismissed once.
+    const SUPPORT_PROMPT_INTERVAL_DAYS = 30;
+    // Long enough for the load toast and the entrance animation to settle, so
+    // the prompt never lands on top of the moment the data appears.
+    const SUPPORT_PROMPT_DELAY_MS = 3200;
+
     const SUBJECTS = ["Language", "Reading", "Mathematics", "Science"];
     const US_NORM_SEASON_LABELS = {
       fall: "Fall",
@@ -3970,7 +4164,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       manualArrangement: false,
       groupSignature: "",
       spotlightKey: "",
-      prefs: { theme: "auto", reducedMotion: false },
+      prefs: { theme: "auto", reducedMotion: false, supportPromptOff: false, supportPromptLastShown: 0 },
+      supportPromptTimer: null,
+      supportReturnFocus: null,
       tableGroups: [],
       tableManualPool: [],
       tableGroupPlanLabel: "",
@@ -4003,6 +4199,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       attachEvents();
       populateTierFilter();
       populateTargetControls();
+      setupSupportLinks();
       applyModeToChrome();
       renderAll();
     });
@@ -4019,6 +4216,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "targetThresholdSelect", "targetShareInput", "targetCards", "targetMethodNote",
         "targetCount", "targetTable", "exportTargetBtn",
         "qualityCards", "qualityDetail", "tierFilter", "cohortCompare",
+        "supportDock", "supportDockCoffee", "supportDockFeedback",
+        "supportBackdrop", "supportPrompt", "supportClose", "supportPromptCoffee",
+        "supportPromptFeedback", "supportPromptLater", "supportPromptNever",
         "spotlightBackdrop", "spotlight", "spotlightBody", "spotlightClose",
         "spotlightCopyBtn", "spotlightPrintBtn",
         "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
@@ -4082,6 +4282,27 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (els.printGoalsBtn) els.printGoalsBtn.addEventListener("click", printGoalSheets);
       if (els.themeToggle) els.themeToggle.addEventListener("click", toggleTheme);
       if (els.motionToggle) els.motionToggle.addEventListener("click", toggleMotion);
+      if (els.supportDockCoffee) els.supportDockCoffee.addEventListener("click", (event) => {
+        event.preventDefault();
+        openSupportLink("coffee");
+      });
+      if (els.supportDockFeedback) els.supportDockFeedback.addEventListener("click", () => openSupportLink("feedback"));
+      if (els.supportClose) els.supportClose.addEventListener("click", () => closeSupportPrompt(false));
+      if (els.supportPromptLater) els.supportPromptLater.addEventListener("click", () => closeSupportPrompt(false));
+      if (els.supportPromptNever) els.supportPromptNever.addEventListener("click", () => closeSupportPrompt(true));
+      if (els.supportPromptCoffee) els.supportPromptCoffee.addEventListener("click", (event) => {
+        event.preventDefault();
+        // Someone who clicked through has done their bit; stop asking.
+        closeSupportPrompt(true);
+        openSupportLink("coffee");
+      });
+      if (els.supportPromptFeedback) els.supportPromptFeedback.addEventListener("click", () => {
+        closeSupportPrompt(false);
+        openSupportLink("feedback");
+      });
+      if (els.supportBackdrop) els.supportBackdrop.addEventListener("click", (event) => {
+        if (event.target === els.supportBackdrop) closeSupportPrompt(false);
+      });
       if (els.spotlightClose) els.spotlightClose.addEventListener("click", closeSpotlight);
       if (els.spotlightCopyBtn) els.spotlightCopyBtn.addEventListener("click", copySpotlight);
       if (els.spotlightPrintBtn) els.spotlightPrintBtn.addEventListener("click", printSpotlight);
@@ -4097,6 +4318,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
 
       document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && els.supportBackdrop && !els.supportBackdrop.hidden) {
+          closeSupportPrompt(false);
+          return;
+        }
         if (event.key === "Escape" && els.spotlightBackdrop && !els.spotlightBackdrop.hidden) {
           closeSpotlight();
           return;
@@ -4393,6 +4618,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       setStatus(modeNote, false);
       toast(formatInteger(state.allRows.length) + " records ready. " + modeNote, "success");
       celebrateLoad();
+      queueSupportPrompt();
     }
 
     function resetToEmpty(fileName) {
@@ -9443,6 +9669,101 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // localStorage: the upload panel promises the file stays in this browser
     // session, and a cached roster on a shared staffroom machine would break
     // that promise.
+    // ---------------------------------------------------------------------
+    // Support links and the coffee prompt
+    // ---------------------------------------------------------------------
+    function hasSupportLink(key) {
+      return typeof SUPPORT_LINKS[key] === "string" && SUPPORT_LINKS[key].trim() !== "";
+    }
+
+    function openSupportLink(key) {
+      if (!hasSupportLink(key)) return;
+      const url = SUPPORT_LINKS[key].trim();
+      if (key === "feedback" && /^mailto:/i.test(url)) {
+        window.location.href = feedbackMailto(url);
+        return;
+      }
+      const opened = window.open(url, "_blank", "noopener,noreferrer");
+      if (!opened) toast("Your browser blocked that link. Allow pop-ups for this page, or open it from the button at the bottom left.", "info");
+    }
+
+    // A mailto gets a little context so feedback can be triaged, but only the
+    // shape of the file - never a name, a score or a class. The teacher sees
+    // the draft before anything is sent.
+    function feedbackMailto(base) {
+      const context = state.allRows.length
+        ? "Mode: " + state.dataWindow.mode + ", window: " + currentWindowName() + ", " + formatInteger(state.allRows.length) + " records loaded."
+        : "No file loaded.";
+      const body = "\n\n---\nWhat I was doing:\n\nWhat I expected:\n\nWhat happened:\n\n---\n" +
+        context + "\n(No student data is included in this message.)";
+      const separator = base.includes("?") ? "&" : "?";
+      return base + separator + "subject=" + encodeURIComponent("MAP ASG Dashboard feedback") +
+        "&body=" + encodeURIComponent(body);
+    }
+
+    function setupSupportLinks() {
+      const coffee = hasSupportLink("coffee");
+      const feedback = hasSupportLink("feedback");
+      if (els.supportDockCoffee) {
+        els.supportDockCoffee.hidden = !coffee;
+        if (coffee) els.supportDockCoffee.href = SUPPORT_LINKS.coffee.trim();
+      }
+      if (els.supportDockFeedback) els.supportDockFeedback.hidden = !feedback;
+      if (els.supportDock) els.supportDock.hidden = !coffee && !feedback;
+      if (els.supportPromptCoffee && coffee) els.supportPromptCoffee.href = SUPPORT_LINKS.coffee.trim();
+      if (els.supportPromptFeedback) els.supportPromptFeedback.hidden = !feedback;
+    }
+
+    function supportPromptDue() {
+      if (!hasSupportLink("coffee")) return false;
+      if (state.prefs.supportPromptOff) return false;
+      const last = state.prefs.supportPromptLastShown || 0;
+      const elapsed = Date.now() - last;
+      return elapsed > SUPPORT_PROMPT_INTERVAL_DAYS * 24 * 60 * 60 * 1000;
+    }
+
+    // Queued rather than shown immediately: a teacher who has just uploaded a
+    // roster is mid-task, and a dialog landing on the moment the data appears
+    // is the fastest way to make a free tool feel like adware.
+    function queueSupportPrompt() {
+      if (!supportPromptDue()) return;
+      window.clearTimeout(state.supportPromptTimer);
+      state.supportPromptTimer = window.setTimeout(() => {
+        // Never interrupt something the teacher opened themselves.
+        if (!els.spotlightBackdrop.hidden || document.body.classList.contains("is-busy")) return;
+        showSupportPrompt();
+      }, SUPPORT_PROMPT_DELAY_MS);
+    }
+
+    function showSupportPrompt() {
+      if (!els.supportBackdrop || !supportPromptDue()) return;
+      state.prefs.supportPromptLastShown = Date.now();
+      writePreferences();
+      state.supportReturnFocus = document.activeElement;
+      els.supportBackdrop.hidden = false;
+      document.body.classList.add("modal-open");
+      requestAnimationFrame(() => els.supportBackdrop.classList.add("is-open"));
+      if (els.supportClose) els.supportClose.focus();
+    }
+
+    function closeSupportPrompt(permanently) {
+      if (!els.supportBackdrop || els.supportBackdrop.hidden) return;
+      if (permanently) {
+        state.prefs.supportPromptOff = true;
+        writePreferences();
+      }
+      els.supportBackdrop.classList.remove("is-open");
+      document.body.classList.remove("modal-open");
+      const hide = () => {
+        els.supportBackdrop.hidden = true;
+        const target = state.supportReturnFocus;
+        state.supportReturnFocus = null;
+        if (target && typeof target.focus === "function" && document.contains(target)) target.focus();
+      };
+      if (prefersReducedMotion()) hide();
+      else window.setTimeout(hide, 180);
+    }
+
     const PREF_KEY = "asg-dashboard-preferences";
 
     function readPreferences() {
@@ -9450,10 +9771,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const stored = JSON.parse(window.localStorage.getItem(PREF_KEY) || "{}");
         return {
           theme: stored.theme === "dark" || stored.theme === "light" ? stored.theme : "auto",
-          reducedMotion: stored.reducedMotion === true
+          reducedMotion: stored.reducedMotion === true,
+          // Only the prompt's own state is remembered. Nothing here identifies
+          // a student, a class or a file.
+          supportPromptOff: stored.supportPromptOff === true,
+          supportPromptLastShown: Number.isFinite(stored.supportPromptLastShown) ? stored.supportPromptLastShown : 0
         };
       } catch (error) {
-        return { theme: "auto", reducedMotion: false };
+        return { theme: "auto", reducedMotion: false, supportPromptOff: false, supportPromptLastShown: 0 };
       }
     }
 
