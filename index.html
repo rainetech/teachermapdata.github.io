@@ -1533,8 +1533,15 @@
       content: " v";
     }
 
-    tr:hover td {
-      background: var(--panel-2);
+    /* Table backgrounds paint table -> row group -> row -> cell, so an opaque
+       cell background hides any row background beneath it. The hover has to be
+       set on the cells, and the transition with it. */
+    tbody td {
+      transition: background var(--dur-fast) var(--ease-soft);
+    }
+
+    tbody tr:hover td {
+      background: var(--bg-accent);
     }
 
     td.wrap {
@@ -1723,6 +1730,13 @@
       font-weight: 600;
       color: var(--muted);
       font-size: 0.76rem;
+    }
+
+    .file-label:focus-within {
+      border-color: var(--brand);
+      outline: 2px solid var(--brand);
+      outline-offset: 2px;
+      box-shadow: var(--focus);
     }
 
     .file-label input[type="file"] {
@@ -2074,32 +2088,32 @@
       will-change: auto;
     }
 
-    .chart-bar {
+    .js-reveal .chart-bar {
       transform-box: fill-box;
       transform-origin: bottom center;
       animation: grow-bar 620ms var(--ease-out) both;
       animation-delay: calc(var(--i, 0) * 55ms);
     }
 
-    .chart-value,
-    .chart-axis-label {
+    .js-reveal .chart-value,
+    .js-reveal .chart-axis-label {
       animation: fade-in 480ms var(--ease-soft) both;
       animation-delay: calc(var(--i, 0) * 55ms + 200ms);
     }
 
-    .stack-seg {
+    .js-reveal .stack-seg {
       animation: grow-width 560ms var(--ease-out) both;
       animation-delay: calc(var(--i, 0) * 70ms);
       transform-origin: left center;
     }
 
-    .tier-fill {
+    .js-reveal .tier-fill {
       animation: grow-width 700ms var(--ease-out) both;
       animation-delay: calc(var(--i, 0) * 80ms + 120ms);
       transform-origin: left center;
     }
 
-    .mode-meter-fill {
+    .js-reveal .mode-meter-fill {
       animation: grow-width 760ms var(--ease-out) both;
       transform-origin: left center;
     }
@@ -2180,13 +2194,7 @@
       border-style: solid;
     }
 
-    tbody tr {
-      transition: background var(--dur-fast) var(--ease-soft);
-    }
 
-    tbody tr:hover {
-      background: var(--bg-accent);
-    }
 
     th.sortable {
       cursor: pointer;
@@ -3296,6 +3304,10 @@
             <strong>Band movement</strong>
             <span>Moved up or moved down compares the start and end percentile color bands for each student-subject record.</span>
           </div>
+          <div class="explain-card">
+            <strong>How to read the number</strong>
+            <span id="gapMethodNote"></span>
+          </div>
         </div>
         <div class="subsection-title">Overall</div>
         <div class="gap-grid grid" id="gapCards"></div>
@@ -3624,7 +3636,8 @@
       "Secure but Regressing": "Check for unfinished learning, engagement changes, or assessment conditions before assigning extension.",
       "Incomplete Data": "Confirm testing status and avoid making placement decisions from incomplete growth data.",
       "Core Instruction": "Keep grade-level core instruction as the plan, with quick checks for understanding on the highest-leverage skills.",
-      "No Score Yet": "Confirm whether this student tested. Do not place them from an absent or suppressed score."
+      "No Score Yet": "Confirm whether this student tested. Do not place them from an absent or suppressed score.",
+      "Coasting Watch": "Achievement is high but growth is not. Raise the challenge level and set a growth target rather than an achievement target."
     };
 
     // Wording for every number that carries a statistical caveat. Kept in one
@@ -3635,6 +3648,7 @@
       gradeLevel: "Grade-level targets are the US norm mean RIT for this grade and season, which sits near the 50th percentile. Reaching it from below requires more than typical growth.",
       shortTest: "Flagged tests finished in under " + SHORT_TEST_ABSOLUTE_MINUTES + " minutes and in less than half the median time for this file. Short tests are worth confirming with the proctor before the score is used for placement; they are not automatically invalid.",
       baseline: "This file has one test window, so no growth can be measured. Everything below describes where students are starting, not how far they have moved.",
+      secureBenchmark: "The 61st percentile is a locally chosen \u201csecure\u201d line, not an NWEA definition. Gap closure counts percentile-rank points, which are positions in a distribution rather than equal-sized units, so a ten-point move near the middle of the scale is a larger change in RIT than a ten-point move near either end. Read it as direction and rough magnitude, not as a precise quantity.",
       normSource: "US norm figures are grade-level mean RIT values rounded to whole points, used here as an approximate reference. They are not a substitute for the official NWEA norms study, and a school with its own norm tables should read the comparisons as indicative. Every norm-referenced figure on this page is derived from this table, never from anything in your file.",
       medianCGP: "Median conditional growth percentile is recalculated from the records currently visible, so it moves with your filters. Your export also carries NWEA's own class-level median, which is fixed for the whole class.",
       nweaProjection: "NWEA's projected RIT in an ASG export describes the window that has already been measured, so it cannot serve as a target for the next window. The targets below are derived from norm means instead."
@@ -3723,6 +3737,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       firstname: "studentFirstName",
       lastname: "studentLastName",
       studentname: "studentFullNameRaw",
+      measurementscale: "subjectRaw",
+      discipline: "subjectRaw",
+      subjectarea: "subjectRaw",
+      contentarea: "subjectRaw",
+      coursename: "course",
       gradelevel: "studentGrade",
       instructor: "teacher",
       teachers: "teacher",
@@ -3730,7 +3749,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       section: "className",
       school: "schoolName",
       district: "districtName",
-      term: "termTested"
+      term: "termTested",
+      termname: "termTested",
+      testterm: "termTested",
+      rosterterm: "termRostered"
     };
 
     const DEFAULT_DATA_WINDOW = {
@@ -3945,10 +3967,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         els.helpPanel.scrollIntoView({ behavior: scrollBehavior(), block: "center" });
       });
       if (els.onboardingClose) els.onboardingClose.addEventListener("click", () => {
-        if (els.onboarding) {
-          els.onboarding.hidden = true;
-          els.onboarding.dataset.dismissed = "true";
-        }
+        if (!els.onboarding) return;
+        els.onboarding.hidden = true;
+        els.onboarding.dataset.dismissed = "true";
+        // The button that was focused is inside the panel being hidden, so
+        // focus would otherwise fall to <body> and lose the reader's place.
+        const next = els.dropZone || els.sampleBtn || els.csvInput;
+        if (next && typeof next.focus === "function") next.focus();
       });
 
       if (els.dropZone) {
@@ -5053,7 +5078,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function getBandMovement(startBand, endBand) {
-      if (!startBand.rank || !endBand.rank) return "Missing End";
+      // A student who transferred in after the prior window has no start band.
+      // Reporting that as "Missing End" sent teachers looking for a test that
+      // was taken, instead of one that never happened.
+      if (!startBand.rank && !endBand.rank) return "No Bands";
+      if (!startBand.rank) return "Missing Start";
+      if (!endBand.rank) return "Missing End";
       if (endBand.rank > startBand.rank) return "Moved Up";
       if (endBand.rank < startBand.rank) return "Moved Down";
       return "Stayed Same";
@@ -5138,10 +5168,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // Beating a projection while still well below the benchmark is catch-up
       // growth to protect, not a reason to move a student onto extension work.
       if (row.exceededGrowth && row.endPercentile < 61) return "Catch-Up Growth";
+      // High achievement with low growth is not a reason to extend. The score
+      // is hiding a year of limited movement, which is what "Coasting Watch"
+      // is for; classifyGrowthChallenge already reads this profile that way.
+      if (row.endPercentile >= 81 && lowGrowth(row)) return "Coasting Watch";
       if (row.endPercentile >= 81) return "Enrichment";
       if (row.exceededGrowth && row.endPercentile >= 61) return "Enrichment";
       if ((row.endPercentile >= 21 && row.endPercentile <= 40) || lowGrowth(row)) return "Targeted Support";
-      if (row.endPercentile >= 41 && row.endPercentile <= 60 && (lowGrowth(row) || row.percentileChange <= 0)) return "Watch Group";
       if (row.endPercentile >= 61 && row.endPercentile <= 80 && row.metGrowth === true) return "Secure / Maintain";
       if (row.endPercentile >= 61 && row.endPercentile <= 80) return "Secure / Maintain";
       if (row.endPercentile >= 41 && row.endPercentile <= 60) return "Watch Group";
@@ -5191,6 +5224,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const startScore = quadrantScore(startQuadrant);
       const endScore = quadrantScore(endQuadrant);
       if (!isFiniteNumber(startScore) || !isFiniteNumber(endScore)) return "Missing";
+      if (startQuadrant === endQuadrant) return "Stayed Same";
+      // Low-G/High-A and High-G/Low-A are not ordered against each other: one
+      // axis rises while the other falls. Calling either direction "improved"
+      // or "declined" is a judgement the data does not support.
+      const lateral = (startQuadrant === "Low-G/High-A" && endQuadrant === "High-G/Low-A") ||
+        (startQuadrant === "High-G/Low-A" && endQuadrant === "Low-G/High-A");
+      if (lateral) return "Traded Off";
       if (endScore > startScore) return "Improved";
       if (endScore < startScore) return "Declined";
       return "Stayed Same";
@@ -5516,8 +5556,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             statCard("Records", formatInteger(rows.length), { raw: rows.length, format: "integer", hint: formatInteger(studentTotal) + " students" }),
             statCard("Met growth", formatPercentWhole(metrics.metPct), { raw: metrics.metPct, format: "percent", tone: toneFor(metrics.metPct, 50) }),
             statCard("Exceeded", formatPercentWhole(metrics.exceededPct), { raw: metrics.exceededPct, format: "percent", tone: toneFor(metrics.exceededPct, 40) }),
-            statCard("Avg start %ile", formatNumber(metrics.avgStartPercentile), { raw: metrics.avgStartPercentile }),
-            statCard("Avg end %ile", formatNumber(metrics.avgEndPercentile), { raw: metrics.avgEndPercentile, tone: toneFor(metrics.avgPercentileChange, 0) }),
+            statCard("Avg start %ile", formatNumber(metrics.avgStartPercentilePaired), { raw: metrics.avgStartPercentilePaired, hint: formatInteger(metrics.pairedCount) + " records with both windows" }),
+            statCard("Avg end %ile", formatNumber(metrics.avgEndPercentilePaired), { raw: metrics.avgEndPercentilePaired, tone: toneFor(metrics.avgPercentileChange, 0), hint: "Same " + formatInteger(metrics.pairedCount) + " records" }),
             statCard("Gap closure", formatFractionPercent(metrics.avgGapClosurePct), { raw: isFiniteNumber(metrics.avgGapClosurePct) ? metrics.avgGapClosurePct * 100 : null, format: "percent", hint: "Pooled across students below the benchmark" }),
             statCard("Priority", formatInteger(focusCount), { raw: focusCount, format: "integer", tone: focusCount ? "warn" : "good" }),
             statCard("Celebration", formatInteger(strengthCount), { raw: strengthCount, format: "integer", tone: "good" })
@@ -6068,10 +6108,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         chartCard("Start vs end achievement percentile",
           barChartSVG({
             labels: [state.dataWindow.priorWindowLabel, state.dataWindow.currentWindowLabel],
-            datasets: [{ label: "Average percentile", color: "var(--brand)", values: [metrics.avgStartPercentile, metrics.avgEndPercentile] }],
+            datasets: [{ label: "Average percentile", color: "var(--brand)", values: [metrics.avgStartPercentilePaired, metrics.avgEndPercentilePaired] }],
             max: 100
           }),
-          "Average achievement percentile in each window."),
+          "Both bars cover the same " + formatInteger(metrics.pairedCount) + " records that carry two windows, so the change is like for like."),
         chartCard("Projected vs observed growth",
           barChartSVG({
             labels: ["Projected", "Observed"],
@@ -6127,8 +6167,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const improved = rows.filter((row) => row.quadrantMovement === "Improved").length;
       const declined = rows.filter((row) => row.quadrantMovement === "Declined").length;
       const stayed = rows.filter((row) => row.quadrantMovement === "Stayed Same").length;
+      const traded = rows.filter((row) => row.quadrantMovement === "Traded Off").length;
       const missing = rows.filter((row) => row.quadrantMovement === "Missing").length;
-      els.quadrantMovement.textContent = `Quadrant movement: ${formatInteger(improved)} improved, ${formatInteger(declined)} declined, ${formatInteger(stayed)} stayed the same, ${formatInteger(missing)} missing.`;
+      els.quadrantMovement.textContent = `Quadrant movement: ${formatInteger(improved)} improved, ${formatInteger(declined)} declined, ${formatInteger(stayed)} stayed the same, ${formatInteger(traded)} traded one axis for the other, ${formatInteger(missing)} missing. A trade-off is not ranked: growth rose while achievement fell, or the reverse.`;
       const lens = currentOverviewLens();
       els.quadrantSubjectBreakdown.innerHTML = getBreakdownSubjects(rows, lens).map((bucket) => {
         const subjectRows = bucketRows(rows, bucket, lens);
@@ -6159,6 +6200,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           <span>${escapeHTML(gapCardSubtext(label))}</span>
         </div>
       `).join("");
+      setText("gapMethodNote", METHOD_NOTES.secureBenchmark);
       const lens = currentOverviewLens();
       els.gapSubjectBreakdown.innerHTML = getBreakdownSubjects(rows, lens).map((bucket) => {
         const subjectRows = bucketRows(rows, bucket, lens);
@@ -7010,7 +7052,7 @@ ${METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
         ? ` ${formatInteger(state.dataWindow.baselineRowCount)} records have only the ${state.dataWindow.currentWindowLabel} window and are excluded from every growth figure above.`
         : "";
 
-      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records covering ${state.dataWindow.priorWindowLabel} to ${state.dataWindow.currentWindowLabel}. The group began with an average percentile of ${formatNumber(metrics.avgStartPercentile)} and ended with ${formatNumber(metrics.avgEndPercentile)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed ${formatFractionPercent(metrics.avgGapClosurePct)} of the total distance to the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm, and moved ${formatSignedNumber(metrics.avgNormDeltaChange)} RIT relative to those norms across the two windows.${mixedNote}
+      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records covering ${state.dataWindow.priorWindowLabel} to ${state.dataWindow.currentWindowLabel}. Across the ${formatInteger(metrics.pairedCount)} records that carry both windows, the group began with an average percentile of ${formatNumber(metrics.avgStartPercentilePaired)} and ended with ${formatNumber(metrics.avgEndPercentilePaired)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed ${formatFractionPercent(metrics.avgGapClosurePct)} of the total distance to the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm, and moved ${formatSignedNumber(metrics.avgNormDeltaChange)} RIT relative to those norms across the two windows.${mixedNote}
 
 Growth was strongest in ${strongest ? strongest.bucket : `the available ${lensTitle} data`}, while ${needsSupport ? needsSupport.bucket : `the available ${lensTitle} data`} requires the most targeted support. ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
 
@@ -7094,6 +7136,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
       let groups = buildGroups(autoProfiles, groupPlan.capacities, strategy, scoreMode);
       if (!groups.length && profiles.length) groups = groupPlan.capacities.map(() => []);
+      // Anything the seat plan could not hold goes to the manual pool rather
+      // than disappearing from the panel, the export and the print.
+      const seated = new Set(groups.flat().map((profile) => profile.key));
+      const unseated = autoProfiles.filter((profile) => !seated.has(profile.key));
+      if (unseated.length) manualPool.push(...unseated);
+      state.unseatedCount = unseated.length;
 
       const tableCountChanged = state.tableGroups.length !== groups.length;
       state.tableGroups = groups;
@@ -7116,7 +7164,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const ratio = roomRatioText(state.classroomLayout.roomRatio);
       const snap = state.classroomLayout.snapPercent > 0 ? `${formatInteger(state.classroomLayout.snapPercent)}% snap` : "free drag";
       const unseated = state.unseatedCount
-        ? ` ${formatInteger(state.unseatedCount)} student${state.unseatedCount === 1 ? " is" : "s are"} unseated because the layout is capped at 80 tables - increase the table size to fit everyone.`
+        ? ` ${formatInteger(state.unseatedCount)} student${state.unseatedCount === 1 ? " was" : "s were"} moved to the manual pool because the layout is capped at 80 tables - increase the table size to seat everyone automatically.`
         : "";
       els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students assigned to ${formatInteger(state.tableGroups.length)} ${tableWord} using ${strategyLabel(strategy)}; table sizes: ${state.tableGroupPlanLabel}; ${poolText}; data source is ${subjectContext}. Room ratio: ${ratio}; ${snap}. Table averages ignore N/A values.${unseated}`;
     }
@@ -7318,14 +7366,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         seats += size;
         index += 1;
       }
-      const truncated = seats < totalStudents;
       const label = parsed.length > 1
         ? `${capacities.join(", ")}${capacities.length > parsed.length ? " (extra table added)" : ""}`
         : `up to ${formatInteger(capacities[0] || fallbackSize)} per table`;
-      // The 80-table cap can leave students unseated. Record how many so the
-      // context line can say so rather than dropping them silently.
-      const seated = capacities.reduce((sum, size) => sum + size, 0);
-      state.unseatedCount = truncated ? Math.max(0, totalStudents - seated) : 0;
       return { capacities, label };
     }
 
@@ -8150,7 +8193,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           : "";
       const mark = row && (row.metGrowthInferred || row.metGrowthQualified) ? "*" : "";
       if (value === true) return `<span class="status-pill status-good"${note}>Yes${mark}</span>`;
-      if (value === false) return `<span class="status-pill status-risk">No</span>`;
+      if (value === false) return `<span class="status-pill status-risk"${note}>No${mark}</span>`;
       return `<span class="status-pill status-neutral">Missing</span>`;
     }
 
@@ -8216,6 +8259,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (group === "Intensive Support") return "group-intensive";
       if (group === "Secure but Regressing") return "group-regressing";
       if (group === "Incomplete Data" || group === "No Score Yet") return "group-incomplete";
+      if (group === "Coasting Watch") return "group-watch";
       if (group === "Core Instruction") return "group-core";
       return "group-targeted";
     }
@@ -8238,6 +8282,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const usNormRows = rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT));
       const usNormGradeRows = rows.filter((row) => isFiniteNumber(row.usNormGradeGap));
       const scoredRows = rows.filter((row) => row.hasCurrentScore);
+      // Comparing a start average taken over paired rows with an end average
+      // taken over every scored row is not a like-for-like comparison, so the
+      // paired population is available separately for anything that does.
+      const pairedRows = rows.filter((row) => row.hasGrowthPair);
       const percentileRows = rows.filter((row) => isFiniteNumber(row.currentPercentile));
       const normChangeRows = rows.filter((row) => isFiniteNumber(row.normDeltaChange));
       const tierCounts = {};
@@ -8271,6 +8319,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         avgStartPercentile: avg(rows.map((row) => row.startPercentile)),
         avgEndPercentile: avg(rows.map((row) => row.endPercentile)),
         avgPercentileChange: avg(rows.map((row) => row.percentileChange)),
+        pairedCount: pairedRows.length,
+        avgStartPercentilePaired: avg(pairedRows.map((row) => row.startPercentile)),
+        avgEndPercentilePaired: avg(pairedRows.map((row) => row.endPercentile)),
         avgProjectedGrowth: avg(rows.map((row) => row.projectedGrowth)),
         avgObservedGrowth: avg(rows.map((row) => row.observedGrowth)),
         medianConditionalGrowthPercentile: median(rows.map((row) => row.conditionalGrowthPercentile)),
@@ -8385,15 +8436,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function exportPriority() {
-      exportCSV(isBaselineMode() ? "support-list" : "priority-students", state.filteredRows.filter((row) => focusReasons(row).length), isBaselineMode() ? BASELINE_EXPORT_COLUMNS : PRIORITY_EXPORT_COLUMNS);
+      exportCSV(isBaselineMode() ? "support-list" : "priority-students", state.filteredRows.filter((row) => focusReasons(row).length), isBaselineMode() ? BASELINE_SUPPORT_COLUMNS : PRIORITY_EXPORT_COLUMNS);
     }
 
     function exportCelebration() {
-      exportCSV(isBaselineMode() ? "strengths" : "celebration-students", state.filteredRows.filter((row) => strengthReasons(row).length), isBaselineMode() ? BASELINE_EXPORT_COLUMNS : CELEBRATION_EXPORT_COLUMNS);
+      exportCSV(isBaselineMode() ? "strengths" : "celebration-students", state.filteredRows.filter((row) => strengthReasons(row).length), isBaselineMode() ? BASELINE_STRENGTH_COLUMNS : CELEBRATION_EXPORT_COLUMNS);
     }
 
     function exportGap() {
       exportCSV("gap-closure", state.filteredRows, GAP_EXPORT_COLUMNS);
+    }
+
+    // Growth columns are always blank in a single-window file, so the seating
+    // export drops them and carries the norm distance instead.
+    function tableGroupExportColumns() {
+      if (!isBaselineMode()) return TABLE_GROUP_EXPORT_COLUMNS;
+      const dropped = new Set([
+        "Avg start percentile", "Avg RIT change", "Avg Conditional Growth Percentile", "Met growth rate"
+      ]);
+      return TABLE_GROUP_EXPORT_COLUMNS
+        .filter(([label]) => !dropped.has(label))
+        .map((column) => (column[0] === "Avg end percentile" ? ["Avg percentile", column[1]] : column));
     }
 
     function exportTableGroups() {
@@ -8413,7 +8476,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         layoutY: ""
       }));
       const rows = assignedRows.concat(poolRows);
-      exportCSV("table-groups", rows, TABLE_GROUP_EXPORT_COLUMNS);
+      exportCSV("table-groups", rows, tableGroupExportColumns());
     }
 
     function printA4Layout() {
@@ -8434,7 +8497,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function buildA4LayoutHTML() {
       const filters = getFilters();
-      const context = filters.subject ? `${filters.subject} only` : "averaged across visible subjects";
+      const context = [filters.className, filters.teacher, filters.subject ? `${filters.subject} only` : "averaged across visible subjects"]
+        .filter(Boolean)
+        .join(" | ");
       const date = new Date().toLocaleDateString();
       const ratio = state.classroomLayout.roomRatio || { width: 4, height: 3 };
       const isPortrait = finiteLayoutNumber(ratio.height, 3) > finiteLayoutNumber(ratio.width, 4);
@@ -8451,12 +8516,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>NWEA Table Layout</title>
+  <title>${escapeHTML(["NWEA Table Layout", filters.className, filters.teacher].filter(Boolean).join(" - "))}</title>
   <style>
     @page { size: A4 ${pageOrientation}; margin: 10mm; }
     * { box-sizing: border-box; }
     body { margin: 0; color: #172033; font-family: Arial, sans-serif; }
-    .print-page { width: ${pageWidthMm}mm; min-height: ${pageMinHeightMm}mm; display: grid; grid-template-rows: auto 1fr; gap: 8px; }
+    .print-page { width: ${pageWidthMm}mm; min-height: ${pageMinHeightMm}mm; display: grid; grid-template-rows: auto 1fr auto; gap: 8px; }
     .print-header { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; border-bottom: 2px solid #c7d1e1; padding-bottom: 6px; }
     h1 { font-size: 18px; margin: 0 0 3px; }
     .meta { color: #5d6a7e; font-size: 10px; line-height: 1.35; }
@@ -8473,7 +8538,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     ol { margin: 0; padding-left: 14px; }
     li { font-size: 7.4px; line-height: 1.15; margin-bottom: 2px; }
     .name { font-weight: 700; }
-    .pool { position: absolute; left: 3mm; bottom: 3mm; width: ${poolWidthMm}mm; border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 4px; }
+    /* Below the room, not inside it: as an absolutely positioned box with an
+       opaque background it painted over the bottom-left table. */
+    .pool { width: 100%; margin-top: 4px; border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 5px; break-inside: avoid; }
+    .pool ol { columns: ${isPortrait ? 2 : 3}; column-gap: 6mm; }
     .pool h2 { margin: 0 0 3px; font-size: 9px; }
   </style>
 </head>
@@ -8481,7 +8549,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   <section class="print-page">
     <header class="print-header">
       <div>
-        <h1>NWEA MAP ASG Table Layout</h1>
+        <h1>${escapeHTML(filters.className ? `Table Layout - ${filters.className}` : "NWEA MAP ASG Table Layout")}</h1>
         <div class="meta">${escapeHTML(context)} | ${escapeHTML(currentWindowName())} | ${escapeHTML(state.tableGroupPlanLabel || "table layout")} | ${escapeHTML(date)} | ${orientationLabel}</div>
       </div>
       <div class="meta">Averages ignore N/A values. Missing-data students may appear in the manual pool.${state.tableCapacities.some((capacity, index) => state.tableGroups[index] && state.tableGroups[index].length > capacity) ? " One or more tables hold more students than planned and are outlined in red." : ""}</div>
@@ -8491,8 +8559,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       <div class="door" style="${printPositionStyle(state.classroomLayout.door)}">Door</div>
       <div class="teacher-desk" style="${printPositionStyle(state.classroomLayout.teacherDesk)}">Teacher Desk</div>
       ${state.tableGroups.map((group, index) => renderPrintTable(group, index)).join("")}
-      ${state.tableManualPool.length ? renderPrintPool() : ""}
     </main>
+    ${state.tableManualPool.length ? renderPrintPool() : ""}
   </section>
 </body>
 </html>`;
@@ -8538,6 +8606,41 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     // ---- Baseline and goal exports ---------------------------------------
+    // Identity and placement columns every baseline export needs. Each export
+    // then adds only the columns its own reader is there for.
+    const BASELINE_CORE_COLUMNS = [
+      ["Student name", (row) => row.studentName],
+      ["Student ID", (row) => row.studentID],
+      ["Grade", (row) => row.studentGrade],
+      ["Class", (row) => row.className],
+      ["Teacher", (row) => row.teacher],
+      ["Subject", (row) => row.subject],
+      ["Window", (row) => row.currentWindowLabel],
+      ["RIT", (row) => row.currentRIT],
+      ["Percentile", (row) => row.currentPercentile],
+      ["Band", (row) => row.currentBand.name],
+      ["Tier", (row) => row.currentTier.name],
+      ["RIT vs US norm", (row) => row.usNormDeltaRIT]
+    ];
+
+    const BASELINE_SUPPORT_COLUMNS = BASELINE_CORE_COLUMNS.concat([
+      ["Points to secure (61st)", (row) => row.distanceToSecure],
+      ["Gain needed for grade level", (row) => (row.goals && !row.goals.alreadyAtOrAbove ? row.goals.catchUpGain : "")],
+      ["Planning group", (row) => row.baselineGroup],
+      ["Why it is flagged", (row) => getBaselineFocusReasons(row).join("; ")],
+      ["Suggested action", (row) => getBaselineAction(row)]
+    ]);
+
+    const BASELINE_STRENGTH_COLUMNS = BASELINE_CORE_COLUMNS.concat([
+      ["US norm grade equivalent", (row) => (row.usNormEquivalentGrade && !row.usNormEquivalentOutOfRange && !row.usNormEquivalentIndeterminate ? formatUSNormGradeLabel(row.usNormEquivalentGrade) : "")],
+      ["Already at grade-level target", (row) => (row.goals && row.goals.alreadyAtOrAbove ? "Yes" : "No")],
+      ["Planning group", (row) => row.baselineGroup],
+      ["Strength", (row) => getBaselineStrengthReasons(row).join("; ")],
+      ["Extension", (row) => getBaselineAction(row)]
+    ]);
+
+    // The full roster export keeps everything, including the data-quality
+    // columns that only make sense when you are auditing the upload.
     const BASELINE_EXPORT_COLUMNS = [
       ["Student name", (row) => row.studentName],
       ["Student ID", (row) => row.studentID],
@@ -8932,6 +9035,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function observeReveals(force) {
       const root = document.documentElement;
       if (!state.animateNextRender && !force) {
+        // Leaving the class on would let every SVG bar and meter replay its
+        // fill on the next keystroke.
         root.classList.remove("js-reveal");
         document.querySelectorAll(".reveal").forEach((node) => node.classList.add("is-revealed"));
         return;
