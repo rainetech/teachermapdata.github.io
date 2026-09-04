@@ -2915,6 +2915,48 @@
     .drag-card.dragging { opacity: 0.45; transform: scale(0.97); }
     .drop-zone.drop-active { outline: 2px dashed var(--brand); outline-offset: 2px; background: var(--brand-soft); }
 
+
+    /* Cohort comparison inside the uploaded file */
+    .cohort-compare {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--brand);
+      background: var(--panel-2);
+    }
+
+    .cohort-head { margin-bottom: 10px; }
+    .cohort-head strong { display: block; font-size: 13px; }
+    .cohort-head span { font-size: 11.5px; color: var(--muted); line-height: 1.4; }
+
+    .cohort-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+    }
+
+    .cohort-metric {
+      display: grid;
+      gap: 1px;
+      padding: 9px 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .cohort-metric i { font-style: normal; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+    .cohort-metric b { font-size: 19px; font-variant-numeric: tabular-nums; }
+    .cohort-delta { font-size: 11.5px; font-weight: 800; color: var(--muted); }
+    .cohort-rest { font-size: 10.5px; color: var(--muted); }
+    .cohort-metric.is-up .cohort-delta { color: var(--green-text); }
+    .cohort-metric.is-down .cohort-delta { color: var(--orange-text); }
+
+    .table-group-card.is-over-capacity {
+      border-color: var(--red);
+      box-shadow: 0 0 0 1px var(--red-line);
+    }
+
   </style>
 </head>
 <body>
@@ -3133,6 +3175,7 @@
           </div>
         </div>
         <div class="summary-grid grid" id="summaryCards"></div>
+        <div class="cohort-compare" id="cohortCompare" hidden></div>
       </section>
 
       <section class="section mode-baseline" id="sec-baseline" aria-labelledby="baselineTitle" hidden>
@@ -3288,7 +3331,7 @@
         <div class="table-shell">
           <div class="table-tools">
             <strong id="crossCount">0 students</strong>
-            <span class="status-line">Sorted by the widest spread between a student's strongest and weakest subject.</span>
+            <span class="status-line" id="crossNote">Sorted by the widest spread between a student's strongest and weakest subject.</span>
           </div>
           <div class="table-scroll" id="crossSubjectTable"></div>
         </div>
@@ -3695,6 +3738,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       diagnostics: null,
       profileCache: null,
       tableLimits: {},
+      tableCapacities: [],
       unseatedCount: 0,
       animateNextRender: false,
       manualArrangement: false,
@@ -3744,7 +3788,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "tierLadder", "normCards", "baselineSubjectBreakdown", "exportBaselineBtn",
         "goalCards", "goalMethodNote", "goalCount", "goalTable", "exportGoalsBtn", "printGoalsBtn",
         "actionBoard", "crossSubjectCards", "crossCount", "crossSubjectTable",
-        "qualityCards", "qualityDetail", "tierFilter",
+        "qualityCards", "qualityDetail", "tierFilter", "cohortCompare",
         "spotlightBackdrop", "spotlight", "spotlightBody", "spotlightClose",
         "spotlightCopyBtn", "spotlightPrintBtn",
         "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
@@ -5258,6 +5302,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       renderUploadStats();
       renderFilterContext();
       renderSummaryCards();
+      renderCohortComparison();
       renderBaselineSection();
       renderSubjectOverview();
       renderCharts();
@@ -5472,6 +5517,53 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       [...container.children].forEach((child, index) => {
         if (!child.style.getPropertyValue("--i")) child.style.setProperty("--i", String(index));
       });
+    }
+
+    // A class is only ever compared with a national norm table unless the file
+    // itself contains other classes. When it does, the more useful question is
+    // how this group sits against the rest of the same upload.
+    function renderCohortComparison() {
+      const node = els.cohortCompare;
+      if (!node) return;
+      const all = state.allRows;
+      const shown = state.filteredRows;
+      const cohorts = new Set(all.map((row) => row.className + "|" + row.teacher));
+      if (!all.length || shown.length === all.length || cohorts.size < 2 || !shown.length) {
+        node.hidden = true;
+        return;
+      }
+      const rest = all.filter((row) => !shown.includes(row));
+      if (!rest.length) {
+        node.hidden = true;
+        return;
+      }
+      const here = aggregateRows(shown);
+      const there = aggregateRows(rest);
+      const metrics = [
+        ["Median percentile", here.medianCurrentPercentile, there.medianCurrentPercentile, (value) => formatNumber(value, 0)],
+        ["Mean RIT", here.avgCurrentRIT, there.avgCurrentRIT, (value) => formatNumber(value, 1)],
+        ["At or above US norm", here.atOrAboveUSNormPct, there.atOrAboveUSNormPct, formatPercentWhole],
+        ["Secure (61st+)", here.atOrAboveSecurePct, there.atOrAboveSecurePct, formatPercentWhole]
+      ];
+      if (hasGrowthContext()) {
+        metrics.push(["Met growth", here.metPct, there.metPct, formatPercentWhole]);
+        metrics.push(["Gap closure (pooled)", here.avgGapClosurePct, there.avgGapClosurePct, formatFractionPercent]);
+      }
+      node.hidden = false;
+      node.innerHTML = '<div class="cohort-head"><strong>This selection vs the rest of the file</strong>' +
+        '<span>' + escapeHTML(formatInteger(shown.length) + " selected records against the other " + formatInteger(rest.length) +
+          " in this upload, across " + formatInteger(cohorts.size) + " class groups. A comparison inside one school, not a national one.") + "</span></div>" +
+        '<div class="cohort-row">' + metrics.map(([label, mine, others, format]) => {
+          const delta = isFiniteNumber(mine) && isFiniteNumber(others) ? mine - others : null;
+          const tone = !isFiniteNumber(delta) ? "" : delta > 0 ? " is-up" : delta < 0 ? " is-down" : "";
+          const deltaText = !isFiniteNumber(delta)
+            ? "n/a"
+            : (delta > 0 ? "+" : "") + (format === formatFractionPercent ? formatFractionPercent(delta) : format(delta));
+          return '<div class="cohort-metric' + tone + '"><i>' + escapeHTML(label) + "</i>" +
+            "<b>" + escapeHTML(format(mine)) + "</b>" +
+            '<span class="cohort-delta">' + escapeHTML(deltaText) + " vs rest</span>" +
+            '<span class="cohort-rest">rest: ' + escapeHTML(format(others)) + "</span></div>";
+        }).join("") + "</div>";
     }
 
     function toneFor(value, threshold) {
@@ -6537,34 +6629,53 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (!els.crossSubjectTable) return;
       const profiles = crossSubjectProfiles();
       const uneven = profiles.filter((profile) => isFiniteNumber(profile.subjectSpread) && profile.subjectSpread >= UNEVEN_SPREAD);
+      const unevenGrowth = profiles.filter((profile) => isFiniteNumber(profile.growthSpread) && profile.growthSpread >= UNEVEN_SPREAD);
       els.crossSubjectCards.innerHTML = [
         statCard("Students with 2+ subjects", formatInteger(profiles.length), { raw: profiles.length, format: "integer" }),
-        statCard("Uneven profiles", formatInteger(uneven.length), { raw: uneven.length, format: "integer", tone: uneven.length ? "warn" : "good", hint: UNEVEN_SPREAD + "+ percentile points between strongest and weakest" }),
+        statCard("Uneven achievement", formatInteger(uneven.length), { raw: uneven.length, format: "integer", tone: uneven.length ? "warn" : "good", hint: UNEVEN_SPREAD + "+ percentile points between strongest and weakest" }),
+        statCard("Uneven growth", formatInteger(unevenGrowth.length), { raw: unevenGrowth.length, format: "integer", tone: unevenGrowth.length ? "warn" : "good", hint: hasGrowthContext() ? UNEVEN_SPREAD + "+ CGP points between subjects" : "Needs two test windows" }),
         statCard("Widest spread", formatNumber(profiles.length ? profiles[0].subjectSpread : null, 0), { raw: profiles.length ? profiles[0].subjectSpread : null, hint: profiles.length ? profiles[0].studentName : "" }),
         statCard("Median spread", formatNumber(median(profiles.map((profile) => profile.subjectSpread)), 0), { raw: median(profiles.map((profile) => profile.subjectSpread)) })
       ].join("");
       applyStagger(els.crossSubjectCards);
       els.crossCount.textContent = formatInteger(profiles.length) + " students with more than one subject";
+      setText("crossNote", hasGrowthContext()
+        ? "Sorted by achievement spread. The growth column shows the same comparison for conditional growth percentile."
+        : "Sorted by the widest spread between a student's strongest and weakest subject.");
       if (!profiles.length) {
         els.crossSubjectTable.innerHTML = '<div class="empty-state">This view has one subject per student, so there is nothing to compare across subjects.</div>';
         return;
       }
-      const header = "<tr><th>Student</th><th>Strongest</th><th>Weakest</th><th>Spread</th><th>Subject profile</th><th>What it means</th></tr>";
+      const growthMode = hasGrowthContext();
+      const header = "<tr><th>Student</th><th>Strongest</th><th>Weakest</th><th>Achievement spread</th>" +
+        (growthMode ? "<th>Growth spread</th>" : "") +
+        "<th>Subject profile</th><th>What it means</th></tr>";
       const limit = tableLimitFor("cross");
       const body = profiles.slice(0, limit).map((profile) => {
         const best = profile.subjectPercentiles[0];
         const worst = profile.subjectPercentiles[profile.subjectPercentiles.length - 1];
         const spread = profile.subjectSpread;
+        const growthHigh = profile.growthBySubject && profile.growthBySubject[0];
+        const growthLow = profile.growthBySubject && profile.growthBySubject[profile.growthBySubject.length - 1];
+        const unevenGrowth = growthMode && isFiniteNumber(profile.growthSpread) && profile.growthSpread >= UNEVEN_SPREAD;
         const meaning = !isFiniteNumber(spread)
           ? "Not enough scored subjects to compare."
           : spread >= UNEVEN_SPREAD
             ? "Group this student differently in " + worst.subject + " than in " + best.subject + "."
-            : "A consistent profile across subjects, so one grouping decision can carry the day.";
+            : unevenGrowth
+              ? "Achievement is even, but growth is not: " + growthHigh.subject + " is moving and " + growthLow.subject + " is not."
+              : "A consistent profile across subjects, so one grouping decision can carry the day.";
         return "<tr>" +
           "<td>" + studentLinkByName(profile.studentName) + "</td>" +
           "<td>" + escapeHTML(best.subject) + " " + bandPill(best.band) + " " + formatNumber(best.percentile, 0) + "</td>" +
           "<td>" + escapeHTML(worst.subject) + " " + bandPill(worst.band) + " " + formatNumber(worst.percentile, 0) + "</td>" +
           '<td><span class="spread-pill' + (spread >= UNEVEN_SPREAD ? " spread-wide" : "") + '">' + formatNumber(spread, 0) + "</span></td>" +
+          (growthMode
+            ? '<td><span class="spread-pill' + (unevenGrowth ? " spread-wide" : "") + '" title="' +
+              escapeAttr(isFiniteNumber(profile.growthSpread) && growthHigh
+                ? growthHigh.subject + " CGP " + formatNumber(growthHigh.cgp, 0) + " down to " + growthLow.subject + " CGP " + formatNumber(growthLow.cgp, 0)
+                : "Not enough conditional growth percentiles to compare") + '">' + formatNumber(profile.growthSpread, 0) + "</span></td>"
+            : "") +
           '<td class="wrap">' + profile.subjectPercentiles.map((entry) =>
             '<span class="subject-dot" title="' + escapeAttr(entry.subject + ": " + formatNumber(entry.percentile, 0)) + '" style="background:' +
             escapeAttr(entry.band.color) + ";color:" + escapeAttr(entry.band.ink) + '">' + escapeHTML(entry.subject.slice(0, 1)) + "</span>").join("") + "</td>" +
@@ -6962,6 +7073,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.tableGroups = groups;
       state.tableManualPool = manualPool;
       state.tableGroupPlanLabel = groupPlan.label;
+      state.tableCapacities = groupPlan.capacities;
       // Only reset the room arrangement when the number of tables actually changes.
       initializeClassroomLayout(groups.length, tableCountChanged);
       updateTableGroupContext(profiles.length, subjectContext, strategy);
@@ -7258,10 +7370,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const dominantGroup = mostCommon(groupCounts) || "Needs Review";
         const subjectPercentiles = rowsForStudent
           .filter((row) => isFiniteNumber(row.currentPercentile))
-          .map((row) => ({ subject: row.subject, percentile: row.currentPercentile, rit: row.currentRIT, band: row.currentBand, tier: row.currentTier }))
+          .map((row) => ({
+            subject: row.subject,
+            percentile: row.currentPercentile,
+            rit: row.currentRIT,
+            band: row.currentBand,
+            tier: row.currentTier,
+            cgp: row.conditionalGrowthPercentile
+          }))
           .sort((a, b) => b.percentile - a.percentile);
         const spread = subjectPercentiles.length > 1
           ? subjectPercentiles[0].percentile - subjectPercentiles[subjectPercentiles.length - 1].percentile
+          : null;
+        // The growth half of the profile matters as much as achievement: a
+        // student can be even across subjects on achievement while growing
+        // strongly in one and flat in another.
+        const growthBySubject = rowsForStudent
+          .filter((row) => isFiniteNumber(row.conditionalGrowthPercentile))
+          .map((row) => ({ subject: row.subject, cgp: row.conditionalGrowthPercentile }))
+          .sort((a, b) => b.cgp - a.cgp);
+        const growthSpread = growthBySubject.length > 1
+          ? growthBySubject[0].cgp - growthBySubject[growthBySubject.length - 1].cgp
           : null;
         const missingDataReasons = getProfileMissingDataReasons(rowsForStudent);
         const result = {
@@ -7285,6 +7414,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           shortTest: rowsForStudent.some((row) => row.shortTest),
           subjectPercentiles,
           subjectSpread: spread,
+          growthBySubject,
+          growthSpread,
           metRate,
           endBand: getBand(avgEndPercentile),
           tier: getAchievementTier(avgEndPercentile),
@@ -7449,20 +7580,22 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function renderTableGroupCard(group, index, scoreMode, strategy) {
+      const capacity = state.tableCapacities[index] || null;
+      const overCapacity = Boolean(capacity && group.length > capacity);
       const avgEnd = avg(group.map((profile) => profile.avgEndPercentile));
       const avgGrowth = avg(group.map((profile) => profile.avgConditionalGrowthPercentile));
       const priorityCount = group.filter((profile) => profile.priorityReasons.length).length;
       void avgGrowth;
       const scoreLabel = scoreModeLabel(scoreMode);
       return `
-        <article class="table-group-card classroom-table" data-layout-kind="table" data-table-index="${escapeAttr(index)}" style="${layoutStyle(state.classroomLayout.tables[index] || defaultTablePosition(index, state.tableGroups.length))}">
+        <article class="table-group-card classroom-table${overCapacity ? " is-over-capacity" : ""}" data-layout-kind="table" data-table-index="${escapeAttr(index)}" style="${layoutStyle(state.classroomLayout.tables[index] || defaultTablePosition(index, state.tableGroups.length))}">
           <header data-layout-handle>
             <div>
               <h3>Table ${formatInteger(index + 1)}</h3>
               <span class="group-detail">${escapeHTML(strategyFocus(strategy))}</span>
             </div>
             <div class="btn-row">
-              <span class="status-pill status-neutral">${formatInteger(group.length)} students</span>
+              <span class="status-pill ${overCapacity ? "status-risk" : "status-neutral"}"${overCapacity ? ` title="More students than this table was planned for. The A4 print may not fit them all."` : ""}>${formatInteger(group.length)}${capacity ? " / " + formatInteger(capacity) : ""} students</span>
               <button class="table-move-handle" type="button" data-layout-handle data-layout-kind="table" data-table-index="${escapeAttr(index)}" aria-label="Move table ${formatInteger(index + 1)}. Use the arrow keys, or drag.">Move</button>
             </div>
           </header>
