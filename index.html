@@ -4049,6 +4049,11 @@
 
     const SECURE_BENCHMARK = 61;
 
+    // Which NWEA norms study the RIT table further down represents. When a file
+    // says it was scored against a different study, every RIT-referenced figure
+    // on this page is comparing against the wrong reference and says so.
+    const EMBEDDED_NORMS_YEAR = "2020";
+
     const GROUP_ACTIONS = {
       "Intensive Support": "Use immediate reteaching, prerequisite checks, short-cycle monitoring, and small-group intervention.",
       "Targeted Support": "Plan focused small-group lessons around the highest-impact skills and check progress frequently.",
@@ -4175,7 +4180,29 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       term: "termTested",
       termname: "termTested",
       testterm: "termTested",
-      rosterterm: "termRostered"
+      rosterterm: "termRostered",
+      // A real ASG export names both the reporting term and, separately, the
+      // two windows being compared. TermTested and TermRostered are both the
+      // reporting term - in a spring export they both read "Spring 2025-2026" -
+      // so the comparison period is the only column that identifies the pair.
+      growthcomparisonperiod: "growthComparisonPeriodRaw",
+      comparisonperiod: "growthComparisonPeriodRaw",
+      normsreferencedata: "normsReferenceRaw",
+      normsreference: "normsReferenceRaw",
+      wistartterm: "weeksOfInstructionStartRaw",
+      wiendterm: "weeksOfInstructionEndRaw",
+      weeksofinstruction: "weeksOfInstructionEndRaw",
+      startritsem: "startRITSEMRaw",
+      endritsem: "endRITSEMRaw",
+      startpercentilese: "startPercentileSERaw",
+      endpercentilese: "endPercentileSERaw",
+      observedgrowthse: "observedGrowthSERaw",
+      studentmiddleinitial: "studentMiddleInitial",
+      optionalgroupingcategory: "optionalGroupingCategory",
+      optiongroupinggroup: "optionalGroupingValue",
+      optionalgroupinggroup: "optionalGroupingValue",
+      countofstudentswithgrowthprojectionavailableandvalidbeginningandendingtermscores: "classGrowthProjectionCountRaw",
+      countofstudentswhometorexceededtheirprojectedgrowth: "classMetGrowthCountRaw"
     };
 
     const DEFAULT_DATA_WINDOW = {
@@ -4632,6 +4659,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
       state.allRows = parsed.rows.map(normalizeRecord).filter(Boolean);
       state.fileName = fileName || "Uploaded CSV";
+      const gradesRecovered = backfillStudentGrades(state.allRows);
       const testQuality = flagShortTests(state.allRows);
       state.dataWindow = state.allRows.length ? detectDataMode(state.allRows) : { ...DEFAULT_DATA_WINDOW };
       cacheBaselineDerivations(state.allRows);
@@ -4642,6 +4670,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (els.summaryEditNote) els.summaryEditNote.hidden = true;
       if (els.targetShareInput) els.targetShareInput.value = "";
       state.diagnostics = buildDiagnostics(parsed, state.allRows, testQuality);
+      state.diagnostics.gradesRecovered = gradesRecovered;
       state.spotlightKey = "";
       populateFilters();
       resetFilters(false);
@@ -4704,6 +4733,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const noScorePairs = noScore.map((row) => row.studentName + " (" + row.subject + ")");
       const noGrade = rows.filter((row) => !row.usNormStudentGrade);
       const noNorm = rows.filter((row) => row.hasCurrentScore && !isFiniteNumber(row.usNormBenchmarkRIT));
+      const fileNormsYears = unique(rows.map((row) => row.normsReference).filter(Boolean));
+      const normsMismatch = fileNormsYears.filter((year) => year !== EMBEDDED_NORMS_YEAR);
+      const comparisonPeriods = unique(rows.map((row) => row.comparisonPeriod).filter(Boolean));
+      const instructionalWeeks = unique(rows.map((row) => row.instructionalWeeks).filter(isFiniteNumber).map(String));
       const seen = new Map();
       const duplicates = [];
       rows.forEach((row) => {
@@ -4728,7 +4761,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         noNormCount: noNorm.length,
         duplicateCount: duplicates.length,
         shortTestCount: testQuality.flagged,
-        medianDuration: testQuality.medianDuration
+        medianDuration: testQuality.medianDuration,
+        fileNormsYears,
+        normsMismatch,
+        comparisonPeriods,
+        instructionalWeeks
       };
     }
 
@@ -4926,8 +4963,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const hasGrowthPair = hasStartScore && hasEndScore && hasGrowthSignal;
       const usesEndWindow = hasEndScore;
 
-      const startSeason = inferWindowSeason(raw.testDate, raw.termRostered, raw.termTested);
-      const endSeason = inferWindowSeason(raw.endTestDate, raw.termTested, raw.termRostered);
+      const comparison = parseComparisonPeriod(raw.growthComparisonPeriodRaw);
+      // The comparison period beats the term columns for both the label and the
+      // season, and it also rescues an ambiguous date like 6/9/26.
+      const startSeason = inferWindowSeason(raw.testDate, comparison ? comparison.start : raw.termRostered, raw.termRostered);
+      const endSeason = inferWindowSeason(raw.endTestDate, comparison ? comparison.end : raw.termTested, raw.termTested);
       const currentSeason = (usesEndWindow ? endSeason || startSeason : startSeason || endSeason) ||
         inferUSNormSeason(raw.termTested, raw.termRostered, raw.endTestDate, raw.testDate);
       const currentRIT = usesEndWindow ? endRIT : startRIT;
@@ -4937,40 +4977,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const currentBand = getBand(currentPercentile);
       const currentTier = getAchievementTier(currentPercentile);
       const currentWindowLabel = usesEndWindow
-        ? windowLabel(raw.termTested, endSeason, "Current window")
-        : windowLabel(raw.termRostered, startSeason, "Current window");
-      const priorWindowLabel = hasGrowthPair ? windowLabel(raw.termRostered, startSeason, "Prior window") : null;
+        ? windowLabel(comparison ? comparison.end : raw.termTested, endSeason, "Current window")
+        : windowLabel(comparison ? comparison.start : raw.termRostered, startSeason, "Current window");
+      const priorWindowLabel = hasGrowthPair
+        ? windowLabel(comparison ? comparison.start : raw.termRostered, startSeason, "Prior window")
+        : null;
 
-      // --- US norm placement -------------------------------------------------
-      // Each window is compared with the norm mean for its own season, so a
-      // start score is never judged against a spring benchmark.
       const usNormStudentGrade = normalizeUSNormGrade(raw.studentGrade);
-      const usNormBenchmarkRIT = getUSNormRIT(subject, usNormStudentGrade, currentSeason);
-      const usNormEquivalent = estimateUSNormEquivalentGrade(subject, currentSeason, currentRIT, usNormStudentGrade);
-      const usNormDeltaRIT = isFiniteNumber(currentRIT) && isFiniteNumber(usNormBenchmarkRIT)
-        ? currentRIT - usNormBenchmarkRIT
-        : null;
-      // A RIT past either end of the norm table, or one consistent with too
-      // many grades to distinguish, has no meaningful grade gap.
-      const usNormGradeGap = usNormEquivalent && !usNormEquivalent.outOfRange && !usNormEquivalent.indeterminate && usNormStudentGrade
-        ? usNormEquivalent.gradeValue - gradeKeyToValue(usNormStudentGrade)
-        : null;
-      const usNormAtOrAbove = isFiniteNumber(usNormDeltaRIT) ? usNormDeltaRIT >= 0 : null;
-      const startNormBenchmarkRIT = getUSNormRIT(subject, usNormStudentGrade, startSeason);
-      const startUSNormDeltaRIT = isFiniteNumber(startRIT) && isFiniteNumber(startNormBenchmarkRIT)
-        ? startRIT - startNormBenchmarkRIT
-        : null;
-      const endNormBenchmarkRIT = getUSNormRIT(subject, usNormStudentGrade, endSeason);
-      const endUSNormDeltaRIT = isFiniteNumber(endRIT) && isFiniteNumber(endNormBenchmarkRIT)
-        ? endRIT - endNormBenchmarkRIT
-        : null;
-      // Ground gained or lost against same-age peers: positive means the student
-      // moved toward or past the norm mean over the two windows.
-      const normDeltaChange = isFiniteNumber(startUSNormDeltaRIT) && isFiniteNumber(endUSNormDeltaRIT)
-        ? endUSNormDeltaRIT - startUSNormDeltaRIT
-        : null;
-
-      const goals = computeGrowthGoals(subject, usNormStudentGrade, currentSeason, currentRIT);
 
       const record = {
         rowNumber: raw._rowNumber,
@@ -4993,6 +5006,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         endTestDate: emptyToMissing(raw.endTestDate),
         startTestDuration,
         endTestDuration,
+        normsReference: cleanString(raw.normsReferenceRaw) || null,
+        comparisonPeriod: comparison ? comparison.start + " to " + comparison.end : null,
+        // NWEA reports weeks of instruction at each window, which is the real
+        // teaching time the growth happened across.
+        weeksOfInstructionStart: cleanNumber(raw.weeksOfInstructionStartRaw),
+        weeksOfInstructionEnd: cleanNumber(raw.weeksOfInstructionEndRaw),
+        startRITSEM: cleanNumber(raw.startRITSEMRaw),
+        endRITSEM: cleanNumber(raw.endRITSEMRaw),
+        observedGrowthSE: cleanNumber(raw.observedGrowthSERaw),
+        optionalGroupingCategory: emptyToMissing(raw.optionalGroupingCategory),
+        optionalGroupingValue: emptyToMissing(raw.optionalGroupingValue),
         startRIT,
         endRIT,
         usNormSeason: currentSeason || "Missing",
@@ -5000,17 +5024,6 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         startSeason,
         endSeason,
         usNormStudentGrade,
-        usNormBenchmarkRIT,
-        usNormDeltaRIT,
-        usNormAtOrAbove,
-        startUSNormDeltaRIT,
-        endUSNormDeltaRIT,
-        normDeltaChange,
-        usNormEquivalentGrade: usNormEquivalent ? usNormEquivalent.gradeKey : null,
-        usNormEquivalentGradeValue: usNormEquivalent ? usNormEquivalent.gradeValue : null,
-        usNormEquivalentOutOfRange: usNormEquivalent ? usNormEquivalent.outOfRange : null,
-        usNormEquivalentIndeterminate: Boolean(usNormEquivalent && usNormEquivalent.indeterminate),
-        usNormGradeGap,
         projectedRIT,
         startPercentile,
         endPercentile,
@@ -5060,10 +5073,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         currentWindowLabel,
         priorWindowLabel,
         hasCurrentScore: isFiniteNumber(currentRIT) || isFiniteNumber(currentPercentile),
+        instructionalWeeks: isFiniteNumber(cleanNumber(raw.weeksOfInstructionStartRaw)) && isFiniteNumber(cleanNumber(raw.weeksOfInstructionEndRaw))
+          ? cleanNumber(raw.weeksOfInstructionEndRaw) - cleanNumber(raw.weeksOfInstructionStartRaw)
+          : null,
         distanceToSecure: isFiniteNumber(currentPercentile) ? Math.max(0, SECURE_BENCHMARK - currentPercentile) : null,
-        goals,
         shortTest: false
       };
+
+      applyNormFields(record);
 
       record.growthChallenge = classifyGrowthChallenge(record);
       record.suggestedGroup = suggestGroup(record);
@@ -5074,6 +5091,70 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       record.celebrationReasons = getCelebrationReasons(record);
       record.extensionAction = getExtensionAction(record);
       return record;
+    }
+
+    // Everything derived from the US norm table, in one place so it can be
+    // recomputed if a student's grade is recovered from another of their rows.
+    // Each window is compared with the norm mean for its own season, so a start
+    // score is never judged against a spring benchmark.
+    function applyNormFields(record) {
+      const grade = record.usNormStudentGrade;
+      const benchmark = getUSNormRIT(record.subject, grade, record.currentSeason);
+      const equivalent = estimateUSNormEquivalentGrade(record.subject, record.currentSeason, record.currentRIT, grade);
+      record.usNormBenchmarkRIT = benchmark;
+      record.usNormDeltaRIT = isFiniteNumber(record.currentRIT) && isFiniteNumber(benchmark)
+        ? record.currentRIT - benchmark
+        : null;
+      record.usNormAtOrAbove = isFiniteNumber(record.usNormDeltaRIT) ? record.usNormDeltaRIT >= 0 : null;
+      record.usNormEquivalentGrade = equivalent ? equivalent.gradeKey : null;
+      record.usNormEquivalentGradeValue = equivalent ? equivalent.gradeValue : null;
+      record.usNormEquivalentOutOfRange = equivalent ? equivalent.outOfRange : null;
+      record.usNormEquivalentIndeterminate = Boolean(equivalent && equivalent.indeterminate);
+      // A RIT past either end of the norm table, or one consistent with too many
+      // grades to distinguish, has no meaningful grade gap.
+      record.usNormGradeGap = equivalent && !equivalent.outOfRange && !equivalent.indeterminate && grade
+        ? equivalent.gradeValue - gradeKeyToValue(grade)
+        : null;
+      const startBenchmark = getUSNormRIT(record.subject, grade, record.startSeason);
+      record.startUSNormDeltaRIT = isFiniteNumber(record.startRIT) && isFiniteNumber(startBenchmark)
+        ? record.startRIT - startBenchmark
+        : null;
+      const endBenchmark = getUSNormRIT(record.subject, grade, record.endSeason);
+      record.endUSNormDeltaRIT = isFiniteNumber(record.endRIT) && isFiniteNumber(endBenchmark)
+        ? record.endRIT - endBenchmark
+        : null;
+      // Ground gained or lost against same-age peers: positive means the student
+      // moved toward or past the norm mean over the two windows.
+      record.normDeltaChange = isFiniteNumber(record.startUSNormDeltaRIT) && isFiniteNumber(record.endUSNormDeltaRIT)
+        ? record.endUSNormDeltaRIT - record.startUSNormDeltaRIT
+        : null;
+      record.goals = computeGrowthGoals(record.subject, grade, record.currentSeason, record.currentRIT);
+      return record;
+    }
+
+    // NWEA suppresses a value it cannot report, and a student's grade can be
+    // suppressed on one subject row while present on another. Recovering it from
+    // the same student restores the norm comparison for those rows instead of
+    // leaving them as "no norm match".
+    function backfillStudentGrades(rows) {
+      const gradeByStudent = new Map();
+      rows.forEach((row) => {
+        if (!row.usNormStudentGrade) return;
+        const key = studentKey(row);
+        if (!gradeByStudent.has(key)) gradeByStudent.set(key, { grade: row.usNormStudentGrade, label: row.studentGrade });
+      });
+      let recovered = 0;
+      rows.forEach((row) => {
+        if (row.usNormStudentGrade) return;
+        const known = gradeByStudent.get(studentKey(row));
+        if (!known) return;
+        row.usNormStudentGrade = known.grade;
+        row.studentGrade = known.label;
+        row.gradeRecovered = true;
+        applyNormFields(row);
+        recovered += 1;
+      });
+      return recovered;
     }
 
     // ---------------------------------------------------------------------
@@ -5296,6 +5377,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         detectSeasonFromText(primaryTerm) ||
         detectSeasonFromText(fallbackTerm) ||
         null;
+    }
+
+    // "Fall 2025 - Spring 2026" -> { start: "Fall 2025", end: "Spring 2026" }.
+    // The separator must have whitespace on both sides: a term label like
+    // "Spring 2025-2026" contains a hyphen of its own and must not be split.
+    function parseComparisonPeriod(value) {
+      const cleaned = cleanString(value);
+      if (!cleaned || isBlankLike(cleaned)) return null;
+      const parts = cleaned.split(/\s+[-\u2013\u2014]\s+/).map((part) => part.trim()).filter(Boolean);
+      if (parts.length !== 2) return null;
+      return { start: parts[0], end: parts[1] };
     }
 
     function seasonLabel(seasonKey) {
@@ -7016,7 +7108,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         statCard("Largest stretch", formatSignedNumber(needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null), { raw: needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null, format: "signed", hint: "Extra RIT above typical for the furthest-behind record" })
       ].join("");
       applyStagger(els.goalCards);
-      setText("goalMethodNote", METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
+      const normsWarning = state.diagnostics && state.diagnostics.normsMismatch && state.diagnostics.normsMismatch.length
+        ? " This export is scored against NWEA's " + state.diagnostics.normsMismatch.join(" and ") +
+          " norms while the table on this page is the " + EMBEDDED_NORMS_YEAR + " study, so these targets will not match your MAP reports until the table is updated."
+        : "";
+      setText("goalMethodNote", normsWarning + (normsWarning ? " " : "") + METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
         (flatNormCount ? " " + formatInteger(flatNormCount) + " record(s) are at a grade and subject where the published means flatten between these seasons, so keeping pace there means holding the current RIT." : "") +
         (hasGrowthContext() ? " " + METHOD_NOTES.nweaProjection : "") + " " + METHOD_NOTES.normSource);
       els.goalCount.textContent = formatInteger(rows.length) + " records with a norm-referenced target";
@@ -7518,8 +7614,27 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (diagnostics.raggedRows) notes.push(["Rows with an unexpected column count", formatInteger(diagnostics.raggedRows) + " rows had more or fewer cells than the header. They were still read, but check the export."]);
       if (diagnostics.duplicateHeaders.length) notes.push(["Duplicate columns ignored", diagnostics.duplicateHeaders.join(", ") + ". The first column with each name was used."]);
       if (diagnostics.noScoreStudents.length) notes.push(["Students missing a score, by subject", diagnostics.noScoreStudents.slice(0, 25).join(", ") + (diagnostics.noScoreStudents.length > 25 ? " and " + (diagnostics.noScoreStudents.length - 25) + " more" : "") + ". These are the tests to chase before the next planning meeting."]);
+      if (diagnostics.gradesRecovered) notes.push(["Suppressed grades recovered",
+        formatInteger(diagnostics.gradesRecovered) + " record(s) had the student grade suppressed by NWEA but carried it on another subject row for the same student. The grade was taken from there, so the norm comparison works for those rows instead of reading as no match."]);
       if (diagnostics.noNormCount) notes.push(["No US norm available", formatInteger(diagnostics.noNormCount) + " scored records could not be matched to a norm. NWEA publishes norms for Reading and Mathematics from kindergarten, and for Language and Science from grade 2."]);
       if (isFiniteNumber(diagnostics.medianDuration)) notes.push(["Median test duration", formatNumber(diagnostics.medianDuration, 0) + " minutes. " + METHOD_NOTES.shortTest]);
+      if (diagnostics.normsMismatch && diagnostics.normsMismatch.length) {
+        notes.push(["Norms mismatch - read the RIT comparisons with care",
+          "This export was scored against NWEA's " + diagnostics.normsMismatch.join(" and ") +
+          " norms. The RIT reference table built into this page is the " + EMBEDDED_NORMS_YEAR +
+          " study. Everything driven by the percentiles in your file - bands, tiers, distribution, gap closure, targets, growth by starting band - comes from NWEA and is unaffected. The figures that compare a RIT against a norm are not: \u201cvs US norm\u201d, grade-level equivalence and the growth targets are measured against the older table and will not match your own MAP reports."]);
+      } else if (diagnostics.fileNormsYears && diagnostics.fileNormsYears.length) {
+        notes.push(["Norms reference", "This export was scored against NWEA's " + diagnostics.fileNormsYears.join(", ") +
+          " norms, which matches the reference table built into this page."]);
+      }
+      if (diagnostics.comparisonPeriods && diagnostics.comparisonPeriods.length) {
+        notes.push(["Windows compared", diagnostics.comparisonPeriods.join("; ") +
+          ". Taken from the export's own growth comparison period, which is more reliable than the term columns - in a spring export those name the reporting term for both windows."]);
+      }
+      if (diagnostics.instructionalWeeks && diagnostics.instructionalWeeks.length) {
+        notes.push(["Weeks of instruction between windows", diagnostics.instructionalWeeks.join(", ") +
+          " weeks, as reported by NWEA. Growth projections assume a typical interval, so a noticeably shorter or longer gap is worth holding in mind when reading whether growth was met."]);
+      }
       notes.push(["How norms are used", METHOD_NOTES.normSource]);
       if (hasGrowthContext()) notes.push(["Median conditional growth percentile", METHOD_NOTES.medianCGP]);
       if (diagnostics.missingColumns.length) {
