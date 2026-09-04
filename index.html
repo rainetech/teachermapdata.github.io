@@ -1237,7 +1237,8 @@
       position: absolute;
       z-index: 5;
       width: min(280px, 29%);
-      max-height: 300px;
+      max-height: 32%;
+      min-height: 120px;
       overflow: auto;
       box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
     }
@@ -2672,6 +2673,344 @@
        ===================================================================== */
     body.modal-open { overflow: hidden; }
 
+    /* =====================================================================
+       Wall posters
+       ===================================================================== */
+    .poster-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: flex-end;
+      margin-bottom: 14px;
+    }
+
+    .poster-toolbar .field { min-width: 200px; }
+    .poster-count { margin: 0 0 6px; font-size: 12px; color: var(--muted); font-weight: 700; }
+
+    .poster-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .poster-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel-2);
+    }
+
+    .poster-pick {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 9px;
+      align-items: start;
+      cursor: pointer;
+    }
+
+    .poster-pick input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--brand); }
+    .poster-pick strong { display: block; font-size: 13.5px; }
+    .poster-pick small { display: block; font-size: 11.5px; color: var(--muted); line-height: 1.4; margin-top: 2px; }
+
+    /* The poster inside is authored at its real print size in millimetres and
+       scaled down to fit the card, so the preview is the printed page. */
+    .poster-frame {
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--poster-w) / var(--poster-h);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: #fff;
+      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.03);
+    }
+
+    .poster-scale {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform: scale(var(--poster-scale, 0.25));
+      transform-origin: top left;
+    }
+
+    .poster-frame .poster { width: 100%; height: 100%; }
+
+    @media (max-width: 640px) {
+      .poster-grid { grid-template-columns: 1fr; }
+    }
+
+    /* =====================================================================
+       Seating planner
+       ===================================================================== */
+    .planner-launch {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      width: 100%;
+      text-align: left;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      background: linear-gradient(120deg, var(--brand-soft), var(--panel-2) 62%);
+      cursor: pointer;
+      transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur) var(--ease-out), border-color var(--dur-fast) linear;
+    }
+
+    .planner-launch:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      border-color: var(--line-accent);
+    }
+
+    .planner-launch:active { transform: translateY(0); }
+
+    .planner-launch-icon {
+      font-size: 26px;
+      line-height: 1;
+      color: var(--brand);
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: var(--radius-sm);
+      background: var(--panel);
+      border: 1px solid var(--line);
+    }
+
+    .planner-launch-text { display: grid; gap: 3px; min-width: 0; }
+    .planner-launch-text strong { font-size: 15px; letter-spacing: -0.01em; }
+    .planner-launch-text small { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+    .planner-launch-cta {
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 14px;
+      border-radius: 999px;
+      background: var(--brand);
+      color: var(--on-brand);
+      white-space: nowrap;
+    }
+
+    .planner-preview { margin-top: 12px; }
+
+    .planner-mini {
+      position: relative;
+      width: min(340px, 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background:
+        repeating-linear-gradient(0deg, transparent 0 11px, var(--line) 11px 12px),
+        repeating-linear-gradient(90deg, transparent 0 11px, var(--line) 11px 12px),
+        var(--panel-2);
+      overflow: hidden;
+    }
+
+    .planner-mini i {
+      position: absolute;
+      border-radius: 3px;
+      font-style: normal;
+    }
+
+    .planner-mini-table {
+      width: 26px;
+      height: 16px;
+      display: grid;
+      place-items: center;
+      font-size: 9px;
+      font-weight: 800;
+      background: var(--brand);
+      color: var(--on-brand);
+    }
+
+    .planner-mini-board { width: 54px; height: 6px; background: var(--slate-ink); }
+    .planner-mini-desk { width: 24px; height: 10px; background: var(--purple); }
+    .planner-mini-note { margin: 6px 0 0; font-size: 11px; color: var(--muted); }
+
+    .planner-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 65;
+      display: grid;
+      place-items: stretch;
+      padding: 14px;
+      background: rgba(9, 15, 26, 0.62);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      transition: opacity var(--dur) var(--ease-soft);
+    }
+
+    .planner-backdrop.is-open { opacity: 1; }
+
+    .planner {
+      display: grid;
+      grid-template-rows: auto auto auto minmax(0, 1fr);
+      width: 100%;
+      height: 100%;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lift);
+      overflow: hidden;
+      transform: scale(0.985);
+      transition: transform var(--dur) var(--ease-out);
+    }
+
+    .planner-backdrop.is-open .planner { transform: none; }
+
+    .planner-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .planner-title h3 { margin: 0; font-size: 16px; letter-spacing: -0.01em; }
+    .planner-title p { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
+
+    .planner-rotate { display: none; }
+
+    .planner-slot {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--line);
+      overflow: auto;
+      max-height: 34vh;
+    }
+
+    .planner-slot.is-collapsed { display: none; }
+    .planner-slot .group-controls { margin: 0; }
+
+    /* The room gets everything that is left, and scrolls on its own so the
+       page behind never moves while a student is mid-drag. */
+    .planner-stage {
+      overflow: auto;
+      padding: 14px 16px 18px;
+      background: var(--bg);
+    }
+
+    .planner-stage .table-groups { margin: 0; }
+
+    body.planner-open { overflow: hidden; }
+
+    /* The floating dock and the back-to-top button belong to the page behind
+       the planner, and sit on top of the room if they are left visible. */
+    body.planner-open .support-dock,
+    body.planner-open .back-to-top { display: none; }
+
+    /* In the room a table card has to be short enough that four or six of them
+       fit without stacking, so the metric tiles collapse to one strip. */
+    .classroom-table .mini-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px 12px;
+      margin-bottom: 8px;
+      padding-bottom: 7px;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .classroom-table .mini-metric {
+      display: flex;
+      align-items: baseline;
+      gap: 5px;
+      padding: 0;
+      border: 0;
+      background: none;
+      border-radius: 0;
+    }
+
+    .classroom-table .drag-card {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 5px 7px;
+      margin-bottom: 5px;
+    }
+
+    .classroom-table .drag-card .student-line { gap: 6px; min-width: 0; }
+    .classroom-table .drag-card .student-line strong {
+      font-size: 0.78rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .classroom-table .drag-card > .group-detail { display: none; }
+    .classroom-table .drag-card-compact {
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .drag-card-compact { display: none; }
+    .classroom-table .drag-card .drag-card-compact { display: inline; }
+
+    /* The score used is the same for every table and already set in the
+       controls, so in the room the line is spent on students instead. */
+    .classroom-table .mini-metric.room-hidden { display: none; }
+
+    /* An empty pool becomes a slim strip rather than a column of prose. */
+    .manual-pool-card.is-empty { padding: 10px 12px; }
+    .manual-pool-card.is-empty .group-detail,
+    .manual-pool-card.is-empty .drop-zone { font-size: 0.76rem; }
+    .manual-pool-card.is-empty .group-detail { display: none; }
+    body.planner-open .table-groups:has(.manual-pool-card.is-empty) {
+      grid-template-columns: minmax(140px, 172px) minmax(0, 1fr);
+    }
+
+    .classroom-table header h3 { font-size: 0.9rem; }
+    .classroom-table header .group-detail { font-size: 0.66rem; }
+
+    .classroom-table .mini-metric span { display: inline; font-size: 0.6rem; }
+    .classroom-table .mini-metric strong { display: inline; font-size: 0.82rem; margin: 0; }
+
+    .table-layout-note {
+      cursor: pointer;
+    }
+
+    .table-layout-note > summary {
+      list-style: none;
+      font-weight: 800;
+      font-size: 0.76rem;
+      color: var(--brand-ink);
+    }
+
+    .table-layout-note > summary::-webkit-details-marker { display: none; }
+    .table-layout-note > summary::before { content: "\2139\FE0E  "; }
+    .table-layout-note > p { margin: 6px 0 0; font-weight: 600; }
+    .table-layout-note:not([open]) { max-width: 170px; }
+
+    /* An empty manual pool should not hold a whole column of the room. */
+    body.planner-open .classroom-board { min-height: min(1180px, calc(100vh - 210px)); }
+    body.planner-open .table-groups { grid-template-columns: minmax(180px, 230px) minmax(0, 1fr); }
+    body.planner-open .manual-pool-card { position: sticky; top: 0; max-height: calc(100vh - 220px); overflow: auto; }
+
+    @media (max-width: 720px) {
+      .planner-launch { grid-template-columns: auto 1fr; }
+      .planner-launch-cta { grid-column: 1 / -1; text-align: center; }
+      .planner-backdrop { padding: 0; }
+      .planner { border-radius: 0; border: 0; }
+    }
+
+    @media (max-height: 560px) and (orientation: portrait) {
+      .planner-rotate {
+        display: block;
+        margin: 0;
+        padding: 6px 16px;
+        font-size: 11px;
+        color: var(--muted);
+        background: var(--panel-3);
+        border-bottom: 1px solid var(--line);
+      }
+    }
+
     .spotlight-backdrop {
       position: fixed;
       inset: 0;
@@ -4088,6 +4427,54 @@
         <p class="summary-edit-note" id="summaryEditNote" hidden>You have edited this text, so it will no longer update when you change the filters. Regenerate to go back to the generated version.</p>
       </section>
 
+      <section class="section" id="sec-posters" aria-labelledby="posterTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="posterTitle">Wall Posters</h2>
+            <p id="posterNote">Data stories for the classroom wall, sized for A3. Class-level only &mdash; no student is named and no individual score appears.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="posterPrintSelected" type="button">Print selected (A3)</button>
+            <button class="btn small ghost" id="posterSelectAll" type="button">Select all</button>
+          </div>
+        </div>
+        <div class="explain-grid">
+          <div class="explain-card">
+            <strong>Written for students, not for you</strong>
+            <span>Each poster says one thing a student can act on, in language they can read. The method notes stay in the dashboard.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Nobody is named</strong>
+            <span>Every figure is a class total, share or median. A poster on a wall is seen by visitors, so no name, no individual score and no rank appears on one.</span>
+          </div>
+          <div class="explain-card">
+            <strong>They follow your filters</strong>
+            <span>Filter to one class or one subject and the posters describe that group. The footer of each poster records which group it came from.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Printing</strong>
+            <span>A3 landscape, one poster per page. Choose &ldquo;Fit to page&rdquo; and turn on background graphics in the print dialog. A4 works too &mdash; it just prints smaller.</span>
+          </div>
+        </div>
+        <div class="poster-toolbar">
+          <div class="field">
+            <label for="posterOrientation">Page</label>
+            <select id="posterOrientation">
+              <option value="landscape">A3 landscape</option>
+              <option value="portrait">A3 portrait</option>
+              <option value="a4-landscape">A4 landscape</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="posterHeading">Heading on every poster</label>
+            <input id="posterHeading" type="text" placeholder="Our class" maxlength="60">
+            <span class="hint">Optional. Use the class name the students know.</span>
+          </div>
+          <p class="poster-count" id="posterCount"></p>
+        </div>
+        <div class="poster-grid" id="posterGrid"></div>
+      </section>
+
       <section class="section" id="sec-tables" aria-labelledby="tableGroupsTitle">
         <div class="section-header">
           <div>
@@ -4099,7 +4486,16 @@
             <button class="btn small" id="printA4LayoutBtn" type="button">Print A4 Layout</button>
           </div>
         </div>
-        <div class="group-controls">
+        <button class="planner-launch" id="plannerLaunch" type="button">
+          <span class="planner-launch-icon" aria-hidden="true">&#9638;</span>
+          <span class="planner-launch-text">
+            <strong>Open the seating planner</strong>
+            <small id="plannerLaunchHint">A full-screen room you can drag students and tables around in.</small>
+          </span>
+          <span class="planner-launch-cta">Open <span aria-hidden="true">&#10530;</span></span>
+        </button>
+        <div class="planner-preview" id="plannerPreview"></div>
+        <div class="group-controls" id="groupControls">
           <div class="field">
             <label for="groupSizeInput">Table size pattern</label>
             <input id="groupSizeInput" type="text" value="5" placeholder="5 or 6,6,5,5 or 2x6,2x5">
@@ -4225,6 +4621,31 @@
   <div id="liveRegion" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
 
   <div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+
+  <!-- The seating planner is the same room the section renders, moved into a
+       near-full-screen surface so there is space to actually drag things. The
+       controls and the board are the very same nodes, so every drag, keyboard
+       and print handler keeps working without knowing where it lives. -->
+  <div class="planner-backdrop" id="plannerBackdrop" hidden>
+    <div class="planner" role="dialog" aria-modal="true" aria-labelledby="plannerTitle">
+      <header class="planner-head">
+        <div class="planner-title">
+          <h3 id="plannerTitle">Seating Planner</h3>
+          <p id="plannerContext">Drag tables, students, the board and the door to match your room.</p>
+        </div>
+        <div class="btn-row">
+          <button class="btn small ghost" id="plannerToggleControls" type="button" aria-expanded="true">Hide controls</button>
+          <button class="btn small" id="plannerRefresh" type="button">Rebuild groups</button>
+          <button class="btn small" id="plannerPrint" type="button">Print layout</button>
+          <button class="btn small ghost" id="plannerExport" type="button">Export CSV</button>
+          <button class="btn small ghost" id="plannerClose" type="button">Close</button>
+        </div>
+      </header>
+      <p class="planner-rotate">Turn your device sideways for more room to work in.</p>
+      <div class="planner-slot" id="plannerControlSlot"></div>
+      <div class="planner-stage" id="plannerStage"></div>
+    </div>
+  </div>
 
   <div class="spotlight-backdrop" id="spotlightBackdrop" hidden>
     <div class="spotlight" id="spotlight" role="dialog" aria-modal="true" aria-labelledby="spotlightName">
@@ -4622,6 +5043,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       targetResult: null,
       strandAnalysis: null,
       fileNames: [],
+      plannerOpen: false,
+      plannerReturnFocus: null,
+      posterSelection: null,
+      posterScaleObserver: null,
       summaryEdited: false,
       tableLimits: {},
       tableCapacities: [],
@@ -4659,8 +5084,19 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     const els = {};
 
+    // The poster stylesheet lives in one string used by both the preview and
+    // the print window, so the two can never drift apart.
+    function injectPosterStyles() {
+      if (document.getElementById("posterStyles")) return;
+      const style = document.createElement("style");
+      style.id = "posterStyles";
+      style.textContent = POSTER_CSS;
+      document.head.appendChild(style);
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
       cacheElements();
+      injectPosterStyles();
       state.prefs = readPreferences();
       applyPreferences();
       attachEvents();
@@ -4688,6 +5124,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "supportDock", "supportDockCoffee", "supportDockFeedback",
         "supportBackdrop", "supportPrompt", "supportClose", "supportPromptCoffee",
         "supportPromptFeedback", "supportPromptLater", "supportPromptNever",
+        "posterGrid", "posterCount", "posterPrintSelected", "posterSelectAll",
+        "posterOrientation", "posterHeading", "posterNote",
+        "plannerLaunch", "plannerLaunchHint", "plannerPreview", "groupControls",
+        "plannerBackdrop", "plannerContext", "plannerControlSlot", "plannerStage",
+        "plannerClose", "plannerRefresh", "plannerPrint", "plannerExport", "plannerToggleControls",
         "spotlightBackdrop", "spotlight", "spotlightBody", "spotlightClose",
         "spotlightCopyBtn", "spotlightPrintBtn",
         "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
@@ -4773,6 +5214,34 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (els.supportBackdrop) els.supportBackdrop.addEventListener("click", (event) => {
         if (event.target === els.supportBackdrop) closeSupportPrompt(false);
       });
+      if (els.posterPrintSelected) els.posterPrintSelected.addEventListener("click", () => printPosters([...posterSelection()]));
+      if (els.posterSelectAll) els.posterSelectAll.addEventListener("click", () => {
+        const posters = availablePosters();
+        const selection = posterSelection();
+        const allPicked = posters.every((poster) => selection.has(poster.id));
+        posters.forEach((poster) => {
+          if (allPicked) selection.delete(poster.id);
+          else selection.add(poster.id);
+        });
+        els.posterSelectAll.textContent = allPicked ? "Select all" : "Clear selection";
+        renderPosters();
+      });
+      if (els.posterOrientation) els.posterOrientation.addEventListener("change", renderPosters);
+      if (els.posterHeading) els.posterHeading.addEventListener("input", debounce(renderPosters, 220));
+      if (els.plannerLaunch) els.plannerLaunch.addEventListener("click", openPlanner);
+      if (els.plannerClose) els.plannerClose.addEventListener("click", closePlanner);
+      if (els.plannerRefresh) els.plannerRefresh.addEventListener("click", () => {
+        state.manualArrangement = false;
+        state.groupSignature = "";
+        renderTableGroups();
+        renderPlannerChrome();
+      });
+      if (els.plannerPrint) els.plannerPrint.addEventListener("click", printA4Layout);
+      if (els.plannerExport) els.plannerExport.addEventListener("click", exportTableGroups);
+      if (els.plannerToggleControls) els.plannerToggleControls.addEventListener("click", togglePlannerControls);
+      if (els.plannerBackdrop) els.plannerBackdrop.addEventListener("click", (event) => {
+        if (event.target === els.plannerBackdrop) closePlanner();
+      });
       if (els.spotlightClose) els.spotlightClose.addEventListener("click", closeSpotlight);
       if (els.spotlightCopyBtn) els.spotlightCopyBtn.addEventListener("click", copySpotlight);
       if (els.spotlightPrintBtn) els.spotlightPrintBtn.addEventListener("click", printSpotlight);
@@ -4796,6 +5265,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           closeSpotlight();
           return;
         }
+        // The planner sits under the spotlight: a student card opened from
+        // inside the room must close before the room does.
+        if (event.key === "Escape" && els.plannerBackdrop && !els.plannerBackdrop.hidden) {
+          closePlanner();
+          return;
+        }
         // Sortable headers are focusable, so Enter and Space must sort.
         if ((event.key === "Enter" || event.key === " ") && event.target.matches && event.target.matches("th[data-table][data-key]")) {
           event.preventDefault();
@@ -4814,6 +5289,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         const student = event.target.closest("[data-student]");
         if (student) {
           openSpotlight(student.dataset.student);
+          return;
+        }
+        const posterPrint = event.target.closest("[data-poster-print]");
+        if (posterPrint) {
+          printPosters([posterPrint.dataset.posterPrint]);
           return;
         }
         const more = event.target.closest("[data-more]");
@@ -4841,6 +5321,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       document.addEventListener("click", (event) => {
         const header = event.target.closest("th[data-table][data-key]");
         if (header) sortByHeader(header);
+      });
+      document.addEventListener("change", (event) => {
+        const pick = event.target.closest ? event.target.closest("[data-poster-pick]") : null;
+        if (!pick) return;
+        const selection = posterSelection();
+        if (pick.checked) selection.add(pick.dataset.posterPick);
+        else selection.delete(pick.dataset.posterPick);
+        const posters = availablePosters();
+        setText("posterCount", formatInteger(posters.filter((poster) => selection.has(poster.id)).length) +
+          " of " + formatInteger(posters.length) + " selected | " + posterPage().css);
       });
       document.addEventListener("keydown", handleTableGroupKeydown);
       document.addEventListener("keydown", handleLayoutKeydown);
@@ -6588,6 +7078,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       renderCrossSubject();
       renderStrands();
       renderSummaryReport();
+      renderPosters();
       renderTables();
       renderDataCheck();
       refreshSpotlight();
@@ -6614,6 +7105,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // exists only when the loaded files actually have them.
       { id: "sec-strands", label: "Areas", modes: ["growth", "mixed", "baseline"], available: hasStrandData },
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-posters", label: "Posters", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-grouping", label: "Grouping", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-priority", label: "Priority", modes: ["growth", "mixed", "baseline"] },
@@ -7697,8 +8189,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return main.concat(extra);
     }
 
-    function miniMetric(label, value, wide = false) {
-      return `<div class="mini-metric${wide ? " wide" : ""}"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`;
+    function miniMetric(label, value, wide = false, extraClass = "") {
+      return `<div class="mini-metric${wide ? " wide" : ""}${extraClass ? " " + extraClass : ""}"><span>${escapeHTML(label)}</span><strong>${escapeHTML(value)}</strong></div>`;
     }
 
     function percentValue(count, total) {
@@ -9152,6 +9644,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         state.tableManualPool = state.tableManualPool.map((profile) => byKey.get(profile.key)).filter(Boolean);
         updateTableGroupContext(profiles.length, subjectContext, strategy);
         renderTableGroupLayout(scoreMode, strategy);
+        renderPlannerChrome();
         return;
       }
       state.groupSignature = signature;
@@ -9164,6 +9657,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         state.tableManualPool = [];
         els.tableGroupContext.textContent = "Upload data or adjust filters to create table groups.";
         els.tableGroups.innerHTML = `<div class="empty-state">No students match the current view.</div>`;
+        renderPlannerChrome();
         return;
       }
 
@@ -9185,6 +9679,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       initializeClassroomLayout(groups.length, tableCountChanged);
       updateTableGroupContext(profiles.length, subjectContext, strategy);
       renderTableGroupLayout(scoreMode, strategy);
+      renderPlannerChrome();
     }
 
     function updateTableGroupContext(totalProfiles, subjectContext, strategy) {
@@ -9202,6 +9697,605 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students assigned to ${formatInteger(state.tableGroups.length)} ${tableWord} using ${strategyLabel(strategy)}; table sizes: ${state.tableGroupPlanLabel}; ${poolText}; data source is ${subjectContext}. Room ratio: ${ratio}; ${snap}. Table averages ignore N/A values.${unseated}`;
     }
 
+    // ---------------------------------------------------------------------
+    // Wall posters
+    // ---------------------------------------------------------------------
+    // Posters go on a classroom wall, which is a public place: visitors, other
+    // classes and parents all see them. So every figure on one is a class
+    // total, share or median - never a name, an individual score or a rank -
+    // and the wording is aimed at the student rather than the teacher.
+    //
+    // The same HTML is used for the on-page preview and for the print, with the
+    // stylesheet below shared between them, so what a teacher approves on
+    // screen is what comes out of the printer.
+
+    const POSTER_PAGES = {
+      landscape: { css: "A3 landscape", width: 400, height: 277 },
+      portrait: { css: "A3 portrait", width: 277, height: 400 },
+      "a4-landscape": { css: "A4 landscape", width: 277, height: 190 }
+    };
+
+    const POSTER_CSS = `
+  .poster {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 7mm;
+    padding: 14mm 16mm;
+    background: #ffffff;
+    color: #10182b;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
+    overflow: hidden;
+  }
+  .poster * { box-sizing: border-box; }
+  .poster-eyebrow {
+    font-size: 5mm; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: #2454a6;
+  }
+  .poster h1 { margin: 1mm 0 0; font-size: 15mm; line-height: 1.02; letter-spacing: -0.02em; }
+  .poster-sub { margin: 2mm 0 0; font-size: 6mm; color: #46536b; line-height: 1.3; }
+  .poster-body { flex: 1; display: flex; gap: 12mm; align-items: center; min-height: 0; }
+  .poster-hero { flex: 0 0 32%; display: flex; flex-direction: column; justify-content: center; gap: 3mm; }
+  .poster-big { font-size: 56mm; line-height: 0.88; font-weight: 900; letter-spacing: -0.04em; color: #2454a6; }
+  .poster-big.is-green { color: #15803d; }
+  .poster-big.is-amber { color: #b45309; }
+  .poster-big-label { font-size: 7.5mm; font-weight: 700; line-height: 1.25; }
+  .poster-main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6mm; min-width: 0; }
+  .poster-foot { border-top: 1.2mm solid #2454a6; padding-top: 4mm; display: flex; gap: 8mm; align-items: flex-end; justify-content: space-between; }
+  .poster-message { margin: 0; font-size: 7mm; line-height: 1.35; font-weight: 600; max-width: 76%; }
+  .poster-meta { font-size: 3.6mm; color: #5d6a7e; text-align: right; line-height: 1.35; white-space: pre-line; }
+
+  .poster-bars { display: flex; flex-direction: column; gap: 5mm; width: 100%; }
+  .poster-bar-row { display: grid; grid-template-columns: 52mm 1fr 26mm; gap: 5mm; align-items: center; }
+  .poster-bar-name { font-size: 6mm; font-weight: 800; line-height: 1.15; }
+  .poster-bar-name small { display: block; font-size: 4mm; font-weight: 600; color: #5d6a7e; margin-top: 1mm; }
+  .poster-bar-track { position: relative; height: 15mm; border-radius: 8mm; background: #eef2f7; overflow: hidden; }
+  .poster-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8mm; }
+  .poster-bar-value { font-size: 6.5mm; font-weight: 900; text-align: right; line-height: 1.05; }
+  .poster-bar-value small { display: block; font-size: 4.6mm; font-weight: 800; color: #15803d; }
+  .poster-gain { background: repeating-linear-gradient(135deg, #bbf7d0 0 3mm, #dcfce7 3mm 6mm); }
+
+  .poster-stack { display: flex; height: 34mm; border-radius: 5mm; overflow: hidden; border: 0.6mm solid #dbe2ee; width: 100%; }
+  .poster-stack span { display: flex; align-items: center; justify-content: center; font-size: 7mm; font-weight: 900; }
+  .poster-key { display: flex; flex-wrap: wrap; gap: 3mm 8mm; font-size: 5mm; font-weight: 700; }
+  .poster-key i { display: inline-block; width: 5mm; height: 5mm; border-radius: 1.5mm; margin-right: 2mm; vertical-align: -0.6mm; }
+
+  .poster-ladder { display: flex; flex-direction: column-reverse; gap: 2.5mm; }
+  .poster-rung { display: grid; grid-template-columns: 26mm 1fr; gap: 4mm; align-items: center; }
+  .poster-rung b { font-size: 7mm; font-variant-numeric: tabular-nums; }
+  .poster-rung span { font-size: 5mm; padding: 3mm 5mm; border-radius: 3mm; background: #eef2f7; font-weight: 700; }
+  .poster-rung.is-now span { background: #2454a6; color: #fff; }
+  .poster-rung.is-goal span { background: #dcfce7; color: #166534; }
+
+  .poster-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; width: 100%; }
+  .poster-callout { border: 0.8mm solid #dbe2ee; border-radius: 4mm; padding: 6mm 7mm; }
+  .poster-callout strong { display: block; font-size: 4.8mm; letter-spacing: .1em; text-transform: uppercase; color: #5d6a7e; }
+  .poster-callout b { display: block; font-size: 11mm; margin: 2mm 0; line-height: 1.05; }
+  .poster-callout small { font-size: 4.8mm; color: #46536b; line-height: 1.3; display: block; }
+  .poster-callout.is-good { border-color: #16a34a; }
+  .poster-callout.is-next { border-color: #ea580c; }
+  .poster-empty { font-size: 5.4mm; color: #5d6a7e; margin: 0; line-height: 1.35; }
+`;
+
+    const POSTER_TONES = { blue: "#2454a6", green: "#16a34a", amber: "#ea580c", slate: "#5d6a7e" };
+
+    function posterContextLine() {
+      const filters = getFilters();
+      const students = new Set(state.filteredRows.map((row) => studentKey(row))).size;
+      const parts = [
+        filters.className ? "Class " + filters.className : null,
+        filters.subject || null,
+        formatInteger(students) + " students",
+        currentWindowName()
+      ].filter(Boolean);
+      return parts.join("  |  ") + "\nNo names, no individual scores.";
+    }
+
+    function posterHeading() {
+      const typed = els.posterHeading && cleanString(els.posterHeading.value);
+      if (typed) return typed;
+      const filters = getFilters();
+      return filters.className ? "Class " + filters.className : "Our class";
+    }
+
+    function posterShell(poster, inner) {
+      return '<section class="poster" data-poster="' + escapeAttr(poster.id) + '">' +
+        '<header><span class="poster-eyebrow">' + escapeHTML(posterHeading()) + "</span>" +
+        "<h1>" + escapeHTML(poster.headline()) + "</h1>" +
+        (poster.sub ? '<p class="poster-sub">' + escapeHTML(poster.sub()) + "</p>" : "") + "</header>" +
+        inner +
+        '<footer class="poster-foot"><p class="poster-message">' + escapeHTML(poster.message()) + "</p>" +
+        '<span class="poster-meta">' + escapeHTML(posterContextLine()) + "</span></footer>" +
+        "</section>";
+    }
+
+    function posterHero(value, label, tone) {
+      return '<div class="poster-hero"><span class="poster-big' + (tone ? " is-" + tone : "") + '">' +
+        escapeHTML(value) + '</span><span class="poster-big-label">' + escapeHTML(label) + "</span></div>";
+    }
+
+    function posterBarRow(name, note, share, value, colour) {
+      const width = clampBetween(isFiniteNumber(share) ? share : 0, 0, 100);
+      return '<div class="poster-bar-row"><span class="poster-bar-name">' + escapeHTML(name) +
+        (note ? "<small>" + escapeHTML(note) + "</small>" : "") + "</span>" +
+        '<span class="poster-bar-track"><i class="poster-bar-fill" style="width:' + width.toFixed(1) +
+        "%;background:" + colour + '"></i></span>' +
+        '<span class="poster-bar-value">' + escapeHTML(value) + "</span></div>";
+    }
+
+    // ---- The posters themselves -------------------------------------------
+    const POSTERS = [
+      {
+        id: "growth",
+        title: "We grew this year",
+        blurb: "The share of the class who met or beat the growth NWEA projected for them.",
+        available: () => hasGrowthContext() && isFiniteNumber(aggregateRows(state.filteredRows).metPct),
+        headline: () => "We Grew This Year",
+        sub: () => "Growth is measured against students who started exactly where you did.",
+        message: () => "Your score tells you where you are. Your growth tells you how hard you have been working. Growth is the part you control.",
+        body: () => {
+          const metrics = aggregateRows(state.filteredRows);
+          const met = metrics.metPct;
+          const exceeded = metrics.exceededPct;
+          const median = metrics.medianConditionalGrowthPercentile;
+          return '<div class="poster-body">' +
+            posterHero(formatPercentWhole(met), "of us met or beat our growth goal", met >= 50 ? "green" : "amber") +
+            '<div class="poster-main"><div class="poster-bars">' +
+            posterBarRow("Met the goal", "Grew at least as much as projected", met, formatPercentWhole(met), POSTER_TONES.green) +
+            posterBarRow("Beat the goal", "Grew more than projected", exceeded, formatPercentWhole(exceeded), POSTER_TONES.blue) +
+            (isFiniteNumber(median)
+              ? posterBarRow("Our typical growth", "50 is typical for students who started with us", median, formatNumber(median, 0), POSTER_TONES.amber)
+              : "") +
+            "</div>" +
+            (isFiniteNumber(metrics.avgRITChange)
+              ? '<div class="poster-callouts"><div class="poster-callout is-good"><strong>Average RIT gain</strong><b>' +
+                escapeHTML(formatSignedNumber(metrics.avgRITChange)) + "</b><small>points added since the last test window</small></div>" +
+                '<div class="poster-callout"><strong>Moved up a colour band</strong><b>' +
+                escapeHTML(formatInteger(metrics.movedUpCount)) + "</b><small>results that climbed into a higher band</small></div></div>"
+              : "") +
+            "</div></div>";
+        }
+      },
+      {
+        id: "bands",
+        title: "Where we are now",
+        blurb: "The class spread across the five NWEA colour bands, as counts rather than names.",
+        available: () => aggregateRows(state.filteredRows).percentileCount > 0,
+        headline: () => "Every Starting Point Counts",
+        sub: () => "This is where our class sits today. It is a starting line, not a label.",
+        message: () => "Nobody on this chart is stuck where they are. The band you are in today says where to begin, not where you finish.",
+        body: () => {
+          const rows = state.filteredRows.filter((row) => isFiniteNumber(row.currentPercentile));
+          const counts = BANDS.map((band) => ({
+            band,
+            count: rows.filter((row) => row.currentBand.name === band.name).length
+          }));
+          const total = counts.reduce((sum, entry) => sum + entry.count, 0) || 1;
+          const stack = counts.filter((entry) => entry.count).map((entry) =>
+            '<span style="flex:' + entry.count + ";background:" + bandPrintColour(entry.band) + ";color:" + bandPrintInk(entry.band) + '">' +
+            formatInteger(entry.count) + "</span>").join("");
+          const key = counts.filter((entry) => entry.count).map((entry) =>
+            '<span><i style="background:' + bandPrintColour(entry.band) + '"></i>' + escapeHTML(entry.band.name) +
+            " " + escapeHTML(entry.band.min + "-" + entry.band.max) + "</span>").join("");
+          const secure = rows.filter((row) => row.currentPercentile >= SECURE_BENCHMARK).length;
+          return '<div class="poster-body">' +
+            posterHero(formatInteger(total), "test results from our class", "blue") +
+            '<div class="poster-main"><div class="poster-stack">' + stack + "</div>" +
+            '<div class="poster-key">' + key + "</div>" +
+            '<div class="poster-callouts"><div class="poster-callout is-good"><strong>At or above the 61st percentile</strong><b>' +
+            escapeHTML(formatInteger(secure)) + "</b><small>of them are already in the green or blue band</small></div>" +
+            '<div class="poster-callout"><strong>Our middle score</strong><b>' +
+            escapeHTML(formatNumber(median(rows.map((row) => row.currentPercentile)), 0)) +
+            "</b><small>half of us are above this percentile, half below</small></div></div></div></div>";
+        }
+      },
+      {
+        id: "areas",
+        title: "Our learning areas",
+        blurb: "The strand the class is strongest in and the one to work on next, from the Class Profile export.",
+        available: () => Boolean(state.strandAnalysis && state.strandAnalysis.subjects.some((subject) =>
+          subject.areas.some((area) => area.verdict === "gap" || area.verdict === "strength"))),
+        headline: () => "What We Are Good At, And What Is Next",
+        sub: () => "Every subject has parts. These are the parts where our class stands out.",
+        message: () => "Being behind in one part of a subject is not being behind in the subject. It is one thing to practise, and it is the fastest thing to change.",
+        body: () => {
+          const analysis = state.strandAnalysis;
+          const strengths = [];
+          const gaps = [];
+          analysis.subjects.forEach((subject) => {
+            subject.areas.forEach((area) => {
+              if (area.verdict === "strength") strengths.push({ subject: subject.subject, area });
+              if (area.verdict === "gap") gaps.push({ subject: subject.subject, area });
+            });
+          });
+          const card = (entry, kind) => '<div class="poster-callout is-' + kind + '"><strong>' +
+            escapeHTML(entry.subject) + (kind === "good" ? " strength" : " next step") + "</strong><b>" +
+            escapeHTML(entry.area.name) + "</b><small>" +
+            escapeHTML(formatFixed1(Math.abs(entry.area.meanDelta)) + " RIT " + (kind === "good" ? "ahead of" : "behind") +
+              " the rest of our work in this subject") + "</small></div>";
+          const cards = strengths.slice(0, 2).map((entry) => card(entry, "good"))
+            .concat(gaps.slice(0, 2).map((entry) => card(entry, "next"))).join("");
+          return '<div class="poster-body">' +
+            posterHero(formatInteger(strengths.length + gaps.length), "areas that stand out across our subjects", "blue") +
+            '<div class="poster-main"><div class="poster-callouts">' + cards + "</div></div></div>";
+        }
+      },
+      {
+        id: "ladder",
+        title: "The RIT ladder",
+        blurb: "What a year of growth looks like on the RIT scale, from where the class is now.",
+        available: () => ritLadderEntries().length > 0,
+        headline: () => "Where We Are, And Where We Are Going",
+        sub: () => "RIT is one scale that keeps going all the way through school. It does not restart each year.",
+        message: () => "A RIT point is small. A year of them is not. Growth happens in the lessons you turn up for, not on the day of the test.",
+        body: () => {
+          // Typical growth differs by subject and shrinks as students get
+          // older, so one averaged number across four subjects would be a
+          // number that describes none of them. Each subject gets its own row.
+          const entries = ritLadderEntries();
+          const horizon = entries.length ? entries[0].horizon : "";
+          const floor = Math.min(...entries.map((entry) => entry.now)) - 8;
+          const ceiling = Math.max(...entries.map((entry) => entry.now + entry.gain)) + 4;
+          const span = Math.max(1, ceiling - floor);
+          const bars = entries.map((entry) => {
+            const nowPct = clampBetween((entry.now - floor) / span * 100, 0, 100);
+            const gainPct = clampBetween(entry.gain / span * 100, 0, 100 - nowPct);
+            return '<div class="poster-bar-row"><span class="poster-bar-name">' + escapeHTML(entry.subject) +
+              "<small>" + escapeHTML("typical gain " + formatSignedNumber(entry.gain) + " RIT") + "</small></span>" +
+              '<span class="poster-bar-track"><i class="poster-bar-fill" style="width:' + nowPct.toFixed(1) +
+              '%;background:#2454a6"></i><i class="poster-bar-fill poster-gain" style="left:' + nowPct.toFixed(1) +
+              "%;width:" + gainPct.toFixed(1) + '%"></i></span>' +
+              '<span class="poster-bar-value">' + escapeHTML(formatNumber(entry.now, 0)) +
+              '<small>&rarr; ' + escapeHTML(formatNumber(entry.now + entry.gain, 0)) + "</small></span></div>";
+          }).join("");
+          const best = entries.slice().sort((a, b) => b.gain - a.gain)[0];
+          return '<div class="poster-body">' +
+            posterHero(formatSignedNumber(best.gain), "RIT points is a typical year in " + best.subject.toLowerCase(), "green") +
+            '<div class="poster-main"><div class="poster-bars">' + bars + "</div>" +
+            '<p class="poster-empty">' + escapeHTML("Dark blue is where our middle score sits today. The pale bar is a typical year of growth, to " +
+              (horizon || "this time next year") + ".") + "</p></div></div>";
+        }
+      },
+      {
+        id: "equity",
+        title: "Growth is measured fairly",
+        blurb: "Median conditional growth by starting band, showing that growth is judged against a fair comparison.",
+        available: () => hasGrowthContext() &&
+          growthEquityBands(state.filteredRows).filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP)).length >= 2,
+        headline: () => "You Are Compared With People Who Started Where You Did",
+        sub: () => "Growth is not a race against the top of the class.",
+        message: () => "50 means you grew as much as students across the country who started on the same score as you. Anyone in this room can be above 50.",
+        body: () => {
+          const bands = growthEquityBands(state.filteredRows).filter((entry) => entry.count > 0);
+          const rows = bands.map((entry) => posterBarRow(
+            entry.band.name + " start",
+            "Started between the " + entry.band.min + "th and " + entry.band.max + "th percentile",
+            isFiniteNumber(entry.medianCGP) ? entry.medianCGP : 0,
+            isFiniteNumber(entry.medianCGP) ? formatNumber(entry.medianCGP, 0) : "n/a",
+            bandPrintColour(entry.band))).join("");
+          const best = bands.filter((entry) => isFiniteNumber(entry.medianCGP))
+            .slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
+          return '<div class="poster-body">' +
+            posterHero(best ? formatNumber(best.medianCGP, 0) : "-",
+              best ? "was the strongest growth in the class, from the " + best.band.name.toLowerCase() + " starting band" : "", "green") +
+            '<div class="poster-main"><div class="poster-bars">' + rows + "</div>" +
+            '<p class="poster-empty">Each bar is a growth score out of 100. 50 is typical.</p></div></div>';
+        }
+      },
+      {
+        id: "effort",
+        title: "Take your time",
+        blurb: "Median test length and the number of tests that were rushed, as a case for slowing down.",
+        available: () => {
+          const diagnostics = state.diagnostics;
+          return Boolean(diagnostics && (isFiniteNumber(diagnostics.medianDuration) || diagnostics.rapidGuessReported));
+        },
+        headline: () => "Your Score Is Only As Honest As Your Effort",
+        sub: () => "A MAP test gets harder when you get answers right. Guessing makes it easier, and the score goes down.",
+        message: () => "Read the whole question. A test finished fast is not a test done well - it is a lower score than you can actually earn.",
+        body: () => {
+          const diagnostics = state.diagnostics || {};
+          const metrics = aggregateRows(state.filteredRows);
+          const rushed = (diagnostics.rapidGuessFlagged || 0) + metrics.shortTestCount;
+          return '<div class="poster-body">' +
+            posterHero(isFiniteNumber(diagnostics.medianDuration) ? formatNumber(diagnostics.medianDuration, 0) : "-",
+              "minutes is how long our class usually takes", "blue") +
+            '<div class="poster-main"><div class="poster-callouts">' +
+            '<div class="poster-callout is-next"><strong>Tests finished too fast</strong><b>' +
+            escapeHTML(formatInteger(rushed)) + "</b><small>rushed or rapidly guessed, and worth taking again</small></div>" +
+            '<div class="poster-callout is-good"><strong>What careful work looks like</strong><b>Read it twice</b>' +
+            "<small>the question, then the answers, before you choose</small></div>" +
+            "</div></div></div>";
+        }
+      },
+      {
+        id: "target",
+        title: "Our next milestone",
+        blurb: "How many more results the class needs above the chosen line to reach its target.",
+        available: () => {
+          const result = state.targetResult;
+          return Boolean(result && result.scored.length);
+        },
+        headline: () => "Our Class Goal",
+        sub: () => {
+          const result = state.targetResult;
+          return "Getting to " + formatPercentWhole(result.targetShare) + " of us at or above the " +
+            ordinal(result.threshold) + " percentile.";
+        },
+        message: () => "A class goal is not a competition. Every person who moves up moves the whole bar along.",
+        body: () => {
+          const result = state.targetResult;
+          const share = clampBetween(result.currentShare, 0, 100);
+          const target = clampBetween(result.targetShare, 0, 100);
+          return '<div class="poster-body">' +
+            posterHero(formatInteger(result.needed), result.needed
+              ? "more results to reach our goal"
+              : "more needed - we are already there", result.needed ? "amber" : "green") +
+            '<div class="poster-main"><div class="poster-bars">' +
+            posterBarRow("Where we are", "Results at or above the line today", share, formatPercentWhole(share), POSTER_TONES.blue) +
+            posterBarRow("Where we are going", "The share we are aiming for", target, formatPercentWhole(target), POSTER_TONES.green) +
+            "</div>" +
+            '<div class="poster-callouts"><div class="poster-callout is-good"><strong>Already there</strong><b>' +
+            escapeHTML(formatInteger(result.above.length)) + "</b><small>results at or above the line</small></div>" +
+            '<div class="poster-callout"><strong>Closest to it</strong><b>' +
+            escapeHTML(result.below.length ? formatNumber(result.below[0].distance, 0) + " points" : "-") +
+            "</b><small>the shortest distance anyone has left to climb</small></div></div></div></div>";
+        }
+      }
+    ];
+
+    function ritLadderEntries() {
+      const bySubject = new Map();
+      state.filteredRows.forEach((row) => {
+        if (!row.goals || !isFiniteNumber(row.currentRIT)) return;
+        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+        bySubject.get(row.subject).push(row);
+      });
+      return [...bySubject.entries()].map(([subject, rows]) => ({
+        subject,
+        now: median(rows.map((row) => row.currentRIT)),
+        gain: avg(rows.map((row) => row.goals.typicalGain)),
+        horizon: rows[0].goals.horizonLabel
+      })).filter((entry) => isFiniteNumber(entry.now) && isFiniteNumber(entry.gain) && entry.gain > 0)
+        .sort((a, b) => a.subject.localeCompare(b.subject));
+    }
+
+    // Band colours are CSS custom properties on the page, which mean nothing in
+    // a print window, so the poster uses fixed print-safe equivalents.
+    const BAND_PRINT_COLOURS = {
+      Red: ["#dc2626", "#ffffff"],
+      Orange: ["#ea580c", "#ffffff"],
+      Yellow: ["#eab308", "#10182b"],
+      Green: ["#16a34a", "#ffffff"],
+      Blue: ["#2563eb", "#ffffff"]
+    };
+
+    function bandPrintColour(band) {
+      return (BAND_PRINT_COLOURS[band.name] || ["#5d6a7e", "#ffffff"])[0];
+    }
+
+    function bandPrintInk(band) {
+      return (BAND_PRINT_COLOURS[band.name] || ["#5d6a7e", "#ffffff"])[1];
+    }
+
+    function availablePosters() {
+      return POSTERS.filter((poster) => {
+        try {
+          return poster.available();
+        } catch (error) {
+          console.error("Poster availability check failed for " + poster.id, error);
+          return false;
+        }
+      });
+    }
+
+    function posterPage() {
+      const value = els.posterOrientation ? els.posterOrientation.value : "landscape";
+      return POSTER_PAGES[value] || POSTER_PAGES.landscape;
+    }
+
+    function posterSelection() {
+      if (!state.posterSelection) state.posterSelection = new Set(POSTERS.map((poster) => poster.id));
+      return state.posterSelection;
+    }
+
+    function renderPosters() {
+      if (!els.posterGrid) return;
+      const posters = availablePosters();
+      const selection = posterSelection();
+      if (!posters.length) {
+        els.posterGrid.innerHTML = '<div class="empty-state">Load a file to build the posters. Which ones are available depends on what the export carries - growth posters need two windows, and the learning-areas poster needs a Class Profile export.</div>';
+        setText("posterCount", "");
+        return;
+      }
+      const page = posterPage();
+      els.posterGrid.innerHTML = posters.map((poster) => {
+        const checked = selection.has(poster.id) ? " checked" : "";
+        let inner;
+        try {
+          inner = posterShell(poster, poster.body());
+        } catch (error) {
+          console.error("Poster render failed for " + poster.id, error);
+          inner = '<section class="poster"><p class="poster-empty">This poster could not be drawn from the current view.</p></section>';
+        }
+        // The scaled preview is a picture of the print, and every number on it
+        // is already in the dashboard above, so it is hidden from assistive
+        // technology rather than read out a second time at a quarter size.
+        return '<article class="poster-card reveal">' +
+          '<label class="poster-pick"><input type="checkbox" data-poster-pick="' + escapeAttr(poster.id) + '"' + checked + ">" +
+          "<span><strong>" + escapeHTML(poster.title) + "</strong><small>" + escapeHTML(poster.blurb) + "</small></span></label>" +
+          '<div class="poster-frame" aria-hidden="true" style="--poster-w:' + page.width + ";--poster-h:" + page.height + '">' +
+          '<div class="poster-scale" style="width:' + page.width + "mm;height:" + page.height + 'mm">' + inner + "</div></div>" +
+          '<div class="btn-row"><button class="btn small ghost" type="button" data-poster-print="' + escapeAttr(poster.id) + '">Print this one</button></div>' +
+          "</article>";
+      }).join("");
+      const picked = posters.filter((poster) => selection.has(poster.id)).length;
+      setText("posterCount", formatInteger(picked) + " of " + formatInteger(posters.length) + " selected | " + page.css);
+      applyStagger(els.posterGrid);
+      scalePosterPreviews();
+    }
+
+    // The poster is authored in millimetres so print is exact; the preview is
+    // the same box scaled down to whatever width the card happens to have.
+    function scalePosterPreviews() {
+      const frames = els.posterGrid ? els.posterGrid.querySelectorAll(".poster-frame") : [];
+      frames.forEach((frame) => {
+        const inner = frame.querySelector(".poster-scale");
+        if (!inner) return;
+        const naturalWidth = inner.offsetWidth || 1;
+        frame.style.setProperty("--poster-scale", (frame.clientWidth / naturalWidth).toFixed(4));
+      });
+      if (!state.posterScaleObserver && typeof ResizeObserver === "function" && els.posterGrid) {
+        state.posterScaleObserver = new ResizeObserver(() => scalePosterPreviews());
+        state.posterScaleObserver.observe(els.posterGrid);
+      }
+    }
+
+    function printPosters(ids) {
+      const posters = availablePosters().filter((poster) => !ids || ids.includes(poster.id));
+      if (!posters.length) {
+        toast("Select at least one poster to print.", "info");
+        return;
+      }
+      const page = posterPage();
+      const body = posters.map((poster) => {
+        try {
+          return '<div class="poster-page">' + posterShell(poster, poster.body()) + "</div>";
+        } catch (error) {
+          console.error("Poster render failed for " + poster.id, error);
+          return "";
+        }
+      }).filter(Boolean).join("");
+      const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' +
+        escapeHTML(posterHeading() + " - wall posters") + "</title><style>" +
+        "@page { size: " + page.css + "; margin: 0; }" +
+        "html, body { margin: 0; padding: 0; background: #fff; }" +
+        ".poster-page { width: " + page.width + "mm; height: " + page.height + "mm; page-break-after: always; }" +
+        ".poster-page:last-child { page-break-after: auto; }" +
+        ".poster { width: 100%; height: 100%; }" +
+        POSTER_CSS +
+        "</style></head><body>" + body + "</body></html>";
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        downloadText("nwea-wall-posters.html", html, "text/html");
+        setStatus("Popup blocked. The posters were downloaded as an HTML file you can open and print.", false);
+        toast("Popup blocked - the posters were downloaded instead.", "info");
+        return;
+      }
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 320);
+    }
+
+    // ---------------------------------------------------------------------
+    // Seating planner
+    // ---------------------------------------------------------------------
+    // Dragging thirty students around a 300px-tall strip inside a scrolling
+    // page is the wrong tool for the job. The planner moves the controls and
+    // the room itself into a near-full-screen surface - the same DOM nodes, so
+    // the drag, keyboard and print handlers are untouched - and puts them back
+    // on close.
+    function plannerHome() {
+      return document.getElementById("sec-tables");
+    }
+
+    function openPlanner() {
+      if (!els.plannerBackdrop || !els.plannerStage) return;
+      if (!state.tableGroups.length && !state.tableManualPool.length) renderTableGroups();
+      if (els.groupControls && els.plannerControlSlot) els.plannerControlSlot.appendChild(els.groupControls);
+      if (els.tableGroups) els.plannerStage.appendChild(els.tableGroups);
+      state.plannerOpen = true;
+      state.plannerReturnFocus = document.activeElement;
+      els.plannerBackdrop.hidden = false;
+      document.body.classList.add("modal-open", "planner-open");
+      requestAnimationFrame(() => els.plannerBackdrop.classList.add("is-open"));
+      renderPlannerChrome();
+      if (els.plannerClose) els.plannerClose.focus();
+    }
+
+    function closePlanner() {
+      if (!els.plannerBackdrop || els.plannerBackdrop.hidden) return;
+      const home = plannerHome();
+      // Put both nodes back where the section expects them: controls above the
+      // explain cards, the room at the end.
+      if (home && els.groupControls) {
+        const anchor = home.querySelector(".explain-grid");
+        if (anchor) home.insertBefore(els.groupControls, anchor);
+        else home.appendChild(els.groupControls);
+      }
+      if (home && els.tableGroups) home.appendChild(els.tableGroups);
+      state.plannerOpen = false;
+      els.plannerBackdrop.classList.remove("is-open");
+      document.body.classList.remove("modal-open", "planner-open");
+      const hide = () => { els.plannerBackdrop.hidden = true; };
+      if (prefersReducedMotion()) hide();
+      else setTimeout(hide, 180);
+      const focus = state.plannerReturnFocus && document.contains(state.plannerReturnFocus)
+        ? state.plannerReturnFocus
+        : els.plannerLaunch;
+      if (focus && typeof focus.focus === "function") focus.focus();
+      state.plannerReturnFocus = null;
+      renderPlannerChrome();
+    }
+
+    function togglePlannerControls() {
+      if (!els.plannerControlSlot || !els.plannerToggleControls) return;
+      const collapsed = els.plannerControlSlot.classList.toggle("is-collapsed");
+      els.plannerToggleControls.textContent = collapsed ? "Show controls" : "Hide controls";
+      els.plannerToggleControls.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    }
+
+    // The launcher and the small preview that stand in for the room while the
+    // planner is closed, so the section is never just a button.
+    function renderPlannerChrome() {
+      const tables = state.tableGroups.length;
+      const seated = state.tableGroups.reduce((sum, group) => sum + group.length, 0);
+      const pool = state.tableManualPool.length;
+      if (els.plannerLaunchHint) {
+        els.plannerLaunchHint.textContent = tables
+          ? formatInteger(seated) + " students across " + formatInteger(tables) + " table" + (tables === 1 ? "" : "s") +
+            (pool ? ", " + formatInteger(pool) + " waiting to be placed by hand" : "") +
+            ". Drag students between tables, move the tables, then print the plan."
+          : "A full-screen room you can drag students and tables around in. Load data to build a plan.";
+      }
+      if (els.plannerContext) {
+        els.plannerContext.textContent = tables
+          ? formatInteger(seated) + " students | " + formatInteger(tables) + " tables | " + state.tableGroupPlanLabel +
+            (pool ? " | " + formatInteger(pool) + " to place by hand" : "")
+          : "No tables yet. Adjust the controls and rebuild the groups.";
+      }
+      if (els.plannerPreview) {
+        els.plannerPreview.hidden = state.plannerOpen || !tables;
+        if (!els.plannerPreview.hidden) els.plannerPreview.innerHTML = plannerPreviewHTML();
+      }
+      if (els.tableGroups) els.tableGroups.hidden = !state.plannerOpen;
+    }
+
+    // A miniature of the room, drawn from the same coordinates the planner uses
+    // so the thumbnail is the plan rather than a decoration.
+    function plannerPreviewHTML() {
+      const ratio = state.classroomLayout.roomRatio || { width: 4, height: 3 };
+      const width = clampBetween(finiteLayoutNumber(ratio.width, 4), 1, 30);
+      const height = clampBetween(finiteLayoutNumber(ratio.height, 3), 1, 30);
+      const tiles = state.tableGroups.map((group, index) => {
+        const position = state.classroomLayout.tables[index] || defaultTablePosition(index, state.tableGroups.length);
+        return '<i class="planner-mini-table" style="left:' + clampBetween(position.x, 0, 92).toFixed(1) +
+          '%;top:' + clampBetween(position.y, 0, 90).toFixed(1) + '%" title="' +
+          escapeAttr("Table " + (index + 1) + ": " + formatInteger(group.length) + " students") + '">' +
+          formatInteger(group.length) + "</i>";
+      }).join("");
+      const board = state.classroomLayout.frontBoard || { x: 24, y: 1 };
+      const desk = state.classroomLayout.teacherDesk || { x: 4, y: 11 };
+      return '<div class="planner-mini" style="aspect-ratio:' + width + " / " + height + '" role="img" aria-label="' +
+        escapeAttr("Miniature of the current room plan: " + formatInteger(state.tableGroups.length) + " tables.") + '">' +
+        '<i class="planner-mini-board" style="left:' + clampBetween(board.x, 0, 80).toFixed(1) + '%;top:' + clampBetween(board.y, 0, 92).toFixed(1) + '%"></i>' +
+        '<i class="planner-mini-desk" style="left:' + clampBetween(desk.x, 0, 92).toFixed(1) + '%;top:' + clampBetween(desk.y, 0, 92).toFixed(1) + '%"></i>' +
+        tiles + "</div>" +
+        '<p class="planner-mini-note">' + escapeHTML("This is the current plan. Open the planner to move anything.") + "</p>";
+    }
+
     function renderTableGroupLayout(scoreMode, strategy) {
       applyLayoutControlSettings();
       initializeClassroomLayout(state.tableGroups.length, false);
@@ -9211,7 +10305,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           <div class="classroom-front-board" data-layout-kind="frontBoard" tabindex="0" role="application" aria-label="Front board. Use the arrow keys to move it, hold Shift for larger steps." style="${layoutStyle(state.classroomLayout.frontBoard)}">Board</div>
           <div class="classroom-door" data-layout-kind="door" tabindex="0" role="application" aria-label="Door. Use the arrow keys to move it along the room border." style="${layoutStyle(state.classroomLayout.door)}">Door</div>
           <div class="teacher-desk" data-layout-kind="teacherDesk" tabindex="0" role="application" aria-label="Teacher desk. Use the arrow keys to move it, hold Shift for larger steps." style="${layoutStyle(state.classroomLayout.teacherDesk)}">Teacher Desk</div>
-          <div class="table-layout-note">Drag the board, door, teacher desk, and table headers to match the room, or focus one and use the arrow keys. Students can be moved with the arrow keys, a number key, or Backspace when a student card has focus. Door stays on the room border.</div>
+          <details class="table-layout-note"><summary>How to move things</summary><p>Drag the board, door, teacher desk, and table headers to match the room, or focus one and use the arrow keys. Students can be moved with the arrow keys, a number key, or Backspace when a student card has focus. The door stays on the room border.</p></details>
           ${state.tableGroups.map((group, index) => renderTableGroupCard(group, index, scoreMode, strategy)).join("")}
         </div>
       `;
@@ -9234,14 +10328,41 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.classroomLayout.tables = state.classroomLayout.tables.slice(0, tableCount);
     }
 
+    // Cards are roughly a third of the room wide and a third of it tall, and the
+    // old fixed 2/3/4-column grid ignored that: five tables landed two rows deep
+    // with less vertical space between them than a card is tall, so they opened
+    // on top of each other. The grid is now derived from the card size.
+    const TABLE_CARD_WIDTH_PCT = 30;
+    const TABLE_CARD_HEIGHT_PCT = 34;
+    const ROOM_BOUNDS = { left: 3, right: 98, top: 21, bottom: 97 };
+
+    function defaultTableGrid(tableCount) {
+      const count = Math.max(1, tableCount);
+      const spanX = ROOM_BOUNDS.right - ROOM_BOUNDS.left;
+      const spanY = ROOM_BOUNDS.bottom - ROOM_BOUNDS.top;
+      const maxColumns = Math.max(1, Math.floor(spanX / TABLE_CARD_WIDTH_PCT));
+      const maxRows = Math.max(1, Math.floor(spanY / TABLE_CARD_HEIGHT_PCT));
+      let columns = Math.ceil(Math.sqrt(count * 1.4));
+      columns = Math.max(columns, Math.ceil(count / maxRows));
+      columns = Math.max(1, Math.min(columns, maxColumns, count));
+      const rows = Math.ceil(count / columns);
+      const stepX = columns > 1
+        ? Math.min(TABLE_CARD_WIDTH_PCT + 2, (spanX - TABLE_CARD_WIDTH_PCT) / (columns - 1))
+        : 0;
+      const stepY = rows > 1
+        ? Math.min(TABLE_CARD_HEIGHT_PCT + 2, (spanY - TABLE_CARD_HEIGHT_PCT) / (rows - 1))
+        : 0;
+      return { columns, rows, stepX, stepY };
+    }
+
     function defaultTablePosition(index, tableCount) {
-      const columns = tableCount <= 4 ? 2 : tableCount <= 9 ? 3 : 4;
-      const rows = Math.ceil(tableCount / columns);
-      const col = index % columns;
-      const row = Math.floor(index / columns);
-      const x = 6 + col * (86 / Math.max(1, columns));
-      const y = 24 + row * (58 / Math.max(1, rows));
-      return clampTablePosition({ x, y });
+      const grid = defaultTableGrid(tableCount);
+      const col = index % grid.columns;
+      const row = Math.floor(index / grid.columns);
+      return clampTablePosition({
+        x: ROOM_BOUNDS.left + col * grid.stepX,
+        y: ROOM_BOUNDS.top + row * grid.stepY
+      });
     }
 
     function classroomBoardStyle() {
@@ -9694,7 +10815,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           <header data-layout-handle>
             <div>
               <h3>Table ${formatInteger(index + 1)}</h3>
-              <span class="group-detail">${escapeHTML(strategyFocus(strategy))}</span>
+              <span class="group-detail" title="${escapeAttr(strategyFocus(strategy))}">${escapeHTML(strategyFocusShort(strategy))}</span>
             </div>
             <div class="btn-row">
               <span class="status-pill ${overCapacity ? "status-risk" : "status-neutral"}"${overCapacity ? ` title="More students than this table was planned for. The A4 print may not fit them all."` : ""}>${formatInteger(group.length)}${capacity ? " / " + formatInteger(capacity) : ""} students</span>
@@ -9707,7 +10828,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               ? miniMetric("Avg vs norm", formatSignedNumber(avg(group.map((profile) => profile.avgUSNormDeltaRIT))))
               : miniMetric("Avg CGP", formatNumber(avgGrowth))}
             ${miniMetric(isBaselineMode() ? "Support flags" : "Priority flags", formatInteger(priorityCount))}
-            ${miniMetric("Score used", scoreLabel)}
+            ${miniMetric("Score used", scoreLabel, false, "room-hidden")}
           </div>
           <ol class="drop-zone" data-drop-zone="table" data-table-index="${escapeAttr(index)}">
             ${group.map((profile) => `
@@ -9721,10 +10842,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function renderManualPool(scoreMode) {
       const count = state.tableManualPool.length;
       return `
-        <aside class="manual-pool-card">
+        <aside class="manual-pool-card${count ? "" : " is-empty"}">
           <header>
-            <h3>Manual Placement Pool</h3>
-            <span class="status-pill status-neutral">${formatInteger(count)} students</span>
+            <h3>${count ? "Manual Placement Pool" : "Manual Pool"}</h3>
+            ${count ? `<span class="status-pill status-neutral">${formatInteger(count)} students</span>` : ""}
           </header>
           <p class="group-detail">Students here do not have a usable score for the selected grouping setting. Drag them into a table after reviewing what you know about them.</p>
           <div class="drop-zone" data-drop-zone="pool">
@@ -9744,6 +10865,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const secondary = isBaselineMode()
         ? `%ile ${formatNumber(profile.avgEndPercentile)} | vs norm ${formatSignedNumber(profile.avgUSNormDeltaRIT)}`
         : `End %ile ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)}`;
+      const detail = `${profile.subjects} | ${secondary} | ${planningGroupForProfile(profile)}${isPool ? missing : ""}`;
+      // Inside the room only the number that drove the grouping is shown, so a
+      // table of five students fits in the space a table actually has.
+      const compact = isBaselineMode()
+        ? `%ile ${formatNumber(profile.avgEndPercentile, 0)}`
+        : `CGP ${formatNumber(profile.avgConditionalGrowthPercentile, 0)}`;
       const placement = isPool ? "the manual placement pool" : "a table";
       const label = `${profile.studentName}, currently in ${placement}. Press the left or right arrow to move between tables, a number key to jump to that table, or Backspace to return to the pool.`;
       return `
@@ -9754,7 +10881,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             <strong>${escapeHTML(profile.studentName)}</strong>
             ${bandPill(profile.endBand)}
           </div>
-          <span class="group-detail">${escapeHTML(profile.subjects)} | ${escapeHTML(secondary)} | ${escapeHTML(planningGroupForProfile(profile))}${escapeHTML(isPool ? missing : "")}</span>
+          <span class="group-detail" title="${escapeAttr(detail)}">${escapeHTML(detail)}</span>
+          <span class="drag-card-compact" aria-hidden="true">${escapeHTML(compact)}</span>
         </${tag}>
       `;
     }
@@ -10001,6 +11129,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (strategy === "score") return "Similar-score skill group";
       if (strategy === "priority") return "Intervention priority order";
       return "Balanced mix of higher, middle, and lower complete profiles";
+    }
+
+    // The room needs the strategy in a few words, not a sentence: a card that
+    // spends four lines describing itself has none left for the students.
+    function strategyFocusShort(strategy) {
+      if (strategy === "score") return "Similar scores";
+      if (strategy === "priority") return "Priority order";
+      return "Balanced mix";
     }
 
     function scoreModeLabel(scoreMode) {
@@ -10819,6 +11955,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         toast("Printing the first " + formatInteger(printed.length) + " of " + formatInteger(entries.length) +
           " students. Filter to a class to print the rest.", "info");
       }
+      const floor = state.strandAnalysis ? state.strandAnalysis.floor : AREA_MIN_FLOOR;
       const sheets = printed.map(([name, studentRows]) => {
         const first = studentRows[0];
         return '<section class="sheet">' +
@@ -10832,12 +11969,44 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             "</td><td>" + escapeHTML(row.goals.alreadyAtOrAbove ? "Already there" : formatSignedNumber(row.goals.catchUpGain)) +
             "</td></tr>").join("") +
           "</tbody></table>" +
+          goalSheetAreas(studentRows, floor) +
           "<h2>My goal for this year</h2><div class=\"write-in\"></div>" +
           "<h2>What I will do to get there</h2><div class=\"write-in\"></div>" +
           '<p class="note">' + escapeHTML(METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel) + "</p>" +
           "</section>";
       }).join("");
       openPrintWindow("NWEA Growth Goal Sheets", sheets, "nwea-goal-sheets.html");
+    }
+
+    // A goal sheet is the one place a student sees their own numbers, so it is
+    // also the right place for the instructional areas: a subject-level target
+    // says how far, and the areas say what to work on to get there. Only
+    // differences past the noise floor are printed, so a student is never sent
+    // to practise something that was measurement error.
+    function goalSheetAreas(studentRows, floor) {
+      const withAreas = studentRows.filter((row) => row.hasInstructionalAreas);
+      if (!withAreas.length) return "";
+      const lines = [];
+      withAreas.forEach((row) => {
+        const areas = row.instructionalAreas.filter((area) => isFiniteNumber(area.delta));
+        if (!areas.length) return;
+        const sorted = areas.slice().sort((a, b) => a.delta - b.delta);
+        const weakest = sorted[0];
+        const strongest = sorted[sorted.length - 1];
+        lines.push(
+          "<tr><td>" + escapeHTML(row.subject) + "</td>" +
+          "<td>" + escapeHTML(sorted.map((area) => area.name + " " + formatNumber(area.rit, 0)).join("; ")) + "</td>" +
+          "<td>" + escapeHTML(Math.abs(strongest.delta) >= floor ? strongest.name : "Even across the subject") + "</td>" +
+          "<td>" + escapeHTML(Math.abs(weakest.delta) >= floor ? weakest.name : "Nothing standing out") + "</td></tr>");
+      });
+      if (!lines.length) return "";
+      return "<h2>What is inside each subject</h2>" +
+        "<table><thead><tr><th>Subject</th><th>My score in each area</th><th>Strongest area</th><th>Area to work on</th></tr></thead><tbody>" +
+        lines.join("") + "</tbody></table>" +
+        '<p class="note">' + escapeHTML("Each area is compared with your own overall score in that subject, not with the year group. " +
+          "An area is only listed as strongest or as one to work on when it is at least " + formatInteger(floor) +
+          " RIT away from your own score - anything smaller is too close to call. Area scores come from fewer questions than the overall score, so they move around more.") +
+        "</p><h2>The area I am going to work on</h2><div class=\"write-in\"></div>";
     }
 
     function printSpotlight() {
