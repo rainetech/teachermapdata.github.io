@@ -4329,7 +4329,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const startTestDuration = cleanNumber(raw.startTestDuration);
       const endTestDuration = cleanNumber(raw.endTestDuration);
       const metGrowthClean = cleanYesNo(raw.metGrowthRaw);
-      const metGrowth = metGrowthClean === null && isFiniteNumber(observedGrowth) && isFiniteNumber(projectedGrowth)
+      const metGrowthInferred = metGrowthClean === null && isFiniteNumber(observedGrowth) && isFiniteNumber(projectedGrowth);
+      const metGrowthQualified = isQualifiedYesNo(raw.metGrowthRaw);
+      const metGrowth = metGrowthInferred
         ? observedGrowth >= projectedGrowth
         : metGrowthClean;
       const exceededGrowth = isFiniteNumber(observedGrowth) && isFiniteNumber(projectedGrowth)
@@ -4384,11 +4386,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // start score is never judged against a spring benchmark.
       const usNormStudentGrade = normalizeUSNormGrade(raw.studentGrade);
       const usNormBenchmarkRIT = getUSNormRIT(subject, usNormStudentGrade, currentSeason);
-      const usNormEquivalent = estimateUSNormEquivalentGrade(subject, currentSeason, currentRIT);
+      const usNormEquivalent = estimateUSNormEquivalentGrade(subject, currentSeason, currentRIT, usNormStudentGrade);
       const usNormDeltaRIT = isFiniteNumber(currentRIT) && isFiniteNumber(usNormBenchmarkRIT)
         ? currentRIT - usNormBenchmarkRIT
         : null;
-      const usNormGradeGap = usNormEquivalent && usNormStudentGrade
+      // A RIT past either end of the norm table, or one consistent with too
+      // many grades to distinguish, has no meaningful grade gap.
+      const usNormGradeGap = usNormEquivalent && !usNormEquivalent.outOfRange && !usNormEquivalent.indeterminate && usNormStudentGrade
         ? usNormEquivalent.gradeValue - gradeKeyToValue(usNormStudentGrade)
         : null;
       const usNormAtOrAbove = isFiniteNumber(usNormDeltaRIT) ? usNormDeltaRIT >= 0 : null;
@@ -4444,6 +4448,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         normDeltaChange,
         usNormEquivalentGrade: usNormEquivalent ? usNormEquivalent.gradeKey : null,
         usNormEquivalentGradeValue: usNormEquivalent ? usNormEquivalent.gradeValue : null,
+        usNormEquivalentOutOfRange: usNormEquivalent ? usNormEquivalent.outOfRange : null,
+        usNormEquivalentIndeterminate: Boolean(usNormEquivalent && usNormEquivalent.indeterminate),
         usNormGradeGap,
         projectedRIT,
         startPercentile,
@@ -4459,6 +4465,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         classPctProjectedGrowthMet,
         medianConditionalGrowthPercentile,
         metGrowth,
+        metGrowthInferred,
+        metGrowthQualified,
         exceededGrowth,
         growthEfficiency,
         growthEfficiencyLabel: growthEfficiencyLabel(growthEfficiency),
@@ -4687,12 +4695,22 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (isBlankLike(value)) return null;
       let cleaned = cleanString(value).replace(/\*/g, "").replace(/,/g, "");
       if (cleaned === "") return null;
+      // NWEA censors the tails of the percentile scale. Both ends get the same
+      // midpoint treatment so the two directions stay symmetric.
       if (/^<\s*1$/i.test(cleaned)) return 0.5;
+      if (/^>\s*99$/i.test(cleaned)) return 99.5;
       cleaned = cleaned.replace(/%/g, "");
       const match = cleaned.match(/-?\d+(\.\d+)?/);
       if (!match) return null;
       const number = Number(match[0]);
       return Number.isFinite(number) ? number : null;
+    }
+
+    // NWEA marks a qualified or estimated growth flag with an asterisk. The
+    // asterisk is recorded rather than discarded so the table can say so.
+    function isQualifiedYesNo(value) {
+      const raw = cleanString(value);
+      return raw.includes("*") && !isBlankLike(raw);
     }
 
     function cleanYesNo(value) {
@@ -4764,10 +4782,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const currentNorm = getUSNormRIT(subject, gradeKey, seasonKey);
       const targetNorm = getUSNormRIT(subject, horizon.gradeKey, horizon.seasonKey);
       if (!isFiniteNumber(currentNorm) || !isFiniteNumber(targetNorm)) return null;
-      const typicalGain = targetNorm - currentNorm;
+      const rawGain = targetNorm - currentNorm;
+      // At the top grades the published means flatten or dip slightly, so a
+      // "keep pace" target is holding position, never going backwards.
+      const typicalGain = Math.max(0, rawGain);
       const keepPaceRIT = currentRIT + typicalGain;
       const catchUpGain = targetNorm - currentRIT;
       return {
+        flatNorm: rawGain <= 0,
         horizonLabel: horizon.label,
         targetSeason: horizon.seasonKey,
         targetGradeKey: horizon.gradeKey,
@@ -4856,7 +4878,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return isFiniteNumber(rit) ? rit : null;
     }
 
-    function estimateUSNormEquivalentGrade(subject, seasonKey, rit) {
+    // Grade equivalence from rounded grade means is a blunt instrument: at the
+    // upper grades several grades share the same mean RIT to the point, so a
+    // single "nearest grade" answer is arbitrary. This returns the whole set of
+    // grades the RIT is consistent with, prefers the student's own grade when it
+    // is in that set, and declines to answer when the set is too wide to mean
+    // anything.
+    const NORM_EQUIVALENT_TOLERANCE = 1;
+    const NORM_EQUIVALENT_MAX_SPAN = 3;
+
+    function estimateUSNormEquivalentGrade(subject, seasonKey, rit, studentGradeKey) {
       if (!subject || !seasonKey || !isFiniteNumber(rit)) return null;
       const subjectNorms = US_NORMS[subject];
       if (!subjectNorms) return null;
@@ -4870,20 +4901,44 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         .sort((a, b) => a.gradeValue - b.gradeValue);
       if (!points.length) return null;
 
-      let best = points[0];
-      let bestDistance = Math.abs(rit - points[0].rit);
-      for (let index = 1; index < points.length; index += 1) {
-        const point = points[index];
-        const distance = Math.abs(rit - point.rit);
-        if (distance < bestDistance || (distance === bestDistance && point.gradeValue > best.gradeValue)) {
-          best = point;
-          bestDistance = distance;
-        }
+      const ritValues = points.map((point) => point.rit);
+      const lowestRIT = Math.min(...ritValues);
+      const highestRIT = Math.max(...ritValues);
+      // Outside the range the table covers there is nothing to match against;
+      // saying so is more useful than extrapolating a grade level.
+      if (rit < lowestRIT) {
+        const lowest = points.find((point) => point.rit === lowestRIT);
+        return { gradeKey: lowest.gradeKey, gradeValue: lowest.gradeValue, rit: lowest.rit, outOfRange: "below", candidates: [] };
       }
+      if (rit > highestRIT) {
+        const highest = points.filter((point) => point.rit === highestRIT).pop();
+        return { gradeKey: highest.gradeKey, gradeValue: highest.gradeValue, rit: highest.rit, outOfRange: "above", candidates: [] };
+      }
+
+      const bestDistance = Math.min(...points.map((point) => Math.abs(rit - point.rit)));
+      const candidates = points.filter((point) => Math.abs(rit - point.rit) <= bestDistance + NORM_EQUIVALENT_TOLERANCE);
+      const span = candidates[candidates.length - 1].gradeValue - candidates[0].gradeValue;
+      // The student's own grade wins whenever the RIT is consistent with it, so
+      // a student sitting exactly on their grade mean is never reported as
+      // being years behind because a neighbouring grade shares that mean.
+      const studentGradeValue = gradeKeyToValue(studentGradeKey);
+      const ownGrade = isFiniteNumber(studentGradeValue)
+        ? candidates.find((point) => point.gradeValue === studentGradeValue)
+        : null;
+      if (ownGrade) {
+        return { gradeKey: ownGrade.gradeKey, gradeValue: ownGrade.gradeValue, rit: ownGrade.rit, outOfRange: null, candidates, indeterminate: false };
+      }
+      const chosen = candidates.reduce((best, point) =>
+        Math.abs(rit - point.rit) < Math.abs(rit - best.rit) ? point : best, candidates[0]);
       return {
-        gradeKey: best.gradeKey,
-        gradeValue: best.gradeValue,
-        rit: best.rit
+        gradeKey: chosen.gradeKey,
+        gradeValue: chosen.gradeValue,
+        rit: chosen.rit,
+        outOfRange: null,
+        candidates,
+        // Where the means flatten, several grades fit equally well and no single
+        // grade level can be claimed.
+        indeterminate: span >= NORM_EQUIVALENT_MAX_SPAN
       };
     }
 
@@ -4970,7 +5025,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
       result.startGap = 0;
       result.endGap = Math.max(0, SECURE_BENCHMARK - endPercentile);
-      result.gapClosed = startPercentile - endPercentile;
+      // Positive always means movement in the student's favour, matching the
+      // below-benchmark branch above.
+      result.gapClosed = endPercentile - startPercentile;
       result.gapClosurePct = null;
       if (endPercentile < SECURE_BENCHMARK) result.status = "Dropped Below Secure";
       else if (endPercentile > startPercentile) result.status = "Secure and Extending";
@@ -5400,7 +5457,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             statCard("Exceeded", formatPercentWhole(metrics.exceededPct), { raw: metrics.exceededPct, format: "percent", tone: toneFor(metrics.exceededPct, 40) }),
             statCard("Avg start %ile", formatNumber(metrics.avgStartPercentile), { raw: metrics.avgStartPercentile }),
             statCard("Avg end %ile", formatNumber(metrics.avgEndPercentile), { raw: metrics.avgEndPercentile, tone: toneFor(metrics.avgPercentileChange, 0) }),
-            statCard("Avg gap closure", formatFractionPercent(metrics.avgGapClosurePct), { raw: isFiniteNumber(metrics.avgGapClosurePct) ? metrics.avgGapClosurePct * 100 : null, format: "percent" }),
+            statCard("Gap closure", formatFractionPercent(metrics.avgGapClosurePct), { raw: isFiniteNumber(metrics.avgGapClosurePct) ? metrics.avgGapClosurePct * 100 : null, format: "percent", hint: "Pooled across students below the benchmark" }),
             statCard("Priority", formatInteger(focusCount), { raw: focusCount, format: "integer", tone: focusCount ? "warn" : "good" }),
             statCard("Celebration", formatInteger(strengthCount), { raw: strengthCount, format: "integer", tone: "good" })
           ];
@@ -5586,7 +5643,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Avg end %ile", formatNumber(metrics.avgEndPercentile)],
               ["Avg %ile change", formatSignedNumber(metrics.avgPercentileChange)],
               ["Median CGP (visible)", formatNumber(metrics.medianConditionalGrowthPercentile)],
-              ["Avg gap closure", formatFractionPercent(metrics.avgGapClosurePct)],
+              ["Gap closure (pooled)", formatFractionPercent(metrics.avgGapClosurePct)],
               ["vs US norm (RIT)", formatSignedNumber(metrics.avgUSNormDeltaRIT)],
               ["Ground vs norm", formatSignedNumber(metrics.avgNormDeltaChange)],
               ["Moved up", formatInteger(metrics.movedUpCount)],
@@ -5981,7 +6038,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         ["% Closed Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Closed"), "status-good"],
         ["% Reduced Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Reduced"), "status-watch"],
         ["% Widened Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Widened"), "status-risk"],
-        ["Avg Gap Closure", formatFractionPercent(avg(belowSecure.map((row) => row.gapClosurePct))), "status-neutral"],
+        ["Gap Closure (pooled)", formatFractionPercent(pooledGapClosure(belowSecure)), "status-neutral"],
         ["% Moved Up", percentOf(validMovement, (row) => row.bandMovement === "Moved Up"), "status-good"],
         ["% Moved Down", percentOf(validMovement, (row) => row.bandMovement === "Moved Down"), "status-risk"],
         ["% Secure Extended", percentOf(secureStart, (row) => row.gapStatus === "Secure and Extending"), "status-good"],
@@ -6004,6 +6061,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function gapCardSubtext(label) {
       if (label.includes("Secure")) return "Among students who started at 61+";
       if (label.includes("Moved")) return "Among records with start and end bands";
+      if (label.includes("pooled")) return "Total points closed over total points to close";
       return "Among students who started below 61";
     }
 
@@ -6209,7 +6267,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const movedDown = movement.filter((row) => row.bandMovement === "Moved Down").length;
       const secureExtended = secure.filter((row) => row.gapStatus === "Secure and Extending").length;
       const secureRegressed = secure.filter((row) => row.gapStatus === "Secure but Regressing" || row.gapStatus === "Dropped Below Secure").length;
-      const avgClosure = avg(below.map((row) => row.gapClosurePct));
+      const avgClosure = pooledGapClosure(below);
       return `
         <article class="subject-mini-card">
           <h3>${escapeHTML(subject)}</h3>
@@ -6309,6 +6367,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (!els.goalTable) return;
       const rows = state.filteredRows.filter((row) => row.goals);
       const horizon = rows.length ? rows[0].goals.horizonLabel : null;
+      const flatNormCount = rows.filter((row) => row.goals.flatNorm).length;
       const needStretch = rows.filter((row) => !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0);
       const onTrack = rows.filter((row) => row.goals.alreadyAtOrAbove);
       els.goalCards.innerHTML = [
@@ -6320,6 +6379,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       ].join("");
       applyStagger(els.goalCards);
       setText("goalMethodNote", METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
+        (flatNormCount ? " " + formatInteger(flatNormCount) + " record(s) are at a grade and subject where the published means flatten between these seasons, so keeping pace there means holding the current RIT." : "") +
         (hasGrowthContext() ? " " + METHOD_NOTES.nweaProjection : "") + " " + METHOD_NOTES.normSource);
       els.goalCount.textContent = formatInteger(rows.length) + " records with a norm-referenced target";
       if (!rows.length) {
@@ -6813,7 +6873,7 @@ ${METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
         ? ` ${formatInteger(state.dataWindow.baselineRowCount)} records have only the ${state.dataWindow.currentWindowLabel} window and are excluded from every growth figure above.`
         : "";
 
-      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records covering ${state.dataWindow.priorWindowLabel} to ${state.dataWindow.currentWindowLabel}. The group began with an average percentile of ${formatNumber(metrics.avgStartPercentile)} and ended with ${formatNumber(metrics.avgEndPercentile)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed an average of ${formatFractionPercent(metrics.avgGapClosurePct)} of the gap toward the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm, and moved ${formatSignedNumber(metrics.avgNormDeltaChange)} RIT relative to those norms across the two windows.${mixedNote}
+      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records covering ${state.dataWindow.priorWindowLabel} to ${state.dataWindow.currentWindowLabel}. The group began with an average percentile of ${formatNumber(metrics.avgStartPercentile)} and ended with ${formatNumber(metrics.avgEndPercentile)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed ${formatFractionPercent(metrics.avgGapClosurePct)} of the total distance to the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm, and moved ${formatSignedNumber(metrics.avgNormDeltaChange)} RIT relative to those norms across the two windows.${mixedNote}
 
 Growth was strongest in ${strongest ? strongest.bucket : `the available ${lensTitle} data`}, while ${needsSupport ? needsSupport.bucket : `the available ${lensTitle} data`} requires the most targeted support. ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
 
@@ -7735,7 +7795,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       ["Observed Growth", "observedGrowth", (row) => formatSignedNumber(row.observedGrowth)],
       ["Growth Efficiency", "growthEfficiency", (row) => `${formatFractionPercent(row.growthEfficiency)}<br><span class="status-pill ${efficiencyClass(row.growthEfficiency)}">${escapeHTML(row.growthEfficiencyLabel)}</span>`],
       ["CGP", "conditionalGrowthPercentile", (row) => formatNumber(row.conditionalGrowthPercentile)],
-      ["Met Growth", "metGrowth", (row) => metPill(row.metGrowth)],
+      ["Met Growth", "metGrowth", (row) => metPill(row.metGrowth, row)],
       ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
       ["Suggested Group", "suggestedGroup", (row) => groupPill(row.suggestedGroup)],
       ["Suggested Teacher Action", "suggestedAction", (row) => escapeHTML(row.suggestedAction), "wrap"]
@@ -7923,8 +7983,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return `<span class="band-pill ${band.className}">${escapeHTML(band.name)}</span>`;
     }
 
-    function metPill(value) {
-      if (value === true) return `<span class="status-pill status-good">Yes</span>`;
+    function metPill(value, row) {
+      const note = row && row.metGrowthInferred
+        ? " title=\"Not reported in the file. Inferred by comparing observed with projected growth.\""
+        : row && row.metGrowthQualified
+          ? " title=\"NWEA marked this value as qualified or estimated.\""
+          : "";
+      const mark = row && (row.metGrowthInferred || row.metGrowthQualified) ? "*" : "";
+      if (value === true) return `<span class="status-pill status-good"${note}>Yes${mark}</span>`;
       if (value === false) return `<span class="status-pill status-risk">No</span>`;
       return `<span class="status-pill status-neutral">Missing</span>`;
     }
@@ -7935,6 +8001,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (!row.usNormSeason || row.usNormSeason === "Missing") return `<span class="status-pill status-neutral">Missing season</span>`;
       if (!row.usNormEquivalentGrade && !isFiniteNumber(row.usNormBenchmarkRIT)) return `<span class="status-pill status-neutral">No norm match</span>`;
 
+      if (row.usNormEquivalentIndeterminate) {
+        return `<span class="status-pill status-neutral">No clear grade level</span><br><span>${escapeHTML("The published means for " + row.subject + " are too close together around this RIT to separate one grade from the next.")}</span><br><span>${escapeHTML("Delta RIT " + formatSignedNumber(row.usNormDeltaRIT) + " | " + row.usNormSeasonLabel + " norm " + formatNumber(row.usNormBenchmarkRIT))}</span>`;
+      }
+      if (row.usNormEquivalentOutOfRange) {
+        const direction = row.usNormEquivalentOutOfRange === "above" ? "above the top" : "below the bottom";
+        return `<span class="status-pill status-neutral">Outside the norm range</span><br><span>${escapeHTML("This RIT is " + direction + " of the published grade means for " + row.subject + ", so no grade level can be matched.")}</span>`;
+      }
       const equivalent = formatUSNormGradeLabel(row.usNormEquivalentGrade);
       const student = formatUSNormGradeLabel(row.usNormStudentGrade);
       const gradeGap = formatUSNormGradeGap(row.usNormGradeGap);
@@ -8002,7 +8075,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         (isFiniteNumber(row.startRIT) || isFiniteNumber(row.startPercentile)) &&
         (isFiniteNumber(row.endRIT) || isFiniteNumber(row.endPercentile))
       );
-      const gapRows = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < SECURE_BENCHMARK && isFiniteNumber(row.gapClosurePct));
+      const gapRows = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < SECURE_BENCHMARK && isFiniteNumber(row.gapClosed));
       const usNormRows = rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT));
       const usNormGradeRows = rows.filter((row) => isFiniteNumber(row.usNormGradeGap));
       const scoredRows = rows.filter((row) => row.hasCurrentScore);
@@ -8042,13 +8115,29 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         avgProjectedGrowth: avg(rows.map((row) => row.projectedGrowth)),
         avgObservedGrowth: avg(rows.map((row) => row.observedGrowth)),
         medianConditionalGrowthPercentile: median(rows.map((row) => row.conditionalGrowthPercentile)),
-        avgGapClosurePct: avg(gapRows.map((row) => row.gapClosurePct)),
+        // Pooled, not a mean of ratios: a student starting at the 60th
+        // percentile has a start gap of 1, so a 10-point slide would otherwise
+        // contribute -1000% to the class average.
+        avgGapClosurePct: pooledGapClosure(gapRows),
         avgUSNormDeltaRIT: avg(usNormRows.map((row) => row.usNormDeltaRIT)),
         atOrAboveUSNormPct: usNormRows.length ? usNormRows.filter((row) => row.usNormAtOrAbove === true).length / usNormRows.length * 100 : null,
         avgUSNormGradeGap: avg(usNormGradeRows.map((row) => row.usNormGradeGap)),
         movedUpCount: rows.filter((row) => row.bandMovement === "Moved Up").length,
         movedDownCount: rows.filter((row) => row.bandMovement === "Moved Down").length
       };
+    }
+
+    // Total distance closed divided by total distance to close, over the
+    // students who started below the benchmark.
+    function pooledGapClosure(rows) {
+      let closed = 0;
+      let target = 0;
+      rows.forEach((row) => {
+        if (!isFiniteNumber(row.gapStart) || !isFiniteNumber(row.gapClosed)) return;
+        closed += row.gapClosed;
+        target += row.gapStart;
+      });
+      return target > 0 ? closed / target : null;
     }
 
     function avg(values) {
