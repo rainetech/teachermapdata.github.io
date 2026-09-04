@@ -2991,6 +2991,143 @@
       padding: 7px 11px;
     }
 
+
+    /* =====================================================================
+       Growth by starting band
+       ===================================================================== */
+    .subsection-lead {
+      margin: 0 0 12px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.45;
+      max-width: 78ch;
+    }
+
+    .equity-rows { display: grid; gap: 8px; }
+
+    .equity-row {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) 66px minmax(120px, 2fr) 76px 76px 88px;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+    }
+
+    .equity-row.is-thin { opacity: 0.62; }
+    .equity-row span { display: grid; line-height: 1.15; }
+    .equity-row small { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.03em; margin-top: 2px; }
+    .equity-band { gap: 4px; justify-items: start; }
+    .equity-n, .equity-cgp, .equity-met, .equity-change { font-size: 17px; font-weight: 900; font-variant-numeric: tabular-nums; }
+
+    /* Diverging track centred on 50, which is typical growth for peers who
+       started in the same place. */
+    .equity-track {
+      position: relative;
+      height: 16px;
+      border-radius: 999px;
+      background: var(--slate-soft);
+      border: 1px solid var(--line);
+      overflow: hidden;
+      display: block;
+    }
+
+    .equity-mid {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      margin-left: -1px;
+      background: var(--line-strong);
+      z-index: 2;
+    }
+
+    .equity-fill {
+      position: absolute;
+      top: 2px;
+      bottom: 2px;
+      border-radius: 999px;
+      opacity: 0.9;
+    }
+
+    .js-reveal .equity-fill {
+      animation: grow-width 640ms var(--ease-out) both;
+      animation-delay: calc(var(--i, 0) * 70ms + 120ms);
+      transform-origin: center;
+    }
+
+    .equity-track.is-below .equity-fill { transform-origin: right center; }
+    .equity-track.is-above .equity-fill { transform-origin: left center; }
+
+    .equity-thin-note {
+      grid-column: 1 / -1;
+      font-size: 11px;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* =====================================================================
+       What would it take?
+       ===================================================================== */
+    .target-controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .target-summary {
+      grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
+      gap: 12px;
+    }
+
+    .distance-pill {
+      display: inline-block;
+      min-width: 34px;
+      text-align: center;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: var(--brand-soft);
+      color: var(--brand-ink);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    tbody tr.target-in-reach td { background: var(--green-soft); }
+    tbody tr.target-in-reach:hover td { background: var(--green-soft); filter: brightness(0.97); }
+
+    .target-flag {
+      display: inline-block;
+      margin-left: 4px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--green-soft);
+      color: var(--green-ink);
+      border: 1px solid var(--green-line);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    @media (max-width: 900px) {
+      .equity-row {
+        grid-template-columns: 1fr auto;
+        grid-template-areas: "band n" "track track" "cgp met" "change change";
+        gap: 8px 12px;
+      }
+
+      .equity-band { grid-area: band; }
+      .equity-n { grid-area: n; text-align: right; }
+      .equity-track { grid-area: track; }
+      .equity-cgp { grid-area: cgp; }
+      .equity-met { grid-area: met; text-align: right; }
+      .equity-change { grid-area: change; }
+    }
+
   </style>
 </head>
 <body>
@@ -3290,6 +3427,10 @@
         <p class="footer-note" id="quadrantMovement"></p>
         <div class="subsection-title" id="quadrantBreakdownTitle">By Subject</div>
         <div class="subject-breakdown" id="quadrantSubjectBreakdown"></div>
+        <div class="subsection-title">Growth by starting band</div>
+        <p class="subsection-lead">Whether this group grew its lowest starters as well as its highest. A class average can look healthy while one end of the roster stands still.</p>
+        <div class="equity-rows" id="growthEquity"></div>
+        <p class="footer-note" id="growthEquityRead"></p>
       </section>
 
       <section class="section" id="sec-gap" aria-labelledby="gapTitle">
@@ -3356,6 +3497,39 @@
           </div>
         </div>
         <div class="action-board" id="actionBoard"></div>
+      </section>
+
+      <section class="section" id="sec-target" aria-labelledby="targetTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="targetTitle">What Would It Take?</h2>
+            <p id="targetNote">How many students are between this group and a target, and which of them are closest to it.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="exportTargetBtn" type="button">Export Closest CSV</button>
+          </div>
+        </div>
+        <div class="target-controls">
+          <div class="field">
+            <label for="targetThresholdSelect">Threshold</label>
+            <select id="targetThresholdSelect"></select>
+            <span class="hint">The line you want students above.</span>
+          </div>
+          <div class="field">
+            <label for="targetShareInput">Target share (%)</label>
+            <input id="targetShareInput" type="number" min="1" max="100" step="1">
+            <span class="hint">Leave as set, or type the percentage your plan aims for.</span>
+          </div>
+        </div>
+        <div class="target-summary grid" id="targetCards"></div>
+        <p class="method-note" id="targetMethodNote"></p>
+        <div class="table-shell">
+          <div class="table-tools">
+            <strong id="targetCount">0 records</strong>
+            <span class="status-line">Closest to the threshold first. These are the shortest distances to move, not the highest needs.</span>
+          </div>
+          <div class="table-scroll" id="targetTable"></div>
+        </div>
       </section>
 
       <section class="section" id="sec-crosssubject" aria-labelledby="crossTitle">
@@ -3787,6 +3961,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       dataWindow: { ...DEFAULT_DATA_WINDOW },
       diagnostics: null,
       profileCache: null,
+      targetResult: null,
       summaryEdited: false,
       tableLimits: {},
       tableCapacities: [],
@@ -3827,6 +4002,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       applyPreferences();
       attachEvents();
       populateTierFilter();
+      populateTargetControls();
       applyModeToChrome();
       renderAll();
     });
@@ -3839,6 +4015,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "tierLadder", "normCards", "baselineSubjectBreakdown", "exportBaselineBtn",
         "goalCards", "goalMethodNote", "goalCount", "goalTable", "exportGoalsBtn", "printGoalsBtn",
         "actionBoard", "crossSubjectCards", "crossCount", "crossSubjectTable",
+        "growthEquity", "growthEquityRead",
+        "targetThresholdSelect", "targetShareInput", "targetCards", "targetMethodNote",
+        "targetCount", "targetTable", "exportTargetBtn",
         "qualityCards", "qualityDetail", "tierFilter", "cohortCompare",
         "spotlightBackdrop", "spotlight", "spotlightBody", "spotlightClose",
         "spotlightCopyBtn", "spotlightPrintBtn",
@@ -3891,6 +4070,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       els.summaryReport.addEventListener("input", markSummaryEdited);
       if (els.regenerateSummaryBtn) els.regenerateSummaryBtn.addEventListener("click", regenerateSummary);
       if (els.exportBaselineBtn) els.exportBaselineBtn.addEventListener("click", exportBaseline);
+      if (els.exportTargetBtn) els.exportTargetBtn.addEventListener("click", exportTarget);
+      if (els.targetThresholdSelect) els.targetThresholdSelect.addEventListener("input", () => {
+        // A new threshold makes the previous target share meaningless.
+        if (els.targetShareInput) els.targetShareInput.value = "";
+        state.tableLimits.target = 0;
+        renderTargets();
+      });
+      if (els.targetShareInput) els.targetShareInput.addEventListener("input", debounce(renderTargets, 180));
       if (els.exportGoalsBtn) els.exportGoalsBtn.addEventListener("click", exportGoals);
       if (els.printGoalsBtn) els.printGoalsBtn.addEventListener("click", printGoalSheets);
       if (els.themeToggle) els.themeToggle.addEventListener("click", toggleTheme);
@@ -3943,6 +4130,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           renderTables();
           renderGoals();
           renderCrossSubject();
+          renderTargets();
           return;
         }
         const tierRow = event.target.closest("[data-tier]");
@@ -4185,6 +4373,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.manualArrangement = false;
       state.summaryEdited = false;
       if (els.summaryEditNote) els.summaryEditNote.hidden = true;
+      if (els.targetShareInput) els.targetShareInput.value = "";
       state.diagnostics = buildDiagnostics(parsed, state.allRows, testQuality);
       state.spotlightKey = "";
       populateFilters();
@@ -5386,6 +5575,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
       renderGoals();
       renderActionBoard();
+      renderGrowthEquity();
+      renderTargets();
       renderCrossSubject();
       renderSummaryReport();
       renderTables();
@@ -5408,6 +5599,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       { id: "sec-gap", label: "Gap Closure", modes: ["growth", "mixed"] },
       { id: "sec-goals", label: "Goals", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-actions", label: "Actions", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-target", label: "Targets", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-crosssubject", label: "Cross-Subject", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
@@ -6698,6 +6890,261 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           move: "Read them from the achievement and norm columns instead, and set a goal now so the next window has a baseline."
         }
       ];
+    }
+
+    // ---------------------------------------------------------------------
+    // What would it take?
+    // ---------------------------------------------------------------------
+    // Turns a share ("43% secure") into a count and a named list ("four more
+    // records, and here are the four closest"). Deliberately framed so it sizes
+    // a goal rather than deciding who gets taught - see TARGET_CAVEAT.
+    const TARGET_THRESHOLDS = [
+      { value: 21, label: "21st percentile - out of the intensive tier" },
+      { value: 41, label: "41st percentile - on track" },
+      { value: 61, label: "61st percentile - secure benchmark" },
+      { value: 81, label: "81st percentile - advanced" }
+    ];
+
+    const TARGET_CAVEAT = "Moving the students already closest to a line is the fastest way to change a percentage and the wrong way to decide who gets taught. Use this to size a goal and to see how far off it is; the Support List answers who needs the teaching. Percentile points are also not equal-sized units, so two records the same distance from the line are not the same amount of work.";
+
+    function ordinal(value) {
+      if (!isFiniteNumber(value)) return "";
+      const rounded = Math.round(value);
+      const lastTwo = Math.abs(rounded) % 100;
+      const lastOne = Math.abs(rounded) % 10;
+      const suffix = lastTwo >= 11 && lastTwo <= 13
+        ? "th"
+        : lastOne === 1 ? "st" : lastOne === 2 ? "nd" : lastOne === 3 ? "rd" : "th";
+      return rounded + suffix;
+    }
+
+    function targetThreshold() {
+      const value = Number(els.targetThresholdSelect && els.targetThresholdSelect.value);
+      return TARGET_THRESHOLDS.some((entry) => entry.value === value) ? value : SECURE_BENCHMARK;
+    }
+
+    function populateTargetControls() {
+      if (!els.targetThresholdSelect) return;
+      els.targetThresholdSelect.innerHTML = TARGET_THRESHOLDS
+        .map((entry) => '<option value="' + entry.value + '"' + (entry.value === SECURE_BENCHMARK ? " selected" : "") + ">" +
+          escapeHTML(entry.label) + "</option>")
+        .join("");
+    }
+
+    function computeTarget(rows) {
+      const threshold = targetThreshold();
+      const scored = rows.filter((row) => isFiniteNumber(row.currentPercentile));
+      const above = scored.filter((row) => row.currentPercentile >= threshold);
+      const currentShare = scored.length ? above.length / scored.length * 100 : null;
+      // Default to the next five-point step above where the group already is,
+      // so the field opens on a goal that is a stretch rather than a formality.
+      const suggested = isFiniteNumber(currentShare)
+        ? Math.min(100, Math.max(5, Math.ceil((currentShare + 0.01) / 5) * 5))
+        : 50;
+      const typed = Number(els.targetShareInput && els.targetShareInput.value);
+      const targetShare = Number.isFinite(typed) && typed >= 1 && typed <= 100 ? typed : suggested;
+      const needed = scored.length
+        ? Math.max(0, Math.ceil(scored.length * targetShare / 100) - above.length)
+        : 0;
+      const below = scored
+        .filter((row) => row.currentPercentile < threshold)
+        .map((row) => ({ row, distance: threshold - row.currentPercentile }))
+        .sort((a, b) => a.distance - b.distance || naturalCompare(a.row.studentName, b.row.studentName));
+      return { threshold, scored, above, below, currentShare, targetShare, suggested, needed };
+    }
+
+    function renderTargets() {
+      if (!els.targetTable) return;
+      const result = computeTarget(state.filteredRows);
+      if (els.targetShareInput && !els.targetShareInput.value) els.targetShareInput.value = String(result.suggested);
+      state.targetResult = result;
+
+      const inReach = result.below.slice(0, result.needed);
+      const furthest = inReach.length ? inReach[inReach.length - 1] : null;
+      const label = TARGET_THRESHOLDS.find((entry) => entry.value === result.threshold);
+
+      setText("targetNote", "How far this group is from having " + formatPercentWhole(result.targetShare) +
+        " of records at or above the " + ordinal(result.threshold) + " percentile, and which students are closest to it.");
+
+      els.targetCards.innerHTML = [
+        statCard("At or above now", formatPercentWhole(result.currentShare), { raw: result.currentShare, format: "percent", hint: formatInteger(result.above.length) + " of " + formatInteger(result.scored.length) + " scored records" }),
+        statCard("Target", formatPercentWhole(result.targetShare), { raw: result.targetShare, format: "percent", hint: label ? label.label : "" }),
+        statCard("Records still needed", formatInteger(result.needed), { raw: result.needed, format: "integer", tone: result.needed ? "warn" : "good", hint: result.needed ? "To reach the target share" : "The target is already met" }),
+        statCard("Furthest of those", furthest ? formatNumber(furthest.distance, 0) + " pts" : "-", { raw: furthest ? furthest.distance : null, hint: furthest ? "Percentile points " + furthest.row.studentName + " needs" : "Nothing to close" }),
+        statCard("Below the line", formatInteger(result.below.length), { raw: result.below.length, format: "integer", hint: "All records under the threshold" })
+      ].join("");
+      applyStagger(els.targetCards);
+      setText("targetMethodNote", TARGET_CAVEAT);
+
+      if (!result.scored.length) {
+        els.targetCount.textContent = "0 records";
+        els.targetTable.innerHTML = '<div class="empty-state">No records in this view have a percentile.</div>';
+        return;
+      }
+      if (!result.below.length) {
+        els.targetCount.textContent = formatInteger(result.above.length) + " records, all at or above the line";
+        els.targetTable.innerHTML = '<div class="empty-state">Every scored record in this view is already at or above the ' +
+          ordinal(result.threshold) + ' percentile.</div>';
+        return;
+      }
+
+      els.targetCount.textContent = formatInteger(result.below.length) + " records below the " + ordinal(result.threshold) + " percentile" +
+        (result.needed ? ", " + formatInteger(result.needed) + " of them needed for the target" : "");
+
+      const growth = hasGrowthContext();
+      const limit = tableLimitFor("target");
+      const shown = result.below.slice(0, limit);
+      const header = "<tr><th>Student</th><th>Subject</th><th>Percentile</th><th>Points to line</th><th>Band</th>" +
+        (growth ? "<th>Change this window</th><th>Met growth</th>" : "<th>vs US norm</th>") +
+        "<th>Planning group</th></tr>";
+      const body = shown.map((entry, index) => {
+        const row = entry.row;
+        const needed = index < result.needed;
+        return '<tr class="' + (needed ? "target-in-reach" : "") + '">' +
+          "<td>" + studentLink(row) + (needed ? ' <span class="target-flag" title="Within the number of records needed to hit the target">needed</span>' : "") + "</td>" +
+          "<td>" + escapeHTML(row.subject) + "</td>" +
+          "<td>" + formatNumber(row.currentPercentile, 0) + "</td>" +
+          '<td><span class="distance-pill">' + formatNumber(entry.distance, 0) + "</span></td>" +
+          "<td>" + bandPill(row.currentBand) + "</td>" +
+          (growth
+            ? "<td>" + escapeHTML(formatSignedNumber(row.percentileChange)) + "</td><td>" + metPill(row.metGrowth, row) + "</td>"
+            : "<td>" + normDeltaCell(row.usNormDeltaRIT) + "</td>") +
+          "<td>" + groupPill(planningGroup(row)) + "</td>" +
+          "</tr>";
+      }).join("");
+      const more = result.below.length > shown.length
+        ? '<div class="table-more"><span>Showing the ' + formatInteger(shown.length) + " closest of " + formatInteger(result.below.length) +
+          '.</span><span class="btn-row"><button class="btn small" type="button" data-more="target" data-step="' + (TABLE_PAGE_SIZE * 4) +
+          '">Show more</button><button class="btn small ghost" type="button" data-more="target" data-step="all">Show all</button></span></div>'
+        : "";
+      els.targetTable.innerHTML = "<table><thead>" + header + "</thead><tbody>" + body + "</tbody></table>" + more;
+    }
+
+    const TARGET_EXPORT_COLUMNS = [
+      ["Student name", (entry) => entry.row.studentName],
+      ["Student ID", (entry) => entry.row.studentID],
+      ["Grade", (entry) => entry.row.studentGrade],
+      ["Class", (entry) => entry.row.className],
+      ["Subject", (entry) => entry.row.subject],
+      ["Percentile", (entry) => entry.row.currentPercentile],
+      ["Threshold", (entry) => entry.threshold],
+      ["Percentile points to threshold", (entry) => entry.distance],
+      ["Band", (entry) => entry.row.currentBand.name],
+      ["Tier", (entry) => entry.row.currentTier.name],
+      ["RIT vs US norm", (entry) => entry.row.usNormDeltaRIT],
+      ["Percentile change this window", (entry) => entry.row.percentileChange],
+      ["Met growth", (entry) => (entry.row.metGrowth === true ? "Yes" : entry.row.metGrowth === false ? "No" : "")],
+      ["Planning group", (entry) => planningGroup(entry.row)],
+      ["Counted toward the target", (entry) => (entry.needed ? "Yes" : "No")],
+      ["Caveat", () => TARGET_CAVEAT]
+    ];
+
+    function exportTarget() {
+      const result = state.targetResult || computeTarget(state.filteredRows);
+      const rows = result.below.map((entry, index) => ({ ...entry, threshold: result.threshold, needed: index < result.needed }));
+      if (!rows.length) {
+        toast("Every scored record is already at or above the line.", "info");
+        return;
+      }
+      exportCSV("closest-to-" + ordinal(result.threshold), rows, TARGET_EXPORT_COLUMNS);
+    }
+
+    // ---------------------------------------------------------------------
+    // Growth by starting band
+    // ---------------------------------------------------------------------
+    // A class median hides distribution: a group can post a healthy overall
+    // conditional growth percentile while the students who started lowest stand
+    // still. Conditional growth percentile is already conditioned on starting
+    // RIT and grade - 50 is typical growth for peers who started in the same
+    // place - so comparing it across starting bands is a fair comparison, not
+    // a restatement of who started ahead.
+    const EQUITY_MIN_RECORDS = 5;
+    const EQUITY_MEANINGFUL_GAP = 10;
+
+    function growthEquityBands(rows) {
+      return BANDS.map((band) => {
+        const bandRows = rows.filter((row) => row.hasGrowthPair && row.startBand.name === band.name);
+        const cgpRows = bandRows.filter((row) => isFiniteNumber(row.conditionalGrowthPercentile));
+        const metRows = bandRows.filter((row) => row.metGrowth !== null);
+        return {
+          band,
+          count: bandRows.length,
+          cgpCount: cgpRows.length,
+          medianCGP: median(cgpRows.map((row) => row.conditionalGrowthPercentile)),
+          metPct: metRows.length ? metRows.filter((row) => row.metGrowth === true).length / metRows.length * 100 : null,
+          avgPercentileChange: avg(bandRows.map((row) => row.percentileChange)),
+          // Two or three students is not a pattern. Thin bands are drawn but
+          // never used to draw a conclusion.
+          thin: bandRows.length < EQUITY_MIN_RECORDS
+        };
+      });
+    }
+
+    function renderGrowthEquity() {
+      if (!els.growthEquity || !hasGrowthContext()) return;
+      const bands = growthEquityBands(state.filteredRows);
+      const withRecords = bands.filter((entry) => entry.count > 0);
+      if (!withRecords.length) {
+        els.growthEquity.innerHTML = '<div class="empty-state">No records in this view carry both windows, so growth cannot be split by starting band.</div>';
+        setText("growthEquityRead", "");
+        return;
+      }
+
+      els.growthEquity.innerHTML = bands.map((entry, index) => {
+        const hasCGP = isFiniteNumber(entry.medianCGP);
+        const position = hasCGP ? Math.max(0, Math.min(100, entry.medianCGP)) : 50;
+        const fillLeft = hasCGP ? Math.min(50, position) : 50;
+        const fillWidth = hasCGP ? Math.abs(position - 50) : 0;
+        const tone = !hasCGP ? "" : entry.medianCGP >= 50 ? " is-above" : " is-below";
+        return '<div class="equity-row reveal' + (entry.thin ? " is-thin" : "") + '" style="--i:' + index + '">' +
+          '<span class="equity-band">' + bandPill(entry.band) +
+          '<small>started ' + escapeHTML(entry.band.min + "-" + entry.band.max) + '</small></span>' +
+          '<span class="equity-n">' + formatInteger(entry.count) + '<small>records</small></span>' +
+          '<span class="equity-track' + tone + '" role="img" aria-label="' +
+          escapeAttr("Median conditional growth percentile " + (hasCGP ? formatNumber(entry.medianCGP, 0) : "not available") +
+            " for students starting in the " + entry.band.name + " band") + '">' +
+          '<i class="equity-mid"></i>' +
+          (hasCGP && fillWidth > 0
+            ? '<i class="equity-fill" style="left:' + fillLeft.toFixed(1) + '%;width:' + fillWidth.toFixed(1) + '%;background:' + entry.band.color + '"></i>'
+            : "") +
+          "</span>" +
+          '<span class="equity-cgp">' + (hasCGP ? formatNumber(entry.medianCGP, 0) : "n/a") + "<small>median CGP</small></span>" +
+          '<span class="equity-met">' + escapeHTML(formatPercentWhole(entry.metPct)) + "<small>met growth</small></span>" +
+          '<span class="equity-change">' + escapeHTML(formatSignedNumber(entry.avgPercentileChange)) + "<small>avg %ile change</small></span>" +
+          (entry.thin ? '<span class="equity-thin-note">too few to read</span>' : "") +
+          "</div>";
+      }).join("");
+      applyStagger(els.growthEquity);
+      setText("growthEquityRead", growthEquityRead(bands));
+    }
+
+    function growthEquityRead(bands) {
+      const usable = bands.filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP));
+      if (usable.length < 2) {
+        return "Fewer than two starting bands have at least " + EQUITY_MIN_RECORDS +
+          " records with a conditional growth percentile, so there is no pattern here worth reading. 50 is typical growth for students who started in the same place.";
+      }
+      const lowestStart = usable[0];
+      const highestStart = usable[usable.length - 1];
+      const gap = lowestStart.medianCGP - highestStart.medianCGP;
+      const strongest = usable.slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
+      const weakest = usable.slice().sort((a, b) => a.medianCGP - b.medianCGP)[0];
+      const spread = "Median conditional growth runs from " + formatNumber(weakest.medianCGP, 0) +
+        " in the " + weakest.band.name + " starting band to " + formatNumber(strongest.medianCGP, 0) +
+        " in the " + strongest.band.name + " band, against a typical value of 50.";
+      let verdict;
+      if (gap <= -EQUITY_MEANINGFUL_GAP) {
+        verdict = " Students who started in the " + lowestStart.band.name + " band are growing " +
+          formatNumber(Math.abs(gap), 0) + " CGP points less than those who started in the " + highestStart.band.name +
+          " band, so the distance between them is widening. This is the group to look at first.";
+      } else if (gap >= EQUITY_MEANINGFUL_GAP) {
+        verdict = " Students who started in the " + lowestStart.band.name + " band are growing " +
+          formatNumber(gap, 0) + " CGP points more than those who started in the " + highestStart.band.name +
+          " band, so the distance between them is narrowing. Whatever is producing that is worth naming and protecting.";
+      } else {
+        verdict = " Growth is broadly even across starting bands, so no group is being carried by the others.";
+      }
+      return spread + verdict;
     }
 
     // ---------------------------------------------------------------------
