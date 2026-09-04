@@ -2957,6 +2957,21 @@
       box-shadow: 0 0 0 1px var(--red-line);
     }
 
+
+    .scatter-warning {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 7px;
+      border-radius: 999px;
+      background: var(--orange-soft);
+      color: var(--orange-ink);
+      border: 1px solid var(--orange-line);
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
   </style>
 </head>
 <body>
@@ -4186,6 +4201,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       });
       const suppressed = parsed.suppressedCells;
       const noScore = rows.filter((row) => !row.hasCurrentScore);
+      const noScorePairs = noScore.map((row) => row.studentName + " (" + row.subject + ")");
       const noGrade = rows.filter((row) => !row.usNormStudentGrade);
       const noNorm = rows.filter((row) => row.hasCurrentScore && !isFiniteNumber(row.usNormBenchmarkRIT));
       const seen = new Map();
@@ -4207,7 +4223,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         unmappedHeaders,
         suppressedCells: suppressed,
         noScoreCount: noScore.length,
-        noScoreStudents: unique(noScore.map((row) => row.studentName)),
+        noScoreStudents: unique(noScorePairs),
         noGradeCount: noGrade.length,
         noNormCount: noNorm.length,
         duplicateCount: duplicates.length,
@@ -6205,12 +6221,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     function renderStudentQuadrantScatter(subjectRows) {
       const scatterSource = getScatterSource(subjectRows);
+      const quadrantSlots = {};
       const points = subjectRows
         .map((row, index) => {
           const rawX = scatterAchievementValue(row, scatterSource.xSource);
           const rawY = scatterGrowthValue(row, scatterSource.ySource);
-          const x = scatterCoordinate(row, rawX, "x", scatterSource.xSource, index);
-          const y = scatterCoordinate(row, rawY, "y", scatterSource.ySource, index);
+          const slotKey = row.endQuadrant;
+          quadrantSlots[slotKey] = (quadrantSlots[slotKey] || 0);
+          const slot = quadrantSlots[slotKey];
+          quadrantSlots[slotKey] += 1;
+          const x = scatterCoordinate(row, rawX, "x", scatterSource.xSource, index, slot);
+          const y = scatterCoordinate(row, rawY, "y", scatterSource.ySource, index, slot);
           if (!isFiniteNumber(x) || !isFiniteNumber(y)) return null;
           return { row, x: clampPercent(x), y: clampPercent(y), rawX, rawY };
         })
@@ -6222,7 +6243,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const capped = points.length - plotted.length;
       return `
         <div class="student-scatter-wrap">
-          <div class="scatter-title">Student Scatter: Growth Up, Achievement Right</div>
+          <div class="scatter-title">Student Scatter: Growth Up, Achievement Right${scatterSource.xSource === "quadrant" || scatterSource.ySource === "quadrant" ? ` <span class="scatter-warning">quadrant labels only - positions are not measured</span>` : ""}</div>
           <div class="student-scatter" aria-label="Student growth and achievement scatter plot">
             <span class="scatter-axis growth-high">High Growth</span>
             <span class="scatter-axis growth-low">Low Growth</span>
@@ -6278,13 +6299,18 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return null;
     }
 
-    function scatterCoordinate(row, value, axis, source, index) {
+    function scatterCoordinate(row, value, axis, source, index, quadrantSlot) {
       if (source !== "quadrant" && isUsefulScatterNumber(value)) {
         return value + deterministicJitter(`${row.studentID}|${row.studentName}|${axis}`, 2.4);
       }
       const base = quadrantCoordinate(row.endQuadrant, axis);
       if (!isFiniteNumber(base)) return null;
-      return base + deterministicJitter(`${row.studentID}|${row.studentName}|${axis}|${index}`, 15);
+      // No measured coordinate exists for this record, only its quadrant label.
+      // A tidy grid inside the quadrant says "category" where scattered jitter
+      // would imply a measurement that is not in the file.
+      const column = quadrantSlot % 5;
+      const rowIndex = Math.floor(quadrantSlot / 5);
+      return axis === "x" ? base - 14 + column * 7 : base + 12 - rowIndex * 7;
     }
 
     function quadrantCoordinate(quadrant, axis) {
@@ -6716,7 +6742,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const notes = [];
       if (diagnostics.raggedRows) notes.push(["Rows with an unexpected column count", formatInteger(diagnostics.raggedRows) + " rows had more or fewer cells than the header. They were still read, but check the export."]);
       if (diagnostics.duplicateHeaders.length) notes.push(["Duplicate columns ignored", diagnostics.duplicateHeaders.join(", ") + ". The first column with each name was used."]);
-      if (diagnostics.noScoreStudents.length) notes.push(["Students without a score", diagnostics.noScoreStudents.slice(0, 25).join(", ") + (diagnostics.noScoreStudents.length > 25 ? " and " + (diagnostics.noScoreStudents.length - 25) + " more" : "") + "."]);
+      if (diagnostics.noScoreStudents.length) notes.push(["Students missing a score, by subject", diagnostics.noScoreStudents.slice(0, 25).join(", ") + (diagnostics.noScoreStudents.length > 25 ? " and " + (diagnostics.noScoreStudents.length - 25) + " more" : "") + ". These are the tests to chase before the next planning meeting."]);
       if (diagnostics.noNormCount) notes.push(["No US norm available", formatInteger(diagnostics.noNormCount) + " scored records could not be matched to a norm. NWEA publishes norms for Reading and Mathematics from kindergarten, and for Language and Science from grade 2."]);
       if (isFiniteNumber(diagnostics.medianDuration)) notes.push(["Median test duration", formatNumber(diagnostics.medianDuration, 0) + " minutes. " + METHOD_NOTES.shortTest]);
       notes.push(["How norms are used", METHOD_NOTES.normSource]);
@@ -8438,13 +8464,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     .front-board { position: absolute; width: 52%; min-height: 11mm; display: grid; place-items: center; background: #31553f; color: #fff; border: 1px solid #243b2e; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
     .door { position: absolute; width: 22mm; height: 10mm; display: grid; place-items: center; border: 1px solid #9a6b38; border-radius: 4px; background: #f5d29c; color: #5b3412; font-size: 9px; font-weight: 700; }
     .teacher-desk { position: absolute; width: 39mm; min-height: 14mm; display: grid; place-items: center; border: 1px solid #8b5e34; border-radius: 5px; background: #ead7b7; color: #4b2e16; font-size: 9px; font-weight: 700; text-align: center; }
-    .print-table { position: absolute; width: ${tableWidthMm}mm; max-height: ${tableMaxHeightMm}mm; overflow: hidden; border: 1px solid #c7d1e1; border-radius: 6px; background: #fff; padding: 4px; }
+    /* No max-height and no clipping: a card that has been loaded past its
+       planned size grows instead of dropping students off the seating chart. */
+    .print-table { position: absolute; width: ${tableWidthMm}mm; border: 1px solid #c7d1e1; border-radius: 6px; background: #fff; padding: 4px; }
+    .print-table.over-capacity { border-color: #dc2626; border-width: 1.5px; }
     .print-table h2 { margin: 0 0 3px; font-size: 10px; }
     .table-meta { color: #5d6a7e; font-size: 7px; margin-bottom: 3px; }
     ol { margin: 0; padding-left: 14px; }
     li { font-size: 7.4px; line-height: 1.15; margin-bottom: 2px; }
     .name { font-weight: 700; }
-    .pool { position: absolute; left: 3mm; bottom: 3mm; width: ${poolWidthMm}mm; max-height: ${poolMaxHeightMm}mm; overflow: hidden; border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 4px; }
+    .pool { position: absolute; left: 3mm; bottom: 3mm; width: ${poolWidthMm}mm; border: 1px dashed #94a3b8; border-radius: 6px; background: #f8fafc; padding: 4px; }
     .pool h2 { margin: 0 0 3px; font-size: 9px; }
   </style>
 </head>
@@ -8455,7 +8484,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         <h1>NWEA MAP ASG Table Layout</h1>
         <div class="meta">${escapeHTML(context)} | ${escapeHTML(currentWindowName())} | ${escapeHTML(state.tableGroupPlanLabel || "table layout")} | ${escapeHTML(date)} | ${orientationLabel}</div>
       </div>
-      <div class="meta">Averages ignore N/A values. Missing-data students may appear in the manual pool.</div>
+      <div class="meta">Averages ignore N/A values. Missing-data students may appear in the manual pool.${state.tableCapacities.some((capacity, index) => state.tableGroups[index] && state.tableGroups[index].length > capacity) ? " One or more tables hold more students than planned and are outlined in red." : ""}</div>
     </header>
     <main class="print-board">
       <div class="front-board" style="${printPositionStyle(state.classroomLayout.frontBoard || { x: 24, y: 1 })}">Board</div>
@@ -8471,9 +8500,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function renderPrintTable(group, index) {
       const position = state.classroomLayout.tables[index] || defaultTablePosition(index, state.tableGroups.length);
+      const capacity = state.tableCapacities[index] || null;
+      const over = Boolean(capacity && group.length > capacity);
       return `
-        <article class="print-table" style="${printPositionStyle(position)}">
-          <h2>Table ${formatInteger(index + 1)}</h2>
+        <article class="print-table${over ? " over-capacity" : ""}" style="${printPositionStyle(position)}">
+          <h2>Table ${formatInteger(index + 1)}${over ? ` (${formatInteger(group.length)} of ${formatInteger(capacity)} planned)` : ""}</h2>
           <div class="table-meta">${formatInteger(group.length)} students | Avg %ile ${formatNumber(avg(group.map((profile) => profile.avgEndPercentile)))} | ${isBaselineMode()
             ? `Avg vs norm ${formatSignedNumber(avg(group.map((profile) => profile.avgUSNormDeltaRIT)))}`
             : `Avg CGP ${formatNumber(avg(group.map((profile) => profile.avgConditionalGrowthPercentile)))}`}</div>
