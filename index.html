@@ -3275,6 +3275,38 @@
       .support-dock, .support-backdrop { display: none !important; }
     }
 
+
+    /* Buy Me a Coffee brand treatment, rebuilt locally.
+       Their own button pairs white text with #5F7FFF, which measures 3.52:1 and
+       fails WCAG AA for text this size. #4A63E0 is the same hue a few steps
+       darker and measures 5.06:1, so the button still reads as theirs. */
+    :root {
+      --bmc-blue: #4A63E0;
+      --bmc-blue-hover: #3D51CC;
+    }
+
+    .coffee-btn,
+    .support-chip.coffee {
+      background: var(--bmc-blue);
+      border-color: var(--bmc-blue);
+      color: #fff;
+    }
+
+    .coffee-btn:hover,
+    .support-chip.coffee:hover {
+      background: var(--bmc-blue-hover);
+      border-color: var(--bmc-blue-hover);
+      color: #fff;
+    }
+
+    .coffee-cup { flex-shrink: 0; }
+
+    .coffee-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
   </style>
 </head>
 <body>
@@ -3865,7 +3897,11 @@
 
   <div class="support-dock" id="supportDock" hidden>
     <a class="support-chip coffee" id="supportDockCoffee" href="#" target="_blank" rel="noopener noreferrer" hidden>
-      <span aria-hidden="true">&#9749;</span><span>Buy me a coffee</span>
+      <svg class="coffee-cup" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false">
+        <path d="M4 8.5h11.5V15a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8.5Z" fill="#FFDD00"></path>
+        <path d="M15.8 10h1.7a2.5 2.5 0 0 1 0 5h-1.7" fill="none" stroke="currentColor" stroke-width="1.6"></path>
+        <path d="M7 3.4c0 1.1-1 1.5-1 2.6M10.2 3.4c0 1.1-1 1.5-1 2.6M13.4 3.4c0 1.1-1 1.5-1 2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".75"></path>
+      </svg><span>Buy me a coffee</span>
     </a>
     <button class="support-chip feedback" id="supportDockFeedback" type="button" hidden>
       <span aria-hidden="true">&#128172;</span><span>Feedback</span>
@@ -3879,7 +3915,13 @@
       <h2 id="supportPromptTitle">Was this useful?</h2>
       <p id="supportPromptBody">This dashboard is free, has no accounts, and never sends your students&rsquo; data anywhere. It is built and maintained in spare time. If it saved you an evening, a coffee helps keep it going.</p>
       <div class="support-actions">
-        <a class="btn primary" id="supportPromptCoffee" href="#" target="_blank" rel="noopener noreferrer">&#9749; Buy me a coffee</a>
+        <a class="btn coffee-btn" id="supportPromptCoffee" href="#" target="_blank" rel="noopener noreferrer">
+          <svg class="coffee-cup" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false">
+            <path d="M4 8.5h11.5V15a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8.5Z" fill="#FFDD00"></path>
+            <path d="M15.8 10h1.7a2.5 2.5 0 0 1 0 5h-1.7" fill="none" stroke="currentColor" stroke-width="1.6"></path>
+            <path d="M7 3.4c0 1.1-1 1.5-1 2.6M10.2 3.4c0 1.1-1 1.5-1 2.6M13.4 3.4c0 1.1-1 1.5-1 2.6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" opacity=".75"></path>
+          </svg><span>Buy me a coffee</span>
+        </a>
         <button class="btn ghost" id="supportPromptFeedback" type="button">&#128172; Send feedback instead</button>
       </div>
       <div class="support-footnote">
@@ -3903,7 +3945,7 @@
     // script is loaded, which is what keeps the "no third-party scripts, works
     // offline and behind a school firewall" promise on the upload panel true.
     const SUPPORT_LINKS = {
-      coffee: "",
+      coffee: "https://www.buymeacoffee.com/Rainetech",
       feedback: ""
     };
 
