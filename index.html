@@ -843,8 +843,13 @@
 
     .quadrant-map {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--quadrant-columns, 2), minmax(0, 1fr));
       gap: 8px;
+    }
+
+    .quadrant-cell.neutral {
+      background: var(--panel-2);
+      border-color: var(--line);
     }
 
     .quadrant-axis-note {
@@ -2396,6 +2401,7 @@
     }
 
     .stack-compare { margin-top: 10px; }
+    .stack-compare:first-child { margin-top: 0; }
     .stack-compare-label { display: block; font-size: 11px; font-weight: 800; color: var(--muted); margin-bottom: 4px; }
 
     /* =====================================================================
@@ -2672,6 +2678,29 @@
        Student spotlight
        ===================================================================== */
     body.modal-open { overflow: hidden; }
+
+    .status-pill.too-close {
+      margin-left: 4px;
+      font-style: italic;
+      opacity: 0.9;
+    }
+
+    .filter-check {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--panel-2);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .filter-check input { width: 15px; height: 15px; accent-color: var(--brand); }
 
     /* =====================================================================
        Wall posters
@@ -4142,6 +4171,10 @@
           <label for="gapFilter">Gap Status</label>
           <select id="gapFilter"></select>
         </div>
+        <label class="filter-check" id="invalidToggleWrap" hidden>
+          <input type="checkbox" id="includeInvalidTests">
+          <span id="includeInvalidLabel">Include invalid tests</span>
+        </label>
         <button class="btn" id="resetFiltersBtn" type="button">Reset</button>
       </div>
     </section>
@@ -4228,7 +4261,7 @@
         <div class="explain-grid">
           <div class="explain-card">
             <strong>What the quadrants mean</strong>
-            <span>High-G/High-A students are growing strongly and achieving highly. Low-G/Low-A students need the most immediate instructional attention.</span>
+            <span>NWEA reports three levels on each axis, not two, and this dashboard keeps all three. A student scored average growth and average achievement is on track &mdash; not low on both, which is what folding average in with low would say about them.</span>
           </div>
           <div class="explain-card">
             <strong>Why this matters</strong>
@@ -4383,7 +4416,7 @@
           </div>
           <div class="explain-card">
             <strong>So everything here is relative</strong>
-            <span>Each area is compared with the same student's overall RIT on the same test. &ldquo;Below&rdquo; means below their own level, not below grade level.</span>
+            <span>Each area is compared with the same student's overall RIT on the same test. &ldquo;Below&rdquo; means below their own level, not below grade level &mdash; which is why each subject also states where the group sits against the US norm. A flat profile can mean evenly behind.</span>
           </div>
           <div class="explain-card">
             <strong>Class patterns are the reliable part</strong>
@@ -4792,7 +4825,40 @@
     ];
 
     const MISSING_BAND = { name: "Missing", min: null, max: null, upper: null, rank: null, className: "band-missing", color: "var(--muted)", ink: "var(--on-slate)" };
-    const QUADRANTS = ["High-G/High-A", "High-G/Low-A", "Low-G/High-A", "Low-G/Low-A"];
+    // Every combination NWEA can report. Which of them the interface draws
+    // depends on what the loaded file actually contains: an export that only
+    // says High or Low still gets a four-cell map.
+    const QUADRANT_CELLS = {
+      "Hi-G/Hi-A": { title: "High Growth / High Achievement", tone: "good", note: "Extend and keep challenge high" },
+      "Hi-G/Avg-A": { title: "High Growth / Average Achievement", tone: "good", note: "Climbing fast from the middle" },
+      "Hi-G/Lo-A": { title: "High Growth / Low Achievement", tone: "catchup", note: "Catch-up growth is working" },
+      "Avg-G/Hi-A": { title: "Average Growth / High Achievement", tone: "watch", note: "Secure, but not being stretched" },
+      "Avg-G/Avg-A": { title: "Average Growth / Average Achievement", tone: "neutral", note: "On track on both axes" },
+      "Avg-G/Lo-A": { title: "Average Growth / Low Achievement", tone: "watch", note: "Typical growth will not close this gap" },
+      "Lo-G/Hi-A": { title: "Low Growth / High Achievement", tone: "watch", note: "Achievement is strong; restart growth" },
+      "Lo-G/Avg-A": { title: "Low Growth / Average Achievement", tone: "watch", note: "Growth has stalled mid-range" },
+      "Lo-G/Lo-A": { title: "Low Growth / Low Achievement", tone: "risk", note: "Highest priority for support" }
+    };
+
+    const QUADRANTS = Object.keys(QUADRANT_CELLS);
+
+    // Only draw the average row and column when the file uses them. A two-level
+    // export would otherwise get five permanently empty cells.
+    function quadrantGridLevels(rows) {
+      const used = new Set();
+      rows.forEach((row) => {
+        [row.startQuadrant, row.endQuadrant].forEach((value) => {
+          const parts = quadrantParts(value);
+          if (parts) { used.add(parts.growth); used.add(parts.achievement); }
+        });
+      });
+      const hasAverage = used.has("Avg");
+      return {
+        growth: QUADRANT_GROWTH_ORDER.filter((level) => hasAverage || level !== "Avg"),
+        achievement: QUADRANT_ACH_ORDER.filter((level) => hasAverage || level !== "Avg"),
+        hasAverage
+      };
+    }
 
     // Instructional tiers used for start-of-year (baseline) planning. They reuse
     // the band cut points so tier colour and band colour never disagree.
@@ -4842,6 +4908,8 @@
       normEquivalent: "Grade-level equivalence compares a student's RIT with the mean RIT for each grade in the same season. It is a rough placement signal, not a reading or maths \u201cgrade level\u201d, and it is least reliable at the top and bottom of the scale.",
       keepPace: "Keep-pace targets add the gain a typical student at this grade makes between these two seasons (the difference between the two US norm means). They describe typical peer progress, not an NWEA projected RIT.",
       gradeLevel: "Grade-level targets are the US norm mean RIT for this grade and season, which sits near the 50th percentile. Reaching it from below requires more than typical growth.",
+      growthError: "A RIT score carries a standard error, so the difference between two of them carries a larger one. Where the export reports it, growth is shown with a 95% range and a result inside that range of its projection is marked too close to call. NWEA's own Yes or No is never changed - this sits beside it. The error is within-test only: it does not include illness, motivation or a bad morning, so the true uncertainty is wider than the range shown, not narrower.",
+      testValidity: "NWEA marks a test it does not consider usable in the Status column. Those records are excluded from every aggregate, chart, poster and planning group on this page, and listed by name with their reason in Data Check. A status this page does not recognise is kept and counted, never silently dropped.",
       rapidGuess: "NWEA reports the share of items a student answered faster than they could have read them. This dashboard flags a test at " + RAPID_GUESS_FLAG_PCT + "% or more. Rapid guessing depresses the score, so a flagged test understates what the student can do - it is not a reason to lower expectations.",
       instructionalArea: "An instructional area RIT rests on a fraction of the items behind the overall RIT, and NWEA publishes no percentile or norm for one. Every area figure here is the difference from the same student's own overall RIT on the same test.",
       shortTest: "Flagged tests finished in under " + SHORT_TEST_ABSOLUTE_MINUTES + " minutes and in less than half the median time for this file. Short tests are worth confirming with the proctor before the score is used for placement; they are not automatically invalid.",
@@ -4964,6 +5032,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       weeksofinstruction: "weeksOfInstructionEndRaw",
       startritsem: "startRITSEMRaw",
       endritsem: "endRITSEMRaw",
+      startritstderr: "startRITSEMRaw",
+      endritstderr: "endRITSEMRaw",
+      startritstandarderror: "startRITSEMRaw",
+      endritstandarderror: "endRITSEMRaw",
       startpercentilese: "startPercentileSERaw",
       endpercentilese: "endPercentileSERaw",
       observedgrowthse: "observedGrowthSERaw",
@@ -5047,6 +5119,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       plannerReturnFocus: null,
       posterSelection: null,
       posterScaleObserver: null,
+      posterStudentCountCache: null,
       summaryEdited: false,
       tableLimits: {},
       tableCapacities: [],
@@ -5134,6 +5207,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
         "searchInput", "subjectFilter", "dashboardLensSelect", "teacherFilter", "classFilter", "gradeFilter",
         "bandFilter", "metFilter", "groupFilter", "gapFilter", "resetFiltersBtn",
+        "invalidToggleWrap", "includeInvalidTests", "includeInvalidLabel",
         "filterContext", "summaryCards", "subjectOverview", "chartsWrap", "quadrantCards",
         "quadrantMovement", "quadrantSubjectBreakdown", "gapCards", "gapSubjectBreakdown",
         "summaryReport", "summaryEditNote", "regenerateSummaryBtn", "tableGroupContext", "groupSizeInput", "groupStrategySelect",
@@ -5213,6 +5287,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       });
       if (els.supportBackdrop) els.supportBackdrop.addEventListener("click", (event) => {
         if (event.target === els.supportBackdrop) closeSupportPrompt(false);
+      });
+      if (els.includeInvalidTests) els.includeInvalidTests.addEventListener("change", () => {
+        state.tableLimits = {};
+        safeRenderAll();
       });
       if (els.posterPrintSelected) els.posterPrintSelected.addEventListener("click", () => printPosters([...posterSelection()]));
       if (els.posterSelectAll) els.posterSelectAll.addEventListener("click", () => {
@@ -5647,13 +5725,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       });
       state.fileNames = usable.map((file) => file.name);
       state.fileName = usable.length === 1 ? usable[0].name : usable.length + " files";
-      const gradesRecovered = backfillStudentGrades(state.allRows);
       // An ASG export and a Class Profile export of the same test describe the
       // same sitting from different angles - one carries growth, the other the
       // instructional areas. Folding them together gives a teacher both at once
-      // instead of two half-records and a duplicate warning.
-      const mergedRecords = mergeComplementaryRecords(state.allRows);
+      // instead of two half-records and a duplicate warning. This runs before
+      // the grade backfill so the backfill sees the merged, richer rows.
+      const mergedRecords = usable.length > 1 ? mergeComplementaryRecords(state.allRows) : 0;
       if (mergedRecords) state.allRows = state.allRows.filter((row) => !row.mergedAway);
+      state.allRows.forEach((row) => { delete row._raw; });
+      const gradesRecovered = backfillStudentGrades(state.allRows);
       const testQuality = flagTestQuality(state.allRows);
       state.dataWindow = state.allRows.length ? detectDataMode(state.allRows) : { ...DEFAULT_DATA_WINDOW };
       cacheBaselineDerivations(state.allRows);
@@ -5737,10 +5817,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const normsMismatch = fileNormsYears.filter((year) => year !== EMBEDDED_NORMS_YEAR);
       const comparisonPeriods = unique(rows.map((row) => row.comparisonPeriod).filter(Boolean));
       const instructionalWeeks = unique(rows.map((row) => row.instructionalWeeks).filter(isFiniteNumber).map(String));
+      // Two Class Profile files from different terms are two windows for the
+      // same child, not a duplicate. Including the window in the key stops the
+      // check firing at a teacher whose data is exactly right.
       const seen = new Map();
       const duplicates = [];
       rows.forEach((row) => {
-        const key = studentKey(row) + "|" + row.subject;
+        const key = studentKey(row) + "|" + row.subject + "|" + windowKey(row);
         if (seen.has(key)) duplicates.push(row);
         else seen.set(key, row);
       });
@@ -5762,15 +5845,28 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         duplicateCount: duplicates.length,
         shortTestCount: testQuality.flagged,
         medianDuration: testQuality.medianDuration,
+        metTooCloseCount: rows.filter((row) => row.metCertainty === "too-close").length,
+        metResolvedCount: rows.filter((row) => row.metCertainty === "clear").length,
         rapidGuessFlagged: testQuality.rapidGuessFlagged,
         rapidGuessReported: testQuality.rapidGuessReported,
         medianRapidGuess: testQuality.medianRapidGuess,
+        statusReported: testQuality.statusReported,
+        notValidCount: testQuality.notValidCount,
+        notValidList: testQuality.notValidList,
+        unknownStatusCount: testQuality.unknownStatusCount,
+        unknownStatuses: testQuality.unknownStatuses,
         areaRecordCount: rows.filter((row) => row.hasInstructionalAreas).length,
         fileNormsYears,
         normsMismatch,
         comparisonPeriods,
         instructionalWeeks
       };
+    }
+
+    // Identifies which test window a record belongs to, from the most reliable
+    // thing the export gives us down to the least.
+    function windowKey(row) {
+      return row.comparisonPeriod || row.currentWindowLabel || row.usNormSeasonLabel || row.termTested || "window";
     }
 
     function studentKey(row) {
@@ -6031,6 +6127,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const usNormStudentGrade = normalizeUSNormGrade(raw.studentGrade);
 
       const record = {
+        // Kept only until mergeComplementaryRecords has run, then dropped.
+        _raw: raw,
         rowNumber: raw._rowNumber,
         termTested: emptyToMissing(raw.termTested),
         termRostered: emptyToMissing(raw.termRostered),
@@ -6137,6 +6235,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       record.hasInstructionalAreas = record.instructionalAreas.length > 0;
 
       applyNormFields(record);
+      applyGrowthUncertainty(record);
 
       record.growthChallenge = classifyGrowthChallenge(record);
       record.suggestedGroup = suggestGroup(record);
@@ -6147,6 +6246,63 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       record.celebrationReasons = getCelebrationReasons(record);
       record.extensionAction = getExtensionAction(record);
       return record;
+    }
+
+    // "Met growth" is the most consequential yes/no this page produces: it is
+    // the first entry in the priority list and it drives the action board and
+    // the celebration list. It was drawn with no error at all. A RIT has a
+    // standard error near 3, so the difference between two windows has one
+    // near 4 - which means a student who missed their projection by two points
+    // and one who beat it by two are the same result, and chasing one while
+    // celebrating the other is reading noise. NWEA's own Yes/No is never
+    // overwritten; this sits beside it.
+    const GROWTH_CI_Z = 1.96;
+
+    function applyGrowthUncertainty(record) {
+      const reported = record.observedGrowthSE;
+      const fromSEMs = isFiniteNumber(record.startRITSEM) && isFiniteNumber(record.endRITSEM) &&
+        record.startRITSEM > 0 && record.endRITSEM > 0
+        ? Math.sqrt(record.startRITSEM * record.startRITSEM + record.endRITSEM * record.endRITSEM)
+        : null;
+      const se = isFiniteNumber(reported) && reported > 0 ? reported : fromSEMs;
+      record.growthSE = se;
+      record.growthSEApproximate = !(isFiniteNumber(reported) && reported > 0) && isFiniteNumber(fromSEMs);
+      record.growthMargin = isFiniteNumber(se) ? GROWTH_CI_Z * se : null;
+      record.growthCertainty = null;
+      record.metCertainty = null;
+      if (!isFiniteNumber(record.growthMargin)) return record;
+      if (isFiniteNumber(record.observedGrowth)) {
+        if (record.observedGrowth - record.growthMargin > 0) record.growthCertainty = "gain";
+        else if (record.observedGrowth + record.growthMargin < 0) record.growthCertainty = "loss";
+        else record.growthCertainty = "unresolved";
+      }
+      // Whether the student cleared their projection is only a real call when
+      // the distance between observed and projected is bigger than the error.
+      if (isFiniteNumber(record.observedGrowth) && isFiniteNumber(record.projectedGrowth)) {
+        record.metCertainty = Math.abs(record.observedGrowth - record.projectedGrowth) <= record.growthMargin
+          ? "too-close"
+          : "clear";
+      }
+      return record;
+    }
+
+    function growthBandText(row) {
+      if (!isFiniteNumber(row.growthMargin) || !isFiniteNumber(row.observedGrowth)) return "";
+      return formatSignedNumber(row.observedGrowth - row.growthMargin) + " to " +
+        formatSignedNumber(row.observedGrowth + row.growthMargin) + " RIT";
+    }
+
+    function growthCertaintyNote(row) {
+      if (!row.metCertainty) return "";
+      const band = growthBandText(row);
+      if (row.metCertainty === "too-close") {
+        return "Observed growth of " + formatSignedNumber(row.observedGrowth) + " RIT sits within measurement error of the " +
+          formatSignedNumber(row.projectedGrowth) + " projected, so this test pair cannot resolve whether the projection was met. " +
+          "The 95% range is " + band + "." + (row.growthSEApproximate ? " The error is approximated from the two RIT standard errors." : "");
+      }
+      return "Observed growth of " + formatSignedNumber(row.observedGrowth) + " RIT is far enough from the " +
+        formatSignedNumber(row.projectedGrowth) + " projected to be a real difference. The 95% range is " + band + "." +
+        (row.growthSEApproximate ? " The error is approximated from the two RIT standard errors." : "");
     }
 
     // Everything derived from the US norm table, in one place so it can be
@@ -6260,6 +6416,22 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     // Marks records whose test finished implausibly quickly relative to the rest
     // of the file. Run once per upload because the threshold is file-relative.
+    // NWEA stamps a test it does not consider usable, and until now the app
+    // read that column and ignored it - so a terminated attempt was averaged
+    // into the class median, printed on a wall poster and used to place a child
+    // into Intensive Support. The vocabulary varies between report versions, so
+    // anything unrecognised is kept and counted rather than silently dropped.
+    const INVALID_TEST_STATUS = /\b(not\s*valid|invalid|terminated|suspended|incomplete|abandoned|did\s*not\s*finish|never\s*started)\b/i;
+    const VALID_TEST_STATUS = /\b(valid|growth\s*event|complete|completed|tested|screening|survey|instructional)\b/i;
+
+    function testValidity(row) {
+      const status = cleanString(row.testStatus);
+      if (!status || status === "Missing" || isBlankLike(status)) return "valid";
+      if (INVALID_TEST_STATUS.test(status)) return "not-valid";
+      if (VALID_TEST_STATUS.test(status)) return "valid";
+      return "unknown";
+    }
+
     function flagTestQuality(rows) {
       const durations = rows.map((row) => row.currentDuration).filter(isFiniteNumber).filter((value) => value > 0);
       const medianDuration = median(durations);
@@ -6272,14 +6444,25 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         // Duration is a proxy. When the export carries NWEA's own rapid-guessing
         // measure, that is the better signal and is used alongside it.
         row.rapidGuessed = isFiniteNumber(row.rapidGuessedPct) && row.rapidGuessedPct >= RAPID_GUESS_FLAG_PCT;
+        row.testValidity = testValidity(row);
+        row.testNotValid = row.testValidity === "not-valid";
       });
       const rapidValues = rows.map((row) => row.rapidGuessedPct).filter(isFiniteNumber);
+      const notValid = rows.filter((row) => row.testNotValid);
       return {
         medianDuration,
         flagged: rows.filter((row) => row.shortTest).length,
         rapidGuessFlagged: rows.filter((row) => row.rapidGuessed).length,
         rapidGuessReported: rapidValues.length,
-        medianRapidGuess: median(rapidValues)
+        medianRapidGuess: median(rapidValues),
+        statusReported: rows.filter((row) => row.testStatus && row.testStatus !== "Missing").length,
+        notValidCount: notValid.length,
+        unknownStatusCount: rows.filter((row) => row.testValidity === "unknown").length,
+        notValidList: notValid.slice(0, 30).map((row) => row.studentName + " (" + row.subject + ")" +
+          (row.testStatus && row.testStatus !== "Missing" ? " - " + row.testStatus : "") +
+          (row.testStatusReason && row.testStatusReason !== "Missing" && !isBlankLike(row.testStatusReason)
+            ? ": " + row.testStatusReason : "")),
+        unknownStatuses: unique(rows.filter((row) => row.testValidity === "unknown").map((row) => row.testStatus))
       };
     }
 
@@ -6302,30 +6485,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         const primary = ranked[0];
         ranked.slice(1).forEach((other) => {
           if (!sameSitting(primary, other)) return;
-          let changed = false;
-          if (!primary.hasInstructionalAreas && other.hasInstructionalAreas) {
-            // The areas were measured against the other row's overall RIT, so
-            // the difference is recomputed against the record being kept.
-            primary.instructionalAreas = other.instructionalAreas.map((area) => ({
-              ...area,
-              delta: isFiniteNumber(primary.currentRIT) ? area.rit - primary.currentRIT : area.delta
-            }));
-            primary.hasInstructionalAreas = true;
-            changed = true;
-          }
-          ["rapidGuessedPct", "lexile", "quantile", "endRITSEM", "currentDuration"].forEach((key) => {
-            if (!isPresent(primary[key]) && isPresent(other[key])) {
-              primary[key] = other[key];
-              changed = true;
-            }
-          });
-          ["testName", "testStatus", "testStatusReason"].forEach((key) => {
-            if ((!primary[key] || primary[key] === "Missing") && other[key] && other[key] !== "Missing") {
-              primary[key] = other[key];
-              changed = true;
-            }
-          });
-          if (!changed) return;
+          // Merge the two source rows and re-derive, rather than copying a
+          // hand-written list of fields across. The old approach only filled
+          // gaps the primary had, so a Class Profile row - which already
+          // carries everything on that list - merged nothing, `changed` stayed
+          // false, and a fall ASG file loaded beside it survived as a duplicate
+          // with its percentile, projected RIT and grouping columns stranded on
+          // a second record. Re-deriving also means every computed field comes
+          // from the one implementation instead of being patched by hand.
+          const mergedRaw = mergeRawRows(primary._raw, other._raw);
+          if (!mergedRaw) return;
+          const rebuilt = normalizeRecord(mergedRaw);
+          if (!rebuilt) return;
+          Object.keys(rebuilt).forEach((key) => { primary[key] = rebuilt[key]; });
+          primary._raw = mergedRaw;
           other.mergedAway = true;
           primary.mergedFrom = unique([primary.sourceFile, other.sourceFile].filter(Boolean));
           merged += 1;
@@ -6334,8 +6507,23 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return merged;
     }
 
-    function isPresent(value) {
-      return value !== null && value !== undefined && value !== "";
+    // Fill every blank on the primary source row from the other one. Returns
+    // null when the other row adds nothing, which is what a genuine duplicate
+    // looks like - those are left alone so the Data Check still reports them.
+    function mergeRawRows(primaryRaw, otherRaw) {
+      if (!primaryRaw || !otherRaw) return null;
+      const out = { ...primaryRaw };
+      let changed = false;
+      Object.keys(otherRaw).forEach((key) => {
+        if (key === "_rowNumber") return;
+        const theirs = otherRaw[key];
+        if (theirs === undefined || theirs === null || theirs === "" || isBlankLike(String(theirs))) return;
+        const mine = out[key];
+        if (mine !== undefined && mine !== null && mine !== "" && !isBlankLike(String(mine))) return;
+        out[key] = theirs;
+        changed = true;
+      });
+      return changed ? out : null;
     }
 
     function recordRichness(row) {
@@ -6347,10 +6535,21 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // not one record with more columns.
     function sameSitting(primary, other) {
       if (primary.currentSeason && other.currentSeason && primary.currentSeason !== other.currentSeason) return false;
+      // An unscored row - a "Rostered, not tested" record - has nothing to
+      // contribute but its status text, and folding it into the scored row
+      // would hide it from the list of tests still to chase.
+      if (!primary.hasCurrentScore || !other.hasCurrentScore) return false;
       if (isFiniteNumber(primary.currentRIT) && isFiniteNumber(other.currentRIT)) {
         return primary.currentRIT === other.currentRIT;
       }
-      return true;
+      // Without a comparable RIT, require some other positive evidence that
+      // these are the same sitting. Defaulting to "yes" merged a terminated
+      // attempt into the valid one and copied its rapid-guessing flag across.
+      const dates = [primary.currentTestDate, other.currentTestDate].filter((value) => value && value !== "Missing");
+      if (dates.length === 2) return dates[0] === dates[1];
+      const names = [primary.testName, other.testName].filter((value) => value && value !== "Missing");
+      if (names.length === 2) return names[0] === names[1];
+      return false;
     }
 
     // Start-of-year placement from a single window. Achievement and distance
@@ -6808,7 +7007,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (startPercentile < SECURE_BENCHMARK) {
         result.startGap = SECURE_BENCHMARK - startPercentile;
         result.endGap = Math.max(0, SECURE_BENCHMARK - endPercentile);
-        result.gapClosed = result.startGap - (SECURE_BENCHMARK - endPercentile);
+        // Overshooting past the benchmark is extension, not extra gap closed.
+        // Left unclamped it pushed pooled closure above 100%, which reads as
+        // "we closed more than the whole gap".
+        result.gapClosed = Math.min(result.startGap, result.startGap - (SECURE_BENCHMARK - endPercentile));
         result.gapClosurePct = result.startGap !== 0 ? result.gapClosed / result.startGap : null;
         if (endPercentile >= SECURE_BENCHMARK) result.status = "Gap Closed";
         else if (result.gapClosed > 0) result.status = "Gap Reduced";
@@ -6910,50 +7112,67 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const growth = quadrantLevel(growthText);
       const achievement = quadrantLevel(achievementText);
       if (!growth || !achievement) return "Missing";
-      // NWEA's own four-cell summary folds average in with low on both axes.
-      const growthKey = growth === "high" ? "High-G" : "Low-G";
-      const achievementKey = achievement === "high" ? "High-A" : "Low-A";
-      return growthKey + "/" + achievementKey;
+      return QUADRANT_LEVEL_KEYS[growth] + "-G/" + QUADRANT_LEVEL_KEYS[achievement] + "-A";
     }
 
-    function quadrantScore(quadrant) {
-      return {
-        "Low-G/Low-A": 0,
-        "Low-G/High-A": 1,
-        "High-G/Low-A": 1.25,
-        "High-G/High-A": 2
-      }[quadrant] ?? null;
+    // A student NWEA scored "Expected Growth / Average Achievement" is a typical
+    // student, and folding average in with low - which this code used to do -
+    // printed them as "Low Growth / Low Achievement" and put them at the top of
+    // the support list. Both axes keep all three levels NWEA actually reports.
+    const QUADRANT_LEVEL_KEYS = { high: "Hi", average: "Avg", low: "Lo" };
+    const QUADRANT_RANK = { Lo: 0, Avg: 1, Hi: 2 };
+    const QUADRANT_GROWTH_ORDER = ["Hi", "Avg", "Lo"];
+    const QUADRANT_ACH_ORDER = ["Lo", "Avg", "Hi"];
+
+    function quadrantKey(growthKey, achievementKey) {
+      return growthKey + "-G/" + achievementKey + "-A";
     }
 
+    function quadrantParts(quadrant) {
+      const match = /^(Hi|Avg|Lo)-G\/(Hi|Avg|Lo)-A$/.exec(String(quadrant || ""));
+      if (!match) return null;
+      return { growth: match[1], achievement: match[2] };
+    }
+
+    // Movement is read one axis at a time. A student can rise on growth while
+    // falling on achievement, and calling that either an improvement or a
+    // decline is a judgement the data does not support.
     function getQuadrantMovement(startQuadrant, endQuadrant) {
-      const startScore = quadrantScore(startQuadrant);
-      const endScore = quadrantScore(endQuadrant);
-      if (!isFiniteNumber(startScore) || !isFiniteNumber(endScore)) return "Missing";
-      if (startQuadrant === endQuadrant) return "Stayed Same";
-      // Low-G/High-A and High-G/Low-A are not ordered against each other: one
-      // axis rises while the other falls. Calling either direction "improved"
-      // or "declined" is a judgement the data does not support.
-      const lateral = (startQuadrant === "Low-G/High-A" && endQuadrant === "High-G/Low-A") ||
-        (startQuadrant === "High-G/Low-A" && endQuadrant === "Low-G/High-A");
-      if (lateral) return "Traded Off";
-      if (endScore > startScore) return "Improved";
-      if (endScore < startScore) return "Declined";
-      return "Stayed Same";
+      const start = quadrantParts(startQuadrant);
+      const end = quadrantParts(endQuadrant);
+      if (!start || !end) return "Missing";
+      const growthShift = QUADRANT_RANK[end.growth] - QUADRANT_RANK[start.growth];
+      const achievementShift = QUADRANT_RANK[end.achievement] - QUADRANT_RANK[start.achievement];
+      if (growthShift === 0 && achievementShift === 0) return "Stayed Same";
+      if (growthShift > 0 && achievementShift < 0) return "Traded Off";
+      if (growthShift < 0 && achievementShift > 0) return "Traded Off";
+      if (growthShift >= 0 && achievementShift >= 0) return "Improved";
+      return "Declined";
+    }
+
+    function quadrantAxisRose(startQuadrant, endQuadrant, axis) {
+      const start = quadrantParts(startQuadrant);
+      const end = quadrantParts(endQuadrant);
+      if (!start || !end) return false;
+      return QUADRANT_RANK[start[axis]] === QUADRANT_RANK.Lo && QUADRANT_RANK[end[axis]] === QUADRANT_RANK.Hi;
     }
 
     function hasLowToHighAchievement(row) {
-      return row.startQuadrant.includes("Low-A") && row.endQuadrant.includes("High-A");
+      return quadrantAxisRose(row.startQuadrant, row.endQuadrant, "achievement");
     }
 
     function hasLowToHighGrowth(row) {
-      return row.startQuadrant.includes("Low-G") && row.endQuadrant.includes("High-G");
+      return quadrantAxisRose(row.startQuadrant, row.endQuadrant, "growth");
     }
 
     function getPriorityReasons(row) {
       const reasons = [];
       if (row.metGrowth === false) reasons.push("Did not meet growth");
       if (row.bandMovement === "Moved Down") reasons.push("Dropped percentile band");
-      if (row.endQuadrant === "Low-G/Low-A") reasons.push("Low-G/Low-A at end");
+      if (row.endQuadrant === "Lo-G/Lo-A") reasons.push("Low growth and low achievement at end");
+      // Behind, and growing at the typical rate - which means the distance to
+      // the year group stays exactly where it is.
+      if (row.endQuadrant === "Avg-G/Lo-A") reasons.push("Typical growth from a low start - the gap will not close at this rate");
       if (row.hasMissingEndScore) reasons.push("Missing end score");
       if (isFiniteNumber(row.observedGrowth) && row.observedGrowth < 0) reasons.push("Negative observed growth");
       if (isFiniteNumber(row.endPercentile) && row.endPercentile < 21) reasons.push("EndPercentile below 21");
@@ -7029,13 +7248,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         met: els.metFilter?.value || "",
         group: els.groupFilter?.value || "",
         gap: els.gapFilter?.value || "",
-        tier: els.tierFilter?.value || ""
+        tier: els.tierFilter?.value || "",
+        includeInvalid: Boolean(els.includeInvalidTests?.checked)
       };
     }
 
     function applyFilters(rows) {
       const filters = getFilters();
       return rows.filter((row) => {
+        // A test NWEA itself marked not valid is out of every aggregate,
+        // chart, poster and planning group unless the teacher asks for it back.
+        if (row.testNotValid && !filters.includeInvalid) return false;
         if (filters.search) {
           const haystack = `${row.studentName} ${row.studentID} ${row.studentLastName} ${row.studentFirstName}`.toLowerCase();
           if (!haystack.includes(filters.search)) return false;
@@ -7135,6 +7358,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       });
 
       setText("bandFilterLabel", baseline ? currentWindowName() + " Band" : "End Band");
+
+      // The toggle only exists when the file actually contains a test the
+      // export marked not valid; otherwise it is a control with nothing to do.
+      const notValid = state.allRows.filter((row) => row.testNotValid).length;
+      if (els.invalidToggleWrap) els.invalidToggleWrap.hidden = notValid === 0;
+      if (notValid && els.includeInvalidLabel) {
+        els.includeInvalidLabel.textContent = "Include " + formatInteger(notValid) + " invalid test" + (notValid === 1 ? "" : "s");
+      }
+      if (!notValid && els.includeInvalidTests) els.includeInvalidTests.checked = false;
 
       // Focus and strengths lists mean different things without a prior window.
       setText("priorityTitle", baseline ? "Start-of-Year Support List" : "Priority Students");
@@ -7499,8 +7731,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           : [
               ["% met", formatPercentWhole(metrics.metPct)],
               ["% exceeded", formatPercentWhole(metrics.exceededPct)],
-              ["Avg start RIT", formatNumber(metrics.avgStartRIT)],
-              ["Avg end RIT", formatNumber(metrics.avgEndRIT)],
+              // Averaged over the same students at both windows. Taking the
+              // start mean over one population and the end mean over another
+              // is not a comparison, and these two sit on adjacent rows.
+              ["Avg start RIT (matched)", formatNumber(metrics.avgStartRITPaired)],
+              ["Avg end RIT (matched)", formatNumber(metrics.avgEndRITPaired)],
               ["Avg RIT change", formatSignedNumber(metrics.avgRITChange)],
               ["Avg start %ile", formatNumber(metrics.avgStartPercentile)],
               ["Avg end %ile", formatNumber(metrics.avgEndPercentile)],
@@ -7852,7 +8087,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           histogramSVG(rows.map((row) => row.currentPercentile), "Percentile distribution"),
           "Averages hide the shape of a class. The marker shows the 61st-percentile secure benchmark."),
         chartCard("Band distribution",
-          stackedBarSVG(bandSegments(rows, "endBand"), {}) +
+          '<div class="stack-compare"><span class="stack-compare-label">' + escapeHTML(state.dataWindow.currentWindowLabel) + "</span>" +
+            stackedBarSVG(bandSegments(rows, "endBand"), {}) + "</div>" +
             '<div class="stack-compare"><span class="stack-compare-label">' + escapeHTML(state.dataWindow.priorWindowLabel) + "</span>" +
             stackedBarSVG(bandSegments(rows, "startBand"), {}) + "</div>",
           "Current window on top, prior window below, so band movement is visible as a shift in colour.")
@@ -7863,19 +8099,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       renderOverviewHeadings();
       const rows = state.filteredRows;
       const total = rows.filter((row) => row.endQuadrant !== "Missing").length;
-      els.quadrantCards.innerHTML = QUADRANTS.map((quadrant) => {
-        const count = rows.filter((row) => row.endQuadrant === quadrant).length;
+      const counts = countBy(rows, (row) => row.endQuadrant);
+      // Nine cells is too many cards to scan, so only the ones this file
+      // actually populated get a card. The map below still shows the full grid.
+      const populated = QUADRANTS.filter((quadrant) => (counts[quadrant] || 0) > 0);
+      els.quadrantCards.innerHTML = (populated.length ? populated : QUADRANTS.slice(0, 1)).map((quadrant) => {
+        const count = counts[quadrant] || 0;
         const pct = total ? count / total * 100 : null;
-        const className = quadrant.includes("High-G") && quadrant.includes("High-A")
-          ? "status-good"
-          : quadrant.includes("Low-G") && quadrant.includes("Low-A")
-            ? "status-risk"
-            : "status-watch";
+        const meta = QUADRANT_CELLS[quadrant] || { tone: "neutral", note: "" };
+        const className = meta.tone === "good" ? "status-good" : meta.tone === "risk" ? "status-risk" : meta.tone === "neutral" ? "status-neutral" : "status-watch";
         return `
-          <div class="card quadrant-card">
+          <div class="card quadrant-card" title="${escapeAttr(meta.title || quadrant)}">
             <span class="status-pill ${className}">${escapeHTML(quadrant)}</span>
             <strong>${formatInteger(count)}</strong>
-            <span>${formatPercentWhole(pct)} of students with quadrant data</span>
+            <span>${formatPercentWhole(pct)} of records with quadrant data</span>
           </div>
         `;
       }).join("");
@@ -7931,6 +8168,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function renderQuadrantSubjectCard(subject, subjectRows) {
+      const levels = quadrantGridLevels(subjectRows);
       const subjectTotal = subjectRows.filter((row) => row.endQuadrant !== "Missing").length;
       const counts = countBy(subjectRows, (row) => row.endQuadrant);
       const subjectImproved = subjectRows.filter((row) => row.quadrantMovement === "Improved").length;
@@ -7947,11 +8185,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             <span>Achievement: Low -> High</span>
             <span>Growth: Low -> High</span>
           </div>
-          <div class="quadrant-map">
-            ${quadrantCell("High Growth / Low Achievement", "High-G/Low-A", counts["High-G/Low-A"] || 0, subjectTotal, "catchup", "Catch-up growth is working")}
-            ${quadrantCell("High Growth / High Achievement", "High-G/High-A", counts["High-G/High-A"] || 0, subjectTotal, "good", "Extend and keep challenge high")}
-            ${quadrantCell("Low Growth / Low Achievement", "Low-G/Low-A", counts["Low-G/Low-A"] || 0, subjectTotal, "risk", "Highest priority for support")}
-            ${quadrantCell("Low Growth / High Achievement", "Low-G/High-A", counts["Low-G/High-A"] || 0, subjectTotal, "watch", "Achievement is strong; restart growth")}
+          <div class="quadrant-map" style="--quadrant-columns:${levels.achievement.length}">
+            ${levels.growth.map((growthLevel) => levels.achievement.map((achievementLevel) => {
+              const key = quadrantKey(growthLevel, achievementLevel);
+              const meta = QUADRANT_CELLS[key];
+              return quadrantCell(meta.title, key, counts[key] || 0, subjectTotal, meta.tone, meta.note);
+            }).join("")).join("")}
           </div>
           ${renderStudentQuadrantScatter(subjectRows)}
           <div class="movement-row">
@@ -8006,10 +8245,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             <span class="scatter-axis growth-low">Low Growth</span>
             <span class="scatter-axis achievement-low">Low Achievement</span>
             <span class="scatter-axis achievement-high">High Achievement</span>
-            <span class="scatter-quadrant-label tl">High-G / Low-A</span>
-            <span class="scatter-quadrant-label tr">High-G / High-A</span>
-            <span class="scatter-quadrant-label bl">Low-G / Low-A</span>
-            <span class="scatter-quadrant-label br">Low-G / High-A</span>
+            <span class="scatter-quadrant-label tl">High growth<br>Low achievement</span>
+            <span class="scatter-quadrant-label tr">High growth<br>High achievement</span>
+            <span class="scatter-quadrant-label bl">Low growth<br>Low achievement</span>
+            <span class="scatter-quadrant-label br">Low growth<br>High achievement</span>
             ${plotted.map((point) => scatterPoint(point.row, point.x, point.y, point.rawX, point.rawY, scatterSource)).join("")}
           </div>
           <div class="scatter-help">${formatInteger(plotted.length)} students plotted. Coordinates: ${escapeHTML(scatterSource.label)}. Select a point to open that student's profile.${missing ? ` ${formatInteger(missing)} missing plot coordinates.` : ""}${capped ? ` ${formatInteger(capped)} more are not drawn - filter to a single class to see them.` : ""}</div>
@@ -8072,10 +8311,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     function quadrantCoordinate(quadrant, axis) {
       const map = {
-        "High-G/High-A": { x: 75, y: 75 },
-        "High-G/Low-A": { x: 25, y: 75 },
-        "Low-G/High-A": { x: 75, y: 25 },
-        "Low-G/Low-A": { x: 25, y: 25 }
+        "Hi-G/Hi-A": { x: 83, y: 83 }, "Hi-G/Avg-A": { x: 50, y: 83 }, "Hi-G/Lo-A": { x: 17, y: 83 },
+        "Avg-G/Hi-A": { x: 83, y: 50 }, "Avg-G/Avg-A": { x: 50, y: 50 }, "Avg-G/Lo-A": { x: 17, y: 50 },
+        "Lo-G/Hi-A": { x: 83, y: 17 }, "Lo-G/Avg-A": { x: 50, y: 17 }, "Lo-G/Lo-A": { x: 17, y: 17 }
       };
       return map[quadrant]?.[axis] ?? null;
     }
@@ -8149,7 +8387,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           <div class="gap-story">
             ${storyLine("Starting point", `${formatInteger(below.length)} below 61; ${formatInteger(secure.length)} secure`)}
             ${storyLine("Catch-up result", below.length ? `${countPct(closed, below.length)} closed, ${countPct(reduced, below.length)} reduced, ${countPct(widened, below.length)} widened${maintained ? `, ${countPct(maintained, below.length)} maintained` : ""}` : "No students started below 61")}
-            ${storyLine("Average gap closure", formatFractionPercent(avgClosure))}
+            ${storyLine("Gap closure (pooled)", formatFractionPercent(avgClosure))}
             ${storyLine("Band movement", movement.length ? `${countPct(movedUp, movement.length)} moved up; ${countPct(movedDown, movement.length)} moved down` : "No complete band movement data")}
             ${storyLine("Secure students", secure.length ? `${countPct(secureExtended, secure.length)} extended; ${countPct(secureRegressed, secure.length)} regressed` : "No students started secure")}
             <div class="teacher-read">${escapeHTML(gapSubjectNote({ below, secure, closed, reduced, widened, movedUp, movedDown, secureExtended, secureRegressed, avgClosure }))}</div>
@@ -8199,12 +8437,19 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     function quadrantSubjectNote(counts, total) {
       if (!total) return "No quadrant data";
-      const lowLow = counts["Low-G/Low-A"] || 0;
-      const highLow = counts["High-G/Low-A"] || 0;
-      const highHigh = counts["High-G/High-A"] || 0;
-      if (lowLow / total >= 0.4) return "Prioritize low growth and low achievement";
-      if (highLow / total >= 0.3) return "Catch-up growth is happening";
-      if (highHigh / total >= 0.3) return "Strong extension area";
+      const at = (key) => counts[key] || 0;
+      const lowLow = at("Lo-G/Lo-A");
+      const catchUp = at("Hi-G/Lo-A");
+      const strong = at("Hi-G/Hi-A") + at("Hi-G/Avg-A");
+      // A student who is behind and growing only typically never catches up.
+      // That is a different instructional problem from low growth, and it used
+      // to be invisible because average was folded into low.
+      const treadingWater = at("Avg-G/Lo-A");
+      if (lowLow / total >= 0.4) return "Prioritise low growth and low achievement";
+      if ((lowLow + treadingWater) / total >= 0.4) return "Several are behind and growing only typically - typical growth will not close that gap";
+      if (catchUp / total >= 0.3) return "Catch-up growth is happening";
+      if (strong / total >= 0.3) return "Strong extension area";
+      if (at("Avg-G/Avg-A") / total >= 0.5) return "Mostly on track on both axes; core instruction is holding";
       return "Mixed pattern; review groups";
     }
 
@@ -8717,6 +8962,37 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       };
     }
 
+    // Collapses an area's raw entries to one per student. The row kept for
+    // display is the student's own most recent sitting where the dates can be
+    // ordered, so a name in a teaching group links to a current record.
+    function collapseAreaEntriesByStudent(entries) {
+      const byStudent = new Map();
+      entries.forEach((entry) => {
+        const key = studentKey(entry.row);
+        if (!byStudent.has(key)) byStudent.set(key, []);
+        byStudent.get(key).push(entry);
+      });
+      return [...byStudent.values()].map((list) => {
+        const latest = list.reduce((best, entry) =>
+          (sittingOrder(entry.row) > sittingOrder(best.row) ? entry : best), list[0]);
+        return {
+          row: latest.row,
+          area: latest.area,
+          rit: avg(list.map((entry) => entry.area.rit)),
+          delta: avg(list.map((entry) => entry.area.delta)),
+          sittings: list.length
+        };
+      });
+    }
+
+    // A coarse orderable stamp for a sitting. Only used to pick which of a
+    // student's records to show; never to claim one window follows another.
+    function sittingOrder(row) {
+      const season = { Fall: 1, Winter: 2, Spring: 3 }[row.currentSeason] || 0;
+      const month = monthFromDateText(row.currentTestDate);
+      return season * 100 + (isFiniteNumber(month) ? month : 0);
+    }
+
     function strandAnalysis(rows) {
       const usable = rows.filter((row) => row.hasInstructionalAreas && isFiniteNumber(row.currentRIT));
       if (!usable.length) return null;
@@ -8736,7 +9012,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
       const analysed = [...subjects.values()].map((bucket) => {
         const areas = [...bucket.areas.values()].map((area) => {
-          const deltas = area.entries.map((entry) => entry.area.delta);
+          // One observation per student, not per record. Two Class Profile
+          // files for the same class - a fall and a spring, which is the
+          // obvious thing to do with multi-file upload - used to give every
+          // area twice the sample, a confidence interval narrowed by root two,
+          // and group cards that listed the same child twice. Where a student
+          // has more than one sitting in view their differences are averaged.
+          const perStudent = collapseAreaEntriesByStudent(area.entries);
+          const deltas = perStudent.map((entry) => entry.delta);
           const count = deltas.length;
           const meanDelta = avg(deltas);
           const sd = sampleStdDev(deltas);
@@ -8749,14 +9032,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           if (thin) verdict = "thin";
           else if (meanDelta - margin > 0) verdict = "strength";
           else if (meanDelta + margin < 0) verdict = "gap";
-          const below = area.entries.filter((entry) => entry.area.delta <= -floor)
-            .sort((a, b) => a.area.delta - b.area.delta);
-          const above = area.entries.filter((entry) => entry.area.delta >= floor)
-            .sort((a, b) => b.area.delta - a.area.delta);
+          const below = perStudent.filter((entry) => entry.delta <= -floor)
+            .sort((a, b) => a.delta - b.delta);
+          const above = perStudent.filter((entry) => entry.delta >= floor)
+            .sort((a, b) => b.delta - a.delta);
           return {
             name: area.name,
             count,
-            meanRIT: avg(area.entries.map((entry) => entry.area.rit)),
+            meanRIT: avg(perStudent.map((entry) => entry.rit)),
             meanDelta,
             sd,
             margin,
@@ -8766,14 +9049,23 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             thin,
             below,
             above,
-            entries: area.entries
+            entries: perStudent,
+            sittingsPerStudent: perStudent.length ? area.entries.length / perStudent.length : 1
           };
         }).sort((a, b) => (isFiniteNumber(a.meanDelta) ? a.meanDelta : 0) - (isFiniteNumber(b.meanDelta) ? b.meanDelta : 0));
+        const normDeltas = bucket.rows.map((row) => row.usNormDeltaRIT).filter(isFiniteNumber);
         return {
           subject: bucket.subject,
           recordCount: bucket.rows.length,
           studentCount: new Set(bucket.rows.map((row) => studentKey(row))).size,
           meanOverallRIT: avg(bucket.rows.map((row) => row.currentRIT)),
+          // Every area figure on this panel is a distance from the student's
+          // OWN overall RIT, so the deltas of a class that is uniformly two
+          // years behind still centre on zero. Without the class's absolute
+          // position beside them, "no area stands out" reads as "nothing to
+          // do" to precisely the class that most needs something done.
+          meanUSNormDelta: normDeltas.length ? avg(normDeltas) : null,
+          normCount: normDeltas.length,
           areas
         };
       }).sort((a, b) => a.subject.localeCompare(b.subject));
@@ -8919,7 +9211,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         return '<article class="strand-subject reveal" style="--i:' + subjectIndex + '">' +
           '<header class="strand-subject-head"><strong>' + escapeHTML(subject.subject) + "</strong>" +
           "<span>" + escapeHTML(formatInteger(subject.studentCount) + " students | mean overall RIT " +
-            formatNumber(subject.meanOverallRIT, 0)) + "</span></header>" +
+            formatNumber(subject.meanOverallRIT, 0) +
+            (isFiniteNumber(subject.meanUSNormDelta) && subject.normCount >= AREA_CLASS_MIN_RECORDS
+              ? " | " + formatSignedNumber(subject.meanUSNormDelta) + " vs US norm"
+              : "")) + "</span></header>" +
           '<div class="strand-scale"><span>' + escapeHTML(formatSignedNumber(-scale)) + "</span><span>own overall RIT</span><span>" +
           escapeHTML(formatSignedNumber(scale)) + "</span></div>" +
           rows +
@@ -8984,15 +9279,33 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         ", each measured against the students' own overall RIT with a 95% confidence interval that clears zero.";
     }
 
+    // The absolute half of the picture: where this group sits against the year
+    // group, which the ipsative area figures cannot tell you.
+    function strandNormAnchor(subject) {
+      if (!isFiniteNumber(subject.meanUSNormDelta) || subject.normCount < AREA_CLASS_MIN_RECORDS) return "";
+      const delta = subject.meanUSNormDelta;
+      if (delta <= -3) {
+        return " Read that against where the group sits overall: these students average " +
+          formatNumber(Math.abs(delta), 1) + " RIT below the US norm for their grade and season in this subject, so an even profile here means evenly behind. The work is the subject, not one strand of it.";
+      }
+      if (delta >= 3) {
+        return " These students average " + formatNumber(delta, 1) +
+          " RIT above the US norm for their grade and season in this subject, so an even profile here means evenly ahead.";
+      }
+      return " Overall the group sits within 3 RIT of the US norm for its grade and season in this subject.";
+    }
+
     function strandSubjectRead(subject, floor) {
       const readable = subject.areas.filter((area) => !area.thin);
       if (!readable.length) {
-        return "Fewer than " + AREA_CLASS_MIN_RECORDS + " students have area scores in this subject, so the class picture cannot be read. The individual differences below still stand.";
+        return "Fewer than " + AREA_CLASS_MIN_RECORDS + " students have area scores in this subject, so the class picture cannot be read. The individual differences below still stand." +
+          strandNormAnchor(subject);
       }
       const gaps = readable.filter((area) => area.verdict === "gap");
       const strengths = readable.filter((area) => area.verdict === "strength");
       if (!gaps.length && !strengths.length) {
-        return "No area sits clearly away from where these students' overall scores sit, so there is no whole-class strand to reteach. Differences here are within measurement noise; the individuals below are still worth grouping.";
+        return "No area sits clearly away from where these students' overall scores sit, so there is no whole-class strand to reteach. Differences here are within measurement noise; the individuals below are still worth grouping." +
+          strandNormAnchor(subject);
       }
       const parts = [];
       if (gaps.length) {
@@ -9005,7 +9318,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         parts.push(strengths.map((area) => area.name).join(" and ") + " " + (strengths.length > 1 ? "run" : "runs") + " ahead of the rest of the subject" +
           (gaps.length ? ", so time can come from there" : ", which is worth protecting rather than adding to") + ".");
       }
-      return parts.join(" ");
+      return parts.join(" ") + strandNormAnchor(subject);
     }
 
     const STRAND_COLUMNS = (floor) => [
@@ -9204,6 +9517,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         statCard("No score in window", formatInteger(diagnostics.noScoreCount), { raw: diagnostics.noScoreCount, format: "integer", tone: diagnostics.noScoreCount ? "warn" : "good" }),
         statCard("Suppressed cells", formatInteger(diagnostics.suppressedCells), { raw: diagnostics.suppressedCells, format: "integer", hint: "Values such as *** that NWEA hides" }),
         statCard("Short tests", formatInteger(diagnostics.shortTestCount), { raw: diagnostics.shortTestCount, format: "integer", tone: diagnostics.shortTestCount ? "warn" : "good", title: METHOD_NOTES.shortTest }),
+        statCard("Invalid tests removed", diagnostics.statusReported ? formatInteger(diagnostics.notValidCount) : "n/a",
+          { raw: diagnostics.statusReported ? diagnostics.notValidCount : null, format: "integer",
+            tone: !diagnostics.statusReported ? undefined : diagnostics.notValidCount ? "warn" : "good",
+            hint: diagnostics.statusReported ? "Marked not valid by NWEA, left out of every figure" : "No test status column in this export",
+            title: METHOD_NOTES.testValidity }),
         statCard("Rapid guessing", diagnostics.rapidGuessReported ? formatInteger(diagnostics.rapidGuessFlagged) : "n/a",
           { raw: diagnostics.rapidGuessReported ? diagnostics.rapidGuessFlagged : null, format: "integer",
             tone: !diagnostics.rapidGuessReported ? undefined : diagnostics.rapidGuessFlagged ? "warn" : "good",
@@ -9234,6 +9552,25 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (diagnostics.areaRecordCount) {
         notes.push(["Instructional areas found", formatInteger(diagnostics.areaRecordCount) +
           " record(s) carry instructional area scores, so the Areas section is available. " + METHOD_NOTES.instructionalArea]);
+      }
+      if (diagnostics.notValidCount) {
+        notes.push(["Tests the export marks as not valid",
+          formatInteger(diagnostics.notValidCount) + " record(s) carry a status NWEA uses for a test it does not consider usable, so they are left out of every figure on this page. " +
+          "Tick \u201cInclude invalid tests\u201d in the filter bar to put them back. The reason is usually operational rather than anything about the student: " +
+          diagnostics.notValidList.join("; ") +
+          (diagnostics.notValidCount > diagnostics.notValidList.length
+            ? " and " + formatInteger(diagnostics.notValidCount - diagnostics.notValidList.length) + " more" : "") + "."]);
+      }
+      if (diagnostics.unknownStatusCount) {
+        notes.push(["Test statuses not recognised",
+          formatInteger(diagnostics.unknownStatusCount) + " record(s) carry a status this page does not recognise, so they were KEPT and counted normally rather than dropped: " +
+          diagnostics.unknownStatuses.join(", ") + ". If any of those mean the test was not usable, tell the developer and they will be added to the list."]);
+      }
+      if (diagnostics.metTooCloseCount) {
+        notes.push(["Met-growth calls too close to call",
+          formatInteger(diagnostics.metTooCloseCount) + " of " + formatInteger(diagnostics.metTooCloseCount + diagnostics.metResolvedCount) +
+          " met-growth results sit within measurement error of the projection, so this test pair cannot resolve them either way. " +
+          METHOD_NOTES.growthError]);
       }
       if (diagnostics.rapidGuessReported) {
         notes.push(["Rapid guessing", formatInteger(diagnostics.rapidGuessReported) + " record(s) report NWEA's rapid-guessing measure, median " +
@@ -9376,6 +9713,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Start / end %ile", formatNumber(row.startPercentile, 0) + " to " + formatNumber(row.endPercentile, 0)],
               ["Met growth", row.metGrowth === true ? "Yes" : row.metGrowth === false ? "No" : "Missing"],
               ["Conditional growth %ile", formatNumber(row.conditionalGrowthPercentile, 0)],
+              ["Growth, with error", row.growthMargin ? growthBandText(row) : "SE not in this export"],
               ["Gap status", row.gapStatus],
               ["vs US norm", formatSignedNumber(row.usNormDeltaRIT)]
             ];
@@ -9541,7 +9879,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
 Instructional tiers at the start of the year are ${tierText}. ${formatPercentWhole(metrics.atOrAboveSecurePct)} of records are already at or above the 61st-percentile secure benchmark, and ${formatPercentWhole(metrics.belowStrategicPct)} are below the 41st. ${strongest ? "The strongest starting area is " + strongest.bucket + " (median percentile " + formatNumber(strongest.metrics.medianCurrentPercentile) + ")" : "No area had enough scores to rank"}${weakest && strongest && weakest.bucket !== strongest.bucket ? ", and " + weakest.bucket + " starts furthest back (median percentile " + formatNumber(weakest.metrics.medianCurrentPercentile) + ")" : ""}.
 
-Looking ahead to ${horizon}, a typical student at these grades gains ${formatSignedNumber(metrics.avgTypicalGain)} RIT. ${formatInteger(metrics.needsAcceleratedGrowthCount)} records would need more than that typical gain to reach the grade-level norm, so they are the ones whose goals should be set deliberately rather than left to core instruction. ${metrics.shortTestCount ? formatInteger(metrics.shortTestCount) + " test session(s) finished unusually quickly and are worth confirming before they are used for placement." : "No test sessions were flagged as unusually short."}${metrics.rapidGuessCount ? " NWEA flagged rapid guessing on " + formatInteger(metrics.rapidGuessCount) + " test(s), which understate what those students can do." : ""}${strandSummarySentence()}
+Looking ahead to ${horizon}, a typical student at these grades gains ${formatSignedNumber(metrics.avgTypicalGain)} RIT. ${formatInteger(metrics.needsAcceleratedGrowthCount)} records would need more than that typical gain to reach the grade-level norm, so they are the ones whose goals should be set deliberately rather than left to core instruction. ${metrics.shortTestCount ? formatInteger(metrics.shortTestCount) + " test session(s) finished unusually quickly and are worth confirming before they are used for placement." : "No test sessions were flagged as unusually short."}${metrics.metTooCloseCount ? " " + formatInteger(metrics.metTooCloseCount) + " met-growth result(s) sit within measurement error of the projection and cannot be resolved either way by this test pair, so they should not be read as evidence in either direction." : ""}${metrics.rapidGuessCount ? " NWEA flagged rapid guessing on " + formatInteger(metrics.rapidGuessCount) + " test(s), which understate what those students can do." : ""}${strandSummarySentence()}
 
 Suggested next steps: open intervention groups from the Intensive and Strategic tiers first; set a written RIT target for every student who needs above-typical growth; plan extension for the Advanced tier now rather than after the winter window; and re-upload once a second window exists so this baseline becomes a growth measure.
 
@@ -9779,15 +10117,32 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     const POSTER_TONES = { blue: "#2454a6", green: "#16a34a", amber: "#ea580c", slate: "#5d6a7e" };
 
+    // A poster describes a group. Below this many students the figures stop
+    // being class-level: with one student in view the "median" IS that child's
+    // score, and the footer would still promise "no individual scores" while
+    // printing them at 56mm on a wall a whole school walks past.
+    const POSTER_MIN_STUDENTS = 5;
+
+    function posterStudentCount() {
+      if (state.posterStudentCountCache && state.posterStudentCountCache.rows === state.filteredRows) {
+        return state.posterStudentCountCache.value;
+      }
+      const value = new Set(state.filteredRows.map((row) => studentKey(row))).size;
+      state.posterStudentCountCache = { rows: state.filteredRows, value };
+      return value;
+    }
+
     function posterContextLine() {
       const filters = getFilters();
-      const students = new Set(state.filteredRows.map((row) => studentKey(row))).size;
       const parts = [
         filters.className ? "Class " + filters.className : null,
         filters.subject || null,
-        formatInteger(students) + " students",
+        formatInteger(posterStudentCount()) + " students",
         currentWindowName()
       ].filter(Boolean);
+      // A search term narrows the group without appearing anywhere on the page
+      // furniture, so it is named here rather than left implied.
+      if (filters.search) parts.push('matching "' + filters.search + '"');
       return parts.join("  |  ") + "\nNo names, no individual scores.";
     }
 
@@ -9966,15 +10321,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         sub: () => "Growth is not a race against the top of the class.",
         message: () => "50 means you grew as much as students across the country who started on the same score as you. Anyone in this room can be above 50.",
         body: () => {
-          const bands = growthEquityBands(state.filteredRows).filter((entry) => entry.count > 0);
+          // available() screens out thin bands; body() used to re-derive with a
+          // count > 0 test, so a band of one student could be rendered - and
+          // become the 56mm hero number, captioned with their starting band.
+          const bands = growthEquityBands(state.filteredRows)
+            .filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP));
           const rows = bands.map((entry) => posterBarRow(
             entry.band.name + " start",
             "Started between the " + entry.band.min + "th and " + entry.band.max + "th percentile",
             isFiniteNumber(entry.medianCGP) ? entry.medianCGP : 0,
             isFiniteNumber(entry.medianCGP) ? formatNumber(entry.medianCGP, 0) : "n/a",
             bandPrintColour(entry.band))).join("");
-          const best = bands.filter((entry) => isFiniteNumber(entry.medianCGP))
-            .slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
+          const best = bands.slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
           return '<div class="poster-body">' +
             posterHero(best ? formatNumber(best.medianCGP, 0) : "-",
               best ? "was the strongest growth in the class, from the " + best.band.name.toLowerCase() + " starting band" : "", "green") +
@@ -10027,6 +10385,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           const result = state.targetResult;
           const share = clampBetween(result.currentShare, 0, 100);
           const target = clampBetween(result.targetShare, 0, 100);
+          const withinReach = result.below.filter((entry) => entry.distance <= 10).length;
           return '<div class="poster-body">' +
             posterHero(formatInteger(result.needed), result.needed
               ? "more results to reach our goal"
@@ -10037,9 +10396,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             "</div>" +
             '<div class="poster-callouts"><div class="poster-callout is-good"><strong>Already there</strong><b>' +
             escapeHTML(formatInteger(result.above.length)) + "</b><small>results at or above the line</small></div>" +
-            '<div class="poster-callout"><strong>Closest to it</strong><b>' +
-            escapeHTML(result.below.length ? formatNumber(result.below[0].distance, 0) + " points" : "-") +
-            "</b><small>the shortest distance anyone has left to climb</small></div></div></div></div>";
+            // "Closest to it" was one student's distance, and the poster names
+            // the threshold, so the wall published their exact percentile by
+            // subtraction. A count of who is within reach is the class fact
+            // that callout was reaching for, and no single record determines it.
+            (withinReach >= 3
+              ? '<div class="poster-callout"><strong>Within reach</strong><b>' + escapeHTML(formatInteger(withinReach)) +
+                "</b><small>results are less than 10 points below the line</small></div>"
+              : '<div class="poster-callout"><strong>Every step counts</strong><b>' +
+                escapeHTML(formatInteger(result.scored.length)) + "</b><small>results in this picture, and each one can move</small></div>") +
+            "</div></div></div>";
         }
       }
     ];
@@ -10079,6 +10445,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function availablePosters() {
+      if (posterStudentCount() < POSTER_MIN_STUDENTS) return [];
       return POSTERS.filter((poster) => {
         try {
           return poster.available();
@@ -10104,7 +10471,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const posters = availablePosters();
       const selection = posterSelection();
       if (!posters.length) {
-        els.posterGrid.innerHTML = '<div class="empty-state">Load a file to build the posters. Which ones are available depends on what the export carries - growth posters need two windows, and the learning-areas poster needs a Class Profile export.</div>';
+        const students = posterStudentCount();
+        els.posterGrid.innerHTML = '<div class="empty-state">' + (students > 0 && students < POSTER_MIN_STUDENTS
+          ? escapeHTML("Only " + formatInteger(students) + " student" + (students === 1 ? " is" : "s are") +
+            " in view, so these would be posters about " + (students === 1 ? "one child" : "a handful of children") +
+            " rather than about a class. Posters need at least " + POSTER_MIN_STUDENTS +
+            " students - clear the search and filters to build them.")
+          : "Load a file to build the posters. Which ones are available depends on what the export carries - growth posters need two windows, and the learning-areas poster needs a Class Profile export.") + "</div>";
         setText("posterCount", "");
         return;
       }
@@ -10152,6 +10525,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function printPosters(ids) {
+      const students = posterStudentCount();
+      if (students < POSTER_MIN_STUDENTS) {
+        const detail = students === 0
+          ? "There is nobody in view to make a poster about."
+          : "Only " + formatInteger(students) + " student" + (students === 1 ? " is" : "s are") +
+            " in view - a poster of that is about a child, not a class.";
+        setStatus(detail + " Posters need at least " + POSTER_MIN_STUDENTS + " students; clear the search and filters first.", true);
+        toast(detail, "error");
+        return;
+      }
       const posters = availablePosters().filter((poster) => !ids || ids.includes(poster.id));
       if (!posters.length) {
         toast("Select at least one poster to print.", "info");
@@ -11015,6 +11398,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // room layout can be arranged without a pointer.
     function handleLayoutKeydown(event) {
       if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(event.key)) return;
+      // A student card sits inside the table article, which is itself a layout
+      // handle. Both listeners are on document, so an arrow key on a focused
+      // student used to move the student AND shift the whole table one percent
+      // across the room - five moves, five percent of drift, and it printed.
+      if (event.target.closest && event.target.closest(".drag-card")) return;
       const handle = event.target.closest ? event.target.closest("[data-layout-kind]") : null;
       if (!handle) return;
       const position = layoutPositionFor(handle);
@@ -11029,8 +11417,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const strategy = els.groupStrategySelect.value || "mixed";
       const scoreMode = els.groupScoreSelect.value || "endPercentile";
       renderTableGroupLayout(scoreMode, strategy);
-      const restored = document.querySelector(`[data-layout-kind="${handle.dataset.layoutKind}"]` +
-        (handle.dataset.tableIndex !== undefined ? `[data-table-index="${escapeAttr(handle.dataset.tableIndex)}"]` : ""));
+      // The table article has no tabindex, so focusing it silently dropped
+      // focus to <body> after every keypress. Prefer the Move button, which is
+      // the focusable control whose own label advertises the arrow keys.
+      const index = handle.dataset.tableIndex;
+      const selector = index !== undefined
+        ? `[data-layout-handle][data-layout-kind="table"][data-table-index="${escapeAttr(index)}"]`
+        : `[data-layout-kind="${handle.dataset.layoutKind}"]`;
+      const restored = document.querySelector(selector) ||
+        document.querySelector(`[data-layout-kind="${handle.dataset.layoutKind}"]`);
       if (restored) restored.focus();
     }
 
@@ -11063,9 +11458,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const fixture = event.target.closest("[data-layout-kind='door'], [data-layout-kind='teacherDesk'], [data-layout-kind='frontBoard']");
       const tableHandle = event.target.closest("[data-layout-handle]");
       if (!fixture && !tableHandle) return;
-      const element = fixture || tableHandle.closest("[data-layout-kind='table']");
+      // The Move button carries data-layout-kind="table" so the keyboard
+      // handler can find it, and closest() matches the element itself - so this
+      // used to resolve to the 54x22px button. Every measurement below then
+      // came from the button instead of the card, and a four-pixel nudge threw
+      // the table 18% of the room across.
+      const element = fixture || tableHandle.closest(".classroom-table[data-layout-kind='table']");
+      if (!element) return;
       const board = element.closest("[data-classroom-board]");
-      if (!element || !board) return;
+      if (!board) return;
       event.preventDefault();
       const boardRect = board.getBoundingClientRect();
       const elementRect = element.getBoundingClientRect();
@@ -11361,8 +11762,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           ? " title=\"NWEA marked this value as qualified or estimated.\""
           : "";
       const mark = row && (row.metGrowthInferred || row.metGrowthQualified) ? "*" : "";
-      if (value === true) return `<span class="status-pill status-good"${note}>Yes${mark}</span>`;
-      if (value === false) return `<span class="status-pill status-risk"${note}>No${mark}</span>`;
+      const tooClose = row && row.metCertainty === "too-close"
+        ? `<span class="status-pill status-neutral too-close" title="${escapeAttr(growthCertaintyNote(row))}">too close to call</span>`
+        : "";
+      if (value === true) return `<span class="status-pill status-good"${note}>Yes${mark}</span>${tooClose}`;
+      if (value === false) return `<span class="status-pill status-risk"${note}>No${mark}</span>${tooClose}`;
       return `<span class="status-pill status-neutral">Missing</span>`;
     }
 
@@ -11481,6 +11885,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         goalRowCount: rows.filter((row) => row.goals).length,
         shortTestCount: rows.filter((row) => row.shortTest).length,
         rapidGuessCount: rows.filter((row) => row.rapidGuessed).length,
+        metResolvedCount: rows.filter((row) => row.metCertainty === "clear").length,
+        metTooCloseCount: rows.filter((row) => row.metCertainty === "too-close").length,
         metPct: validGrowth.length ? validGrowth.filter((row) => row.metGrowth === true).length / validGrowth.length * 100 : null,
         exceededPct: validExceeded.length ? validExceeded.filter((row) => row.exceededGrowth).length / validExceeded.length * 100 : null,
         avgStartRIT: avg(rows.map((row) => row.startRIT)),
@@ -11492,6 +11898,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         pairedCount: pairedRows.length,
         avgStartPercentilePaired: avg(pairedRows.map((row) => row.startPercentile)),
         avgEndPercentilePaired: avg(pairedRows.map((row) => row.endPercentile)),
+        avgStartRITPaired: avg(pairedRows.map((row) => row.startRIT)),
+        avgEndRITPaired: avg(pairedRows.map((row) => row.endRIT)),
         avgProjectedGrowth: avg(rows.map((row) => row.projectedGrowth)),
         avgObservedGrowth: avg(rows.map((row) => row.observedGrowth)),
         medianConditionalGrowthPercentile: median(rows.map((row) => row.conditionalGrowthPercentile)),
@@ -11943,10 +12351,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         toast("No records in view have a norm-referenced target.", "info");
         return;
       }
+      // Keyed on identity, not on the printed name: two children who share a
+      // name, or a set of records with the ID present but the name suppressed,
+      // used to collapse onto one sheet carrying both their areas.
       const byStudent = new Map();
       rows.forEach((row) => {
-        if (!byStudent.has(row.studentName)) byStudent.set(row.studentName, []);
-        byStudent.get(row.studentName).push(row);
+        const key = studentKey(row);
+        if (!byStudent.has(key)) byStudent.set(key, []);
+        byStudent.get(key).push(row);
       });
       const GOAL_SHEET_LIMIT = 200;
       const entries = [...byStudent.entries()];
@@ -11956,8 +12368,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           " students. Filter to a class to print the rest.", "info");
       }
       const floor = state.strandAnalysis ? state.strandAnalysis.floor : AREA_MIN_FLOOR;
-      const sheets = printed.map(([name, studentRows]) => {
+      const sheets = printed.map(([, studentRows]) => {
         const first = studentRows[0];
+        const name = first.studentName;
         return '<section class="sheet">' +
           printHeader("Growth Goal Sheet", first.className) +
           "<h2>" + escapeHTML(name) + " - Grade " + escapeHTML(first.studentGrade) + "</h2>" +
@@ -11996,8 +12409,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         lines.push(
           "<tr><td>" + escapeHTML(row.subject) + "</td>" +
           "<td>" + escapeHTML(sorted.map((area) => area.name + " " + formatNumber(area.rit, 0)).join("; ")) + "</td>" +
-          "<td>" + escapeHTML(Math.abs(strongest.delta) >= floor ? strongest.name : "Even across the subject") + "</td>" +
-          "<td>" + escapeHTML(Math.abs(weakest.delta) >= floor ? weakest.name : "Nothing standing out") + "</td></tr>");
+          // Directional, not absolute: with Math.abs the "strongest area" could
+          // be the one furthest BELOW the student's own level.
+          "<td>" + escapeHTML(strongest.delta >= floor ? strongest.name : "Even across the subject") + "</td>" +
+          "<td>" + escapeHTML(weakest.delta <= -floor ? weakest.name : "Nothing standing out") + "</td></tr>");
       });
       if (!lines.length) return "";
       return "<h2>What is inside each subject</h2>" +
