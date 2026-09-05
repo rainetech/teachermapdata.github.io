@@ -2657,6 +2657,10 @@
     .method-note.wide { grid-column: 1 / -1; }
     .muted-cell { color: var(--muted); font-style: italic; }
     .card-story { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+    .card-floor-note {
+      font-size: 11.5px; line-height: 1.45; color: var(--muted); margin: 10px 0 0;
+      padding-top: 8px; border-top: 1px dashed var(--border);
+    }
     .subject-summary { display: grid; gap: 10px; }
 
     /* =====================================================================
@@ -7671,7 +7675,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       } else if (info.mode === "mixed") {
         setText("modeHeadline", "Mixed file - " + formatInteger(info.growthRowCount) + " of " + formatInteger(info.scoredRowCount) + " records have two windows");
         setText("modeDetail", formatInteger(info.baselineRowCount) + " records have only " + currentWindowName() +
-          " and are treated as baselines. Growth panels describe the " + formatPercentWhole(info.growthShare * 100) + " with a prior score.");
+          " and are treated as baselines. Growth panels describe the " +
+          formatShare({ n: info.growthRowCount, of: info.scoredRowCount }) + " with a prior score.");
       } else {
         setText("modeHeadline", info.priorWindowLabel + " to " + info.currentWindowLabel);
         setText("modeDetail", formatInteger(info.growthRowCount) + " records carry both windows, so growth, gap closure and quadrant movement are all measured.");
@@ -7778,6 +7783,57 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "</div>";
     }
 
+    // A stat card whose value is a share. It prints a percentage or the raw
+    // counts depending on the denominator, and only animates the count-up when
+    // there is a percentage to count up to.
+    function shareCard(label, entry, options) {
+      const opts = options || {};
+      const pct = sharePct(entry);
+      const thin = shareIsThin(entry);
+      return statCard(label, formatShare(entry), {
+        raw: thin ? null : pct,
+        format: "percent",
+        tone: thin ? "" : toneFor(pct, opts.threshold),
+        hint: thin
+          ? "Too few records for a percentage"
+          : opts.hint || (entry && entry.of ? "of " + formatInteger(entry.of) + " records" : "")
+      });
+    }
+
+    // Pooled gap closure is a ratio of distances, not a share of students, so
+    // there are no counts to fall back to. Under the floor it is withheld.
+    function capitalizeFirst(text) {
+      return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
+    }
+
+    // Pooled gap closure has no count form, so in prose it is either stated or
+    // the sentence says why it is not.
+    function gapClosureSentence(metrics) {
+      if (!isFiniteNumber(metrics.avgGapClosurePct)) {
+        return "No student in this view started below the secure benchmark, so there is no gap closure to report.";
+      }
+      if (metrics.gapContributorCount < MIN_SHARE_N) {
+        return "Only " + formatInteger(metrics.gapContributorCount) + " student" +
+          (metrics.gapContributorCount === 1 ? "" : "s") +
+          " started below the secure benchmark, too few to report a pooled gap closure figure.";
+      }
+      return "The " + formatInteger(metrics.gapContributorCount) +
+        " students who began below the secure benchmark closed " + formatFractionPercent(metrics.avgGapClosurePct) +
+        " of the total distance to the 61st percentile.";
+    }
+
+    function formatMedianCGP(value, count) {
+      if (!isFiniteNumber(value)) return "N/A";
+      if (count < EQUITY_MIN_RECORDS) return "Too few";
+      return formatNumber(value);
+    }
+
+    function formatPooledGapClosure(metrics) {
+      if (!isFiniteNumber(metrics.avgGapClosurePct)) return "N/A";
+      if (metrics.gapContributorCount < MIN_SHARE_N) return "Too few";
+      return formatFractionPercent(metrics.avgGapClosurePct);
+    }
+
     function renderSummaryCards() {
       const rows = state.filteredRows;
       const metrics = aggregateRows(rows);
@@ -7790,18 +7846,24 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             statCard("Median %ile", formatNumber(metrics.medianCurrentPercentile), { raw: metrics.medianCurrentPercentile, hint: currentWindowName() }),
             statCard("Mean RIT", formatNumber(metrics.avgCurrentRIT), { raw: metrics.avgCurrentRIT, hint: "Average across visible records" }),
             statCard("vs US norm", formatSignedNumber(metrics.avgUSNormDeltaRIT), { raw: metrics.avgUSNormDeltaRIT, format: "signed", tone: toneFor(metrics.avgUSNormDeltaRIT, 0), hint: "Mean RIT distance from the grade/season norm" }),
-            statCard("At/above norm", formatPercentWhole(metrics.atOrAboveUSNormPct), { raw: metrics.atOrAboveUSNormPct, format: "percent", tone: toneFor(metrics.atOrAboveUSNormPct, 50) }),
-            statCard("Secure (61+)", formatPercentWhole(metrics.atOrAboveSecurePct), { raw: metrics.atOrAboveSecurePct, format: "percent", tone: toneFor(metrics.atOrAboveSecurePct, 50) }),
+            shareCard("At/above norm", metrics.shares.atOrAboveUSNorm, { threshold: 50 }),
+            shareCard("Secure (61+)", metrics.shares.secure, { threshold: 50 }),
             statCard("Tier 2 or 3", formatInteger((metrics.tierCounts.intensive || 0) + (metrics.tierCounts.strategic || 0)), { raw: (metrics.tierCounts.intensive || 0) + (metrics.tierCounts.strategic || 0), format: "integer", tone: "warn", hint: "Records below the 41st percentile" }),
             statCard("Support list", formatInteger(focusCount), { raw: focusCount, format: "integer", tone: focusCount ? "warn" : "good", hint: "Records with a start-of-year flag" })
           ]
         : [
             statCard("Records", formatInteger(rows.length), { raw: rows.length, format: "integer", hint: formatInteger(studentTotal) + " students" }),
-            statCard("Met growth", formatPercentWhole(metrics.metPct), { raw: metrics.metPct, format: "percent", tone: toneFor(metrics.metPct, 50) }),
-            statCard("Exceeded", formatPercentWhole(metrics.exceededPct), { raw: metrics.exceededPct, format: "percent", tone: toneFor(metrics.exceededPct, 40) }),
+            shareCard("Met growth", metrics.shares.met, { threshold: 50 }),
+            shareCard("Exceeded", metrics.shares.exceeded, { threshold: 40 }),
             statCard("Avg start %ile", formatNumber(metrics.avgStartPercentilePaired), { raw: metrics.avgStartPercentilePaired, hint: formatInteger(metrics.pairedCount) + " records with both windows" }),
             statCard("Avg end %ile", formatNumber(metrics.avgEndPercentilePaired), { raw: metrics.avgEndPercentilePaired, tone: toneFor(metrics.avgPercentileChange, 0), hint: "Same " + formatInteger(metrics.pairedCount) + " records" }),
-            statCard("Gap closure", formatFractionPercent(metrics.avgGapClosurePct), { raw: isFiniteNumber(metrics.avgGapClosurePct) ? metrics.avgGapClosurePct * 100 : null, format: "percent", hint: "Pooled across students below the benchmark" }),
+            statCard("Gap closure", formatPooledGapClosure(metrics), {
+              raw: isFiniteNumber(metrics.avgGapClosurePct) && metrics.gapContributorCount >= MIN_SHARE_N ? metrics.avgGapClosurePct * 100 : null,
+              format: "percent",
+              hint: metrics.gapContributorCount
+                ? "Pooled across " + formatInteger(metrics.gapContributorCount) + " students below the benchmark"
+                : "No students below the benchmark"
+            }),
             statCard("Priority", formatInteger(focusCount), { raw: focusCount, format: "integer", tone: focusCount ? "warn" : "good" }),
             statCard("Celebration", formatInteger(strengthCount), { raw: strengthCount, format: "integer", tone: "good" })
           ];
@@ -7841,28 +7903,41 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const metrics = [
         ["Median percentile", here.medianCurrentPercentile, there.medianCurrentPercentile, (value) => formatNumber(value, 0)],
         ["Mean RIT", here.avgCurrentRIT, there.avgCurrentRIT, (value) => formatNumber(value, 1)],
-        ["At or above US norm", here.atOrAboveUSNormPct, there.atOrAboveUSNormPct, formatPercentWhole],
-        ["Secure (61st+)", here.atOrAboveSecurePct, there.atOrAboveSecurePct, formatPercentWhole]
+        shareMetric("At or above US norm", here.shares.atOrAboveUSNorm, there.shares.atOrAboveUSNorm),
+        shareMetric("Secure (61st+)", here.shares.secure, there.shares.secure)
       ];
       if (hasGrowthContext()) {
-        metrics.push(["Met growth", here.metPct, there.metPct, formatPercentWhole]);
-        metrics.push(["Gap closure (pooled)", here.avgGapClosurePct, there.avgGapClosurePct, formatFractionPercent]);
+        metrics.push(shareMetric("Met growth", here.shares.met, there.shares.met));
+        metrics.push(["Gap closure (pooled)", here.avgGapClosurePct, there.avgGapClosurePct, formatFractionPercent,
+          here.gapContributorCount >= MIN_SHARE_N && there.gapContributorCount >= MIN_SHARE_N]);
       }
       node.hidden = false;
       node.innerHTML = '<div class="cohort-head"><strong>This selection vs the rest of the file</strong>' +
         '<span>' + escapeHTML(formatInteger(shown.length) + " selected records against the other " + formatInteger(rest.length) +
           " in this upload, across " + formatInteger(cohorts.size) + " class groups. A comparison inside one school, not a national one.") + "</span></div>" +
-        '<div class="cohort-row">' + metrics.map(([label, mine, others, format]) => {
-          const delta = isFiniteNumber(mine) && isFiniteNumber(others) ? mine - others : null;
+        '<div class="cohort-row">' + metrics.map(([label, mine, others, format, comparable, mineText, othersText]) => {
+          // Subtracting one percentage from another is only a comparison when
+          // both were worth writing as a percentage. "+33 points vs rest" off a
+          // three-record group is noise wearing the clothes of a finding.
+          const delta = comparable !== false && isFiniteNumber(mine) && isFiniteNumber(others) ? mine - others : null;
           const tone = !isFiniteNumber(delta) ? "" : delta > 0 ? " is-up" : delta < 0 ? " is-down" : "";
           const deltaText = !isFiniteNumber(delta)
-            ? "n/a"
+            ? (comparable === false ? "too few to compare" : "n/a")
             : (delta > 0 ? "+" : "") + (format === formatFractionPercent ? formatFractionPercent(delta) : format(delta));
           return '<div class="cohort-metric' + tone + '"><i>' + escapeHTML(label) + "</i>" +
-            "<b>" + escapeHTML(format(mine)) + "</b>" +
+            "<b>" + escapeHTML(mineText === undefined ? format(mine) : mineText) + "</b>" +
             '<span class="cohort-delta">' + escapeHTML(deltaText) + " vs rest</span>" +
-            '<span class="cohort-rest">rest: ' + escapeHTML(format(others)) + "</span></div>";
+            '<span class="cohort-rest">rest: ' + escapeHTML(othersText === undefined ? format(others) : othersText) + "</span></div>";
         }).join("") + "</div>";
+    }
+
+    // Packs a pair of shares into the [label, mine, theirs, format, comparable]
+    // shape the cohort row renders, printing counts on either side that needs
+    // them and marking the pair uncomparable when either does.
+    function shareMetric(label, mine, theirs) {
+      const comparable = !shareIsThin(mine) && !shareIsThin(theirs) && Boolean(mine.of) && Boolean(theirs.of);
+      return [label, sharePct(mine), sharePct(theirs), formatPercentWhole, comparable,
+        formatShare(mine), formatShare(theirs)];
     }
 
     function toneFor(value, threshold) {
@@ -7901,7 +7976,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           '<span class="tier-name"><b>' + escapeHTML(tier.name) + "</b><small>" + escapeHTML(tier.tierLabel + " - " + tier.blurb) + "</small></span>" +
           '<span class="tier-bar"><span class="tier-fill" style="--fill:' + share.toFixed(1) + '%;background:' + tier.color + '"></span></span>' +
           '<span class="tier-count"><b data-count="' + tierRows.length + '" data-count-format="integer">' + formatInteger(tierRows.length) + "</b><small>" +
-          escapeHTML(formatPercentWhole(share)) + "</small></span>" +
+          escapeHTML(shareTag(tierRows.length, scored.length)) + "</small></span>" +
           '<span class="tier-names">' + escapeHTML(names.slice(0, 4).join(", ") + (names.length > 4 ? " +" + (names.length - 4) + " more" : "")) + "</span>" +
           "</button>";
       }).join("");
@@ -7911,7 +7986,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const ahead = rows.filter((row) => isFiniteNumber(row.usNormGradeGap) && row.usNormGradeGap >= 1).length;
       els.normCards.innerHTML = [
         statCard("Mean RIT vs norm", formatSignedNumber(metrics.avgUSNormDeltaRIT), { raw: metrics.avgUSNormDeltaRIT, format: "signed", tone: toneFor(metrics.avgUSNormDeltaRIT, 0), hint: formatInteger(normRows.length) + " records matched to a norm" }),
-        statCard("At or above norm", formatPercentWhole(metrics.atOrAboveUSNormPct), { raw: metrics.atOrAboveUSNormPct, format: "percent", tone: toneFor(metrics.atOrAboveUSNormPct, 50) }),
+        shareCard("At or above norm", metrics.shares.atOrAboveUSNorm, { threshold: 50 }),
         statCard("Testing a grade+ below", formatInteger(behind), { raw: behind, format: "integer", tone: behind ? "warn" : "good", hint: "Approximate placement only" }),
         statCard("Testing a grade+ above", formatInteger(ahead), { raw: ahead, format: "integer", tone: "good", hint: "Approximate placement only" }),
         statCard("Median RIT", formatNumber(metrics.medianCurrentRIT), { raw: metrics.medianCurrentRIT }),
@@ -7939,7 +8014,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         miniMetric("Median %ile", formatNumber(metrics.medianCurrentPercentile)) +
         miniMetric("Mean RIT", formatNumber(metrics.avgCurrentRIT)) +
         miniMetric("vs norm", formatSignedNumber(metrics.avgUSNormDeltaRIT)) +
-        miniMetric("Secure 61+", formatPercentWhole(metrics.atOrAboveSecurePct)) +
+        miniMetric("Secure 61+", formatShare(metrics.shares.secure)) +
         "</div>" +
         (lowest.length
           ? '<p class="card-story">Start here: ' + escapeHTML(lowest.map((row) => row.studentName + " (" + formatNumber(row.currentPercentile, 0) + ")").join(", ")) + ".</p>"
@@ -8017,16 +8092,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Mean RIT", formatNumber(metrics.avgCurrentRIT)],
               ["Norm mean RIT", formatNumber(avg(rows.map((row) => row.usNormBenchmarkRIT)))],
               ["vs US norm (RIT)", formatSignedNumber(metrics.avgUSNormDeltaRIT)],
-              ["At/above US norm", formatPercentWhole(metrics.atOrAboveUSNormPct)],
+              ["At/above US norm", formatShare(metrics.shares.atOrAboveUSNorm)],
               ["Grade-level gap", formatSignedNumber(metrics.avgUSNormGradeGap)],
-              ["Secure (61+)", formatPercentWhole(metrics.atOrAboveSecurePct)],
-              ["Below 41st", formatPercentWhole(metrics.belowStrategicPct)],
+              ["Secure (61+)", formatShare(metrics.shares.secure)],
+              ["Below 41st", formatShare(metrics.shares.belowStrategic)],
               ["Typical gain ahead", formatSignedNumber(metrics.avgTypicalGain)],
               ["Need accelerated growth", formatInteger(metrics.needsAcceleratedGrowthCount)]
             ]
           : [
-              ["% met", formatPercentWhole(metrics.metPct)],
-              ["% exceeded", formatPercentWhole(metrics.exceededPct)],
+              ["Met growth", formatShare(metrics.shares.met)],
+              ["Exceeded", formatShare(metrics.shares.exceeded)],
               // Averaged over the same students at both windows. Taking the
               // start mean over one population and the end mean over another
               // is not a comparison, and these two sit on adjacent rows.
@@ -8036,8 +8111,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Avg start %ile", formatNumber(metrics.avgStartPercentile)],
               ["Avg end %ile", formatNumber(metrics.avgEndPercentile)],
               ["Avg %ile change", formatSignedNumber(metrics.avgPercentileChange)],
-              ["Median CGP (visible)", formatNumber(metrics.medianConditionalGrowthPercentile)],
-              ["Gap closure (pooled)", formatFractionPercent(metrics.avgGapClosurePct)],
+              ["Median CGP (visible)", formatMedianCGP(metrics.medianConditionalGrowthPercentile, metrics.cgpCount)],
+              ["Gap closure (pooled)", formatPooledGapClosure(metrics)],
               ["vs US norm (RIT)", formatSignedNumber(metrics.avgUSNormDeltaRIT)],
               ["Ground vs norm", formatSignedNumber(metrics.avgNormDeltaChange)],
               ["Moved up", formatInteger(metrics.movedUpCount)],
@@ -8045,10 +8120,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Class % met (from file)", formatPercentWhole(avg(rows.map((row) => row.classPctMet)))],
               ["Class median CGP (from file)", formatNumber(avg(rows.map((row) => row.medianConditionalGrowthPercentile)))]
             ];
+        // Splitting a class by subject is exactly where denominators get small,
+        // so each card says for itself when its shares fell back to counts.
+        const floorNote = shareFloorNote(baseline
+          ? [metrics.shares.atOrAboveUSNorm, metrics.shares.secure, metrics.shares.belowStrategic]
+          : [metrics.shares.met, metrics.shares.exceeded]);
         return '<article class="card subject-card reveal ' + (lens === "subject" ? escapeAttr(slugify(bucket)) : "") + '" style="--i:' + index + '">' +
           '<div class="card-title"><h3>' + escapeHTML(bucket) + "</h3>" +
           '<span class="status-pill status-neutral">' + formatInteger(metrics.validCount) + " valid</span></div>" +
           '<div class="metric-list">' + metricRows.map(([label, value]) => metricHTML(label, value)).join("") + "</div>" +
+          (floorNote ? '<p class="card-floor-note">' + escapeHTML(floorNote) + "</p>" : "") +
           "</article>";
       }).join("");
     }
@@ -8137,9 +8218,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           bars += '<rect class="chart-bar" style="--i:' + index + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) +
             '" width="' + (barWidth - 2).toFixed(1) + '" height="' + height.toFixed(1) +
             '" rx="3" fill="' + escapeAttr(set.color || "var(--brand)") + '"><title>' +
-            escapeHTML(label + " - " + (set.label || "") + ": " + format(value)) + "</title></rect>";
+            escapeHTML(label + " - " + (set.label || "") + ": " + format(value, labelIndex, setIndex)) + "</title></rect>";
           bars += '<text class="chart-value" style="--i:' + index + '" x="' + (x + (barWidth - 2) / 2).toFixed(1) +
-            '" y="' + (value >= 0 ? y - 4 : y + height + 9).toFixed(1) + '" text-anchor="middle">' + escapeHTML(format(value)) + "</text>";
+            '" y="' + (value >= 0 ? y - 4 : y + height + 9).toFixed(1) + '" text-anchor="middle">' +
+            escapeHTML(format(value, labelIndex, setIndex)) + "</text>";
           index += 1;
         });
         bars += '<text class="chart-axis-label" x="' + groupCenter.toFixed(1) + '" y="' + (CHART_H - CHART_PAD.bottom + 14) +
@@ -8173,7 +8255,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         offset += share;
         if (!value) return "";
         return '<span class="stack-seg" style="' + escapeAttr(style) + "color:" + escapeAttr(segment.ink || "var(--on-slate)") + ';" title="' +
-          escapeAttr(segment.label + ": " + formatInteger(value) + " (" + formatPercentWhole(share) + ")") + '">' +
+          escapeAttr(segment.label + ": " + countPct(value, total)) + '">' +
           (share >= 9 ? '<span class="stack-seg-text">' + escapeHTML(formatInteger(value)) + "</span>" : "") + "</span>";
       }).join("");
       const legend = segments.filter((segment) => segment.value).map((segment) =>
@@ -8374,11 +8456,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         chartCard("Met and exceeded growth",
           barChartSVG({
             labels: ["Met", "Exceeded"],
+            // The bars still need a height, so the geometry keeps the raw
+            // percentage; only the text printed on them respects the floor.
             datasets: [{ label: "Percent of records", color: "var(--green)", values: [metrics.metPct, metrics.exceededPct] }],
             max: 100,
-            format: (value) => formatPercentWhole(value)
+            format: (value, labelIndex) =>
+              formatShare(labelIndex === 0 ? metrics.shares.met : metrics.shares.exceeded)
           }),
-          "Share of records that met, and that beat, their projected RIT."),
+          "Share of records that met, and that beat, their projected RIT." +
+            (shareFloorNote([metrics.shares.met, metrics.shares.exceeded])
+              ? " " + shareFloorNote([metrics.shares.met, metrics.shares.exceeded])
+              : "")),
         chartCard("Distance from the US grade/season norm",
           normDeltaChartSVG(rows),
           "Where the group sits against same-grade peers now. " +
@@ -8407,14 +8495,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const populated = QUADRANTS.filter((quadrant) => (counts[quadrant] || 0) > 0);
       els.quadrantCards.innerHTML = (populated.length ? populated : QUADRANTS.slice(0, 1)).map((quadrant) => {
         const count = counts[quadrant] || 0;
-        const pct = total ? count / total * 100 : null;
         const meta = QUADRANT_CELLS[quadrant] || { tone: "neutral", note: "" };
         const className = meta.tone === "good" ? "status-good" : meta.tone === "risk" ? "status-risk" : meta.tone === "neutral" ? "status-neutral" : "status-watch";
         return `
           <div class="card quadrant-card" title="${escapeAttr(meta.title || quadrant)}">
             <span class="status-pill ${className}">${escapeHTML(quadrant)}</span>
             <strong>${formatInteger(count)}</strong>
-            <span>${formatPercentWhole(pct)} of records with quadrant data</span>
+            <span>${escapeHTML(shareQualifier(count, total, "records with quadrant data"))}</span>
           </div>
         `;
       }).join("");
@@ -8438,14 +8525,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const secureStart = rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile >= 61 && isFiniteNumber(row.endPercentile));
       const validMovement = rows.filter((row) => row.bandMovement !== "Missing End");
       const cards = [
-        ["% Closed Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Closed"), "status-good"],
-        ["% Reduced Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Reduced"), "status-watch"],
-        ["% Widened Gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Widened"), "status-risk"],
-        ["Gap Closure (pooled)", formatFractionPercent(pooledGapClosure(belowSecure)), "status-neutral"],
-        ["% Moved Up", percentOf(validMovement, (row) => row.bandMovement === "Moved Up"), "status-good"],
-        ["% Moved Down", percentOf(validMovement, (row) => row.bandMovement === "Moved Down"), "status-risk"],
-        ["% Secure Extended", percentOf(secureStart, (row) => row.gapStatus === "Secure and Extending"), "status-good"],
-        ["% Secure Regressed", percentOf(secureStart, (row) => row.gapStatus === "Secure but Regressing" || row.gapStatus === "Dropped Below Secure"), "status-risk"]
+        ["Closed the gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Closed"), "status-good"],
+        ["Reduced the gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Reduced"), "status-watch"],
+        ["Widened the gap", percentOf(belowSecure, (row) => row.gapStatus === "Gap Widened"), "status-risk"],
+        ["Gap Closure (pooled)", formatPooledGapClosure({
+          avgGapClosurePct: pooledGapClosure(belowSecure),
+          gapContributorCount: belowSecure.length
+        }), "status-neutral"],
+        ["Moved up a band", percentOf(validMovement, (row) => row.bandMovement === "Moved Up"), "status-good"],
+        ["Moved down a band", percentOf(validMovement, (row) => row.bandMovement === "Moved Down"), "status-risk"],
+        ["Secure and extending", percentOf(secureStart, (row) => row.gapStatus === "Secure and Extending"), "status-good"],
+        ["Secure but slipping", percentOf(secureStart, (row) => row.gapStatus === "Secure but Regressing" || row.gapStatus === "Dropped Below Secure"), "status-risk"]
       ];
       els.gapCards.innerHTML = cards.map(([label, value, className]) => `
         <div class="card gap-card">
@@ -8463,8 +8553,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function gapCardSubtext(label) {
-      if (label.includes("Secure")) return "Among students who started at 61+";
-      if (label.includes("Moved")) return "Among records with start and end bands";
+      if (label.includes("Secure") || label.includes("secure") || label.includes("slipping")) return "Among students who started at 61+";
+      if (label.includes("Moved") || label.includes("moved")) return "Among records with start and end bands";
       if (label.includes("pooled")) return "Total points closed over total points to close";
       return "Among students who started below 61";
     }
@@ -8510,7 +8600,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         <div class="quadrant-cell ${className}">
           <span class="q-title">${escapeHTML(title)}</span>
           <span class="q-value">${formatInteger(count)}</span>
-          <span class="q-note">${escapeHTML(shortLabel)} | ${formatPercentWhole(percentValue(count, total))}<br>${escapeHTML(note)}</span>
+          <span class="q-note">${escapeHTML(shortLabel)} | ${escapeHTML(shareQualifier(count, total, "records"))}<br>${escapeHTML(note)}</span>
         </div>
       `;
     }
@@ -8689,7 +8779,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           <div class="gap-story">
             ${storyLine("Starting point", `${formatInteger(below.length)} below 61; ${formatInteger(secure.length)} secure`)}
             ${storyLine("Catch-up result", below.length ? `${countPct(closed, below.length)} closed, ${countPct(reduced, below.length)} reduced, ${countPct(widened, below.length)} widened${maintained ? `, ${countPct(maintained, below.length)} maintained` : ""}` : "No students started below 61")}
-            ${storyLine("Gap closure (pooled)", formatFractionPercent(avgClosure))}
+            ${storyLine("Gap closure (pooled)", formatPooledGapClosure({ avgGapClosurePct: avgClosure, gapContributorCount: below.length }))}
             ${storyLine("Band movement", movement.length ? `${countPct(movedUp, movement.length)} moved up; ${countPct(movedDown, movement.length)} moved down` : "No complete band movement data")}
             ${storyLine("Secure students", secure.length ? `${countPct(secureExtended, secure.length)} extended; ${countPct(secureRegressed, secure.length)} regressed` : "No students started secure")}
             <div class="teacher-read">${escapeHTML(gapSubjectNote({ below, secure, closed, reduced, widened, movedUp, movedDown, secureExtended, secureRegressed, avgClosure }))}</div>
@@ -8703,11 +8793,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     function countPct(count, total) {
+      if (!total) return formatInteger(count);
+      if (total < MIN_SHARE_N) return `${formatInteger(count)} of ${formatInteger(total)}`;
       return `${formatInteger(count)} (${formatPercentWhole(percentValue(count, total))})`;
     }
 
     function gapSubjectNote(data) {
       if (!data.below.length && !data.secure.length) return "There is not enough complete percentile data to judge gap closure in this subject.";
+      if (data.below.length + data.secure.length < MIN_SHARE_N) {
+        return "Only " + formatInteger(data.below.length + data.secure.length) +
+          " records here have both windows - too few to call a pattern. Read the counts above as individual students, and look at this subject across the whole class before deciding anything.";
+      }
       if (data.below.length && data.widened / data.below.length >= 0.3) return "Many students who started below secure lost ground. Prioritize reteaching and progress checks for this subject.";
       if (data.below.length && (data.closed + data.reduced) / data.below.length >= 0.6 && isFiniteNumber(data.avgClosure) && data.avgClosure > 0) return "Most below-secure students are moving toward the benchmark. Keep the current supports and push toward full closure.";
       if (data.secure.length && data.secureRegressed / data.secure.length >= 0.5) return "Secure starters are slipping in this subject. Add challenge, review missed skills, and monitor high starters.";
@@ -8737,8 +8833,26 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return total ? count / total * 100 : null;
     }
 
+    // The qualifier printed under a headline count. A percentage there is
+    // doing the same work the count above it already did, and under the floor
+    // it does that work less honestly, so it names the denominator instead.
+    function shareTag(count, total) {
+      if (!total) return "";
+      if (total < MIN_SHARE_N) return "of " + formatInteger(total);
+      return formatPercentWhole(percentValue(count, total));
+    }
+
+    function shareQualifier(count, total, noun) {
+      if (!total) return "no " + noun;
+      if (total < MIN_SHARE_N) return "of " + formatInteger(total) + " " + noun;
+      return formatPercentWhole(percentValue(count, total)) + " of " + noun;
+    }
+
     function quadrantSubjectNote(counts, total) {
       if (!total) return "No quadrant data";
+      if (total < MIN_SHARE_N) {
+        return "Only " + formatInteger(total) + " records with quadrant data - too few to name a pattern";
+      }
       const at = (key) => counts[key] || 0;
       const lowLow = at("Lo-G/Lo-A");
       const catchUp = at("Hi-G/Lo-A");
@@ -9119,7 +9233,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         " of records at or above the " + ordinal(result.threshold) + " percentile, and which students are closest to it.");
 
       els.targetCards.innerHTML = [
-        statCard("At or above now", formatPercentWhole(result.currentShare), { raw: result.currentShare, format: "percent", hint: formatInteger(result.above.length) + " of " + formatInteger(result.scored.length) + " scored records" }),
+        shareCard("At or above now", { n: result.above.length, of: result.scored.length }, {
+          hint: formatInteger(result.above.length) + " of " + formatInteger(result.scored.length) + " scored records"
+        }),
         statCard("Target", formatPercentWhole(result.targetShare), { raw: result.targetShare, format: "percent", hint: label ? label.label : "" }),
         statCard("Records still needed", formatInteger(result.needed), { raw: result.needed, format: "integer", tone: result.needed ? "warn" : "good", hint: result.needed ? "To reach the target share" : "The target is already met" }),
         statCard("Furthest of those", furthest ? formatNumber(furthest.distance, 0) + " pts" : "-", { raw: furthest ? furthest.distance : null, hint: furthest ? "Percentile points " + furthest.row.studentName + " needs" : "Nothing to close" }),
@@ -9210,6 +9326,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // RIT and grade - 50 is typical growth for peers who started in the same
     // place - so comparing it across starting bands is a fair comparison, not
     // a restatement of who started ahead.
+    // Two floors, two different jobs. EQUITY_MIN_RECORDS gates the prose: a
+    // median conditional growth percentile is a robust statistic even over a
+    // handful of records, so five is enough to let a band into the comparison.
+    // MIN_SHARE_N gates the "met growth" figure in the same row, because a
+    // percentage over the same handful is not robust at all. A band can
+    // therefore be read for its median and still print its met figure as
+    // counts, which is the honest combination rather than an inconsistency.
     const EQUITY_MIN_RECORDS = 5;
     const EQUITY_MEANINGFUL_GAP = 10;
 
@@ -9224,6 +9347,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           cgpCount: cgpRows.length,
           medianCGP: median(cgpRows.map((row) => row.conditionalGrowthPercentile)),
           metPct: metRows.length ? metRows.filter((row) => row.metGrowth === true).length / metRows.length * 100 : null,
+          metShare: share(metRows, (row) => row.metGrowth === true),
           avgPercentileChange: avg(bandRows.map((row) => row.percentileChange)),
           // Two or three students is not a pattern. Thin bands are drawn but
           // never used to draw a conclusion.
@@ -9261,7 +9385,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             : "") +
           "</span>" +
           '<span class="equity-cgp">' + (hasCGP ? formatNumber(entry.medianCGP, 0) : "n/a") + "<small>median CGP</small></span>" +
-          '<span class="equity-met">' + escapeHTML(formatPercentWhole(entry.metPct)) + "<small>met growth</small></span>" +
+          '<span class="equity-met">' + escapeHTML(formatShare(entry.metShare)) + "<small>met growth</small></span>" +
           '<span class="equity-change">' + escapeHTML(formatSignedNumber(entry.avgPercentileChange)) + "<small>avg %ile change</small></span>" +
           (entry.thin ? '<span class="equity-thin-note">too few to read</span>' : "") +
           "</div>";
@@ -9952,6 +10076,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           formatInteger(diagnostics.forwardProjectionCount) + " record(s) carry NWEA's projected growth and projected RIT for a window that has not been tested yet. " +
           METHOD_NOTES.forwardProjection]);
       }
+      // A teacher who sees "3 of 4" where they expected a percentage should be
+      // able to find out why without guessing, so the rule is written down in
+      // the panel that explains what was read from the file.
+      {
+        const metrics = aggregateRows(state.filteredRows);
+        const thin = [metrics.shares.met, metrics.shares.exceeded, metrics.shares.secure,
+          metrics.shares.belowStrategic, metrics.shares.atOrAboveUSNorm].filter(shareIsThin);
+        if (thin.length) {
+          notes.push(["Counts instead of percentages",
+            "Some figures in this view rest on fewer than " + MIN_SHARE_N +
+            " records, so they are shown as counts. A percentage over a handful of students is one child rounded to a whole number: it looks like a rate, moves like a coin toss, and sits next to figures drawn from hundreds as though the two were comparable. Widen the filters, or read the counts as counts. " +
+            "Posters built on a percentage are withheld entirely below the same line, because a wall has no room for the denominator."]);
+        }
+      }
       if (diagnostics.areaRecordCount) {
         notes.push(["Instructional areas found", formatInteger(diagnostics.areaRecordCount) +
           " record(s) carry instructional area scores, so the Areas section is available. " + METHOD_NOTES.instructionalArea]);
@@ -10266,7 +10404,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const students = new Set(rows.map((row) => studentKey(row))).size;
       const buckets = getOverviewBuckets(rows, lens)
         .map((bucket) => ({ bucket, metrics: aggregateRows(bucketRows(rows, bucket, lens)) }))
-        .filter((item) => item.metrics.percentileCount > 0);
+        .filter((item) => item.metrics.percentileCount >= MIN_SHARE_N);
       const sorted = buckets.slice().sort((a, b) =>
         (isFiniteNumber(b.metrics.medianCurrentPercentile) ? b.metrics.medianCurrentPercentile : -1) -
         (isFiniteNumber(a.metrics.medianCurrentPercentile) ? a.metrics.medianCurrentPercentile : -1));
@@ -10278,9 +10416,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const goalRows = rows.filter((row) => row.goals);
       const horizon = goalRows.length ? goalRows[0].goals.horizonLabel.toLowerCase() : "the next window";
 
-      return `This is a ${currentWindowName()} baseline for ${formatInteger(students)} students across ${formatInteger(rows.length)} student-${lensLabel} records. Because the export contains a single test window, no growth, gap closure or quadrant movement can be calculated; everything below describes where the group is starting. The median percentile is ${formatNumber(metrics.medianCurrentPercentile)} and the mean RIT is ${formatNumber(metrics.avgCurrentRIT)}. Against US norms for the same grade and season the group averages ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above the norm mean.
+      return `This is a ${currentWindowName()} baseline for ${formatInteger(students)} students across ${formatInteger(rows.length)} student-${lensLabel} records. Because the export contains a single test window, no growth, gap closure or quadrant movement can be calculated; everything below describes where the group is starting. The median percentile is ${formatNumber(metrics.medianCurrentPercentile)} and the mean RIT is ${formatNumber(metrics.avgCurrentRIT)}. Against US norms for the same grade and season the group averages ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT, with ${formatShareInline(metrics.shares.atOrAboveUSNorm, "records")} at or above the norm mean.
 
-Instructional tiers at the start of the year are ${tierText}. ${formatPercentWhole(metrics.atOrAboveSecurePct)} of records are already at or above the 61st-percentile secure benchmark, and ${formatPercentWhole(metrics.belowStrategicPct)} are below the 41st. ${strongest ? "The strongest starting area is " + strongest.bucket + " (median percentile " + formatNumber(strongest.metrics.medianCurrentPercentile) + ")" : "No area had enough scores to rank"}${weakest && strongest && weakest.bucket !== strongest.bucket ? ", and " + weakest.bucket + " starts furthest back (median percentile " + formatNumber(weakest.metrics.medianCurrentPercentile) + ")" : ""}.
+Instructional tiers at the start of the year are ${tierText}. ${capitalizeFirst(formatShareInline(metrics.shares.secure, "records"))} are already at or above the 61st-percentile secure benchmark, and ${formatShareInline(metrics.shares.belowStrategic, "records")} are below the 41st. ${strongest ? "The strongest starting area is " + strongest.bucket + " (median percentile " + formatNumber(strongest.metrics.medianCurrentPercentile) + ")" : "No area had enough scores to rank"}${weakest && strongest && weakest.bucket !== strongest.bucket ? ", and " + weakest.bucket + " starts furthest back (median percentile " + formatNumber(weakest.metrics.medianCurrentPercentile) + ")" : ""}.
 
 Looking ahead to ${horizon}, a typical student at these grades gains ${formatSignedNumber(metrics.avgTypicalGain)} RIT. ${formatInteger(metrics.needsAcceleratedGrowthCount)} records would need more than that typical gain to reach the grade-level norm, so they are the ones whose goals should be set deliberately rather than left to core instruction. ${metrics.shortTestCount ? formatInteger(metrics.shortTestCount) + " test session(s) finished unusually quickly and are worth confirming before they are used for placement." : "No test sessions were flagged as unusually short."}${metrics.metTooCloseCount ? " " + formatInteger(metrics.metTooCloseCount) + " met-growth result(s) sit within measurement error of the projection and cannot be resolved either way by this test pair, so they should not be read as evidence in either direction." : ""}${metrics.rapidGuessCount ? " NWEA flagged rapid guessing on " + formatInteger(metrics.rapidGuessCount) + " test(s), which understate what those students can do." : ""}${strandSummarySentence()}
 
@@ -10296,7 +10434,7 @@ ${METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
       const metrics = aggregateRows(rows);
       const subjectMetrics = getOverviewBuckets(rows, lens)
         .map((bucket) => ({ bucket, metrics: aggregateRows(bucketRows(rows, bucket, lens)) }))
-        .filter((item) => item.metrics.validCount > 0);
+        .filter((item) => item.metrics.validCount >= MIN_SHARE_N);
       const strongest = subjectMetrics.length
         ? subjectMetrics.slice().sort((a, b) => supportScore(b.metrics) - supportScore(a.metrics))[0]
         : null;
@@ -10318,13 +10456,29 @@ ${METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
         ? ` ${formatInteger(state.dataWindow.baselineRowCount)} records have only the ${state.dataWindow.currentWindowLabel} window and are excluded from every growth figure above.`
         : "";
 
-      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records covering ${state.dataWindow.priorWindowLabel} to ${state.dataWindow.currentWindowLabel}. Across the ${formatInteger(metrics.pairedCount)} records that carry both windows, the group began with an average percentile of ${formatNumber(metrics.avgStartPercentilePaired)} and ended with ${formatNumber(metrics.avgEndPercentilePaired)}. Overall, ${formatPercentWhole(metrics.metPct)} of records met growth and ${formatPercentWhole(metrics.exceededPct)} exceeded projected growth. Students who began below the secure benchmark closed ${formatFractionPercent(metrics.avgGapClosurePct)} of the total distance to the 61st percentile. Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatPercentWhole(metrics.atOrAboveUSNormPct)} of records at or above norm, and moved ${formatSignedNumber(metrics.avgNormDeltaChange)} RIT relative to those norms across the two windows.${mixedNote}
+      return `This class view includes ${formatInteger(rows.length)} student-${lensLabel} records covering ${state.dataWindow.priorWindowLabel} to ${state.dataWindow.currentWindowLabel}. Across the ${formatInteger(metrics.pairedCount)} records that carry both windows, the group began with an average percentile of ${formatNumber(metrics.avgStartPercentilePaired)} and ended with ${formatNumber(metrics.avgEndPercentilePaired)}. Overall, ${formatShareInline(metrics.shares.met, "records")} met growth and ${formatShareInline(metrics.shares.exceeded, "records")} exceeded projected growth. ${gapClosureSentence(metrics)} Compared with US norms by grade and season, the class averaged ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT from benchmark, with ${formatShareInline(metrics.shares.atOrAboveUSNorm, "records")} at or above norm, and moved ${formatSignedNumber(metrics.avgNormDeltaChange)} RIT relative to those norms across the two windows.${mixedNote}
 
-Growth was strongest in ${strongest ? strongest.bucket : `the available ${lensTitle} data`}, while ${needsSupport ? needsSupport.bucket : `the available ${lensTitle} data`} requires the most targeted support. ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
+${rankingSentence(strongest, needsSupport, lensTitle)} ${formatInteger(metrics.movedUpCount)} records moved up at least one percentile band, while ${formatInteger(metrics.movedDownCount)} moved down.
 
 Key intervention groups are ${interventionGroups}. Key enrichment and extension groups are ${enrichmentGroups}. Low starters showing strong catch-up growth: ${formatInteger(lowCatchUp)}. Low starters needing urgent support: ${formatInteger(urgent)}. Secure starters showing strong extension: ${formatInteger(highExtension)}. Secure starters who may be coasting: ${formatInteger(coasting)}.
 
 Suggested next steps: prioritize Intensive Support and Targeted Support students for small-group instruction and progress checks; review Secure but Regressing students for skill gaps or engagement changes; keep successful supports in place for Catch-Up Growth students; and provide Enrichment students with extension tasks that continue measuring growth, not only high achievement.`;
+    }
+
+    // With the floor applied, no bucket, or only one, may qualify for the
+    // ranking. Saying "strongest in the available subject data, while the
+    // available subject data requires the most support" was the old fallback,
+    // and it says nothing twice.
+    function rankingSentence(strongest, needsSupport, lensTitle) {
+      if (!strongest) {
+        return "No " + lensTitle + " in this view has at least " + MIN_SHARE_N +
+          " records with both windows, so there is no fair way to rank one against another here.";
+      }
+      if (!needsSupport || needsSupport.bucket === strongest.bucket) {
+        return strongest.bucket + " is the only " + lensTitle + " with enough records to read on its own, so there is nothing to rank it against.";
+      }
+      return "Growth was strongest in " + strongest.bucket + ", while " + needsSupport.bucket +
+        " requires the most targeted support.";
     }
 
     function supportScore(metrics) {
@@ -10867,7 +11021,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         id: "growth",
         title: "We grew this year",
         blurb: "The share of the class who met or beat the growth NWEA projected for them.",
-        available: () => hasGrowthContext() && isFiniteNumber(aggregateRows(state.filteredRows).metPct),
+        // Not merely "is there a number" - is the number a percentage anyone
+        // should paint on a wall. Under the floor the poster is withheld
+        // rather than printed with counts: "2 of 3 of us met our growth goal"
+        // in a room of three tells the two who did which one did not.
+        available: () => {
+          if (!hasGrowthContext()) return false;
+          const met = aggregateRows(state.filteredRows).shares.met;
+          return met.of >= MIN_SHARE_N;
+        },
         headline: () => "We Grew This Year",
         sub: () => "Growth is measured against students who started exactly where you did.",
         message: () => "Your score tells you where you are. Your growth tells you how hard you have been working. Growth is the part you control.",
@@ -10889,7 +11051,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               formatPercentWhole(exceeded), POSTER_INK.green.fill, POSTER_INK.green.track) +
             "</div>" +
             '<div class="poster-callouts">' +
-            (isFiniteNumber(median)
+            (isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N
               ? '<div class="poster-callout"><strong>Our typical growth score</strong><b>' +
                 escapeHTML(formatNumber(median, 0)) + "</b><small>out of 100, where 50 is typical for students who started where we did</small></div>"
               : "") +
@@ -10904,7 +11066,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         id: "bands",
         title: "Where we are now",
         blurb: "The class spread across the five NWEA colour bands, as counts rather than names.",
-        available: () => aggregateRows(state.filteredRows).percentileCount > 0,
+        available: () => aggregateRows(state.filteredRows).percentileCount >= MIN_SHARE_N,
         headline: () => "Every Starting Point Counts",
         sub: () => "This is where our class sits today. It is a starting line, not a label.",
         message: () => "Nobody on this chart is stuck where they are. The band you are in today says where to begin, not where you finish.",
@@ -11088,7 +11250,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         blurb: "How many more results the class needs above the chosen line to reach its target.",
         available: () => {
           const result = state.targetResult;
-          return Boolean(result && result.scored.length);
+          return Boolean(result && result.scored.length >= MIN_SHARE_N);
         },
         headline: () => "Our Class Goal",
         sub: () => {
@@ -11204,7 +11366,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             " in view, so these would be posters about " + (students === 1 ? "one child" : "a handful of children") +
             " rather than about a class. Posters need at least " + POSTER_MIN_STUDENTS +
             " students - clear the search and filters to build them.")
-          : "Load a file to build the posters. Which ones are available depends on what the export carries - growth posters need two windows, and the learning-areas poster needs a Class Profile export.") + "</div>";
+          : "Load a file to build the posters. Which ones are available depends on what the export carries - growth posters need two windows, the learning-areas poster needs a Class Profile export, and any poster built on a percentage needs at least " +
+            MIN_SHARE_N + " records behind it.") + "</div>";
         setText("posterCount", "");
         return;
       }
@@ -12630,6 +12793,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         avgProjectedGrowth: avg(rows.map((row) => row.projectedGrowth)),
         avgObservedGrowth: avg(rows.map((row) => row.observedGrowth)),
         medianConditionalGrowthPercentile: median(rows.map((row) => row.conditionalGrowthPercentile)),
+        cgpCount: rows.filter((row) => isFiniteNumber(row.conditionalGrowthPercentile)).length,
         // Pooled, not a mean of ratios: a student starting at the 60th
         // percentile has a start gap of 1, so a 10-point slide would otherwise
         // contribute -1000% to the class average.
@@ -12638,7 +12802,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         atOrAboveUSNormPct: usNormRows.length ? usNormRows.filter((row) => row.usNormAtOrAbove === true).length / usNormRows.length * 100 : null,
         avgUSNormGradeGap: avg(usNormGradeRows.map((row) => row.usNormGradeGap)),
         movedUpCount: rows.filter((row) => row.bandMovement === "Moved Up").length,
-        movedDownCount: rows.filter((row) => row.bandMovement === "Moved Down").length
+        movedDownCount: rows.filter((row) => row.bandMovement === "Moved Down").length,
+        // Every percentage above is also published with the denominator it was
+        // divided by, so the places that print one can decide whether a
+        // percentage is the honest shape for it. The flat *Pct fields stay for
+        // chart geometry, where a bar still has to have a height.
+        shares: {
+          met: share(validGrowth, (row) => row.metGrowth === true),
+          exceeded: share(validExceeded, (row) => row.exceededGrowth),
+          secure: share(percentileRows, (row) => row.currentPercentile >= SECURE_BENCHMARK),
+          belowStrategic: share(percentileRows, (row) => row.currentPercentile < 41),
+          atOrAboveUSNorm: share(usNormRows, (row) => row.usNormAtOrAbove === true),
+          gainedGround: share(normChangeRows, (row) => row.normDeltaChange > 0)
+        },
+        // Pooled gap closure is a ratio of totals rather than a share of
+        // students, so it cannot be printed as counts. It gets the same floor
+        // applied to the students who contributed to it.
+        gapContributorCount: gapRows.length
       };
     }
 
@@ -12677,8 +12857,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function percentOf(rows, predicate) {
-      if (!rows.length) return "N/A";
-      return formatPercentWhole(rows.filter(predicate).length / rows.length * 100);
+      return formatShare(share(rows, predicate));
     }
 
     const NUMBER_FORMATTERS = new Map();
@@ -12729,6 +12908,53 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function formatFractionPercent(value) {
       if (!isFiniteNumber(value)) return "N/A";
       return `${formatNumber(value * 100, 0)}%`;
+    }
+
+    // A percentage is a claim about a rate, and under ten students the reader
+    // does not get a rate: they get one child, rounded. "67% met growth" from
+    // three records moves 33 points if one of them tests on a bad morning, and
+    // it sits on the page looking exactly like the same number drawn from a
+    // hundred. Below the floor the counts are printed instead. They carry the
+    // same fact without implying a precision the denominator cannot support,
+    // and a reader can weigh "2 of 3" for themselves.
+    const MIN_SHARE_N = 10;
+
+    function share(rows, predicate) {
+      return { n: rows.filter(predicate).length, of: rows.length };
+    }
+
+    function shareIsThin(entry) {
+      return Boolean(entry) && entry.of > 0 && entry.of < MIN_SHARE_N;
+    }
+
+    function sharePct(entry) {
+      return entry && entry.of > 0 ? entry.n / entry.of * 100 : null;
+    }
+
+    function formatShare(entry) {
+      if (!entry || !entry.of) return "N/A";
+      if (entry.of < MIN_SHARE_N) return formatInteger(entry.n) + " of " + formatInteger(entry.of);
+      return formatPercentWhole(entry.n / entry.of * 100);
+    }
+
+    // For prose, where "3 of 4 records" reads better than a bare fraction.
+    function formatShareInline(entry, noun) {
+      if (!entry || !entry.of) return "no " + (noun || "records");
+      if (entry.of < MIN_SHARE_N) {
+        return formatInteger(entry.n) + " of the " + formatInteger(entry.of) + " " + (noun || "records");
+      }
+      return formatPercentWhole(entry.n / entry.of * 100) + " of " + (noun || "records");
+    }
+
+    // The note that explains a count where a percentage was expected. Returns
+    // an empty string when the denominator is large enough to speak for itself.
+    function shareFloorNote(entries) {
+      const thin = (Array.isArray(entries) ? entries : [entries]).filter(shareIsThin);
+      if (!thin.length) return "";
+      const smallest = Math.min(...thin.map((entry) => entry.of));
+      return "Shown as counts, not percentages: " + (thin.length === 1 ? "this figure rests" : "these figures rest") +
+        " on " + formatInteger(smallest) + " record" + (smallest === 1 ? "" : "s") +
+        ", under the " + MIN_SHARE_N + " a percentage needs to mean anything.";
     }
 
     function naturalCompare(a, b) {
