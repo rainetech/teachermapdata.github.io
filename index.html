@@ -337,6 +337,31 @@
        detail. Errors stay, because nothing else carries them. */
     body.has-data:not(.upload-open) .status-line:not(.is-error) { display: none; }
 
+    /* The support dock sits over the bottom-left corner of every screen for the
+       whole session, covering chart notes and subsection headings as a teacher
+       scrolls. Once they have seen it once - which is what having data means -
+       it collapses to its icon and expands again on hover or focus. */
+    body.has-data .support-chip span:not([aria-hidden]) {
+      max-width: 0;
+      opacity: 0;
+      overflow: hidden;
+      white-space: nowrap;
+      transition: max-width var(--dur) var(--ease-out), opacity var(--dur-fast) linear, margin var(--dur) var(--ease-out);
+      margin-left: 0;
+    }
+
+    body.has-data .support-chip:hover span:not([aria-hidden]),
+    body.has-data .support-chip:focus-visible span:not([aria-hidden]),
+    body.has-data .support-dock:focus-within .support-chip span:not([aria-hidden]) {
+      max-width: 12rem;
+      opacity: 1;
+      margin-left: 7px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      body.has-data .support-chip span:not([aria-hidden]) { transition: none; }
+    }
+
     @media (max-width: 720px) {
       body.has-data .brand-panel { flex-direction: column; align-items: flex-start; }
       body.has-data .quick-questions { justify-content: flex-start; }
@@ -2028,7 +2053,7 @@
       top: var(--stick-top, 90px);
       z-index: 999;
       display: flex;
-      align-items: center;
+      align-items: baseline;
       gap: 12px;
       background: var(--veil-strong);
       backdrop-filter: blur(12px);
@@ -2050,9 +2075,9 @@
 
     .section-nav-links {
       display: flex;
+      flex-wrap: wrap;
       gap: 6px;
-      overflow-x: auto;
-      scrollbar-width: thin;
+      min-width: 0;
     }
 
     .section-nav-links button {
