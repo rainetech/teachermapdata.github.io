@@ -36,7 +36,14 @@
       --red-ink: #8d1a1a;
       --red-line: #fecaca;
       --orange: #f77f00;
-      --orange-text: #c2410c;
+      --up-text: #0f6b3d;
+      --down-text: #b4530b;
+      --norm-below-3: #8c2d0a;
+      --norm-below-2: #c2600f;
+      --norm-below-1: #f0b27a;
+      --norm-above-1: #a8cbe8;
+      --norm-above-2: #2f79bd;
+      --norm-above-3: #12406e;
       --orange-soft: #ffedd5;
       --orange-ink: #9a3412;
       --orange-line: #fed7aa;
@@ -45,7 +52,6 @@
       --yellow-ink: #854d0e;
       --yellow-line: #fde68a;
       --green: #0f7a45;
-      --green-text: #15803d;
       --green-soft: #dcfce7;
       --green-ink: #166534;
       --green-line: #bbf7d0;
@@ -105,7 +111,14 @@
       --red-ink: #fca5a5;
       --red-line: rgba(248, 113, 113, 0.36);
       --orange: #f59120;
-      --orange-text: #fb923c;
+      --up-text: #4ddb9b;
+      --down-text: #f7a94a;
+      --norm-below-3: #f0a06a;
+      --norm-below-2: #e2762c;
+      --norm-below-1: #b8551c;
+      --norm-above-1: #2e6ea8;
+      --norm-above-2: #4f9ddb;
+      --norm-above-3: #8fc4f2;
       --orange-soft: rgba(251, 146, 60, 0.16);
       --orange-ink: #fdba74;
       --orange-line: rgba(251, 146, 60, 0.36);
@@ -114,7 +127,6 @@
       --yellow-ink: #fcd34d;
       --yellow-line: rgba(234, 179, 8, 0.36);
       --green: #2bbd7a;
-      --green-text: #34d399;
       --green-soft: rgba(52, 211, 153, 0.16);
       --green-ink: #6ee7b7;
       --green-line: rgba(52, 211, 153, 0.36);
@@ -165,7 +177,14 @@
         --red-ink: #fca5a5;
         --red-line: rgba(248, 113, 113, 0.36);
         --orange: #f59120;
-        --orange-text: #fb923c;
+        --up-text: #4ddb9b;
+        --down-text: #f7a94a;
+        --norm-below-3: #f0a06a;
+        --norm-below-2: #e2762c;
+        --norm-below-1: #b8551c;
+        --norm-above-1: #2e6ea8;
+        --norm-above-2: #4f9ddb;
+        --norm-above-3: #8fc4f2;
         --orange-soft: rgba(251, 146, 60, 0.16);
         --orange-ink: #fdba74;
         --orange-line: rgba(251, 146, 60, 0.36);
@@ -174,7 +193,6 @@
         --yellow-ink: #fcd34d;
         --yellow-line: rgba(234, 179, 8, 0.36);
         --green: #2bbd7a;
-        --green-text: #34d399;
         --green-soft: rgba(52, 211, 153, 0.16);
         --green-ink: #6ee7b7;
         --green-line: rgba(52, 211, 153, 0.36);
@@ -268,6 +286,13 @@
       border: 1px solid var(--orange-line);
       border-radius: var(--radius-sm);
       padding: 6px 10px;
+    }
+
+    .name-more.is-capped {
+      background: var(--orange-soft);
+      color: var(--orange-ink);
+      border-color: var(--orange-line);
+      cursor: help;
     }
 
     .filter-more { white-space: nowrap; }
@@ -429,8 +454,9 @@
     }
 
     h2 {
-      font-size: 1.18rem;
+      font-size: 1.5rem;
       line-height: 1.2;
+      letter-spacing: -0.01em;
     }
 
     h3 {
@@ -668,8 +694,37 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 14px;
-      margin-bottom: 14px;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
     }
+
+    .section-header h2 {
+      position: relative;
+      padding-left: 15px;
+    }
+
+    .section-header h2::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.16em;
+      bottom: 0.16em;
+      width: 4px;
+      border-radius: 2px;
+      background: var(--brand);
+    }
+
+    #sec-actions .section-header h2::before,
+    #sec-priority .section-header h2::before { background: var(--orange); }
+    #sec-celebration .section-header h2::before { background: var(--green); }
+
+    /* A lead paragraph that runs the full content width is 240 characters a
+       line, which nobody reads. */
+    .section-header p,
+    .method-note,
+    .footer-note,
+    .subsection-lead { max-width: 74ch; }
 
     .section-header p {
       margin: 5px 0 0;
@@ -773,8 +828,8 @@
 
     .summary-card .value {
       display: block;
-      font-size: clamp(1.15rem, 1.5vw, 1.65rem);
-      font-weight: 950;
+      font-size: clamp(1.15rem, 1.4vw, 1.25rem);
+      font-weight: 900;
       margin-top: 4px;
     }
 
@@ -2554,7 +2609,7 @@
     .subject-dot,
     .scatter-point { background: var(--tint, var(--brand)); }
     .tier-count { text-align: right; }
-    .tier-count b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; }
+    .tier-count b { display: block; font-size: 1.25rem; font-variant-numeric: tabular-nums; }
     .tier-count small { color: var(--text-soft); font-size: 11px; }
     .tier-names { color: var(--text-soft); font-size: 11.5px; line-height: 1.3; }
 
@@ -2587,8 +2642,8 @@
     .summary-card { position: relative; overflow: hidden; }
     .summary-card .card-hint { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); line-height: 1.3; }
     .summary-card .value { font-variant-numeric: tabular-nums; }
-    .summary-card.tone-good .value { color: var(--green-text); }
-    .summary-card.tone-warn .value { color: var(--orange-text); }
+    .summary-card.tone-good .value { color: var(--up-text); }
+    .summary-card.tone-warn .value { color: var(--down-text); }
 
     .method-note {
       font-size: 11.5px;
@@ -2653,12 +2708,12 @@
       color: var(--brand);
     }
 
-    .action-count b { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .action-count b { font-size: 1.25rem; font-weight: 900; font-variant-numeric: tabular-nums; }
     .action-count i { font-style: normal; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 
     .action-card.tone-risk .action-count { color: var(--red-ink); }
-    .action-card.tone-watch .action-count { color: var(--orange-text); }
-    .action-card.tone-good .action-count { color: var(--green-text); }
+    .action-card.tone-watch .action-count { color: var(--down-text); }
+    .action-card.tone-good .action-count { color: var(--up-text); }
     .action-card p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
     .action-move { color: var(--text-soft) !important; }
     .action-move strong { color: var(--text); }
@@ -3454,8 +3509,8 @@
     .cohort-metric b { font-size: 19px; font-variant-numeric: tabular-nums; }
     .cohort-delta { font-size: 11.5px; font-weight: 800; color: var(--muted); }
     .cohort-rest { font-size: 10.5px; color: var(--muted); }
-    .cohort-metric.is-up .cohort-delta { color: var(--green-text); }
-    .cohort-metric.is-down .cohort-delta { color: var(--orange-text); }
+    .cohort-metric.is-up .cohort-delta { color: var(--up-text); }
+    .cohort-metric.is-down .cohort-delta { color: var(--down-text); }
 
     .table-group-card.is-over-capacity {
       border-color: var(--red);
@@ -4471,6 +4526,10 @@
             <h2 id="actionsTitle">Action Board</h2>
             <p id="actionsNote">The handful of moves with the most leverage this week, with the students named.</p>
           </div>
+          <div class="btn-row">
+            <button class="btn small" id="printActionsBtn" type="button">Print this week's plan</button>
+            <button class="btn small ghost" id="copyActionsBtn" type="button">Copy</button>
+          </div>
         </div>
         <div class="action-board" id="actionBoard"></div>
       </section>
@@ -5240,6 +5299,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       profileCache: null,
       targetResult: null,
       strandAnalysis: null,
+      actionItems: [],
+      expandedActions: new Set(),
       fileNames: [],
       plannerOpen: false,
       plannerReturnFocus: null,
@@ -5313,7 +5374,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "motionToggle", "motionToggleLabel", "toastStack", "celebrateLayer",
         "tierLadder", "normCards", "baselineSubjectBreakdown", "exportBaselineBtn",
         "goalCards", "goalMethodNote", "goalCount", "goalTable", "exportGoalsBtn", "printGoalsBtn",
-        "actionBoard", "crossSubjectCards", "crossCount", "crossSubjectTable",
+        "actionBoard", "printActionsBtn", "copyActionsBtn", "crossSubjectCards", "crossCount", "crossSubjectTable",
         "growthEquity", "growthEquityRead",
         "strandCards", "strandSubjects", "strandGroups", "strandTable", "strandCount",
         "strandMethodNote", "exportStrandBtn",
@@ -5383,6 +5444,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (els.exportBaselineBtn) els.exportBaselineBtn.addEventListener("click", exportBaseline);
       if (els.exportTargetBtn) els.exportTargetBtn.addEventListener("click", exportTarget);
       if (els.exportStrandBtn) els.exportStrandBtn.addEventListener("click", exportStrands);
+      if (els.printActionsBtn) els.printActionsBtn.addEventListener("click", printActionPlan);
+      if (els.copyActionsBtn) els.copyActionsBtn.addEventListener("click", () => {
+        const text = actionPlanText();
+        if (!text) {
+          toast("Nothing is on the action board to copy.", "info");
+          return;
+        }
+        copyText(text).then((ok) => toast(ok
+          ? "This week's plan copied."
+          : "Could not copy. Use Print instead.", ok ? "success" : "error"));
+      });
       if (els.targetThresholdSelect) els.targetThresholdSelect.addEventListener("input", () => {
         // A new threshold makes the previous target share meaningless.
         if (els.targetShareInput) els.targetShareInput.value = "";
@@ -5494,6 +5566,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         const student = event.target.closest("[data-student]");
         if (student) {
           openSpotlight(student.dataset.student);
+          return;
+        }
+        const actionExpand = event.target.closest("[data-action-expand]");
+        if (actionExpand) {
+          state.expandedActions.add(Number(actionExpand.dataset.actionExpand));
+          renderActionBoard();
           return;
         }
         const posterPrint = event.target.closest("[data-poster-print]");
@@ -5907,7 +5985,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         ? currentWindowName() + " baseline loaded - single test window, so growth is not measured."
         : "Growth file loaded - " + state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel + ".";
       setStatus(fileNote + modeNote + skipNote, false);
-      toast(formatInteger(state.allRows.length) + " records ready. " + fileNote + modeNote, "success");
+      // The success status line is hidden once data is loaded, which also
+      // silences its aria-live - so a teacher who dropped four files and had
+      // one rejected saw a green success toast and planned from three subjects.
+      toast(formatInteger(state.allRows.length) + " records ready. " + fileNote + modeNote + skipNote,
+        rejected.length ? "info" : "success");
       celebrateLoad();
       queueSupportPrompt();
     }
@@ -8114,13 +8196,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return chartFrame(grid + axis + bars + marker, summary);
     }
 
+    // Distance from the norm runs below-through-above, which is polarity, not
+    // identity - so it takes two hues whose pale steps meet at the divide,
+    // rather than a rainbow. The previous scale also gave one bin --green and
+    // its neighbour --green-text; after the band re-step those two measured a
+    // normal-vision delta E of 2.4, so "0 to +7" and "+8 to +14" rendered as
+    // one colour. Every bar carries its own label, so identity never rests on
+    // hue alone.
     const NORM_DELTA_BINS = [
-      { label: "-15 or less", min: -Infinity, max: -15, color: "var(--red)" },
-      { label: "-14 to -8", min: -15, max: -8, color: "var(--orange)" },
-      { label: "-7 to -1", min: -8, max: 0, color: "var(--yellow)" },
-      { label: "0 to +7", min: 0, max: 8, color: "var(--green)" },
-      { label: "+8 to +14", min: 8, max: 15, color: "var(--green-text)" },
-      { label: "+15 or more", min: 15, max: Infinity, color: "var(--blue)" }
+      { label: "-15 or less", min: -Infinity, max: -15, color: "var(--norm-below-3)" },
+      { label: "-14 to -8", min: -15, max: -8, color: "var(--norm-below-2)" },
+      { label: "-7 to -1", min: -8, max: 0, color: "var(--norm-below-1)" },
+      { label: "0 to +7", min: 0, max: 8, color: "var(--norm-above-1)" },
+      { label: "+8 to +14", min: 8, max: 15, color: "var(--norm-above-2)" },
+      { label: "+15 or more", min: 15, max: Infinity, color: "var(--norm-above-3)" }
     ];
 
     // Diverging distribution of RIT distance from the grade/season norm mean.
@@ -8696,7 +8785,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // ---------------------------------------------------------------------
     function actionCard(item, index) {
       if (!item.students.length) return "";
-      const shown = item.students.slice(0, 6);
+      const expanded = state.expandedActions && state.expandedActions.has(index);
+      const shown = expanded ? item.students : item.students.slice(0, 6);
       const extra = item.students.length - shown.length;
       return '<article class="action-card reveal tone-' + escapeAttr(item.tone) + '" style="--i:' + index + '">' +
         '<div class="action-head"><span class="action-rank">' + (index + 1) + "</span>" +
@@ -8706,7 +8796,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "<p>" + escapeHTML(item.why) + "</p>" +
         '<div class="action-names">' + shown.map((name) =>
           '<button class="name-chip" type="button" data-student="' + escapeAttr(name) + '">' + escapeHTML(name) + "</button>").join("") +
-        (extra > 0 ? '<span class="name-more">+' + extra + " more</span>" : "") + "</div>" +
+        (extra > 0
+          ? '<button class="name-chip name-more" type="button" data-action-expand="' + index + '">+' + extra + " more</button>"
+          : "") +
+        (item.students.capped
+          ? '<span class="name-more is-capped" title="' +
+            escapeAttr("This list shows the first " + item.students.length + " of " + item.students.total +
+              ". Filter to one class or subject to see the rest.") + '">first ' + item.students.length +
+            " of " + item.students.total + "</span>"
+          : "") + "</div>" +
         '<p class="action-move"><strong>Move:</strong> ' + escapeHTML(item.move) + "</p>" +
         "</article>";
     }
@@ -8717,7 +8815,53 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       matched.forEach((row) => {
         if (!byStudent.has(row.studentName)) byStudent.set(row.studentName, row);
       });
-      return [...byStudent.keys()].slice(0, limit || 40);
+      const all = [...byStudent.keys()];
+      const cap = limit || 40;
+      const kept = all.slice(0, cap);
+      kept.total = all.length;
+      kept.capped = all.length > cap;
+      return kept;
+    }
+
+    function actionPlanText() {
+      const items = state.actionItems || [];
+      if (!items.length) return "";
+      const filters = getFilters();
+      const context = [filters.className, filters.subject, filters.teacher].filter(Boolean).join(" | ");
+      const lines = [
+        "This week's plan" + (context ? " - " + context : ""),
+        currentWindowName() + " | " + new Date().toLocaleDateString(),
+        ""
+      ];
+      items.forEach((item, index) => {
+        lines.push((index + 1) + ". " + item.title + " (" + formatInteger(item.students.length) +
+          (item.students.length === 1 ? " student)" : " students)"));
+        if (item.why) lines.push("   Why: " + item.why);
+        lines.push("   Students: " + (item.students.length ? item.students.join(", ") : "none") +
+          (item.students.capped ? "  (first " + item.students.length + " of " + item.students.total + ")" : ""));
+        if (item.move) lines.push("   Move: " + item.move);
+        lines.push("");
+      });
+      return lines.join("\n");
+    }
+
+    function printActionPlan() {
+      const items = state.actionItems || [];
+      if (!items.length) {
+        toast("Nothing is on the action board to print.", "info");
+        return;
+      }
+      const body = printHeader("This week's plan", "Action board") +
+        items.map((item, index) =>
+          '<section style="page-break-inside:avoid;margin-bottom:9mm">' +
+          "<h2>" + formatInteger(index + 1) + ". " + escapeHTML(item.title) + " &mdash; " +
+          escapeHTML(formatInteger(item.students.length) + (item.students.length === 1 ? " student" : " students")) + "</h2>" +
+          (item.why ? "<p>" + escapeHTML(item.why) + "</p>" : "") +
+          '<p><strong>Students:</strong> ' + escapeHTML(item.students.length ? item.students.join(", ") : "none") +
+          (item.students.capped ? escapeHTML(" (first " + item.students.length + " of " + item.students.total + ")") : "") + "</p>" +
+          (item.move ? '<p><strong>Move:</strong> ' + escapeHTML(item.move) + "</p>" : "") +
+          '<div class="write-in"></div></section>').join("");
+      openPrintWindow("This week's plan", body, "nwea-action-plan.html");
     }
 
     function renderActionBoard() {
@@ -8728,6 +8872,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         return;
       }
       const items = isBaselineMode() ? baselineActions(rows) : growthActions(rows);
+      state.actionItems = items;
       const rendered = items.map(actionCard).filter(Boolean).join("");
       els.actionBoard.innerHTML = rendered || '<div class="empty-state">Nothing is flagged in the current view. Widen the filters to see more.</div>';
       applyStagger(els.actionBoard);
@@ -12049,7 +12194,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     const GROUPING_COLUMNS = [
-      ["Student", "studentName", (row) => `<span class="student-name">${escapeHTML(row.studentName)}</span>`],
+      ["Student", "studentName", (row) => studentLink(row)],
       ["Student ID", "studentID", (row) => escapeHTML(row.studentID)],
       ["Subject", "subject", (row) => escapeHTML(row.subject)],
       ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
@@ -12121,18 +12266,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     const PRIORITY_COLUMNS = [
-      ["Student", "studentName", (row) => `<span class="student-name">${escapeHTML(row.studentName)}</span>`],
-      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)],
+      ["Student", "studentName", (row) => studentLink(row)],
       ["Subject", "subject", (row) => escapeHTML(row.subject)],
-      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
-      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
-      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["Priority Reason", "priorityReasons", (row) => escapeHTML(row.priorityReasons.join("; ")), "wrap"],
+      ["Action", "suggestedAction", (row) => escapeHTML(row.suggestedAction), "wrap"],
+      ["Suggested Group", "suggestedGroup", (row) => groupPill(row.suggestedGroup)],
+      ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
       ["End %ile", "endPercentile", (row) => formatNumber(row.endPercentile)],
       ["RIT Change", "ritChange", (row) => formatSignedNumber(row.ritChange)],
-      ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
-      ["Suggested Group", "suggestedGroup", (row) => groupPill(row.suggestedGroup)],
-      ["Priority Reason", "priorityReasons", (row) => escapeHTML(row.priorityReasons.join("; ")), "wrap"],
-      ["Action", "suggestedAction", (row) => escapeHTML(row.suggestedAction), "wrap"]
+      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
+      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)]
     ];
 
     const BASELINE_PRIORITY_COLUMNS = [
@@ -12174,18 +12319,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     const CELEBRATION_COLUMNS = [
-      ["Student", "studentName", (row) => `<span class="student-name">${escapeHTML(row.studentName)}</span>`],
-      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)],
+      ["Student", "studentName", (row) => studentLink(row)],
       ["Subject", "subject", (row) => escapeHTML(row.subject)],
-      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
-      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
-      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["Celebration Reason", "celebrationReasons", (row) => escapeHTML(row.celebrationReasons.join("; ")), "wrap"],
+      ["Next Extension", "extensionAction", (row) => escapeHTML(row.extensionAction), "wrap"],
       ["Growth Efficiency", "growthEfficiency", (row) => `${formatFractionPercent(row.growthEfficiency)}<br><span class="status-pill ${efficiencyClass(row.growthEfficiency)}">${escapeHTML(row.growthEfficiencyLabel)}</span>`],
       ["%ile Change", "percentileChange", (row) => formatSignedNumber(row.percentileChange)],
       ["Band Movement", "bandMovement", (row) => escapeHTML(row.bandMovement)],
       ["Gap Status", "gapStatus", (row) => statusPill(row.gapStatus)],
-      ["Celebration Reason", "celebrationReasons", (row) => escapeHTML(row.celebrationReasons.join("; ")), "wrap"],
-      ["Next Extension", "extensionAction", (row) => escapeHTML(row.extensionAction), "wrap"]
+      ["US Norm Grade Level", "usNormGradeGap", (row) => usNormGradeCell(row), "wrap"],
+      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+      ["ClassName", "className", (row) => escapeHTML(row.className)],
+      ["Student ID", "studentID", (row) => escapeHTML(row.studentID)]
     ];
 
     function renderCelebrationTable() {
