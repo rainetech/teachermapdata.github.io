@@ -10047,75 +10047,340 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // stylesheet below shared between them, so what a teacher approves on
     // screen is what comes out of the printer.
 
+    // scale drives every type size and gap, so one stylesheet fits three pages.
     const POSTER_PAGES = {
-      landscape: { css: "A3 landscape", width: 400, height: 277 },
-      portrait: { css: "A3 portrait", width: 277, height: 400 },
-      "a4-landscape": { css: "A4 landscape", width: 277, height: 190 }
+      landscape: { css: "A3 landscape", width: 400, height: 277, scale: 1 },
+      portrait: { css: "A3 portrait", width: 277, height: 400, scale: 0.78 },
+      "a4-landscape": { css: "A4 landscape", width: 277, height: 190, scale: 0.7 }
     };
 
+    // Sizes are expressed against --s so one stylesheet serves A3 landscape,
+    // A3 portrait and A4 landscape without a second set of numbers.
     const POSTER_CSS = `
   .poster {
+    --ink: #10151f;
+    --ink-2: #4a5568;
+    --ink-3: #6b7688;
+    --rule: #d9dee8;
+    --brand: #1d4ed8;
+    --brand-deep: #14307f;
+    --brand-wash: #e3ecfd;
+    --good: #0f7a45;
+    --good-wash: #daf0e4;
+    --warn: #b45309;
+    --warn-wash: #fbeada;
+    --s: 1mm;
     position: relative;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    gap: 7mm;
-    padding: 14mm 16mm;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
     background: #ffffff;
-    color: #10182b;
+    color: var(--ink);
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
     overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
   .poster * { box-sizing: border-box; }
-  .poster-eyebrow {
-    font-size: 5mm; font-weight: 800; letter-spacing: .18em; text-transform: uppercase; color: #2454a6;
+  .poster p { margin: 0; }
+
+  /* ---- masthead: a full-bleed colour band, so the page has a top edge ---- */
+  .poster-masthead {
+    background: var(--brand-deep);
+    color: #ffffff;
+    padding: calc(8 * var(--s)) calc(14 * var(--s)) calc(9 * var(--s));
   }
-  .poster h1 { margin: 1mm 0 0; font-size: 15mm; line-height: 1.02; letter-spacing: -0.02em; }
-  .poster-sub { margin: 2mm 0 0; font-size: 6mm; color: #46536b; line-height: 1.3; }
-  .poster-body { flex: 1; display: flex; gap: 12mm; align-items: center; min-height: 0; }
-  .poster-hero { flex: 0 0 32%; display: flex; flex-direction: column; justify-content: center; gap: 3mm; }
-  .poster-big { font-size: 56mm; line-height: 0.88; font-weight: 900; letter-spacing: -0.04em; color: #2454a6; }
-  .poster-big.is-green { color: #15803d; }
-  .poster-big.is-amber { color: #b45309; }
-  .poster-big-label { font-size: 7.5mm; font-weight: 700; line-height: 1.25; }
-  .poster-main { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 6mm; min-width: 0; }
-  .poster-foot { border-top: 1.2mm solid #2454a6; padding-top: 4mm; display: flex; gap: 8mm; align-items: flex-end; justify-content: space-between; }
-  .poster-message { margin: 0; font-size: 7mm; line-height: 1.35; font-weight: 600; max-width: 76%; }
-  .poster-meta { font-size: 3.6mm; color: #5d6a7e; text-align: right; line-height: 1.35; white-space: pre-line; }
+  .poster-eyebrow {
+    display: block;
+    font-size: calc(4.6 * var(--s));
+    font-weight: 800;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: #a9c6f7;
+  }
+  .poster-masthead h1 {
+    margin: calc(2 * var(--s)) 0 0;
+    font-size: calc(17 * var(--s));
+    line-height: 1;
+    letter-spacing: -0.025em;
+    font-weight: 800;
+  }
+  .poster-sub {
+    margin: calc(3 * var(--s)) 0 0;
+    font-size: calc(6 * var(--s));
+    line-height: 1.25;
+    color: #cfe0fb;
+    max-width: 84%;
+  }
 
-  .poster-bars { display: flex; flex-direction: column; gap: 5mm; width: 100%; }
-  .poster-bar-row { display: grid; grid-template-columns: 52mm 1fr 26mm; gap: 5mm; align-items: center; }
-  .poster-bar-name { font-size: 6mm; font-weight: 800; line-height: 1.15; }
-  .poster-bar-name small { display: block; font-size: 4mm; font-weight: 600; color: #5d6a7e; margin-top: 1mm; }
-  .poster-bar-track { position: relative; height: 15mm; border-radius: 8mm; background: #eef2f7; overflow: hidden; }
-  .poster-bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 8mm; }
-  .poster-bar-value { font-size: 6.5mm; font-weight: 900; text-align: right; line-height: 1.05; }
-  .poster-bar-value small { display: block; font-size: 4.6mm; font-weight: 800; color: #15803d; }
-  .poster-gain { background: repeating-linear-gradient(135deg, #bbf7d0 0 3mm, #dcfce7 3mm 6mm); }
+  /* ---- body: fills the page rather than floating in the middle of it ---- */
+  .poster-body {
+    display: grid;
+    grid-template-columns: 33% minmax(0, 1fr);
+    align-items: stretch;
+    min-height: 0;
+  }
+  /* Some posters ARE the chart. Forcing a hero column onto those leaves a
+     third of the page holding one weak number. */
+  .poster-body.is-full { grid-template-columns: minmax(0, 1fr); }
+  .poster-body.is-full .poster-main { padding-left: calc(14 * var(--s)); }
+  .poster-lead {
+    display: flex;
+    align-items: baseline;
+    gap: calc(4 * var(--s));
+    flex-wrap: wrap;
+  }
+  .poster-lead b {
+    font-size: calc(26 * var(--s));
+    font-weight: 800;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+    color: var(--brand);
+  }
+  .poster-lead span { font-size: calc(6.6 * var(--s)); font-weight: 700; color: var(--ink); }
+  .poster-block { display: flex; flex-direction: column; gap: calc(5 * var(--s)); flex: 1 1 auto; justify-content: center; }
+  .poster-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(2 * var(--s));
+    padding: calc(9 * var(--s)) calc(9 * var(--s)) calc(9 * var(--s)) calc(14 * var(--s));
+    border-right: calc(0.4 * var(--s)) solid var(--rule);
+  }
+  /* Proportional figures: tabular-nums gives every digit a zero's width, which
+     reads loose at display size. Columns of numbers get tabular, not this. */
+  .poster-big {
+    font-size: calc(62 * var(--s));
+    line-height: 0.84;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: var(--brand);
+  }
+  .poster-hero-rule {
+    display: block;
+    width: calc(26 * var(--s));
+    height: calc(2 * var(--s));
+    background: var(--brand);
+    margin-bottom: calc(2 * var(--s));
+  }
+  .poster-hero-rule.is-green { background: var(--good); }
+  .poster-hero-rule.is-amber { background: var(--warn); }
+  .poster-big.is-green { color: var(--good); }
+  .poster-big.is-amber { color: var(--warn); }
+  .poster-big-label {
+    font-size: calc(7.6 * var(--s));
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink);
+    max-width: 90%;
+  }
+  .poster-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: calc(8 * var(--s));
+    padding: calc(9 * var(--s)) calc(14 * var(--s)) calc(9 * var(--s)) calc(9 * var(--s));
+    min-width: 0;
+  }
 
-  .poster-stack { display: flex; height: 34mm; border-radius: 5mm; overflow: hidden; border: 0.6mm solid #dbe2ee; width: 100%; }
-  .poster-stack span { display: flex; align-items: center; justify-content: center; font-size: 7mm; font-weight: 900; }
-  .poster-key { display: flex; flex-wrap: wrap; gap: 3mm 8mm; font-size: 5mm; font-weight: 700; }
-  .poster-key i { display: inline-block; width: 5mm; height: 5mm; border-radius: 1.5mm; margin-right: 2mm; vertical-align: -0.6mm; }
+  /* ---- meters: square at the baseline, rounded at the data end ---- */
+  .poster-bars {
+    display: flex;
+    flex-direction: column;
+    gap: calc(10 * var(--s));
+    flex: 0 1 auto;
+    justify-content: center;
+  }
 
-  .poster-ladder { display: flex; flex-direction: column-reverse; gap: 2.5mm; }
-  .poster-rung { display: grid; grid-template-columns: 26mm 1fr; gap: 4mm; align-items: center; }
-  .poster-rung b { font-size: 7mm; font-variant-numeric: tabular-nums; }
-  .poster-rung span { font-size: 5mm; padding: 3mm 5mm; border-radius: 3mm; background: #eef2f7; font-weight: 700; }
-  .poster-rung.is-now span { background: #2454a6; color: #fff; }
-  .poster-rung.is-goal span { background: #dcfce7; color: #166534; }
+  /* A now-to-target range: two dots on a shared scale, joined. */
+  .poster-range { position: relative; height: calc(15 * var(--s)); }
+  .poster-range-axis {
+    position: absolute; left: 0; right: 0; top: 50%;
+    height: calc(1.4 * var(--s)); margin-top: calc(-0.7 * var(--s));
+    background: #e3e8f1; border-radius: calc(0.7 * var(--s));
+  }
+  .poster-range-link {
+    position: absolute; top: 50%;
+    height: calc(3 * var(--s)); margin-top: calc(-1.5 * var(--s));
+    background: #0f7a45; border-radius: calc(1.5 * var(--s));
+  }
+  .poster-range-dot {
+    position: absolute; top: 50%;
+    width: calc(9 * var(--s)); height: calc(9 * var(--s));
+    margin: calc(-4.5 * var(--s)) 0 0 calc(-4.5 * var(--s));
+    border-radius: 50%;
+    box-shadow: 0 0 0 calc(1 * var(--s)) #ffffff;
+  }
+  .poster-range-dot.is-now { background: #1d4ed8; }
+  .poster-range-dot.is-target { background: #0f7a45; }
 
-  .poster-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; width: 100%; }
-  .poster-callout { border: 0.8mm solid #dbe2ee; border-radius: 4mm; padding: 6mm 7mm; }
-  .poster-callout strong { display: block; font-size: 4.8mm; letter-spacing: .1em; text-transform: uppercase; color: #5d6a7e; }
-  .poster-callout b { display: block; font-size: 11mm; margin: 2mm 0; line-height: 1.05; }
-  .poster-callout small { font-size: 4.8mm; color: #46536b; line-height: 1.3; display: block; }
-  .poster-callout.is-good { border-color: #16a34a; }
-  .poster-callout.is-next { border-color: #ea580c; }
-  .poster-empty { font-size: 5.4mm; color: #5d6a7e; margin: 0; line-height: 1.35; }
+  .poster-scale {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: calc(4 * var(--s));
+    font-size: calc(4 * var(--s));
+    font-weight: 700;
+    color: #4a5568;
+  }
+  .poster-scale span:nth-child(2) { text-align: center; font-weight: 600; }
+  .poster-scale span:last-child { text-align: right; }
+  .poster-bar-row {
+    display: grid;
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr) auto;
+    gap: calc(5 * var(--s));
+    align-items: center;
+  }
+  .poster-bar-name {
+    font-size: calc(6.2 * var(--s));
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+  .poster-bar-name small {
+    display: block;
+    font-size: calc(4 * var(--s));
+    font-weight: 600;
+    color: #4a5568;
+    margin-top: calc(0.8 * var(--s));
+  }
+  .poster-bar-track {
+    position: relative;
+    height: calc(15 * var(--s));
+    border-radius: calc(1.2 * var(--s));
+    background: var(--track, #e8edf6);
+    overflow: hidden;
+  }
+  .poster-bar-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 0 calc(1.2 * var(--s)) calc(1.2 * var(--s)) 0;
+  }
+  .poster-bar-value {
+    font-size: calc(10 * var(--s));
+    font-weight: 800;
+    text-align: right;
+    line-height: 1;
+    min-width: calc(22 * var(--s));
+    font-variant-numeric: tabular-nums;
+  }
+  .poster-bar-value small {
+    display: block;
+    font-size: calc(4.4 * var(--s));
+    font-weight: 700;
+    color: var(--good);
+    margin-top: calc(1 * var(--s));
+  }
+
+  /* ---- stacked bar: white gaps do the separating, no strokes ---- */
+  .poster-stack {
+    display: flex;
+    gap: calc(0.7 * var(--s));
+    flex: 1 1 auto;
+    min-height: calc(34 * var(--s));
+    max-height: calc(72 * var(--s));
+  }
+  .poster-stack span {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: calc(0.5 * var(--s));
+    border-radius: calc(0.8 * var(--s));
+    overflow: hidden;
+    padding: 0 calc(1 * var(--s));
+  }
+  .poster-stack b { font-size: calc(11 * var(--s)); font-weight: 800; line-height: 1; }
+  .poster-stack i {
+    font-style: normal;
+    font-size: calc(3.4 * var(--s));
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .poster-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(2 * var(--s)) calc(7 * var(--s));
+    font-size: calc(4.6 * var(--s));
+    font-weight: 700;
+    color: var(--ink-2);
+  }
+  .poster-key i {
+    display: inline-block;
+    width: calc(4.4 * var(--s));
+    height: calc(4.4 * var(--s));
+    border-radius: calc(0.8 * var(--s));
+    margin-right: calc(1.8 * var(--s));
+    vertical-align: -0.4mm;
+    font-style: normal;
+  }
+
+  /* ---- stat tiles ---- */
+  .poster-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: calc(5 * var(--s)); }
+  .poster-callouts-big { flex: 1 1 auto; align-items: stretch; }
+  .poster-callouts-big .poster-callout {
+    padding: calc(8 * var(--s)) calc(9 * var(--s));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .poster-callouts-big .poster-callout b { font-size: calc(13 * var(--s)); line-height: 1.05; }
+  .poster-callouts-big .poster-callout small { font-size: calc(5.2 * var(--s)); }
+  .poster-callout {
+    border-radius: calc(2 * var(--s));
+    background: #f4f6fb;
+    padding: calc(6 * var(--s)) calc(7 * var(--s));
+    border-left: calc(1.8 * var(--s)) solid var(--brand);
+  }
+  .poster-callout strong {
+    display: block;
+    font-size: calc(4.2 * var(--s));
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #3d4757;
+    font-weight: 800;
+  }
+  .poster-callout b {
+    display: block;
+    font-size: calc(15 * var(--s));
+    margin: calc(2 * var(--s)) 0 calc(1.4 * var(--s));
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .poster-callout small { font-size: calc(4.4 * var(--s)); color: var(--ink-2); line-height: 1.3; display: block; }
+  .poster-callout.is-good { background: var(--good-wash); border-left-color: var(--good); }
+  .poster-callout.is-next { background: var(--warn-wash); border-left-color: var(--warn); }
+
+  /* ---- footer: the sentence a student should leave with ---- */
+  .poster-foot {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: calc(8 * var(--s));
+    align-items: end;
+    padding: calc(8 * var(--s)) calc(14 * var(--s)) calc(9 * var(--s));
+    background: var(--brand-wash);
+    border-top: calc(1.2 * var(--s)) solid var(--brand);
+  }
+  .poster-message {
+    font-size: calc(7.4 * var(--s));
+    line-height: 1.3;
+    font-weight: 700;
+    color: var(--brand-deep);
+  }
+  .poster-meta {
+    font-size: calc(3.6 * var(--s));
+    color: #46506180;
+    color: #4a5568;
+    text-align: right;
+    line-height: 1.4;
+    white-space: pre-line;
+    font-weight: 600;
+  }
+  .poster-empty { font-size: calc(4.8 * var(--s)); color: #4a5568; line-height: 1.35; }
 `;
-
-    const POSTER_TONES = { blue: "#2454a6", green: "#16a34a", amber: "#ea580c", slate: "#5d6a7e" };
 
     // A poster describes a group. Below this many students the figures stop
     // being class-level: with one student in view the "median" IS that child's
@@ -10153,9 +10418,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return filters.className ? "Class " + filters.className : "Our class";
     }
 
-    function posterShell(poster, inner) {
-      return '<section class="poster" data-poster="' + escapeAttr(poster.id) + '">' +
-        '<header><span class="poster-eyebrow">' + escapeHTML(posterHeading()) + "</span>" +
+    function posterShell(poster, inner, page) {
+      const scale = page && isFiniteNumber(page.scale) ? page.scale : 1;
+      return '<section class="poster" data-poster="' + escapeAttr(poster.id) + '" style="--s:' + scale + 'mm">' +
+        '<header class="poster-masthead"><span class="poster-eyebrow">' + escapeHTML(posterHeading()) + "</span>" +
         "<h1>" + escapeHTML(poster.headline()) + "</h1>" +
         (poster.sub ? '<p class="poster-sub">' + escapeHTML(poster.sub()) + "</p>" : "") + "</header>" +
         inner +
@@ -10165,18 +10431,32 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function posterHero(value, label, tone) {
-      return '<div class="poster-hero"><span class="poster-big' + (tone ? " is-" + tone : "") + '">' +
+      return '<div class="poster-hero"><i class="poster-hero-rule' + (tone ? " is-" + tone : "") + '"></i>' +
+        '<span class="poster-big' + (tone ? " is-" + tone : "") + '">' +
         escapeHTML(value) + '</span><span class="poster-big-label">' + escapeHTML(label) + "</span></div>";
     }
 
-    function posterBarRow(name, note, share, value, colour) {
+    // A meter: the fill carries the value, the track is a lighter step of the
+    // same hue rather than neutral grey, and the fill is square where it leaves
+    // the baseline and rounded only at the data end.
+    function posterBarRow(name, note, share, value, colour, track, valueNote) {
       const width = clampBetween(isFiniteNumber(share) ? share : 0, 0, 100);
       return '<div class="poster-bar-row"><span class="poster-bar-name">' + escapeHTML(name) +
         (note ? "<small>" + escapeHTML(note) + "</small>" : "") + "</span>" +
-        '<span class="poster-bar-track"><i class="poster-bar-fill" style="width:' + width.toFixed(1) +
-        "%;background:" + colour + '"></i></span>' +
-        '<span class="poster-bar-value">' + escapeHTML(value) + "</span></div>";
+        '<span class="poster-bar-track" style="--track:' + (track || "#e8edf6") + '">' +
+        '<i class="poster-bar-fill" style="width:' + width.toFixed(1) + "%;background:" + colour + '"></i></span>' +
+        '<span class="poster-bar-value">' + escapeHTML(value) +
+        (valueNote ? "<small>" + escapeHTML(valueNote) + "</small>" : "") + "</span></div>";
     }
+
+    // One hue per job. Blue is the neutral measure, green a good outcome,
+    // amber the thing to work on; each ships with its own lighter track.
+    const POSTER_INK = {
+      blue: { fill: "#1d4ed8", track: "#dbe6fb" },
+      green: { fill: "#0f7a45", track: "#d6efe1" },
+      amber: { fill: "#b45309", track: "#fbe8d5" },
+      slate: { fill: "#64748b", track: "#e8ecf3" }
+    };
 
     // ---- The posters themselves -------------------------------------------
     const POSTERS = [
@@ -10193,22 +10473,28 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           const met = metrics.metPct;
           const exceeded = metrics.exceededPct;
           const median = metrics.medianConditionalGrowthPercentile;
+          // Both meters are the same measure - a share of the class - at two
+          // thresholds, so they share a hue and a scale. The median growth
+          // score is a percentile, a different unit entirely, and putting it on
+          // the same track made 76 read as 76%. It is a stat tile instead.
           return '<div class="poster-body">' +
             posterHero(formatPercentWhole(met), "of us met or beat our growth goal", met >= 50 ? "green" : "amber") +
             '<div class="poster-main"><div class="poster-bars">' +
-            posterBarRow("Met the goal", "Grew at least as much as projected", met, formatPercentWhole(met), POSTER_TONES.green) +
-            posterBarRow("Beat the goal", "Grew more than projected", exceeded, formatPercentWhole(exceeded), POSTER_TONES.blue) +
-            (isFiniteNumber(median)
-              ? posterBarRow("Our typical growth", "50 is typical for students who started with us", median, formatNumber(median, 0), POSTER_TONES.amber)
-              : "") +
+            posterBarRow("Met our growth goal", "Grew at least as much as projected", met,
+              formatPercentWhole(met), POSTER_INK.green.fill, POSTER_INK.green.track) +
+            posterBarRow("Beat it outright", "Grew more than projected", exceeded,
+              formatPercentWhole(exceeded), POSTER_INK.green.fill, POSTER_INK.green.track) +
             "</div>" +
-            (isFiniteNumber(metrics.avgRITChange)
-              ? '<div class="poster-callouts"><div class="poster-callout is-good"><strong>Average RIT gain</strong><b>' +
-                escapeHTML(formatSignedNumber(metrics.avgRITChange)) + "</b><small>points added since the last test window</small></div>" +
-                '<div class="poster-callout"><strong>Moved up a colour band</strong><b>' +
-                escapeHTML(formatInteger(metrics.movedUpCount)) + "</b><small>results that climbed into a higher band</small></div></div>"
+            '<div class="poster-callouts">' +
+            (isFiniteNumber(median)
+              ? '<div class="poster-callout"><strong>Our typical growth score</strong><b>' +
+                escapeHTML(formatNumber(median, 0)) + "</b><small>out of 100, where 50 is typical for students who started where we did</small></div>"
               : "") +
-            "</div></div>";
+            (isFiniteNumber(metrics.avgRITChange)
+              ? '<div class="poster-callout is-good"><strong>Average RIT gain</strong><b>' +
+                escapeHTML(formatSignedNumber(metrics.avgRITChange)) + "</b><small>points added since the last test window</small></div>"
+              : "") +
+            "</div></div></div>";
         }
       },
       {
@@ -10226,17 +10512,28 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             count: rows.filter((row) => row.currentBand.name === band.name).length
           }));
           const total = counts.reduce((sum, entry) => sum + entry.count, 0) || 1;
-          const stack = counts.filter((entry) => entry.count).map((entry) =>
-            '<span style="flex:' + entry.count + ";background:" + bandPrintColour(entry.band) + ";color:" + bandPrintInk(entry.band) + '">' +
-            formatInteger(entry.count) + "</span>").join("");
-          const key = counts.filter((entry) => entry.count).map((entry) =>
+          // Yellow sits under 3:1 on white, so identity never rests on the fill
+          // alone: every segment wide enough carries its own name, and the key
+          // repeats all five. The gaps between segments are the surface colour,
+          // never a stroke.
+          const shown = counts.filter((entry) => entry.count);
+          const stack = shown.map((entry) => {
+            const share = entry.count / total * 100;
+            return '<span style="flex:' + entry.count + ";background:" + bandPrintColour(entry.band) +
+              ";color:" + bandPrintInk(entry.band) + '"><b>' + formatInteger(entry.count) + "</b>" +
+              (share >= 14 ? "<i>" + escapeHTML(entry.band.name) + "</i>" : "") + "</span>";
+          }).join("");
+          const key = shown.map((entry) =>
             '<span><i style="background:' + bandPrintColour(entry.band) + '"></i>' + escapeHTML(entry.band.name) +
             " " + escapeHTML(entry.band.min + "-" + entry.band.max) + "</span>").join("");
           const secure = rows.filter((row) => row.currentPercentile >= SECURE_BENCHMARK).length;
-          return '<div class="poster-body">' +
-            posterHero(formatInteger(total), "test results from our class", "blue") +
-            '<div class="poster-main"><div class="poster-stack">' + stack + "</div>" +
-            '<div class="poster-key">' + key + "</div>" +
+          // The distribution is the story here, so it gets the whole width and
+          // the lead statistic sits above it rather than in a hero column.
+          return '<div class="poster-body is-full"><div class="poster-main">' +
+            '<div class="poster-lead"><b>' + escapeHTML(formatInteger(total)) + "</b>" +
+            "<span>test results across our class, spread like this</span></div>" +
+            '<div class="poster-block"><div class="poster-stack">' + stack + "</div>" +
+            '<div class="poster-key">' + key + "</div></div>" +
             '<div class="poster-callouts"><div class="poster-callout is-good"><strong>At or above the 61st percentile</strong><b>' +
             escapeHTML(formatInteger(secure)) + "</b><small>of them are already in the green or blue band</small></div>" +
             '<div class="poster-callout"><strong>Our middle score</strong><b>' +
@@ -10270,9 +10567,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               " the rest of our work in this subject") + "</small></div>";
           const cards = strengths.slice(0, 2).map((entry) => card(entry, "good"))
             .concat(gaps.slice(0, 2).map((entry) => card(entry, "next"))).join("");
-          return '<div class="poster-body">' +
-            posterHero(formatInteger(strengths.length + gaps.length), "areas that stand out across our subjects", "blue") +
-            '<div class="poster-main"><div class="poster-callouts">' + cards + "</div></div></div>";
+          const total = strengths.length + gaps.length;
+          return '<div class="poster-body is-full"><div class="poster-main">' +
+            '<div class="poster-lead"><b>' + escapeHTML(formatInteger(total)) + "</b><span>" +
+            escapeHTML(total === 1 ? "area stands out across our subjects" : "areas stand out across our subjects") +
+            "</span></div>" +
+            '<div class="poster-callouts poster-callouts-big">' + cards + "</div></div></div>";
         }
       },
       {
@@ -10292,14 +10592,22 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           const floor = Math.min(...entries.map((entry) => entry.now)) - 8;
           const ceiling = Math.max(...entries.map((entry) => entry.now + entry.gain)) + 4;
           const span = Math.max(1, ceiling - floor);
+          // A bar whose baseline is not zero misstates the values: on a scale
+          // starting at 146, a 168 reads as three times a 154. This is a
+          // now-to-target range, so it is drawn as one - two dots on a shared,
+          // labelled scale - and the axis ends are printed so the reader can
+          // see the scale does not start at zero.
           const bars = entries.map((entry) => {
             const nowPct = clampBetween((entry.now - floor) / span * 100, 0, 100);
-            const gainPct = clampBetween(entry.gain / span * 100, 0, 100 - nowPct);
+            const targetPct = clampBetween((entry.now + entry.gain - floor) / span * 100, 0, 100);
             return '<div class="poster-bar-row"><span class="poster-bar-name">' + escapeHTML(entry.subject) +
-              "<small>" + escapeHTML("typical gain " + formatSignedNumber(entry.gain) + " RIT") + "</small></span>" +
-              '<span class="poster-bar-track"><i class="poster-bar-fill" style="width:' + nowPct.toFixed(1) +
-              '%;background:#2454a6"></i><i class="poster-bar-fill poster-gain" style="left:' + nowPct.toFixed(1) +
-              "%;width:" + gainPct.toFixed(1) + '%"></i></span>' +
+              "<small>" + escapeHTML("a typical year adds " + formatSignedNumber(entry.gain) + " RIT") + "</small></span>" +
+              '<span class="poster-range">' +
+              '<i class="poster-range-axis"></i>' +
+              '<i class="poster-range-link" style="left:' + nowPct.toFixed(1) + "%;width:" + Math.max(0, targetPct - nowPct).toFixed(1) + '%"></i>' +
+              '<i class="poster-range-dot is-target" style="left:' + targetPct.toFixed(1) + '%"></i>' +
+              '<i class="poster-range-dot is-now" style="left:' + nowPct.toFixed(1) + '%"></i>' +
+              "</span>" +
               '<span class="poster-bar-value">' + escapeHTML(formatNumber(entry.now, 0)) +
               '<small>&rarr; ' + escapeHTML(formatNumber(entry.now + entry.gain, 0)) + "</small></span></div>";
           }).join("");
@@ -10307,8 +10615,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           return '<div class="poster-body">' +
             posterHero(formatSignedNumber(best.gain), "RIT points is a typical year in " + best.subject.toLowerCase(), "green") +
             '<div class="poster-main"><div class="poster-bars">' + bars + "</div>" +
-            '<p class="poster-empty">' + escapeHTML("Dark blue is where our middle score sits today. The pale bar is a typical year of growth, to " +
-              (horizon || "this time next year") + ".") + "</p></div></div>";
+            '<div class="poster-scale"><span>RIT ' + escapeHTML(formatNumber(floor, 0)) + "</span>" +
+            "<span>the scale on these lines runs left to right, and does not start at zero</span>" +
+            "<span>RIT " + escapeHTML(formatNumber(ceiling, 0)) + "</span></div>" +
+            '<div class="poster-key"><span><i style="background:' + POSTER_INK.blue.fill + '"></i>Where our middle score sits today</span>' +
+            '<span><i style="background:' + POSTER_INK.green.fill + '"></i>After a typical year, by ' + escapeHTML(horizon || "this time next year") +
+            "</span></div></div></div>";
         }
       },
       {
@@ -10331,7 +10643,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             "Started between the " + entry.band.min + "th and " + entry.band.max + "th percentile",
             isFiniteNumber(entry.medianCGP) ? entry.medianCGP : 0,
             isFiniteNumber(entry.medianCGP) ? formatNumber(entry.medianCGP, 0) : "n/a",
-            bandPrintColour(entry.band))).join("");
+            bandPrintColour(entry.band), "#eceff5",
+            isFiniteNumber(entry.medianCGP) && entry.medianCGP >= 50 ? "above typical" : "")).join("");
           const best = bands.slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
           return '<div class="poster-body">' +
             posterHero(best ? formatNumber(best.medianCGP, 0) : "-",
@@ -10391,8 +10704,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               ? "more results to reach our goal"
               : "more needed - we are already there", result.needed ? "amber" : "green") +
             '<div class="poster-main"><div class="poster-bars">' +
-            posterBarRow("Where we are", "Results at or above the line today", share, formatPercentWhole(share), POSTER_TONES.blue) +
-            posterBarRow("Where we are going", "The share we are aiming for", target, formatPercentWhole(target), POSTER_TONES.green) +
+            posterBarRow("Where we are today", "Results at or above the line", share, formatPercentWhole(share),
+              POSTER_INK.blue.fill, POSTER_INK.blue.track) +
+            posterBarRow("Where we are going", "The share we are aiming for", target, formatPercentWhole(target),
+              POSTER_INK.green.fill, POSTER_INK.green.track) +
             "</div>" +
             '<div class="poster-callouts"><div class="poster-callout is-good"><strong>Already there</strong><b>' +
             escapeHTML(formatInteger(result.above.length)) + "</b><small>results at or above the line</small></div>" +
@@ -10428,11 +10743,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     // Band colours are CSS custom properties on the page, which mean nothing in
     // a print window, so the poster uses fixed print-safe equivalents.
+    // Re-stepped for separation. The previous red and orange measured a normal
+    // vision Delta E of 8.7 - below the 15 floor, so full-colour readers could
+    // not reliably tell the Red band from the Orange one, let alone a
+    // colourblind reader. These clear both the colourblind and normal-vision
+    // gates. Yellow still sits under 3:1 on white, so every segment carries a
+    // visible name and count rather than relying on its fill.
+    // Ink is chosen by measured contrast against its own fill, not by eye:
+    // white on the old green measured 3.4:1 and failed for the label sizes used
+    // here. Every pairing below clears 4.5:1.
     const BAND_PRINT_COLOURS = {
-      Red: ["#dc2626", "#ffffff"],
-      Orange: ["#ea580c", "#ffffff"],
-      Yellow: ["#eab308", "#10182b"],
-      Green: ["#16a34a", "#ffffff"],
+      Red: ["#a50f1a", "#ffffff"],
+      Orange: ["#f77f00", "#1a1200"],
+      Yellow: ["#e5c11a", "#1a1200"],
+      Green: ["#0f7a45", "#ffffff"],
       Blue: ["#2563eb", "#ffffff"]
     };
 
@@ -10486,7 +10810,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const checked = selection.has(poster.id) ? " checked" : "";
         let inner;
         try {
-          inner = posterShell(poster, poster.body());
+          inner = posterShell(poster, poster.body(), page);
         } catch (error) {
           console.error("Poster render failed for " + poster.id, error);
           inner = '<section class="poster"><p class="poster-empty">This poster could not be drawn from the current view.</p></section>';
@@ -10543,7 +10867,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const page = posterPage();
       const body = posters.map((poster) => {
         try {
-          return '<div class="poster-page">' + posterShell(poster, poster.body()) + "</div>";
+          return '<div class="poster-page">' + posterShell(poster, poster.body(), page) + "</div>";
         } catch (error) {
           console.error("Poster render failed for " + poster.id, error);
           return "";
@@ -12343,8 +12667,103 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         escapeHTML(context + " | " + currentWindowName() + " | " + new Date().toLocaleDateString()) + "</div>";
     }
 
-    // One goal-setting sheet per student, sized for a conference or a
-    // goal-setting conversation with the student themselves.
+    // One goal-setting sheet per student. This is the only page in the app a
+    // child reads about themselves, so it is built as a document rather than as
+    // a table: their name is the biggest thing on it, the target that leads is
+    // the reachable one, and there are ruled lines to actually write on.
+    const GOAL_SHEET_CSS = `
+  @page { size: A4 portrait; margin: 0; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
+    color: #10151f;
+    font-size: 10.5pt;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .sheet { padding: 0 0 8mm; page-break-after: always; }
+  .sheet:last-child { page-break-after: auto; }
+
+  .gs-head { background: #14307f; color: #fff; padding: 7mm 16mm 6mm; }
+  .gs-kicker {
+    font-size: 9pt; font-weight: 800; letter-spacing: .2em;
+    text-transform: uppercase; color: #a9c6f7;
+  }
+  .gs-head h1 { margin: 1.5mm 0 0; font-size: 20pt; line-height: 1.05; letter-spacing: -0.02em; }
+  .gs-head p { margin: 2mm 0 0; font-size: 10pt; color: #cfe0fb; }
+
+  .gs-body { padding: 0 16mm; }
+  .gs-section { margin-top: 3.5mm; }
+  .gs-section > h2 {
+    margin: 0 0 4mm;
+    font-size: 10pt; font-weight: 800; letter-spacing: .14em;
+    text-transform: uppercase; color: #4a5568;
+    border-bottom: 0.5mm solid #1d4ed8; padding-bottom: 1.5mm;
+  }
+
+  .gs-subjects { display: grid; gap: 2.5mm; }
+  .gs-subject {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(52mm, auto);
+    gap: 5mm; align-items: center;
+    border: 0.4mm solid #d9dee8; border-radius: 2.5mm;
+    padding: 3.5mm 5mm; break-inside: avoid;
+  }
+  .gs-subject h3 { margin: 0; font-size: 13pt; letter-spacing: -0.01em; }
+  .gs-now { display: flex; align-items: baseline; gap: 2.5mm; }
+  .gs-now b { font-size: 23pt; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: #14307f; }
+  .gs-now span { font-size: 9pt; color: #4a5568; font-weight: 700; }
+  .gs-chip {
+    display: inline-block; padding: 1.2mm 3mm; border-radius: 10mm;
+    font-size: 8.5pt; font-weight: 800; white-space: nowrap;
+  }
+  .gs-target {
+    padding: 3mm 4mm; border-radius: 2mm;
+    background: #daf0e4; border-left: 1.2mm solid #0f7a45;
+  }
+  .gs-target strong {
+    display: block; font-size: 7.5pt; letter-spacing: .08em;
+    text-transform: uppercase; color: #4a5568;
+  }
+  .gs-target b { font-size: 14pt; line-height: 1.15; color: #0f5c34; }
+  .gs-target small { font-size: 8.5pt; color: #4a5568; }
+
+  .gs-areas { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm 7mm; }
+  .gs-area-group { break-inside: avoid; }
+  .gs-area-group > strong { font-size: 10pt; display: block; margin-bottom: 1.5mm; }
+  .gs-area-group > strong em { font-style: normal; font-weight: 600; font-size: 8pt; color: #4a5568; }
+  .gs-area {
+    display: grid; grid-template-columns: minmax(0, 1fr) 26mm 11mm;
+    gap: 2.5mm; align-items: center; margin-bottom: 1.2mm;
+  }
+  .gs-area-name { font-size: 8.5pt; font-weight: 600; line-height: 1.2; }
+  .gs-area-track {
+    position: relative; height: 5mm; border-radius: 1mm; background: #eef1f6;
+  }
+  .gs-area-mid { position: absolute; left: 50%; top: 0; bottom: 0; width: 0.4mm; background: #b7c0d0; }
+  .gs-area-fill { position: absolute; top: 1mm; bottom: 1mm; border-radius: 0.8mm; }
+  .gs-area-rit { font-size: 9pt; font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+  .gs-area-key { font-size: 7.5pt; color: #4a5568; margin-top: 1.5mm; line-height: 1.35; }
+
+  /* Lines to write on, not an empty box. */
+  .gs-write {
+    margin-top: 1.5mm; height: 15.9mm;
+    background-image: repeating-linear-gradient(to bottom, transparent 0 5.3mm, #c8cfdb 5.3mm 5.65mm);
+    border-bottom: 0.35mm solid #c8cfdb;
+  }
+  .gs-write.is-short { height: 12.7mm; }
+  /* A section that will not fit moves whole to the next page rather than
+     splitting a set of ruled lines across the fold. */
+  .gs-section { break-inside: avoid; }
+  .gs-note { font-size: 7.5pt; color: #4a5568; line-height: 1.4; margin: 3mm 0 0; }
+  .gs-foot {
+    margin: 5mm 16mm 0; padding-top: 2.5mm; border-top: 0.4mm solid #d9dee8;
+    font-size: 7pt; color: #5b6473; line-height: 1.35;
+  }
+`;
+
     function printGoalSheets() {
       const rows = state.filteredRows.filter((row) => row.goals);
       if (!rows.length) {
@@ -12370,25 +12789,66 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const floor = state.strandAnalysis ? state.strandAnalysis.floor : AREA_MIN_FLOOR;
       const sheets = printed.map(([, studentRows]) => {
         const first = studentRows[0];
-        const name = first.studentName;
+        const meta = [
+          first.studentGrade && first.studentGrade !== "Missing" ? "Year " + first.studentGrade : "",
+          first.className && first.className !== "Missing" ? "Class " + first.className : "",
+          currentWindowName()
+        ].filter(Boolean).join("  ·  ");
         return '<section class="sheet">' +
-          printHeader("Growth Goal Sheet", first.className) +
-          "<h2>" + escapeHTML(name) + " - Grade " + escapeHTML(first.studentGrade) + "</h2>" +
-          "<table><thead><tr><th>Subject</th><th>RIT now</th><th>%ile</th><th>Keep pace by " +
-          escapeHTML(first.goals.horizonLabel.toLowerCase()) + "</th><th>Grade-level target</th><th>Gain needed</th></tr></thead><tbody>" +
-          studentRows.map((row) => "<tr><td>" + escapeHTML(row.subject) + "</td><td>" + escapeHTML(formatNumber(row.currentRIT, 0)) +
-            "</td><td>" + escapeHTML(formatNumber(row.currentPercentile, 0)) + "</td><td>" +
-            escapeHTML(formatNumber(row.goals.keepPaceRIT, 0)) + "</td><td>" + escapeHTML(formatNumber(row.goals.gradeLevelRIT, 0)) +
-            "</td><td>" + escapeHTML(row.goals.alreadyAtOrAbove ? "Already there" : formatSignedNumber(row.goals.catchUpGain)) +
-            "</td></tr>").join("") +
-          "</tbody></table>" +
+          '<header class="gs-head"><span class="gs-kicker">My learning goals</span>' +
+          "<h1>" + escapeHTML(first.studentName) + "</h1>" +
+          "<p>" + escapeHTML(meta) + "</p></header>" +
+          '<div class="gs-body">' +
+          '<div class="gs-section"><h2>Where I am now</h2>' +
+          '<div class="gs-subjects">' + studentRows.map(goalSheetSubject).join("") + "</div></div>" +
           goalSheetAreas(studentRows, floor) +
-          "<h2>My goal for this year</h2><div class=\"write-in\"></div>" +
-          "<h2>What I will do to get there</h2><div class=\"write-in\"></div>" +
-          '<p class="note">' + escapeHTML(METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel) + "</p>" +
+          '<div class="gs-section"><h2>The goal I am setting myself</h2><div class="gs-write"></div></div>' +
+          '<div class="gs-section"><h2>What I will do to get there, and how my teacher will help</h2><div class="gs-write"></div></div>' +
+          "</div>" +
+          '<p class="gs-foot">' + escapeHTML(METHOD_NOTES.keepPace) + "</p>" +
           "</section>";
       }).join("");
-      openPrintWindow("NWEA Growth Goal Sheets", sheets, "nwea-goal-sheets.html");
+      const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' +
+        escapeHTML("Growth goal sheets") + "</title><style>" + GOAL_SHEET_CSS + "</style></head><body>" +
+        sheets + "</body></html>";
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        downloadText("nwea-goal-sheets.html", html, "text/html");
+        setStatus("Popup blocked. Downloaded the goal sheets instead.", false);
+        toast("Popup blocked - the sheets were downloaded instead.", "info");
+        return;
+      }
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => printWindow.print(), 280);
+    }
+
+    // The target that leads is the reachable one. A child at the first
+    // percentile needs "+4 RIT by spring", not "+78 to reach grade level"
+    // printed at them in bold - the grade-level figure stays available in the
+    // small print, where a teacher can use it and a ten-year-old is not
+    // handed it as their headline.
+    function goalSheetSubject(row) {
+      const goal = row.goals;
+      const band = row.currentBand;
+      const colours = BAND_PRINT_COLOURS[band.name] || ["#64748b", "#ffffff"];
+      return '<article class="gs-subject"><h3>' + escapeHTML(row.subject) + "</h3>" +
+        '<div class="gs-now"><b>' + escapeHTML(formatNumber(row.currentRIT, 0)) + "</b>" +
+        "<span>RIT</span>" +
+        (isFiniteNumber(row.currentPercentile)
+          ? '<span class="gs-chip" style="background:' + colours[0] + ";color:" + colours[1] + '">' +
+            escapeHTML(band.name) + "</span>"
+          : "") + "</div>" +
+        (goal
+          ? '<div class="gs-target"><strong>My next step by ' + escapeHTML(goal.horizonLabel.toLowerCase()) + "</strong>" +
+            "<b>RIT " + escapeHTML(formatNumber(goal.keepPaceRIT, 0)) + "</b> " +
+            "<small>" + escapeHTML(goal.typicalGain > 0
+              ? "(" + formatSignedNumber(goal.typicalGain) + " from now)"
+              : "(holding my ground)") + "</small></div>"
+          : "") +
+        "</article>";
     }
 
     // A goal sheet is the one place a student sees their own numbers, so it is
@@ -12399,29 +12859,34 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function goalSheetAreas(studentRows, floor) {
       const withAreas = studentRows.filter((row) => row.hasInstructionalAreas);
       if (!withAreas.length) return "";
-      const lines = [];
-      withAreas.forEach((row) => {
-        const areas = row.instructionalAreas.filter((area) => isFiniteNumber(area.delta));
-        if (!areas.length) return;
-        const sorted = areas.slice().sort((a, b) => a.delta - b.delta);
-        const weakest = sorted[0];
-        const strongest = sorted[sorted.length - 1];
-        lines.push(
-          "<tr><td>" + escapeHTML(row.subject) + "</td>" +
-          "<td>" + escapeHTML(sorted.map((area) => area.name + " " + formatNumber(area.rit, 0)).join("; ")) + "</td>" +
-          // Directional, not absolute: with Math.abs the "strongest area" could
-          // be the one furthest BELOW the student's own level.
-          "<td>" + escapeHTML(strongest.delta >= floor ? strongest.name : "Even across the subject") + "</td>" +
-          "<td>" + escapeHTML(weakest.delta <= -floor ? weakest.name : "Nothing standing out") + "</td></tr>");
-      });
-      if (!lines.length) return "";
-      return "<h2>What is inside each subject</h2>" +
-        "<table><thead><tr><th>Subject</th><th>My score in each area</th><th>Strongest area</th><th>Area to work on</th></tr></thead><tbody>" +
-        lines.join("") + "</tbody></table>" +
-        '<p class="note">' + escapeHTML("Each area is compared with your own overall score in that subject, not with the year group. " +
-          "An area is only listed as strongest or as one to work on when it is at least " + formatInteger(floor) +
-          " RIT away from your own score - anything smaller is too close to call. Area scores come from fewer questions than the overall score, so they move around more.") +
-        "</p><h2>The area I am going to work on</h2><div class=\"write-in\"></div>";
+      const groups = withAreas.map((row) => {
+        const areas = (row.instructionalAreas || []).filter((area) => isFiniteNumber(area.delta));
+        if (!areas.length) return "";
+        const scale = Math.max(floor + 4, ...areas.map((area) => Math.abs(area.delta)));
+        const bars = areas.slice().sort((a, b) => a.delta - b.delta).map((area) => {
+          const beyond = Math.abs(area.delta) >= floor;
+          const centre = 50 + (area.delta / (scale * 2)) * 100;
+          const left = Math.min(50, centre);
+          const width = Math.abs(centre - 50);
+          const colour = !beyond ? "#b7c0d0" : area.delta < 0 ? "#b45309" : "#0f7a45";
+          return '<div class="gs-area"><span class="gs-area-name">' + escapeHTML(area.name) + "</span>" +
+            '<span class="gs-area-track"><i class="gs-area-mid"></i>' +
+            (width > 0
+              ? '<i class="gs-area-fill" style="left:' + left.toFixed(1) + "%;width:" + width.toFixed(1) +
+                "%;background:" + colour + '"></i>'
+              : "") + "</span>" +
+            '<span class="gs-area-rit">' + escapeHTML(formatNumber(area.rit, 0)) + "</span></div>";
+        }).join("");
+        return '<div class="gs-area-group"><strong>' + escapeHTML(row.subject) +
+          ' <em>my overall score ' + escapeHTML(formatNumber(row.currentRIT, 0)) + "</em></strong>" + bars + "</div>";
+      }).filter(Boolean).join("");
+      if (!groups) return "";
+      return '<div class="gs-section"><h2>What is inside each subject</h2>' +
+        '<div class="gs-areas">' + groups + "</div>" +
+        '<p class="gs-note">' + escapeHTML("The middle line in each bar is my own overall score in that subject, not the year group's. " +
+          "Bars reaching left are the parts I find harder, right the parts I find easier. A bar shorter than " +
+          formatInteger(floor) + " RIT either way is too small to be sure about - these come from fewer questions than the overall score, so they move around more.") +
+        "</p></div>";
     }
 
     function printSpotlight() {
