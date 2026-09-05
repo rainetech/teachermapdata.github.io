@@ -4514,7 +4514,7 @@
         <div class="table-shell">
           <div class="table-tools">
             <strong id="goalCount">0 records</strong>
-            <span class="status-line">Targets use US norm means, not NWEA projected RIT.</span>
+            <span class="status-line" id="goalTargetsNote">Targets use US norm means.</span>
           </div>
           <div class="table-scroll" id="goalTable"></div>
         </div>
@@ -5102,7 +5102,8 @@
       secureBenchmark: "The 61st percentile is a locally chosen \u201csecure\u201d line, not an NWEA definition. Gap closure counts percentile-rank points, which are positions in a distribution rather than equal-sized units, so a ten-point move near the middle of the scale is a larger change in RIT than a ten-point move near either end. Read it as direction and rough magnitude, not as a precise quantity.",
       normSource: "US norm figures are grade-level mean RIT values rounded to whole points, used here as an approximate reference. They are not a substitute for the official NWEA norms study, and a school with its own norm tables should read the comparisons as indicative. Every norm-referenced figure on this page is derived from this table, never from anything in your file.",
       medianCGP: "Median conditional growth percentile is recalculated from the records currently visible, so it moves with your filters. Your export also carries NWEA's own class-level median, which is fixed for the whole class.",
-      nweaProjection: "NWEA's projected RIT in an ASG export describes the window that has already been measured, so it cannot serve as a target for the next window. The targets below are derived from norm means instead."
+      nweaProjection: "In a two-window export, NWEA's projected RIT describes the window already measured, so it is a record of what was expected rather than a target ahead. The norm-referenced targets below are used instead.",
+      forwardProjection: "This export carries NWEA's own projection for the window ahead: the growth it expects this student to make, and the RIT that follows from it. It is conditioned on the student's own starting score and grade rather than on a class-level norm mean, and it is the figure the next export will score \u201cmet growth\u201d against - so it leads here. The norm-referenced targets stay beside it, because a projection describes typical progress from where a student is, not the distance to grade level."
     };
 
     const SAMPLE_CSV = `TermTested,TermRostered,DistrictName,SchoolName,Teacher,ClassName,Subject,Course,ASGType,StudentID,StudentLastName,StudentFirstName,StudentGrade,TestDate,StartRIT,StartPercentile,StartTestDuration,EndTestDate,EndRIT,EndPercentile,EndTestDuration,ProjectedRIT,ProjectedGrowth,ObservedGrowth,GrowthIndex,MetGrowthProjection?,ConditionalGrowthIndex,ConditionalGrowthPercentile,PercentageofStudentswhoMetorExceededtheirProjectedRIT,PercentageofProjectedGrowthMet,MedianConditionalGrowthPercentile,StartGrowthandAchievement,EndGrowthandAchievement,ConditionalGrowthPercentileAxis,AchievementPercentileAxis
@@ -5373,7 +5374,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "sectionNavLinks", "quickQuestions", "themeToggle", "themeToggleLabel",
         "motionToggle", "motionToggleLabel", "toastStack", "celebrateLayer",
         "tierLadder", "normCards", "baselineSubjectBreakdown", "exportBaselineBtn",
-        "goalCards", "goalMethodNote", "goalCount", "goalTable", "exportGoalsBtn", "printGoalsBtn",
+        "goalCards", "goalMethodNote", "goalCount", "goalTable", "goalTargetsNote", "exportGoalsBtn", "printGoalsBtn",
         "actionBoard", "printActionsBtn", "copyActionsBtn", "crossSubjectCards", "crossCount", "crossSubjectTable",
         "growthEquity", "growthEquityRead",
         "strandCards", "strandSubjects", "strandGroups", "strandTable", "strandCount",
@@ -6078,6 +6079,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         unknownStatusCount: testQuality.unknownStatusCount,
         unknownStatuses: testQuality.unknownStatuses,
         areaRecordCount: rows.filter((row) => row.hasInstructionalAreas).length,
+        forwardProjectionCount: rows.filter((row) => row.forwardProjection).length,
         fileNormsYears,
         normsMismatch,
         comparisonPeriods,
@@ -6459,6 +6461,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
       applyNormFields(record);
       applyGrowthUncertainty(record);
+      applyForwardProjection(record);
 
       record.growthChallenge = classifyGrowthChallenge(record);
       record.suggestedGroup = suggestGroup(record);
@@ -6468,6 +6471,34 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       record.priorityReasons = getPriorityReasons(record);
       record.celebrationReasons = getCelebrationReasons(record);
       record.extensionAction = getExtensionAction(record);
+      return record;
+    }
+
+    // A fall ASG export carries NWEA's fall-to-spring projection: a projected
+    // growth for the window that has NOT happened yet, and the projected RIT
+    // that follows from it. That is the number the spring file will be scored
+    // against, and it is conditioned on this student's own starting RIT and
+    // grade rather than on a class-level norm mean - so where it exists it is
+    // a better target than anything this page can derive.
+    //
+    // In a two-window file the same columns describe the window already
+    // measured, and metGrowth reports the outcome, so there is nothing forward
+    // about them. The distinction is the measured second window, not the
+    // column names.
+    function applyForwardProjection(record) {
+      const target = record.projectedRIT;
+      const gain = isFiniteNumber(record.projectedGrowth)
+        ? record.projectedGrowth
+        : (isFiniteNumber(target) && isFiniteNumber(record.currentRIT) ? target - record.currentRIT : null);
+      record.forwardProjection = !record.hasGrowthPair && isFiniteNumber(target) && isFiniteNumber(record.currentRIT)
+        ? {
+            targetRIT: target,
+            gain,
+            // Whether NWEA expects this student to need more than the typical
+            // peer gain to hit their own projection.
+            aboveTypical: record.goals && isFiniteNumber(gain) ? gain - record.goals.typicalGain : null
+          }
+        : null;
       return record;
     }
 
@@ -7630,9 +7661,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const chip = { growth: "Growth file", mixed: "Mixed file", baseline: "Baseline file" }[info.mode];
       setText("modeChip", chip);
       if (info.mode === "baseline") {
+        const projected = state.allRows.filter((row) => row.forwardProjection).length;
         setText("modeHeadline", currentWindowName() + " baseline - one test window");
         setText("modeDetail", "No prior window to compare against, so growth, gap closure and quadrant movement are not shown. " +
-          formatInteger(info.scoredRowCount) + " scored records are analysed as a starting point.");
+          formatInteger(info.scoredRowCount) + " scored records are analysed as a starting point." +
+          (projected
+            ? " " + formatInteger(projected) + " of them carry NWEA's own projection for the window ahead, so Growth Goals shows the target the next export will be scored against."
+            : ""));
       } else if (info.mode === "mixed") {
         setText("modeHeadline", "Mixed file - " + formatInteger(info.growthRowCount) + " of " + formatInteger(info.scoredRowCount) + " records have two windows");
         setText("modeDetail", formatInteger(info.baselineRowCount) + " records have only " + currentWindowName() +
@@ -8723,19 +8758,43 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // ---------------------------------------------------------------------
     // Growth Goals
     // ---------------------------------------------------------------------
-    const GOAL_COLUMNS = [
-      ["Student", "studentName", (row) => studentLink(row)],
-      ["Subject", "subject", (row) => escapeHTML(row.subject)],
-      ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
-      ["Current RIT", "currentRIT", (row) => formatNumber(row.currentRIT, 0)],
-      ["Current %ile", "currentPercentile", (row) => formatNumber(row.currentPercentile, 0)],
-      ["Norm mean now", "usNormBenchmarkRIT", (row) => formatNumber(row.usNormBenchmarkRIT, 0)],
-      ["Typical gain", "goals.typicalGain", (row) => formatSignedNumber(row.goals ? row.goals.typicalGain : null)],
-      ["Keep-pace target", "goals.keepPaceRIT", (row) => formatNumber(row.goals ? row.goals.keepPaceRIT : null, 0)],
-      ["Grade-level target", "goals.gradeLevelRIT", (row) => formatNumber(row.goals ? row.goals.gradeLevelRIT : null, 0)],
-      ["Gain to grade level", "goals.catchUpGain", (row) => goalGainCell(row)],
-      ["Stretch needed", "goals.acceleration", (row) => goalStretchCell(row)]
-    ];
+    function goalColumns(hasProjection) {
+      const lead = [
+        ["Student", "studentName", (row) => studentLink(row)],
+        ["Subject", "subject", (row) => escapeHTML(row.subject)],
+        ["Current RIT", "currentRIT", (row) => formatNumber(row.currentRIT, 0)],
+        ["Current %ile", "currentPercentile", (row) => formatNumber(row.currentPercentile, 0)]
+      ];
+      // NWEA's own projection leads when the file carries one for the window
+      // ahead: it is the figure the next export scores against.
+      const projection = hasProjection ? [
+        ["NWEA target", "forwardProjection.targetRIT", (row) => row.forwardProjection
+          ? '<strong>' + escapeHTML(formatNumber(row.forwardProjection.targetRIT, 0)) + "</strong>" : "-"],
+        ["NWEA projected gain", "forwardProjection.gain", (row) => row.forwardProjection
+          ? escapeHTML(formatSignedNumber(row.forwardProjection.gain)) : "-"],
+        ["vs typical peer gain", "forwardProjection.aboveTypical", (row) => projectionVsTypicalCell(row)]
+      ] : [];
+      return lead.concat(projection, [
+        ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+        ["Norm mean now", "usNormBenchmarkRIT", (row) => formatNumber(row.usNormBenchmarkRIT, 0)],
+        ["Typical gain", "goals.typicalGain", (row) => formatSignedNumber(row.goals ? row.goals.typicalGain : null)],
+        ["Keep-pace target", "goals.keepPaceRIT", (row) => formatNumber(row.goals ? row.goals.keepPaceRIT : null, 0)],
+        ["Grade-level target", "goals.gradeLevelRIT", (row) => formatNumber(row.goals ? row.goals.gradeLevelRIT : null, 0)],
+        ["Gain to grade level", "goals.catchUpGain", (row) => goalGainCell(row)],
+        ["Stretch needed", "goals.acceleration", (row) => goalStretchCell(row)]
+      ]);
+    }
+
+    function projectionVsTypicalCell(row) {
+      const delta = row.forwardProjection ? row.forwardProjection.aboveTypical : null;
+      if (!isFiniteNumber(delta)) return "-";
+      if (Math.abs(delta) < 0.5) return '<span class="status-pill status-neutral">about typical</span>';
+      return '<span class="status-pill ' + (delta > 0 ? "status-watch" : "status-good") + '" title="' +
+        escapeAttr(delta > 0
+          ? "NWEA expects more than the typical peer gain from this student, because the projection is conditioned on where they started."
+          : "NWEA expects less than the typical peer gain from this student, because the projection is conditioned on where they started.") +
+        '">' + escapeHTML(formatSignedNumber(delta)) + " vs typical</span>";
+    }
 
     function goalGainCell(row) {
       if (!row.goals) return '<span class="muted-cell">n/a</span>';
@@ -8757,27 +8816,43 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const flatNormCount = rows.filter((row) => row.goals.flatNorm).length;
       const needStretch = rows.filter((row) => !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0);
       const onTrack = rows.filter((row) => row.goals.alreadyAtOrAbove);
+      const projectionRows = state.filteredRows.filter((row) => row.forwardProjection);
+      const projectionGain = avg(projectionRows.map((row) => row.forwardProjection.gain));
       els.goalCards.innerHTML = [
+        // When the export carries NWEA's own forward projection it leads: that
+        // is the number the next window is scored against.
+        projectionRows.length
+          ? statCard("NWEA projected gain", formatSignedNumber(projectionGain),
+              { raw: projectionGain, format: "signed", tone: "good",
+                hint: formatInteger(projectionRows.length) + " records carry NWEA's own target for " + (horizon || "the next window") })
+          : "",
         statCard("Records with a target", formatInteger(rows.length), { raw: rows.length, format: "integer", hint: horizon ? "Horizon: " + horizon : "" }),
         statCard("Typical gain ahead", formatSignedNumber(avg(rows.map((row) => row.goals.typicalGain))), { raw: avg(rows.map((row) => row.goals.typicalGain)), format: "signed", hint: "Mean RIT gain a typical peer makes" }),
         statCard("Already at grade level", formatInteger(onTrack.length), { raw: onTrack.length, format: "integer", tone: "good" }),
         statCard("Need above-typical growth", formatInteger(needStretch.length), { raw: needStretch.length, format: "integer", tone: needStretch.length ? "warn" : "good" }),
         statCard("Largest stretch", formatSignedNumber(needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null), { raw: needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null, format: "signed", hint: "Extra RIT above typical for the furthest-behind record" })
-      ].join("");
+      ].filter(Boolean).join("");
       applyStagger(els.goalCards);
       const normsWarning = state.diagnostics && state.diagnostics.normsMismatch && state.diagnostics.normsMismatch.length
         ? " This export is scored against NWEA's " + state.diagnostics.normsMismatch.join(" and ") +
           " norms while the table on this page is the " + EMBEDDED_NORMS_YEAR + " study, so these targets will not match your MAP reports until the table is updated."
         : "";
-      setText("goalMethodNote", normsWarning + (normsWarning ? " " : "") + METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
+      setText("goalTargetsNote", projectionRows.length
+        ? "NWEA's own projection leads; norm-referenced targets sit beside it."
+        : "Targets use US norm means.");
+      setText("goalMethodNote", normsWarning + (normsWarning ? " " : "") +
+        (projectionRows.length ? METHOD_NOTES.forwardProjection + " " : "") +
+        METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
         (flatNormCount ? " " + formatInteger(flatNormCount) + " record(s) are at a grade and subject where the published means flatten between these seasons, so keeping pace there means holding the current RIT." : "") +
         (hasGrowthContext() ? " " + METHOD_NOTES.nweaProjection : "") + " " + METHOD_NOTES.normSource);
-      els.goalCount.textContent = formatInteger(rows.length) + " records with a norm-referenced target";
+      els.goalCount.textContent = projectionRows.length
+        ? formatInteger(projectionRows.length) + " records with NWEA's own target for " + (horizon || "the window ahead")
+        : formatInteger(rows.length) + " records with a norm-referenced target";
       if (!rows.length) {
         els.goalTable.innerHTML = '<div class="empty-state">Targets need a student grade, a subject with US norms, and a RIT score. None of the visible records have all three.</div>';
         return;
       }
-      els.goalTable.innerHTML = renderTable("goal", GOAL_COLUMNS, sortRows(rows, state.sort.goal));
+      els.goalTable.innerHTML = renderTable("goal", goalColumns(projectionRows.length > 0), sortRows(rows, state.sort.goal));
     }
 
     // ---------------------------------------------------------------------
@@ -9871,6 +9946,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (diagnostics.mergedRecords) {
         notes.push(["Records combined across files", formatInteger(diagnostics.mergedRecords) +
           " student-subject record(s) appeared in more than one file describing the same test. They were folded into one record rather than counted twice, so growth from an ASG export and the instructional areas from a Class Profile export sit on the same student."]);
+      }
+      if (diagnostics.forwardProjectionCount) {
+        notes.push(["NWEA projection for the window ahead",
+          formatInteger(diagnostics.forwardProjectionCount) + " record(s) carry NWEA's projected growth and projected RIT for a window that has not been tested yet. " +
+          METHOD_NOTES.forwardProjection]);
       }
       if (diagnostics.areaRecordCount) {
         notes.push(["Instructional areas found", formatInteger(diagnostics.areaRecordCount) +
@@ -12916,6 +12996,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       ["Current window", (row) => row.currentWindowLabel],
       ["Current RIT", (row) => row.currentRIT],
       ["Current percentile", (row) => row.currentPercentile],
+      ["NWEA projected RIT", (row) => (row.forwardProjection ? row.forwardProjection.targetRIT : "")],
+      ["NWEA projected gain", (row) => (row.forwardProjection ? row.forwardProjection.gain : "")],
+      ["NWEA gain vs typical peer gain", (row) => (row.forwardProjection && isFiniteNumber(row.forwardProjection.aboveTypical)
+        ? Number(row.forwardProjection.aboveTypical.toFixed(1)) : "")],
       ["Target window", (row) => (row.goals ? row.goals.horizonLabel : "")],
       ["Typical peer gain (RIT)", (row) => (row.goals ? row.goals.typicalGain : "")],
       ["Keep-pace target RIT", (row) => (row.goals ? Math.round(row.goals.keepPaceRIT) : "")],
@@ -12923,7 +13007,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       ["Gain needed for grade level", (row) => (row.goals ? row.goals.catchUpGain : "")],
       ["Extra above typical", (row) => (row.goals && !row.goals.alreadyAtOrAbove ? Math.max(0, row.goals.acceleration) : "")],
       ["Already at grade level", (row) => (row.goals && row.goals.alreadyAtOrAbove ? "Yes" : "No")],
-      ["Method", () => "Targets are US norm means for the grade and season, not NWEA projected RIT."]
+      ["Method", (row) => row.forwardProjection
+        ? "NWEA projected RIT is NWEA's own target for the window ahead, conditioned on this student's starting score and grade. Keep-pace and grade-level targets are US norm means for the grade and season."
+        : "Keep-pace and grade-level targets are US norm means for the grade and season. This export carried no NWEA projection for a window ahead."]
     ];
 
     function exportBaseline() {
@@ -12931,7 +13017,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function exportGoals() {
-      exportCSV("growth-goals", sortRows(state.filteredRows.filter((row) => row.goals), state.sort.goal), GOAL_EXPORT_COLUMNS);
+      exportCSV("growth-goals",
+        sortRows(state.filteredRows.filter((row) => row.goals || row.forwardProjection), state.sort.goal),
+        GOAL_EXPORT_COLUMNS);
     }
 
     // ---- Printable sheets --------------------------------------------------
@@ -13088,9 +13176,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 `;
 
     function printGoalSheets() {
-      const rows = state.filteredRows.filter((row) => row.goals);
+      const rows = state.filteredRows.filter((row) => row.goals || row.forwardProjection);
       if (!rows.length) {
-        toast("No records in view have a norm-referenced target.", "info");
+        toast("No records in view have a target.", "info");
         return;
       }
       // Keyed on identity, not on the printed name: two children who share a
@@ -13128,7 +13216,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           '<div class="gs-section"><h2>The goal I am setting myself</h2><div class="gs-write"></div></div>' +
           '<div class="gs-section"><h2>What I will do to get there, and how my teacher will help</h2><div class="gs-write"></div></div>' +
           "</div>" +
-          '<p class="gs-foot">' + escapeHTML(METHOD_NOTES.keepPace) + "</p>" +
+          '<p class="gs-foot">' + escapeHTML(studentRows.some((row) => row.forwardProjection)
+            ? METHOD_NOTES.forwardProjection
+            : METHOD_NOTES.keepPace) + "</p>" +
           "</section>";
       }).join("");
       const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' +
@@ -13164,13 +13254,19 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           ? '<span class="gs-chip" style="background:' + colours[0] + ";color:" + colours[1] + '">' +
             escapeHTML(band.name) + "</span>"
           : "") + "</div>" +
-        (goal
-          ? '<div class="gs-target"><strong>My next step by ' + escapeHTML(goal.horizonLabel.toLowerCase()) + "</strong>" +
-            "<b>RIT " + escapeHTML(formatNumber(goal.keepPaceRIT, 0)) + "</b> " +
-            "<small>" + escapeHTML(goal.typicalGain > 0
-              ? "(" + formatSignedNumber(goal.typicalGain) + " from now)"
-              : "(holding my ground)") + "</small></div>"
-          : "") +
+        (row.forwardProjection
+          ? '<div class="gs-target"><strong>My target by ' + escapeHTML((goal ? goal.horizonLabel : "the next test").toLowerCase()) + "</strong>" +
+            "<b>RIT " + escapeHTML(formatNumber(row.forwardProjection.targetRIT, 0)) + "</b> " +
+            "<small>" + escapeHTML(isFiniteNumber(row.forwardProjection.gain) && row.forwardProjection.gain > 0
+              ? "(" + formatSignedNumber(row.forwardProjection.gain) + " from where I am now)"
+              : "(holding the ground I have made)") + "</small></div>"
+          : goal
+            ? '<div class="gs-target"><strong>My next step by ' + escapeHTML(goal.horizonLabel.toLowerCase()) + "</strong>" +
+              "<b>RIT " + escapeHTML(formatNumber(goal.keepPaceRIT, 0)) + "</b> " +
+              "<small>" + escapeHTML(goal.typicalGain > 0
+                ? "(" + formatSignedNumber(goal.typicalGain) + " from now)"
+                : "(holding my ground)") + "</small></div>"
+            : "") +
         "</article>";
     }
 
