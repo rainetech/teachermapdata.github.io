@@ -2807,6 +2807,248 @@
     .quality-note span { font-size: 12px; color: var(--muted); line-height: 1.45; }
 
     /* =====================================================================
+       Check My Understanding (quiz)
+       ===================================================================== */
+    #sec-quiz .section-header h2::before { background: var(--purple); }
+    .quiz { display: grid; gap: 14px; }
+
+    .quiz-intro {
+      display: grid;
+      grid-template-columns: minmax(0, 1.5fr) minmax(250px, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .quiz-intro-copy { display: grid; gap: 10px; align-content: start; }
+    .quiz-intro-copy h3 { font-size: 1.15rem; line-height: 1.3; }
+    .quiz-intro-copy p { margin: 0; color: var(--muted); line-height: 1.5; }
+    .quiz-intro-copy .explain-grid { margin: 4px 0 0; }
+
+    .quiz-setup {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+
+    .quiz-setup .field { display: grid; gap: 4px; }
+    .quiz-pool { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+
+    .quiz-progress { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .quiz-progress strong { font-size: 0.86rem; white-space: nowrap; }
+    .quiz-track {
+      flex: 1 1 160px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--slate-soft);
+      overflow: hidden;
+    }
+    .quiz-track-fill {
+      display: block;
+      height: 100%;
+      width: var(--fill, 0%);
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand), var(--green));
+      transition: width var(--dur) var(--ease-out);
+    }
+    .quiz-running { color: var(--muted); font-size: 12px; white-space: nowrap; }
+
+    .quiz-card {
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .quiz-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .quiz-asker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.74rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--brand-ink);
+    }
+    .quiz-asker::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--purple); }
+
+    .quiz-stem {
+      font-size: clamp(1.05rem, 1.4vw, 1.25rem);
+      line-height: 1.35;
+      margin: 0;
+      max-width: 74ch;
+    }
+    .quiz-stem:focus { outline: none; }
+
+    .quiz-options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    .quiz-options.is-tf { grid-template-columns: repeat(2, minmax(0, 220px)); }
+
+    .quiz-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      text-align: left;
+      min-height: 48px;
+      padding: 10px 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+      font-weight: 700;
+      font-size: 0.92rem;
+      line-height: 1.3;
+      cursor: pointer;
+      transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+    }
+    .quiz-option:hover:not(:disabled) { border-color: var(--brand); background: var(--brand-soft); transform: translateY(-1px); }
+    .quiz-option:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; box-shadow: var(--focus); }
+    .quiz-option:disabled { cursor: default; opacity: 0.72; }
+    .quiz-option span:last-child { min-width: 0; overflow-wrap: anywhere; }
+
+    .quiz-letter {
+      flex: none;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: var(--slate-soft);
+      color: var(--slate-ink);
+      font-size: 0.74rem;
+      font-weight: 900;
+    }
+    .quiz-option.is-correct { border-color: var(--green); background: var(--green-soft); color: var(--green-ink); opacity: 1; }
+    .quiz-option.is-correct .quiz-letter { background: var(--green); color: var(--on-green); }
+    .quiz-option.is-wrong { border-color: var(--red); background: var(--red-soft); color: var(--red-ink); opacity: 1; }
+    .quiz-option.is-wrong .quiz-letter { background: var(--red); color: var(--on-red); }
+
+    .quiz-feedback {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--green);
+      border-radius: var(--radius-sm);
+      background: var(--panel);
+      padding: 12px 14px;
+      display: grid;
+      gap: 8px;
+    }
+    .quiz-feedback.tone-warn { border-left-color: var(--orange); }
+    .quiz-feedback p { margin: 0; line-height: 1.5; font-size: 0.9rem; max-width: 80ch; }
+    .quiz-verdict { font-size: 1rem; }
+    .quiz-caution { color: var(--muted); font-size: 0.84rem; }
+    .quiz-followup {
+      background: var(--panel-2);
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.86rem;
+    }
+    .quiz-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    .quiz-results { display: grid; gap: 14px; }
+    .quiz-score {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 18px;
+      align-items: center;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+    .quiz-score-ring {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: conic-gradient(var(--green) var(--pct, 0%), var(--slate-soft) 0);
+    }
+    .quiz-score-ring b {
+      display: grid;
+      place-items: center;
+      width: 74px;
+      height: 74px;
+      border-radius: 50%;
+      background: var(--panel);
+      font-size: 1.05rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+    .quiz-score h3 { font-size: 1.2rem; margin: 0 0 4px; }
+    .quiz-score p { margin: 0; color: var(--muted); line-height: 1.5; max-width: 74ch; }
+
+    .quiz-topics { display: flex; flex-wrap: wrap; gap: 8px; }
+    .quiz-topic {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+    .quiz-topic b { font-variant-numeric: tabular-nums; }
+    .quiz-topic.tone-good { background: var(--green-soft); color: var(--green-ink); border-color: var(--green-line); }
+    .quiz-topic.tone-warn { background: var(--orange-soft); color: var(--orange-ink); border-color: var(--orange-line); }
+
+    .quiz-review { display: grid; gap: 10px; }
+    .quiz-review-item {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--orange);
+      border-radius: var(--radius-sm);
+      background: var(--panel-2);
+      padding: 12px 14px;
+      display: grid;
+      gap: 6px;
+    }
+    .quiz-review-item.is-right { border-left-color: var(--green); }
+    .quiz-review-item p { margin: 0; font-size: 0.86rem; line-height: 1.5; max-width: 80ch; }
+    .quiz-review-item .quiz-stem { font-size: 0.98rem; }
+    .quiz-answer-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.86rem; }
+    .quiz-answer-line .is-right { color: var(--up-text); }
+    .quiz-answer-line .is-wrong { color: var(--down-text); }
+
+    .quiz-stale {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--yellow-line);
+      background: var(--yellow-soft);
+      color: var(--yellow-ink);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      font-size: 0.86rem;
+    }
+    .quiz-note { color: var(--muted); font-size: 0.86rem; margin: 0; max-width: 80ch; }
+
+    @media (max-width: 860px) {
+      .quiz-intro { grid-template-columns: 1fr; }
+      .quiz-options { grid-template-columns: 1fr; }
+      .quiz-options.is-tf { grid-template-columns: 1fr 1fr; }
+      .quiz-score { grid-template-columns: 1fr; justify-items: start; }
+      .quiz-card { padding: 14px; }
+    }
+
+    /* =====================================================================
        Toasts
        ===================================================================== */
     .toast-stack {
@@ -3382,6 +3624,7 @@
       .btn-row,
       .group-controls,
       #sec-tables,
+      #sec-quiz,
       .table-tools .status-line {
         display: none !important;
       }
@@ -4660,6 +4903,17 @@
         <p class="summary-edit-note" id="summaryEditNote" hidden>You have edited this text, so it will no longer update when you change the filters. Regenerate to go back to the generated version.</p>
       </section>
 
+      <section class="section" id="sec-quiz" aria-labelledby="quizTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="quizTitle">Check My Understanding</h2>
+            <p id="quizLead">The questions a principal, inspector or governor is likely to ask about this data, with every answer worked out from the records currently in view. A practice run before the real conversation.</p>
+          </div>
+          <div class="btn-row" id="quizTools"></div>
+        </div>
+        <div class="quiz" id="quizBody"></div>
+      </section>
+
       <section class="section" id="sec-posters" aria-labelledby="posterTitle">
         <div class="section-header">
           <div>
@@ -5331,6 +5585,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       manualArrangement: false,
       groupSignature: "",
       spotlightKey: "",
+      quiz: null,
       prefs: { theme: "auto", reducedMotion: false, supportPromptOff: false, supportPromptLastShown: 0 },
       supportPromptTimer: null,
       supportReturnFocus: null,
@@ -5373,6 +5628,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     document.addEventListener("DOMContentLoaded", () => {
       cacheElements();
       injectPosterStyles();
+      state.quiz = emptyQuizState();
       state.prefs = readPreferences();
       applyPreferences();
       attachEvents();
@@ -5397,6 +5653,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "targetThresholdSelect", "targetShareInput", "targetCards", "targetMethodNote",
         "targetCount", "targetTable", "exportTargetBtn",
         "qualityCards", "qualityDetail", "tierFilter", "cohortCompare",
+        "quizBody", "quizTools",
         "supportDock", "supportDockCoffee", "supportDockFeedback",
         "supportBackdrop", "supportPrompt", "supportClose", "supportPromptCoffee",
         "supportPromptFeedback", "supportPromptLater", "supportPromptNever",
@@ -5574,6 +5831,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // Delegated so dynamically rendered nav links, student names and tier
       // rows keep working after every re-render.
       document.addEventListener("click", (event) => {
+        const quizAnswer = event.target.closest("[data-quiz-answer]");
+        if (quizAnswer) {
+          answerQuiz(Number(quizAnswer.dataset.quizAnswer));
+          return;
+        }
+        const quizAction = event.target.closest("[data-quiz-action]");
+        if (quizAction) {
+          handleQuizAction(quizAction.dataset.quizAction, quizAction);
+          return;
+        }
         const jump = event.target.closest("[data-jump]");
         if (jump) {
           jumpToSection(jump.dataset.jump);
@@ -5622,6 +5889,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         if (header) sortByHeader(header);
       });
       document.addEventListener("change", (event) => {
+        const countSelect = event.target.closest ? event.target.closest("[data-quiz-count-select]") : null;
+        if (countSelect) {
+          state.quiz.count = Number(countSelect.value) || QUIZ_DEFAULT_COUNT;
+          const start = els.quizBody && els.quizBody.querySelector("[data-quiz-action='start']");
+          if (start) start.dataset.quizCount = String(state.quiz.count);
+          return;
+        }
         const pick = event.target.closest ? event.target.closest("[data-poster-pick]") : null;
         if (!pick) return;
         const selection = posterSelection();
@@ -5984,6 +6258,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.diagnostics.unreadableFiles = unreadableCount || 0;
       state.diagnostics.mergedRecords = mergedRecords;
       state.spotlightKey = "";
+      state.quiz = emptyQuizState();
       populateFilters();
       resetFilters(false);
       applyModeToChrome();
@@ -6016,6 +6291,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.dataWindow = { ...DEFAULT_DATA_WINDOW };
       state.diagnostics = null;
       state.spotlightKey = "";
+      state.quiz = emptyQuizState();
       populateFilters();
       applyModeToChrome();
       safeRenderAll();
@@ -7570,6 +7846,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       renderCrossSubject();
       renderStrands();
       renderSummaryReport();
+      renderQuiz();
       renderPosters();
       renderTables();
       renderDataCheck();
@@ -7597,6 +7874,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // exists only when the loaded files actually have them.
       { id: "sec-strands", label: "Areas", modes: ["growth", "mixed", "baseline"], available: hasStrandData },
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-quiz", label: "Quiz", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-posters", label: "Posters", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-grouping", label: "Grouping", modes: ["growth", "mixed", "baseline"] },
@@ -7719,8 +7997,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const container = els.quickQuestions;
       if (!container) return;
       const questions = isBaselineMode()
-        ? [["sec-baseline", "Where are we starting?"], ["sec-priority", "Who needs support?"], ["sec-goals", "What are the targets?"], ["sec-tables", "How do I group them?"]]
-        : [["sec-celebration", "Who grew?"], ["sec-priority", "Who needs support?"], ["sec-gap", "Who closed gaps?"], ["sec-tables", "How do I group them?"]];
+        ? [["sec-baseline", "Where are we starting?"], ["sec-priority", "Who needs support?"], ["sec-goals", "What are the targets?"], ["sec-tables", "How do I group them?"], ["sec-quiz", "Can I explain this data?"]]
+        : [["sec-celebration", "Who grew?"], ["sec-priority", "Who needs support?"], ["sec-gap", "Who closed gaps?"], ["sec-tables", "How do I group them?"], ["sec-quiz", "Can I explain this data?"]];
       container.innerHTML = questions
         .map(([id, label]) => '<button class="question-chip" type="button" data-jump="' + escapeAttr(id) + '">' + escapeHTML(label) + "</button>")
         .join("");
@@ -10498,6 +10776,1715 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const gap = isFiniteNumber(metrics.avgGapClosurePct) ? metrics.avgGapClosurePct * 100 : 0;
       return met * 0.45 + end * 0.35 + gap * 0.2;
     }
+
+    // ---------------------------------------------------------------------
+    // Check My Understanding
+    // ---------------------------------------------------------------------
+    // A practice run for the data conversation. Every question is built from
+    // the records currently in view, so each answer is a figure that is on
+    // this page, formatted the way the page formats it, and each explanation
+    // says which section shows it. A wrong answer is coached, not marked.
+    //
+    // The quiz obeys the same rules as the rest of the page: a share under
+    // MIN_SHARE_N records is asked as a count, never a percentage; nothing
+    // about growth is asked of a single-window file; and a met-growth call
+    // that sits inside measurement error is never the subject of a question.
+    //
+    // Nothing here is stored. The quiz lives in memory beside the data and is
+    // discarded with it, which keeps the promise on the upload panel intact.
+    const QUIZ_COUNT_OPTIONS = [10, 12, 15, 20];
+    const QUIZ_DEFAULT_COUNT = 12;
+    const QUIZ_MIN_COUNT = 10;
+    const QUIZ_PERSONAS = {
+      principal: "Principal",
+      inspector: "Inspector",
+      governor: "Governor",
+      datalead: "Data lead",
+      hod: "Head of department"
+    };
+    const QUIZ_LETTERS = ["A", "B", "C", "D", "E", "F"];
+    const QUIZ_SECTION_NAMES = {
+      "sec-snapshot": "Class Snapshot",
+      "sec-baseline": "Starting Point",
+      "sec-overview": "Subject Overview",
+      "sec-charts": "Subject Charts",
+      "sec-growth": "Growth and Achievement",
+      "sec-gap": "Gap Closure",
+      "sec-goals": "Growth Goals",
+      "sec-actions": "Action Board",
+      "sec-target": "What Would It Take?",
+      "sec-crosssubject": "Cross-Subject Profiles",
+      "sec-strands": "Instructional Areas",
+      "sec-summary": "Class Summary Report",
+      "sec-grouping": "Student Grouping Report",
+      "sec-priority": "Priority Students",
+      "sec-celebration": "Celebration Students",
+      "sec-quality": "Data Check"
+    };
+
+    function emptyQuizState() {
+      return {
+        status: "idle",
+        count: QUIZ_DEFAULT_COUNT,
+        questions: [],
+        index: 0,
+        answers: [],
+        signature: "",
+        poolSize: 0,
+        reviewOpen: false,
+        focus: ""
+      };
+    }
+
+    // The section title as the page currently labels it, so "see Priority
+    // Students" becomes "see Start-of-Year Support List" on a baseline file.
+    function quizSectionName(id) {
+      const heading = document.querySelector("#" + id + " .section-header h2");
+      const text = heading ? cleanString(heading.textContent) : "";
+      return text || QUIZ_SECTION_NAMES[id] || "the dashboard";
+    }
+
+    // A fingerprint of the view a quiz was built from. It changes with the
+    // file and the filters, which is enough to say "these answers describe a
+    // view you are no longer looking at". The overview lens is left out: the
+    // quiz always reads subjects, so switching the lens changes nothing here.
+    function quizSignature() {
+      const rows = state.filteredRows;
+      let sum = 0;
+      rows.forEach((row) => { sum += row.rowNumber || 0; });
+      return [
+        state.fileNames.join("|"), state.dataWindow.mode, rows.length, sum,
+        rows.length ? rows[0].rowNumber : "", rows.length ? rows[rows.length - 1].rowNumber : ""
+      ].join("#");
+    }
+
+    // --- Randomness helpers ------------------------------------------------
+    function quizShuffle(list) {
+      const copy = list.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function quizPick(list) {
+      return list.length ? list[Math.floor(Math.random() * list.length)] : undefined;
+    }
+
+    function quizPickSome(list, count) {
+      return quizShuffle(list).slice(0, count);
+    }
+
+    // --- Option builders ---------------------------------------------------
+    // Every builder returns the option strings with the correct one included,
+    // or null when there are not enough distinct wrong answers to make a fair
+    // question. Options are compared as the text the teacher will read, so
+    // two candidates that round to the same figure never both appear.
+    function quizOptionsFrom(correctText, candidateTexts, minimum) {
+      const options = [correctText];
+      const seen = new Set([correctText]);
+      candidateTexts.forEach((text) => {
+        if (options.length >= 4 || seen.has(text) || text === "N/A") return;
+        seen.add(text);
+        options.push(text);
+      });
+      return options.length >= (minimum || 3) ? options : null;
+    }
+
+    // Wrong counts near the right one, never negative and never above the
+    // population they are counted from when that is known.
+    function quizCountOptions(correct, total) {
+      const candidates = [];
+      const push = (value) => {
+        const rounded = Math.round(value);
+        if (rounded === correct || rounded < 0) return;
+        if (isFiniteNumber(total) && rounded > total) return;
+        if (!candidates.includes(rounded)) candidates.push(rounded);
+      };
+      [1, -1, 2, -2, 3, -3, 4, 5].forEach((step) => push(correct + step));
+      if (correct >= 6) [correct * 0.5, correct * 1.5, correct * 2].forEach(push);
+      const near = candidates.filter((value) => Math.abs(value - correct) <= 3);
+      const far = candidates.filter((value) => Math.abs(value - correct) > 3);
+      const mixed = quizShuffle(near).slice(0, 2).concat(quizShuffle(far).slice(0, 1));
+      const filler = quizShuffle(candidates.filter((value) => !mixed.includes(value)));
+      return quizOptionsFrom(formatInteger(correct), mixed.concat(filler).map(formatInteger), 3);
+    }
+
+    // Wrong percentages a sensible distance away, kept inside 0-100.
+    function quizPercentOptions(correct) {
+      const rounded = Math.round(correct);
+      const candidates = quizShuffle([5, 8, 10, 12, 15, 20, 25, 30])
+        .flatMap((step) => [rounded + step, rounded - step])
+        .filter((value) => value >= 0 && value <= 100 && Math.round(value) !== rounded);
+      return quizOptionsFrom(formatPercentWhole(rounded), candidates.map(formatPercentWhole), 3);
+    }
+
+    // Wrong values for a mean or median, formatted exactly as the page does.
+    function quizNumberOptions(correct, steps, format) {
+      const fmt = format || ((value) => formatNumber(value));
+      const candidates = quizShuffle(steps).flatMap((step) => [correct + step, correct - step]);
+      return quizOptionsFrom(fmt(correct), candidates.map(fmt), 3);
+    }
+
+    // A signed RIT distance. The sign flip is always offered because reading
+    // "+3" as "3 below" is the mistake a leader is most likely to catch.
+    function quizSignedOptions(correct, steps) {
+      const candidates = [-correct].concat(quizShuffle(steps).flatMap((step) => [correct + step, correct - step]));
+      return quizOptionsFrom(formatSignedNumber(correct), candidates.map(formatSignedNumber), 3);
+    }
+
+    // Wrong labels drawn from a list, preferring the ones that are actually in
+    // the file so the distractors read as real choices.
+    function quizLabelOptions(correct, preferred, fallback) {
+      const others = unique(preferred || []).filter((label) => label !== correct);
+      const extra = unique(fallback || []).filter((label) => label !== correct && !others.includes(label));
+      return quizOptionsFrom(correct, quizShuffle(others).concat(quizShuffle(extra)), 3);
+    }
+
+    // The "how many / what share" question in the form the page would print
+    // it: a percentage over MIN_SHARE_N records, a count under it.
+    function quizShareOptions(entry) {
+      if (!entry || !entry.of) return null;
+      if (shareIsThin(entry)) {
+        const options = quizCountOptions(entry.n, entry.of);
+        return options ? { options, correct: formatInteger(entry.n), asCount: true } : null;
+      }
+      const pct = sharePct(entry);
+      const options = quizPercentOptions(pct);
+      return options ? { options, correct: formatPercentWhole(pct), asCount: false } : null;
+    }
+
+    // The exact sentence the page uses for a share, for explanations.
+    function quizShareSentence(entry, noun) {
+      if (shareIsThin(entry)) return formatInteger(entry.n) + " of the " + formatInteger(entry.of) + " " + noun;
+      return formatPercentWhole(sharePct(entry)) + " (" + formatInteger(entry.n) + " of " + formatInteger(entry.of) + " " + noun + ")";
+    }
+
+    // Why a share was asked as a count, appended to the explanation.
+    function quizThinNote(entry) {
+      return shareIsThin(entry)
+        ? " The dashboard shows this as a count rather than a percentage because fewer than " + MIN_SHARE_N + " records is too few for a percentage to mean anything."
+        : "";
+    }
+
+    function quizPlural(count, singular, plural) {
+      return count === 1 ? singular : (plural || singular + "s");
+    }
+
+    function quizTF(truth) {
+      return { options: ["True", "False"], correct: truth ? "True" : "False" };
+    }
+
+    // The one record per student and subject with the best evidence, for
+    // "which student" questions: a student who sat twice in view counts once.
+    function quizStudentRows(rows, subject) {
+      const byStudent = new Map();
+      rows.forEach((row) => {
+        if (subject && row.subject !== subject) return;
+        if (!row.studentName || row.studentName === "Missing") return;
+        const key = studentKey(row) + "|" + row.subject;
+        const existing = byStudent.get(key);
+        if (!existing || recordRichness(row) > recordRichness(existing)) byStudent.set(key, row);
+      });
+      return [...byStudent.values()];
+    }
+
+    // The single record with the highest (or lowest) value, provided no other
+    // record ties with it. A tie has no single right answer, so it yields
+    // nothing rather than a coin toss.
+    function quizUniqueExtreme(rows, getter, highest) {
+      const scored = rows.filter((row) => isFiniteNumber(getter(row)));
+      if (scored.length < 3) return null;
+      const sorted = scored.slice().sort((a, b) => highest ? getter(b) - getter(a) : getter(a) - getter(b));
+      if (getter(sorted[0]) === getter(sorted[1])) return null;
+      // Two records for the same student cannot both be options.
+      const names = unique(sorted.map((row) => row.studentName));
+      if (names.length < 3) return null;
+      return { row: sorted[0], others: names.filter((name) => name !== sorted[0].studentName), sorted };
+    }
+
+    // Distractor labels for a category, in the order the page lists them.
+    const QUIZ_TIER_NAMES = ACHIEVEMENT_TIERS.map((tier) => tier.name);
+    const QUIZ_BAND_NAMES = BANDS.map((band) => band.name);
+    const QUIZ_GROWTH_GROUPS = ["Intensive Support", "Targeted Support", "Watch Group", "Secure / Maintain", "Enrichment", "Catch-Up Growth", "Secure but Regressing", "Coasting Watch", "Incomplete Data"];
+    const QUIZ_BASELINE_GROUPS = ["Intensive Support", "Targeted Support", "Watch Group", "Core Instruction", "Secure / Maintain", "Enrichment", "No Score Yet"];
+    const QUIZ_PRIORITY_REASONS = [
+      "Did not meet growth", "Dropped percentile band", "Low growth and low achievement at end",
+      "Typical growth from a low start - the gap will not close at this rate", "Missing end score",
+      "Negative observed growth", "EndPercentile below 21", "Started secure but regressed", "Widened the gap"
+    ];
+    const QUIZ_CELEBRATION_REASONS = [
+      "Exceeded projected growth", "Moved up a band", "Closed the gap", "Reduced gap significantly",
+      "Improved RIT strongly", "Moved from Low-A to High-A", "Moved from Low-G to High-G"
+    ];
+
+    // --- Context -----------------------------------------------------------
+    function quizContext(rows) {
+      const metrics = aggregateRows(rows);
+      const subjects = getOverviewBuckets(rows, "subject");
+      const classes = unique(rows.map((row) => row.className)).filter((name) => name !== "Missing");
+      return {
+        rows,
+        metrics,
+        baseline: isBaselineMode(),
+        growth: hasGrowthContext(),
+        mode: state.dataWindow.mode,
+        subjects,
+        classes,
+        studentCount: new Set(rows.map((row) => studentKey(row))).size,
+        window: currentWindowName(),
+        prior: state.dataWindow.priorWindowLabel,
+        diagnostics: state.diagnostics,
+        subjectMetrics: subjects.map((subject) => ({ subject, rows: bucketRows(rows, subject, "subject"), metrics: aggregateRows(bucketRows(rows, subject, "subject")) })),
+        classMetrics: classes.map((className) => ({ className, rows: rows.filter((row) => row.className === className), metrics: aggregateRows(rows.filter((row) => row.className === className)) }))
+      };
+    }
+
+    // --- Pool, selection ---------------------------------------------------
+    // A generator returns one question, a list of them, or nothing. A question
+    // names its family (the template) so a set never leans on one idea, and
+    // its key so the same question is never asked twice in a set.
+    function buildQuizPool(rows) {
+      const ctx = quizContext(rows);
+      const pool = [];
+      const keys = new Set();
+      QUIZ_GENERATORS.forEach((generator) => {
+        let produced;
+        try {
+          produced = generator(ctx);
+        } catch (error) {
+          console.error("Quiz question could not be built", error);
+          return;
+        }
+        (Array.isArray(produced) ? produced : [produced]).filter(Boolean).forEach((question) => {
+          const finished = finishQuizQuestion(question);
+          if (!finished || keys.has(finished.key)) return;
+          keys.add(finished.key);
+          pool.push(finished);
+        });
+      });
+      return pool;
+    }
+
+    function finishQuizQuestion(question) {
+      if (!question || !question.stem || !Array.isArray(question.options)) return null;
+      const options = question.type === "tf" ? question.options.slice() : quizShuffle(unique(question.options));
+      if (options.length < 2 || !options.includes(question.correct)) return null;
+      if (question.type !== "tf" && options.length < 3) return null;
+      return {
+        key: question.key || question.family + ":" + question.stem,
+        family: question.family || question.key || "question",
+        topic: question.topic || "General",
+        type: question.type === "tf" ? "tf" : "mc",
+        persona: QUIZ_PERSONAS[question.persona] ? question.persona : quizPick(Object.keys(QUIZ_PERSONAS)),
+        stem: question.stem,
+        options,
+        answer: options.indexOf(question.correct),
+        explanation: question.explanation || "",
+        caution: question.caution || "",
+        section: question.section || "",
+        followUp: question.followUp || ""
+      };
+    }
+
+    // Topic round-robin with a per-family cap, and a few true/false questions
+    // reserved first, so a set reads like a conversation rather than a column
+    // of "what is the number".
+    function pickQuizQuestions(pool, count) {
+      let remaining = quizShuffle(pool);
+      const chosen = [];
+      const familyCount = {};
+      const take = (question) => {
+        chosen.push(question);
+        familyCount[question.family] = (familyCount[question.family] || 0) + 1;
+        remaining = remaining.filter((item) => item !== question);
+      };
+      const tfWanted = Math.min(3, Math.max(1, Math.round(count / 4)));
+      remaining.filter((question) => question.type === "tf").forEach((question) => {
+        if (chosen.length >= tfWanted || familyCount[question.family]) return;
+        take(question);
+      });
+      const topics = quizShuffle(unique(pool.map((question) => question.topic)));
+      for (let pass = 0; chosen.length < count && remaining.length; pass += 1) {
+        const cap = pass === 0 ? 1 : pass === 1 ? 2 : Infinity;
+        let added = false;
+        for (let i = 0; i < topics.length && chosen.length < count; i += 1) {
+          const candidate = remaining.find((question) => question.topic === topics[i] && (familyCount[question.family] || 0) < cap);
+          if (!candidate) continue;
+          take(candidate);
+          added = true;
+        }
+        if (!added && cap === Infinity) break;
+      }
+      return quizShuffle(chosen);
+    }
+
+    // --- Actions -----------------------------------------------------------
+    function startQuiz(count) {
+      const pool = buildQuizPool(state.filteredRows);
+      const wanted = Math.max(1, Math.min(count || state.quiz.count || QUIZ_DEFAULT_COUNT, pool.length));
+      const questions = pickQuizQuestions(pool, wanted);
+      if (!questions.length) {
+        toast("Not enough data in view to build a quiz. Widen the filters.", "info");
+        return;
+      }
+      state.quiz = {
+        ...emptyQuizState(),
+        status: "active",
+        count: count || state.quiz.count || QUIZ_DEFAULT_COUNT,
+        questions,
+        answers: questions.map(() => null),
+        signature: quizSignature(),
+        poolSize: pool.length,
+        focus: "stem"
+      };
+      renderQuiz();
+      announce("Quiz started. Question 1 of " + formatInteger(questions.length) + ".");
+    }
+
+    function answerQuiz(optionIndex) {
+      const quiz = state.quiz;
+      if (quiz.status !== "active") return;
+      const question = quiz.questions[quiz.index];
+      if (!question || quiz.answers[quiz.index] !== null) return;
+      if (!isFiniteNumber(optionIndex) || optionIndex < 0 || optionIndex >= question.options.length) return;
+      quiz.answers[quiz.index] = optionIndex;
+      quiz.focus = "next";
+      renderQuiz();
+      announce(optionIndex === question.answer
+        ? "Correct. " + question.explanation
+        : "Not quite. The answer is " + question.options[question.answer] + ". " + question.explanation);
+    }
+
+    function advanceQuiz() {
+      const quiz = state.quiz;
+      if (quiz.status !== "active") return;
+      if (quiz.answers[quiz.index] === null) return;
+      if (quiz.index + 1 >= quiz.questions.length) {
+        quiz.status = "done";
+        quiz.focus = "results";
+        renderQuiz();
+        const right = quizCorrectCount();
+        announce("Quiz finished. " + formatInteger(right) + " of " + formatInteger(quiz.questions.length) + " correct.");
+        return;
+      }
+      quiz.index += 1;
+      quiz.focus = "stem";
+      renderQuiz();
+      announce("Question " + formatInteger(quiz.index + 1) + " of " + formatInteger(quiz.questions.length) + ".");
+    }
+
+    function retryQuiz() {
+      const quiz = state.quiz;
+      if (!quiz.questions.length) return;
+      quiz.status = "active";
+      quiz.index = 0;
+      quiz.answers = quiz.questions.map(() => null);
+      quiz.reviewOpen = false;
+      quiz.focus = "stem";
+      renderQuiz();
+      announce("Same questions again. Question 1 of " + formatInteger(quiz.questions.length) + ".");
+    }
+
+    function resetQuiz() {
+      const count = state.quiz.count;
+      state.quiz = emptyQuizState();
+      state.quiz.count = count;
+      renderQuiz();
+    }
+
+    function quizCorrectCount() {
+      const quiz = state.quiz;
+      return quiz.questions.filter((question, index) => quiz.answers[index] === question.answer).length;
+    }
+
+    function handleQuizAction(action, node) {
+      if (action === "start") startQuiz(Number(node.dataset.quizCount) || state.quiz.count);
+      else if (action === "next") advanceQuiz();
+      else if (action === "retry") retryQuiz();
+      else if (action === "new") startQuiz(state.quiz.count);
+      else if (action === "reset") resetQuiz();
+      else if (action === "review") {
+        state.quiz.reviewOpen = !state.quiz.reviewOpen;
+        state.quiz.focus = "review";
+        renderQuiz();
+      } else if (action === "copy") {
+        copyText(quizPrepNotes()).then((ok) => toast(ok ? "Prep notes copied." : "Could not copy. Select the text instead.", ok ? "success" : "error"));
+      }
+    }
+
+    // --- Rendering ---------------------------------------------------------
+    function renderQuiz() {
+      const body = els.quizBody;
+      if (!body) return;
+      const quiz = state.quiz;
+      const rows = state.filteredRows;
+      if (!rows.length && quiz.status === "idle") {
+        body.innerHTML = '<div class="empty-state">' +
+          (state.allRows.length ? "No records match the current view, so there is nothing to be asked about. Widen the filters to build a quiz." : "Upload a CSV and this section builds a quiz from it: the questions a school leader would ask, answered from your own data.") +
+          "</div>";
+        if (els.quizTools) els.quizTools.innerHTML = "";
+        return;
+      }
+      const stale = quiz.status !== "idle" && quiz.signature !== quizSignature();
+      if (els.quizTools) {
+        els.quizTools.innerHTML = quiz.status === "idle"
+          ? ""
+          : '<button class="btn small ghost" type="button" data-quiz-action="reset">Start over</button>';
+      }
+      let html = "";
+      if (stale) {
+        html += '<div class="quiz-stale" role="status"><span>The view has changed since these questions were built, so their answers describe the records you were looking at then.</span>' +
+          '<button class="btn small" type="button" data-quiz-action="new">Rebuild from the current view</button></div>';
+      }
+      if (quiz.status === "idle") html += quizIntroHTML(rows);
+      else if (quiz.status === "active") html += quizQuestionHTML(quiz);
+      else html += quizResultsHTML(quiz);
+      body.innerHTML = html;
+      applyQuizFocus(quiz);
+    }
+
+    function applyQuizFocus(quiz) {
+      const target = quiz.focus;
+      quiz.focus = "";
+      if (!target) return;
+      const selector = target === "stem" ? ".quiz-stem" : target === "next" ? "[data-quiz-action='next']" : target === "results" ? ".quiz-score h3" : "[data-quiz-action='review']";
+      const node = els.quizBody.querySelector(selector);
+      if (node && typeof node.focus === "function") node.focus({ preventScroll: true });
+    }
+
+    // The intro card only needs the pool's size, and it re-renders on every
+    // filter keystroke, so the pool is kept for as long as the view it was
+    // built from is the one on screen.
+    let quizPoolCache = { signature: "", size: 0 };
+
+    function quizPoolSize(rows) {
+      const signature = quizSignature();
+      if (quizPoolCache.signature !== signature) {
+        quizPoolCache = { signature, size: buildQuizPool(rows).length };
+      }
+      return quizPoolCache.size;
+    }
+
+    function quizIntroHTML(rows) {
+      const poolSize = quizPoolSize(rows);
+      state.quiz.poolSize = poolSize;
+      const counts = QUIZ_COUNT_OPTIONS.filter((value) => value <= poolSize);
+      const options = counts.map((value) => ({ value, label: formatInteger(value) + " questions" }));
+      if (poolSize > 0 && (!counts.length || poolSize > counts[counts.length - 1])) {
+        options.push({ value: poolSize, label: "All " + formatInteger(poolSize) + " available" });
+      }
+      const preferred = counts.includes(state.quiz.count) ? state.quiz.count : (options.length ? options[options.length - 1].value : 0);
+      const thin = poolSize < QUIZ_MIN_COUNT;
+      const students = new Set(rows.map((row) => studentKey(row))).size;
+      const scope = formatInteger(rows.length) + " " + quizPlural(rows.length, "record") + " for " + formatInteger(students) + " " + quizPlural(students, "student") +
+        (state.filteredRows.length !== state.allRows.length ? " in the current filter" : " in this file");
+      return '<div class="quiz-intro">' +
+        '<div class="quiz-intro-copy">' +
+        '<p class="eyebrow">Prep for the data conversation</p>' +
+        "<h3>Could you answer these tomorrow morning?</h3>" +
+        "<p>" + escapeHTML("A leader asks about your class and you should not need to look anything up. This builds the questions they are likely to ask from the " + scope +
+          ", marks your answers against the figures on this page, and shows you where each one lives. Filter to one class or subject first to practise for that conversation.") + "</p>" +
+        '<div class="explain-grid">' +
+        '<div class="explain-card"><strong>Who is asking</strong><span>Five voices: a principal who wants the children named, an inspector probing what the data can and cannot claim, a governor, a data lead who knows MAP, and a head of department.</span></div>' +
+        '<div class="explain-card"><strong>Where the answers come from</strong><span>Every answer is computed from the records in view, the same way the dashboard computes it. Shares under ' + MIN_SHARE_N + ' records are asked as counts, as they are shown.</span></div>' +
+        '<div class="explain-card"><strong>What you get</strong><span>A score, the questions you missed with the right answer and a link to the section that shows it, and the follow-up each leader is likely to ask next.</span></div>' +
+        "</div></div>" +
+        '<div class="quiz-setup">' +
+        '<p class="eyebrow">Build a quiz</p>' +
+        (poolSize
+          ? '<div class="field"><label for="quizCountSelect">How many questions</label><select id="quizCountSelect" data-quiz-count-select>' +
+            options.map((option) => '<option value="' + option.value + '"' + (option.value === preferred ? " selected" : "") + ">" + escapeHTML(option.label) + "</option>").join("") +
+            "</select></div>" +
+            '<button class="btn primary" type="button" data-quiz-action="start" data-quiz-count="' + preferred + '">Start the quiz</button>' +
+            '<p class="quiz-pool">' + escapeHTML(formatInteger(poolSize) + " different " + quizPlural(poolSize, "question") + " can be built from this view. Each set is drawn fresh, so you can go again with new questions.") +
+            (thin ? " " + escapeHTML("That is under the " + QUIZ_MIN_COUNT + " a full run needs: widen the filters for more.") : "") + "</p>"
+          : '<p class="quiz-pool">' + escapeHTML("Nothing can be asked about this view yet: it needs records with a score. Widen the filters or load a fuller export.") + "</p>") +
+        "</div></div>";
+    }
+
+    function quizQuestionHTML(quiz) {
+      const question = quiz.questions[quiz.index];
+      const total = quiz.questions.length;
+      const answered = quiz.answers[quiz.index];
+      const done = answered !== null;
+      const right = quizCorrectCount();
+      const answeredCount = quiz.answers.filter((value) => value !== null).length;
+      const fill = (quiz.index + (done ? 1 : 0)) / total * 100;
+      const tf = question.type === "tf";
+      return '<div class="quiz-progress">' +
+        "<strong>Question " + formatInteger(quiz.index + 1) + " of " + formatInteger(total) + "</strong>" +
+        '<span class="quiz-track" role="progressbar" aria-valuemin="0" aria-valuemax="' + total + '" aria-valuenow="' + (quiz.index + (done ? 1 : 0)) + '" aria-label="Quiz progress"><span class="quiz-track-fill" style="--fill:' + fill.toFixed(1) + '%"></span></span>' +
+        '<span class="quiz-running">' + formatInteger(right) + " of " + formatInteger(answeredCount) + " answered correctly</span>" +
+        "</div>" +
+        '<div class="quiz-card">' +
+        '<div class="quiz-meta"><span class="quiz-asker">' + escapeHTML(QUIZ_PERSONAS[question.persona]) + " asks</span>" +
+        '<span class="status-pill status-neutral">' + escapeHTML(question.topic) + "</span>" +
+        (tf ? '<span class="status-pill status-neutral">True or false</span>' : "") + "</div>" +
+        '<h3 class="quiz-stem" tabindex="-1">' + escapeHTML(question.stem) + "</h3>" +
+        '<div class="quiz-options' + (tf ? " is-tf" : "") + '" role="group" aria-label="Answer options">' +
+        question.options.map((option, index) => {
+          const classes = ["quiz-option"];
+          if (done && index === question.answer) classes.push("is-correct");
+          if (done && index === answered && index !== question.answer) classes.push("is-wrong");
+          const mark = done && index === question.answer ? " ✓" : done && index === answered ? " ✗" : "";
+          return '<button class="' + classes.join(" ") + '" type="button" data-quiz-answer="' + index + '"' + (done ? " disabled" : "") +
+            (done && index === answered ? ' aria-pressed="true"' : "") + ">" +
+            '<span class="quiz-letter" aria-hidden="true">' + (tf ? (index === 0 ? "T" : "F") : QUIZ_LETTERS[index]) + "</span>" +
+            "<span>" + escapeHTML(option) + escapeHTML(mark) + "</span></button>";
+        }).join("") + "</div>" +
+        (done ? quizFeedbackHTML(question, answered, quiz.index + 1 >= total) : "") +
+        "</div>";
+    }
+
+    function quizFeedbackHTML(question, answered, last) {
+      const correct = answered === question.answer;
+      return '<div class="quiz-feedback' + (correct ? " tone-good" : " tone-warn") + '">' +
+        '<p class="quiz-verdict">' + (correct
+          ? "<strong>Correct.</strong>"
+          : "<strong>Not quite.</strong> The answer is <b>" + escapeHTML(question.options[question.answer]) + "</b>.") + "</p>" +
+        (question.explanation ? "<p>" + escapeHTML(question.explanation) + "</p>" : "") +
+        (question.caution ? '<p class="quiz-caution">' + escapeHTML(question.caution) + "</p>" : "") +
+        (question.followUp ? '<p class="quiz-followup"><strong>Likely follow-up:</strong> ' + escapeHTML(question.followUp) + "</p>" : "") +
+        '<div class="quiz-actions">' +
+        '<button class="btn small primary" type="button" data-quiz-action="next">' + (last ? "See my results" : "Next question") + "</button>" +
+        (question.section ? '<button class="btn small ghost" type="button" data-jump="' + escapeAttr(question.section) + '">Show me: ' + escapeHTML(quizSectionName(question.section)) + "</button>" : "") +
+        "</div></div>";
+    }
+
+    function quizResultsHTML(quiz) {
+      const total = quiz.questions.length;
+      const right = quizCorrectCount();
+      const pct = total ? right / total * 100 : 0;
+      const verdict = pct >= 90
+        ? "You know this data. Walk into that meeting."
+        : pct >= 70
+          ? "Solid. Read back through the ones you missed and you are ready."
+          : pct >= 50
+            ? "About half. Spend ten minutes in the sections linked below before the conversation."
+            : "Worth a slower pass through the dashboard before anyone asks. Each link below goes straight to the figure.";
+      const topics = unique(quiz.questions.map((question) => question.topic)).map((topic) => {
+        const indexes = quiz.questions.map((question, index) => question.topic === topic ? index : -1).filter((index) => index >= 0);
+        const got = indexes.filter((index) => quiz.answers[index] === quiz.questions[index].answer).length;
+        return { topic, got, of: indexes.length };
+      });
+      const weakest = topics.filter((entry) => entry.got < entry.of).sort((a, b) => (a.got / a.of) - (b.got / b.of) || b.of - a.of)[0];
+      const missed = quiz.questions.map((question, index) => ({ question, index })).filter((entry) => quiz.answers[entry.index] !== entry.question.answer);
+      const shown = quiz.reviewOpen ? quiz.questions.map((question, index) => ({ question, index })) : missed;
+      return '<div class="quiz-results">' +
+        '<div class="quiz-score">' +
+        '<div class="quiz-score-ring" style="--pct:' + pct.toFixed(1) + '%" role="img" aria-label="' + escapeAttr(formatInteger(right) + " of " + formatInteger(total) + " correct") + '"><b>' + formatInteger(right) + "/" + formatInteger(total) + "</b></div>" +
+        '<div><h3 tabindex="-1">' + escapeHTML(formatInteger(right) + " of " + formatInteger(total) + " correct") + "</h3>" +
+        "<p>" + escapeHTML(verdict) +
+        (weakest ? " " + escapeHTML("Weakest area: " + weakest.topic + " (" + formatInteger(weakest.got) + " of " + formatInteger(weakest.of) + ").") : "") + "</p></div></div>" +
+        '<div class="quiz-topics" aria-label="Score by topic">' + topics.map((entry) =>
+          '<span class="quiz-topic' + (entry.got === entry.of ? " tone-good" : " tone-warn") + '">' + escapeHTML(entry.topic) + " <b>" + formatInteger(entry.got) + "/" + formatInteger(entry.of) + "</b></span>").join("") + "</div>" +
+        '<div class="quiz-actions">' +
+        '<button class="btn small primary" type="button" data-quiz-action="new">New questions</button>' +
+        '<button class="btn small" type="button" data-quiz-action="retry">Retry these questions</button>' +
+        '<button class="btn small ghost" type="button" data-quiz-action="review" aria-expanded="' + (quiz.reviewOpen ? "true" : "false") + '">' + (quiz.reviewOpen ? "Show only the ones I missed" : "Review every question") + "</button>" +
+        '<button class="btn small ghost" type="button" data-quiz-action="copy">Copy prep notes</button>' +
+        "</div>" +
+        (shown.length
+          ? '<div class="subsection-title">' + (quiz.reviewOpen ? "Every question, with the answer" : "The ones to look at again") + "</div>" +
+            '<div class="quiz-review">' + shown.map((entry) => quizReviewItemHTML(entry.question, quiz.answers[entry.index], entry.index)).join("") + "</div>"
+          : '<p class="quiz-note">Nothing missed. Use “Review every question” to read the answers back as prep notes, or draw a new set.</p>') +
+        "</div>";
+    }
+
+    function quizReviewItemHTML(question, answered, index) {
+      const correct = answered === question.answer;
+      return '<div class="quiz-review-item' + (correct ? " is-right" : "") + '">' +
+        '<div class="quiz-meta"><span class="quiz-asker">' + escapeHTML(QUIZ_PERSONAS[question.persona]) + " asks</span>" +
+        '<span class="status-pill status-neutral">' + escapeHTML(question.topic) + "</span></div>" +
+        '<h4 class="quiz-stem">' + formatInteger(index + 1) + ". " + escapeHTML(question.stem) + "</h4>" +
+        '<div class="quiz-answer-line">' +
+        '<span class="is-right"><strong>Answer:</strong> ' + escapeHTML(question.options[question.answer]) + "</span>" +
+        (correct ? "" : '<span class="is-wrong"><strong>You said:</strong> ' + escapeHTML(answered === null ? "no answer" : question.options[answered]) + "</span>") +
+        "</div>" +
+        (question.explanation ? "<p>" + escapeHTML(question.explanation) + "</p>" : "") +
+        (question.caution ? '<p class="quiz-caution">' + escapeHTML(question.caution) + "</p>" : "") +
+        (question.followUp ? '<p class="quiz-followup"><strong>Likely follow-up:</strong> ' + escapeHTML(question.followUp) + "</p>" : "") +
+        (question.section ? '<div class="quiz-actions"><button class="btn small ghost" type="button" data-jump="' + escapeAttr(question.section) + '">Show me: ' + escapeHTML(quizSectionName(question.section)) + "</button></div>" : "") +
+        "</div>";
+    }
+
+    // Plain text of the whole set, for pasting into meeting prep notes.
+    function quizPrepNotes() {
+      const quiz = state.quiz;
+      const rows = state.filteredRows;
+      const students = new Set(rows.map((row) => studentKey(row))).size;
+      const lines = [
+        "Check my understanding - prep notes",
+        state.fileName + " - " + formatInteger(rows.length) + " records, " + formatInteger(students) + " students in view - " +
+          (isBaselineMode() ? currentWindowName() + " baseline" : state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel),
+        "Score: " + formatInteger(quizCorrectCount()) + " of " + formatInteger(quiz.questions.length),
+        ""
+      ];
+      quiz.questions.forEach((question, index) => {
+        const answered = quiz.answers[index];
+        lines.push(formatInteger(index + 1) + ". [" + QUIZ_PERSONAS[question.persona] + " - " + question.topic + "] " + question.stem);
+        lines.push("   Answer: " + question.options[question.answer] + (answered !== null && answered !== question.answer ? "   (you said: " + question.options[answered] + ")" : ""));
+        if (question.explanation) lines.push("   Why: " + question.explanation);
+        if (question.caution) lines.push("   Note: " + question.caution);
+        if (question.followUp) lines.push("   Likely follow-up: " + question.followUp);
+        if (question.section) lines.push("   Where: " + quizSectionName(question.section));
+        lines.push("");
+      });
+      return lines.join("\n");
+    }
+
+    // --- The question bank -------------------------------------------------
+    // Each generator reads the view and returns nothing when its guards fail:
+    // too few records for the figure to mean anything, a tie at the top, a
+    // field the export does not carry, or the wrong data mode. The stems are
+    // written in the leader's voice, in direct speech.
+    function quizWindowQuestion(ctx) {
+      const parse = (label) => {
+        const match = /^(fall|winter|spring)\s+(\d{4})$/i.exec(cleanString(label));
+        return match ? { season: match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase(), year: Number(match[2]) } : null;
+      };
+      const seasons = ["Fall", "Winter", "Spring"];
+      const text = (window) => window.season + " " + window.year;
+      if (ctx.growth) {
+        const from = parse(ctx.prior);
+        const to = parse(ctx.window);
+        if (!from || !to) return null;
+        const correct = text(from) + " to " + text(to);
+        const candidates = [
+          text({ season: from.season, year: from.year - 1 }) + " to " + text({ season: to.season, year: to.year - 1 }),
+          text({ season: from.season, year: from.year + 1 }) + " to " + text({ season: to.season, year: to.year + 1 })
+        ].concat(
+          seasons.filter((season) => season !== from.season).map((season) => text({ season, year: from.year }) + " to " + text(to)),
+          seasons.filter((season) => season !== to.season).map((season) => text(from) + " to " + text({ season, year: to.year }))
+        );
+        const options = quizOptionsFrom(correct, quizShuffle(candidates), 3);
+        if (!options) return null;
+        return {
+          family: "window", topic: "Snapshot", type: "mc", persona: "inspector",
+          stem: "Which two test windows is this growth measured between?",
+          options, correct,
+          explanation: "The file carries " + correct + ": " + formatInteger(ctx.metrics.pairedCount) + " records in view have both windows, so growth, gap closure and quadrant movement are all measured against that span.",
+          section: "sec-snapshot",
+          followUp: "How many weeks of teaching sit between those two tests?"
+        };
+      }
+      const only = parse(ctx.window);
+      if (!only) return null;
+      const correct = text(only);
+      const candidates = [text({ season: only.season, year: only.year - 1 }), text({ season: only.season, year: only.year + 1 })]
+        .concat(seasons.filter((season) => season !== only.season).map((season) => text({ season, year: only.year })));
+      const options = quizOptionsFrom(correct, quizShuffle(candidates), 3);
+      if (!options) return null;
+      return {
+        family: "window", topic: "Snapshot", type: "mc", persona: "inspector",
+        stem: "Which test window is this data from?",
+        options, correct,
+        explanation: "A single window, " + correct + ". With no earlier test to compare against, nothing here measures growth - it describes where the group is starting.",
+        section: "sec-snapshot",
+        followUp: "When is the next window, and what will you be looking for in it?"
+      };
+    }
+
+    function quizNormSection(ctx) {
+      return ctx.baseline ? "sec-snapshot" : "sec-baseline";
+    }
+
+    // Records that stand for a student in "which student" questions, and the
+    // subject cards those questions rotate through.
+    function quizSubjectsWithStudents(ctx, minimum) {
+      return ctx.subjects.filter((subject) => quizScoredStudentRows(ctx, subject).length >= (minimum || 3));
+    }
+
+    // In a growth file a record with no end score is describing the earlier
+    // window, so it has no place in a question about where students finished.
+    function quizScoredStudentRows(ctx, subject) {
+      return quizStudentRows(ctx.rows, subject).filter((row) => isFiniteNumber(row.currentPercentile) && (ctx.baseline || !row.hasMissingEndScore));
+    }
+
+    // "Spring, same grade" is a column label; in a sentence it is a season.
+    function quizHorizonPhrase(goals) {
+      const label = goals && goals.horizonLabel ? goals.horizonLabel : "the next window";
+      if (/^spring, same grade$/i.test(label)) return "spring of the same grade";
+      return label.replace(/^Spring of grade/, "spring of grade");
+    }
+
+    // A view with two grades in it has two horizons, so the sentence names
+    // the season rather than one grade's label.
+    function quizHorizonForRows(rows) {
+      const labels = unique(rows.filter((row) => row.goals).map((row) => row.goals.horizonLabel));
+      if (labels.length === 1) return quizHorizonPhrase({ horizonLabel: labels[0] });
+      return "next spring";
+    }
+
+    function quizNameList(names, limit) {
+      const shown = names.slice(0, limit || 6);
+      const extra = names.length - shown.length;
+      return shown.join(", ") + (extra > 0 ? " and " + formatInteger(extra) + " more" : "");
+    }
+
+    const QUIZ_GENERATORS = [
+      // ----------------------------------------------------------------- Snapshot
+      function quizStudents(ctx) {
+        const options = quizCountOptions(ctx.studentCount);
+        if (!options) return null;
+        const multi = ctx.rows.length !== ctx.studentCount;
+        return {
+          family: "students", topic: "Snapshot", type: "mc", persona: "governor",
+          stem: "How many students are we talking about in this view?",
+          options, correct: formatInteger(ctx.studentCount),
+          explanation: formatInteger(ctx.studentCount) + " " + quizPlural(ctx.studentCount, "student") + " across " + formatInteger(ctx.rows.length) + " student-subject " + quizPlural(ctx.rows.length, "record") +
+            (multi ? ": a student tested in two subjects is two records, which is why most figures here count records." : "."),
+          section: "sec-snapshot",
+          followUp: "And how many of them are on your support list?"
+        };
+      },
+      quizWindowQuestion,
+      function quizCentralPercentile(ctx) {
+        const metrics = ctx.metrics;
+        if (ctx.baseline) {
+          if (metrics.percentileCount < 3 || !isFiniteNumber(metrics.medianCurrentPercentile)) return null;
+          const options = quizNumberOptions(metrics.medianCurrentPercentile, [3, 4.5, 6, 8.5, 12, 15]);
+          if (!options) return null;
+          return {
+            family: "central-percentile", topic: "Achievement", type: "mc", persona: "principal",
+            stem: "What is the median percentile of this group in " + ctx.window + "?",
+            options, correct: formatNumber(metrics.medianCurrentPercentile),
+            explanation: "The median " + ctx.window + " percentile is " + formatNumber(metrics.medianCurrentPercentile) + " over " + formatInteger(metrics.percentileCount) + " records with a percentile: half the records sit above it and half below. The mean RIT is " + formatNumber(metrics.avgCurrentRIT) + ".",
+            section: "sec-snapshot",
+            followUp: "So roughly what share of the class is working at or above the national middle?"
+          };
+        }
+        if (metrics.pairedCount < 3 || !isFiniteNumber(metrics.avgEndPercentilePaired)) return null;
+        const options = quizNumberOptions(metrics.avgEndPercentilePaired, [2.7, 4.3, 6.1, 8.9, 11.6, 14.2]);
+        if (!options) return null;
+        return {
+          family: "central-percentile", topic: "Achievement", type: "mc", persona: "principal",
+          stem: "For the records with both windows, what was the average percentile at the end of " + ctx.window + "?",
+          options, correct: formatNumber(metrics.avgEndPercentilePaired),
+          explanation: "The " + formatInteger(metrics.pairedCount) + " matched records averaged " + formatNumber(metrics.avgStartPercentilePaired) + " in " + ctx.prior + " and " + formatNumber(metrics.avgEndPercentilePaired) + " in " + ctx.window + ". Both means are taken over the same records, so the two are a fair comparison.",
+          section: "sec-snapshot",
+          followUp: "Where did they start, and is that movement in the right direction?"
+        };
+      },
+      function quizCentralRIT(ctx) {
+        const metrics = ctx.metrics;
+        if (metrics.scoredCount < 3) return null;
+        const value = ctx.baseline ? metrics.avgCurrentRIT : metrics.medianCurrentRIT;
+        if (!isFiniteNumber(value)) return null;
+        const options = quizNumberOptions(value, [1.8, 3.3, 4.7, 7.2, 9.6]);
+        if (!options) return null;
+        return {
+          family: "central-rit", topic: "Achievement", type: "mc", persona: "datalead",
+          stem: ctx.baseline
+            ? "What is the mean RIT score of this group in " + ctx.window + "?"
+            : "What is the median RIT score of this group at the end of " + ctx.window + "?",
+          options, correct: formatNumber(value),
+          explanation: (ctx.baseline ? "Mean RIT " : "Median RIT ") + formatNumber(value) + " over " + formatInteger(metrics.scoredCount) + " scored records. RIT is NWEA's equal-interval scale, so it is the number to quote for growth; the percentile says where that RIT sits against same-grade peers.",
+          section: ctx.baseline ? "sec-snapshot" : "sec-baseline",
+          followUp: "How does that compare with the US norm for this grade and season?"
+        };
+      },
+      // ----------------------------------------------------------- Achievement
+      function quizSecureShare(ctx) {
+        const entry = ctx.metrics.shares.secure;
+        if (!entry || entry.of < 2) return null;
+        const built = quizShareOptions(entry);
+        if (!built) return null;
+        return {
+          family: "secure-share", topic: "Achievement", type: "mc", persona: "inspector",
+          stem: built.asCount
+            ? "Of the " + formatInteger(entry.of) + " records with a percentile, how many are at or above the secure benchmark, the 61st percentile?"
+            : "What proportion of records are at or above the secure benchmark, the 61st percentile?",
+          options: built.options, correct: built.correct,
+          explanation: quizShareSentence(entry, "records with a percentile") + " are at or above the 61st percentile. The 61st is a locally chosen secure line, not an NWEA definition." + quizThinNote(entry),
+          section: ctx.baseline ? "sec-snapshot" : "sec-target",
+          followUp: "What would it take to move that share up by ten points, and who is closest to the line?"
+        };
+      },
+      function quizBelowStrategic(ctx) {
+        const metrics = ctx.metrics;
+        if (metrics.percentileCount < 3) return null;
+        const count = (metrics.tierCounts.intensive || 0) + (metrics.tierCounts.strategic || 0);
+        const options = quizCountOptions(count, metrics.percentileCount);
+        if (!options) return null;
+        return {
+          family: "below-41", topic: "Achievement", type: "mc", persona: "principal",
+          stem: "How many records sit below the 41st percentile - Tier 2 or Tier 3 - in " + ctx.window + "?",
+          options, correct: formatInteger(count),
+          explanation: formatInteger(count) + " of " + formatInteger(metrics.percentileCount) + " records with a percentile: " + formatInteger(metrics.tierCounts.intensive || 0) + " Intensive (at or below the 20th) and " + formatInteger(metrics.tierCounts.strategic || 0) + " Strategic (21st to 40th).",
+          section: ctx.baseline ? "sec-snapshot" : "sec-baseline",
+          followUp: "Which of them are already in an intervention group, and who is not?"
+        };
+      },
+      function quizLargestTier(ctx) {
+        const counts = ctx.metrics.tierCounts;
+        const ranked = ACHIEVEMENT_TIERS.map((tier) => ({ tier, count: counts[tier.key] || 0 })).sort((a, b) => b.count - a.count);
+        if (ctx.metrics.percentileCount < 3 || ranked[0].count === 0 || ranked[0].count === ranked[1].count) return null;
+        const options = quizLabelOptions(ranked[0].tier.name, QUIZ_TIER_NAMES);
+        if (!options) return null;
+        return {
+          family: "largest-tier", topic: "Achievement", type: "mc", persona: "hod",
+          stem: "Which instructional tier holds the most records in " + ctx.window + "?",
+          options, correct: ranked[0].tier.name,
+          explanation: ranked.map((entry) => entry.tier.name + " " + formatInteger(entry.count)).join(", ") + ". " + ranked[0].tier.name + " is " + ranked[0].tier.tierLabel + ": " + ranked[0].tier.blurb.toLowerCase() + ".",
+          section: "sec-baseline",
+          followUp: "What does core teaching look like for that tier, and what is different for the tiers either side of it?"
+        };
+      },
+      function quizStrongestSubject(ctx) {
+        const scored = ctx.subjectMetrics.map((entry) => ({
+          subject: entry.subject,
+          count: ctx.baseline ? entry.metrics.percentileCount : entry.rows.filter((row) => isFiniteNumber(row.endPercentile)).length,
+          value: ctx.baseline ? entry.metrics.medianCurrentPercentile : entry.metrics.avgEndPercentile
+        })).filter((entry) => entry.count >= 3 && isFiniteNumber(entry.value));
+        if (scored.length < 2) return null;
+        const label = ctx.baseline ? "median percentile" : "average end-of-" + ctx.window + " percentile";
+        const thin = scored.filter((entry) => entry.count < MIN_SHARE_N);
+        const caution = thin.length
+          ? "Small numbers: " + thin.map((entry) => entry.subject + " has " + formatInteger(entry.count)).join(", ") + " records, so read this as a description of the file rather than a finding about the subject."
+          : "";
+        const build = (highest) => {
+          const sorted = scored.slice().sort((a, b) => highest ? b.value - a.value : a.value - b.value);
+          if (sorted[0].value === sorted[1].value) return null;
+          const options = quizLabelOptions(sorted[0].subject, scored.map((entry) => entry.subject), SUBJECTS);
+          if (!options) return null;
+          return {
+            key: (highest ? "strongest-subject" : "weakest-subject"), family: "subject-rank", topic: "Subjects", type: "mc", persona: "hod",
+            stem: highest
+              ? "Which subject has the highest " + label + " in this view?"
+              : "Which subject " + (ctx.baseline ? "starts furthest back" : "finished furthest back") + " on " + label + "?",
+            options, correct: sorted[0].subject,
+            explanation: sorted.map((entry) => entry.subject + " " + formatNumber(entry.value) + " (" + formatInteger(entry.count) + " records)").join("; ") + ".",
+            caution,
+            section: "sec-overview",
+            followUp: highest
+              ? "What is happening in " + sorted[0].subject + " that the other subjects could borrow?"
+              : "What is different about how " + sorted[0].subject + " is taught, and what changes next term?"
+          };
+        };
+        return [build(true), build(false)];
+      },
+      // ----------------------------------------------------------------- Norms
+      function quizNormDelta(ctx) {
+        const value = ctx.metrics.avgUSNormDeltaRIT;
+        const matched = ctx.rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT)).length;
+        if (matched < 3 || !isFiniteNumber(value) || Math.abs(value) < 1) return null;
+        const options = quizSignedOptions(value, [2, 3.5, 5, 8]);
+        if (!options) return null;
+        const direction = value > 0 ? "above" : "below";
+        return {
+          family: "norm-delta", topic: "Norms", type: "mc", persona: "datalead",
+          stem: "On average, how far is this group's RIT from the US norm mean for their grade and season?",
+          options, correct: formatSignedNumber(value),
+          explanation: "The mean RIT sits " + formatNumber(Math.abs(value)) + " RIT " + direction + " the US grade/season norm mean, over " + formatInteger(matched) + " records matched to a norm. The norm mean is roughly the 50th percentile for that grade.",
+          caution: "The norm table built into this page is an approximate reference, not the official NWEA norms study.",
+          section: quizNormSection(ctx),
+          followUp: ctx.growth ? "Is that distance closing or widening across the two windows?" : "Which subject carries most of that distance?"
+        };
+      },
+      function quizNormAboveTF(ctx) {
+        const value = ctx.metrics.avgUSNormDeltaRIT;
+        const matched = ctx.rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT)).length;
+        if (matched < 3 || !isFiniteNumber(value) || Math.abs(value) < 0.5) return null;
+        return {
+          key: "norm-above-tf", family: "norm-delta", topic: "Norms", type: "tf", persona: "governor",
+          stem: "True or false: on average, this group scores above the US norm for their grade and season.",
+          ...quizTF(value > 0),
+          explanation: "The mean RIT is " + formatSignedNumber(value) + " RIT against the US grade/season norm mean, so the group is on average " + (value > 0 ? "above" : "below") + " it.",
+          section: quizNormSection(ctx),
+          followUp: "What share of the records are individually at or above that norm?"
+        };
+      },
+      function quizNormShare(ctx) {
+        const entry = ctx.metrics.shares.atOrAboveUSNorm;
+        if (!entry || entry.of < 2) return null;
+        const built = quizShareOptions(entry);
+        if (!built) return null;
+        return {
+          family: "norm-share", topic: "Norms", type: "mc", persona: "inspector",
+          stem: built.asCount
+            ? "Of the " + formatInteger(entry.of) + " records matched to a US norm, how many are at or above the norm mean for their grade and season?"
+            : "What share of records are at or above the US norm mean for their grade and season?",
+          options: built.options, correct: built.correct,
+          explanation: quizShareSentence(entry, "records matched to a norm") + " are at or above the US norm mean. The norm mean sits near the 50th percentile, so this is close to asking how many are in the top half nationally." + quizThinNote(entry),
+          section: "sec-baseline",
+          followUp: "And how many are more than a grade below where they should be?"
+        };
+      },
+      function quizGradeBelow(ctx) {
+        const graded = ctx.rows.filter((row) => isFiniteNumber(row.usNormGradeGap));
+        if (graded.length < 3) return null;
+        const count = graded.filter((row) => row.usNormGradeGap <= -1).length;
+        const behindNames = unique(graded.filter((row) => row.usNormGradeGap <= -1).map((row) => row.studentName));
+        const options = quizCountOptions(count, graded.length);
+        if (!options) return null;
+        return {
+          family: "grade-below", topic: "Norms", type: "mc", persona: "principal",
+          stem: "How many records are testing a grade or more below their grade placement?",
+          options, correct: formatInteger(count),
+          explanation: formatInteger(count) + " of " + formatInteger(graded.length) + " records with a grade-level estimate sit a grade or more below placement" +
+            (count ? ", covering " + formatInteger(behindNames.length) + " " + quizPlural(behindNames.length, "student") + ": " + quizNameList(behindNames, 5) + "." : "."),
+          caution: "Approximate placement only: grade-level equivalence compares a RIT with the mean RIT of each grade in the same season. It is not a reading or maths grade level.",
+          section: "sec-baseline",
+          followUp: "What are those students getting that is different from the rest of the class?"
+        };
+      },
+      // -------------------------------------------------------------- Students
+      function quizTopStudent(ctx) {
+        return quizPickSome(quizSubjectsWithStudents(ctx, 3), 2).map((subject) => {
+          const found = quizUniqueExtreme(quizScoredStudentRows(ctx, subject), (row) => row.currentPercentile, true);
+          if (!found) return null;
+          const options = quizLabelOptions(found.row.studentName, found.others);
+          if (!options) return null;
+          const runnerUp = found.sorted[1];
+          return {
+            key: "top-student:" + subject, family: "top-student", topic: "Students", type: "mc", persona: "principal",
+            stem: ctx.baseline
+              ? "Who has the highest " + ctx.window + " percentile in " + subject + "?"
+              : "Who finished " + ctx.window + " with the highest percentile in " + subject + "?",
+            options, correct: found.row.studentName,
+            explanation: found.row.studentName + " is at the " + ordinal(found.row.currentPercentile) + " percentile in " + subject + " (RIT " + formatNumber(found.row.currentRIT, 0) + "). Next is " + runnerUp.studentName + " at the " + ordinal(runnerUp.currentPercentile) + ".",
+            section: "sec-grouping",
+            followUp: "What are you doing to stretch " + found.row.studentName + ", and is their growth keeping up with their achievement?"
+          };
+        });
+      },
+      function quizLowestStudent(ctx) {
+        return quizPickSome(quizSubjectsWithStudents(ctx, 3), 2).map((subject) => {
+          const found = quizUniqueExtreme(quizScoredStudentRows(ctx, subject), (row) => row.currentPercentile, false);
+          if (!found || found.row.currentPercentile >= SECURE_BENCHMARK) return null;
+          const options = quizLabelOptions(found.row.studentName, found.others);
+          if (!options) return null;
+          return {
+            key: "lowest-student:" + subject, family: "lowest-student", topic: "Students", type: "mc", persona: "principal",
+            stem: "Who is furthest from the secure benchmark, the 61st percentile, in " + subject + "?",
+            options, correct: found.row.studentName,
+            explanation: found.row.studentName + " is at the " + ordinal(found.row.currentPercentile) + " percentile in " + subject + ", " + formatNumber(SECURE_BENCHMARK - found.row.currentPercentile, 0) + " percentile points below the line. The dashboard puts them in " + planningGroup(found.row) + ".",
+            section: "sec-priority",
+            followUp: "What changes for " + found.row.studentName + " this week, and how will you know it is working?"
+          };
+        });
+      },
+      function quizStudentTierOrBand(ctx) {
+        const rows = quizScoredStudentRows(ctx);
+        if (rows.length < 3) return null;
+        return quizPickSome(rows, 2).map((row) => {
+          if (ctx.baseline) {
+            const options = quizLabelOptions(row.currentTier.name, QUIZ_TIER_NAMES);
+            if (!options) return null;
+            return {
+              key: "student-tier:" + studentKey(row) + ":" + row.subject, family: "student-tier", topic: "Students", type: "mc", persona: "principal",
+              stem: "Which instructional tier is " + row.studentName + " in for " + row.subject + "?",
+              options, correct: row.currentTier.name,
+              explanation: row.studentName + " is at the " + ordinal(row.currentPercentile) + " percentile in " + row.subject + ", which is the " + row.currentTier.name + " tier (" + row.currentTier.tierLabel + ": " + row.currentTier.blurb.toLowerCase() + ").",
+              section: "sec-grouping",
+              followUp: "And in their other subjects - is the profile even?"
+            };
+          }
+          const band = row.endBand.rank ? row.endBand : row.currentBand;
+          if (!band.rank) return null;
+          const options = quizLabelOptions(band.name, QUIZ_BAND_NAMES);
+          if (!options) return null;
+          return {
+            key: "student-band:" + studentKey(row) + ":" + row.subject, family: "student-band", topic: "Students", type: "mc", persona: "principal",
+            stem: "Which percentile band did " + row.studentName + " finish " + ctx.window + " in for " + row.subject + "?",
+            options, correct: band.name,
+            explanation: row.studentName + " ended at the " + ordinal(row.currentPercentile) + " percentile in " + row.subject + ": the " + band.name + " band (" + band.min + "-" + band.max + ")" +
+              (row.startBand.rank ? ", having started in " + row.startBand.name + " (" + row.bandMovement.toLowerCase() + ")." : "."),
+            section: "sec-grouping",
+            followUp: "Did they move bands this year, and what explains it?"
+          };
+        });
+      },
+      function quizStudentGroup(ctx) {
+        const rows = quizStudentRows(ctx.rows).filter((row) => planningGroup(row) && planningGroup(row) !== "Incomplete Data" && planningGroup(row) !== "No Score Yet");
+        if (rows.length < 3) return null;
+        const present = unique(ctx.rows.map((row) => planningGroup(row)));
+        return quizPickSome(rows, 2).map((row) => {
+          const group = planningGroup(row);
+          const options = quizLabelOptions(group, present, ctx.baseline ? QUIZ_BASELINE_GROUPS : QUIZ_GROWTH_GROUPS);
+          if (!options) return null;
+          return {
+            key: "student-group:" + studentKey(row) + ":" + row.subject, family: "student-group", topic: "Planning groups", type: "mc", persona: "hod",
+            stem: "Which planning group does the dashboard put " + row.studentName + " in for " + row.subject + "?",
+            options, correct: group,
+            explanation: group + ". " + planningAction(row),
+            section: "sec-grouping",
+            followUp: "Do you agree with that placement, and what would change your mind?"
+          };
+        });
+      },
+      // ------------------------------------------------------- Planning groups
+      function quizLargestGroup(ctx) {
+        const counts = countBy(ctx.rows.filter((row) => planningGroup(row)), (row) => planningGroup(row));
+        const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        if (ranked.length < 2 || ranked[0][1] === ranked[1][1] || ctx.rows.length < 3) return null;
+        const options = quizLabelOptions(ranked[0][0], ranked.map((entry) => entry[0]), ctx.baseline ? QUIZ_BASELINE_GROUPS : QUIZ_GROWTH_GROUPS);
+        if (!options) return null;
+        return {
+          family: "largest-group", topic: "Planning groups", type: "mc", persona: "principal",
+          stem: "Which planning group holds the most records in this view?",
+          options, correct: ranked[0][0],
+          explanation: ranked.map((entry) => entry[0] + " " + formatInteger(entry[1])).join(", ") + ". " + (GROUP_ACTIONS[ranked[0][0]] || ""),
+          section: "sec-grouping",
+          followUp: "What does that group get in your timetable that the others do not?"
+        };
+      },
+      function quizPriorityCount(ctx) {
+        const count = ctx.rows.filter((row) => focusReasons(row).length).length;
+        const options = quizCountOptions(count, ctx.rows.length);
+        if (!options || ctx.rows.length < 3) return null;
+        const names = unique(ctx.rows.filter((row) => focusReasons(row).length).map((row) => row.studentName));
+        return {
+          family: "priority-count", topic: "Planning groups", type: "mc", persona: "principal",
+          stem: ctx.baseline
+            ? "How many records are on your start-of-year support list?"
+            : "How many records are on your priority list?",
+          options, correct: formatInteger(count),
+          explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records, covering " + formatInteger(names.length) + " " + quizPlural(names.length, "student") +
+            (ctx.baseline
+              ? ". A record is listed when it starts below the 41st percentile, tests a grade or more below placement, sits well below the norm, needs above-typical growth to reach grade level, or has a score that needs confirming."
+              : ". A record is listed for missed growth, a band drop, a missing end score, negative growth, finishing below the 21st percentile, secure regression or a widened gap."),
+          section: "sec-priority",
+          followUp: "Name three of them and tell me what is different for them this week."
+        };
+      },
+      function quizCelebrationCount(ctx) {
+        const count = ctx.rows.filter((row) => strengthReasons(row).length).length;
+        const options = quizCountOptions(count, ctx.rows.length);
+        if (!options || ctx.rows.length < 3) return null;
+        return {
+          family: "celebration-count", topic: "Planning groups", type: "mc", persona: "governor",
+          stem: ctx.baseline
+            ? "How many records are on the strengths list - already at or above the secure benchmark or the US norm?"
+            : "How many records are on the celebration list?",
+          options, correct: formatInteger(count),
+          explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records" +
+            (ctx.baseline
+              ? " are already at or above the 61st percentile, above the norm, or ahead of the grade-level target."
+              : " exceeded projected growth, moved up a band, closed or sharply reduced a gap, made a strong RIT gain, or rose from low to high on a quadrant axis."),
+          section: "sec-celebration",
+          followUp: "Who on that list is at risk of coasting now that they are secure?"
+        };
+      },
+      function quizPriorityReason(ctx) {
+        if (!ctx.growth) return null;
+        const rows = quizStudentRows(ctx.rows).filter((row) => row.priorityReasons.length && QUIZ_PRIORITY_REASONS.filter((reason) => !row.priorityReasons.includes(reason)).length >= 3);
+        if (!rows.length) return null;
+        return quizPickSome(rows, 2).map((row) => {
+          const correct = quizPick(row.priorityReasons);
+          const options = quizLabelOptions(correct, QUIZ_PRIORITY_REASONS.filter((reason) => !row.priorityReasons.includes(reason)));
+          if (!options) return null;
+          return {
+            key: "priority-reason:" + studentKey(row) + ":" + row.subject, family: "priority-reason", topic: "Students", type: "mc", persona: "principal",
+            stem: row.studentName + " is on your priority list for " + row.subject + ". Which of these is one of the reasons?",
+            options, correct,
+            explanation: "The list gives: " + row.priorityReasons.join("; ") + ". The other options do not apply to this record." +
+              (isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth) ? " Growth was " + formatSignedNumber(row.observedGrowth) + " RIT against a projection of " + formatSignedNumber(row.projectedGrowth) + "." : ""),
+            section: "sec-priority",
+            followUp: "What have you changed for " + row.studentName + " since you saw this, and when will you check it is working?"
+          };
+        });
+      },
+      function quizCelebrationReason(ctx) {
+        if (!ctx.growth) return null;
+        const rows = quizStudentRows(ctx.rows).filter((row) => row.celebrationReasons.length && QUIZ_CELEBRATION_REASONS.filter((reason) => !row.celebrationReasons.includes(reason)).length >= 3);
+        if (!rows.length) return null;
+        return quizPickSome(rows, 2).map((row) => {
+          const correct = quizPick(row.celebrationReasons);
+          const options = quizLabelOptions(correct, QUIZ_CELEBRATION_REASONS.filter((reason) => !row.celebrationReasons.includes(reason)));
+          if (!options) return null;
+          return {
+            key: "celebration-reason:" + studentKey(row) + ":" + row.subject, family: "celebration-reason", topic: "Students", type: "mc", persona: "hod",
+            stem: row.studentName + " is on your celebration list for " + row.subject + ". Which of these is one of the reasons?",
+            options, correct,
+            explanation: "The list gives: " + row.celebrationReasons.join("; ") + ". The other options do not apply to this record." +
+              (isFiniteNumber(row.ritChange) ? " RIT moved " + formatSignedNumber(row.ritChange) + (isFiniteNumber(row.percentileChange) ? (row.percentileChange === 0 ? ", percentile unchanged" : ", percentile " + formatSignedNumber(row.percentileChange)) : "") + "." : ""),
+            section: "sec-celebration",
+            followUp: "What produced that, and how do you keep it going next term?"
+          };
+        });
+      },
+      // ---------------------------------------------------------------- Growth
+      function quizMetShare(ctx) {
+        if (!ctx.growth) return null;
+        const entry = ctx.metrics.shares.met;
+        if (!entry || entry.of < 2) return null;
+        const built = quizShareOptions(entry);
+        if (!built) return null;
+        return {
+          family: "met-share", topic: "Growth", type: "mc", persona: "inspector",
+          stem: built.asCount
+            ? "Of the " + formatInteger(entry.of) + " records with a growth result, how many met their projected growth?"
+            : "What percentage of records met their projected growth between " + ctx.prior + " and " + ctx.window + "?",
+          options: built.options, correct: built.correct,
+          explanation: quizShareSentence(entry, "records with a growth result") + " met projected growth. NWEA sets each projection from the student's own starting RIT and grade, so meeting it means growing at least as much as typical peers who started in the same place." +
+            (ctx.metrics.metTooCloseCount ? " " + formatInteger(ctx.metrics.metTooCloseCount) + " of the results sit within measurement error of the projection." : "") + quizThinNote(entry),
+          section: "sec-snapshot",
+          followUp: "Which students missed it, and what is different about your plan for them now?"
+        };
+      },
+      function quizExceededShare(ctx) {
+        if (!ctx.growth) return null;
+        const entry = ctx.metrics.shares.exceeded;
+        if (!entry || entry.of < 2) return null;
+        const built = quizShareOptions(entry);
+        if (!built) return null;
+        return {
+          family: "exceeded-share", topic: "Growth", type: "mc", persona: "datalead",
+          stem: built.asCount
+            ? "Of the " + formatInteger(entry.of) + " records with projected and observed growth, how many exceeded their projection?"
+            : "What percentage of records exceeded their projected growth?",
+          options: built.options, correct: built.correct,
+          explanation: quizShareSentence(entry, "records with projected and observed growth") + " grew more than NWEA projected for them." + quizThinNote(entry),
+          section: "sec-snapshot",
+          followUp: "Is that concentrated in one subject or one class, or spread across the group?"
+        };
+      },
+      function quizPercentileRoseTF(ctx) {
+        if (!ctx.growth) return null;
+        const metrics = ctx.metrics;
+        if (metrics.pairedCount < 3 || !isFiniteNumber(metrics.avgStartPercentilePaired) || !isFiniteNumber(metrics.avgEndPercentilePaired)) return null;
+        const delta = metrics.avgEndPercentilePaired - metrics.avgStartPercentilePaired;
+        if (Math.abs(delta) < 0.5) return null;
+        return {
+          family: "percentile-rose-tf", topic: "Growth", type: "tf", persona: "governor",
+          stem: "True or false: on average, the records with both windows finished " + ctx.window + " at a higher percentile than they started " + ctx.prior + ".",
+          ...quizTF(delta > 0),
+          explanation: "The " + formatInteger(metrics.pairedCount) + " matched records averaged " + formatNumber(metrics.avgStartPercentilePaired) + " in " + ctx.prior + " and " + formatNumber(metrics.avgEndPercentilePaired) + " in " + ctx.window + ", a change of " + formatSignedNumber(delta) + " percentile points. Holding a percentile already means growing at the typical rate; a rise means faster than typical.",
+          section: "sec-snapshot",
+          followUp: "So did the group grow faster or slower than typical peers, and how do you know?"
+        };
+      },
+      function quizBandMovement(ctx) {
+        if (!ctx.growth) return null;
+        const valid = ctx.rows.filter((row) => row.startBand.rank && row.endBand.rank);
+        if (valid.length < 3) return null;
+        return [true, false].map((up) => {
+          const count = up ? ctx.metrics.movedUpCount : ctx.metrics.movedDownCount;
+          const options = quizCountOptions(count, valid.length);
+          if (!options) return null;
+          return {
+            key: up ? "moved-up" : "moved-down", family: "band-movement", topic: "Gap closure", type: "mc", persona: "hod",
+            stem: "How many records moved " + (up ? "up" : "down") + " at least one percentile band between " + ctx.prior + " and " + ctx.window + "?",
+            options, correct: formatInteger(count),
+            explanation: formatInteger(count) + " of " + formatInteger(valid.length) + " records with a band at both windows moved " + (up ? "up" : "down") + " (" + formatInteger(ctx.metrics.movedUpCount) + " up, " + formatInteger(ctx.metrics.movedDownCount) + " down, " + formatInteger(valid.length - ctx.metrics.movedUpCount - ctx.metrics.movedDownCount) + " stayed). Bands are 20 percentile points wide, so a move is a large shift, not noise.",
+            section: "sec-gap",
+            followUp: up ? "Who moved up, and what did they get that others did not?" : "Who dropped a band, and did anyone see it coming?"
+          };
+        });
+      },
+      function quizGapShares(ctx) {
+        if (!ctx.growth) return null;
+        const belowSecure = ctx.rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < SECURE_BENCHMARK && isFiniteNumber(row.endPercentile));
+        const secureStart = ctx.rows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile >= SECURE_BENCHMARK && isFiniteNumber(row.endPercentile));
+        const questions = [];
+        if (belowSecure.length >= 2) {
+          const closed = share(belowSecure, (row) => row.gapStatus === "Gap Closed");
+          const built = quizShareOptions(closed);
+          if (built) questions.push({
+            key: "gap-closed", family: "gap-share", topic: "Gap closure", type: "mc", persona: "principal",
+            stem: built.asCount
+              ? "Of the " + formatInteger(belowSecure.length) + " records that started below the 61st percentile, how many finished at or above it?"
+              : "Of the records that started below the 61st percentile, what proportion finished at or above it?",
+            options: built.options, correct: built.correct,
+            explanation: quizShareSentence(closed, "records that started below the secure line") + " closed the gap entirely; " + formatInteger(belowSecure.filter((row) => row.gapStatus === "Gap Reduced").length) + " reduced it and " + formatInteger(belowSecure.filter((row) => row.gapStatus === "Gap Widened").length) + " widened it." + quizThinNote(closed),
+            section: "sec-gap",
+            followUp: "Who closed it, and who went the other way?"
+          });
+          const widened = share(belowSecure, (row) => row.gapStatus === "Gap Widened");
+          const builtWidened = quizShareOptions(widened);
+          if (builtWidened) questions.push({
+            key: "gap-widened", family: "gap-share", topic: "Gap closure", type: "mc", persona: "inspector",
+            stem: builtWidened.asCount
+              ? "Of the " + formatInteger(belowSecure.length) + " records that started below the 61st percentile, how many fell further behind?"
+              : "Of the records that started below the 61st percentile, what proportion fell further behind?",
+            options: builtWidened.options, correct: builtWidened.correct,
+            explanation: quizShareSentence(widened, "records that started below the secure line") + " widened the gap - their percentile fell, so they grew more slowly than peers who started in the same place." + quizThinNote(widened),
+            section: "sec-gap",
+            followUp: "What is your plan for them, and is it different from what they had last term?"
+          });
+        }
+        if (secureStart.length >= 2) {
+          const slipping = share(secureStart, (row) => row.gapStatus === "Secure but Regressing" || row.gapStatus === "Dropped Below Secure");
+          const built = quizShareOptions(slipping);
+          if (built) questions.push({
+            family: "secure-slipping", topic: "Gap closure", type: "mc", persona: "inspector",
+            stem: built.asCount
+              ? "Of the " + formatInteger(secureStart.length) + " records that started at or above the 61st percentile, how many lost ground?"
+              : "Of the records that started at or above the 61st percentile, what proportion lost ground?",
+            options: built.options, correct: built.correct,
+            explanation: quizShareSentence(slipping, "records that started secure") + " regressed or dropped below the line. Core instruction alone rarely catches a secure student who is slipping, which is why they have their own card on the action board." + quizThinNote(slipping),
+            section: "sec-gap",
+            followUp: "Are your secure students being stretched, or are they coasting?"
+          });
+        }
+        return questions;
+      },
+      function quizPooledGapClosure(ctx) {
+        if (!ctx.growth) return null;
+        const metrics = ctx.metrics;
+        if (!isFiniteNumber(metrics.avgGapClosurePct) || metrics.gapContributorCount < MIN_SHARE_N) return null;
+        const pct = metrics.avgGapClosurePct * 100;
+        const options = quizPercentOptions(pct);
+        if (!options) return null;
+        return {
+          family: "gap-pooled", topic: "Gap closure", type: "mc", persona: "datalead",
+          stem: "Among students who started below the 61st percentile, what share of the total distance to that benchmark was closed by " + ctx.window + "?",
+          options, correct: formatPercentWhole(Math.round(pct)),
+          explanation: "Pooled gap closure is " + formatFractionPercent(metrics.avgGapClosurePct) + " over " + formatInteger(metrics.gapContributorCount) + " students: the total percentile points closed divided by the total points there were to close, not an average of individual rates.",
+          caution: "Percentile points are not equal-sized units, so read this as direction and rough size rather than a precise quantity.",
+          section: "sec-gap",
+          followUp: "Which subject is doing most of that closing, and which is doing least?"
+        };
+      },
+      function quizGrowthStudents(ctx) {
+        if (!ctx.growth) return null;
+        const subjects = quizPickSome(ctx.subjects, 2);
+        const questions = [];
+        subjects.forEach((subject) => {
+          const rows = quizStudentRows(ctx.rows, subject).filter((row) => row.hasGrowthPair);
+          const gain = quizUniqueExtreme(rows, (row) => row.ritChange, true);
+          if (gain) {
+            const options = quizLabelOptions(gain.row.studentName, gain.others);
+            if (options) questions.push({
+              key: "largest-gain:" + subject, family: "largest-gain", topic: "Students", type: "mc", persona: "hod",
+              stem: "Who made the largest RIT gain in " + subject + " between " + ctx.prior + " and " + ctx.window + "?",
+              options, correct: gain.row.studentName,
+              explanation: gain.row.studentName + ": " + formatSignedNumber(gain.row.ritChange) + " RIT, from " + formatNumber(gain.row.startRIT, 0) + " to " + formatNumber(gain.row.endRIT, 0) +
+                (isFiniteNumber(gain.row.projectedGrowth) ? ", against a projection of " + formatSignedNumber(gain.row.projectedGrowth) : "") + ". Next is " + gain.sorted[1].studentName + " at " + formatSignedNumber(gain.sorted[1].ritChange) + ".",
+              section: "sec-grouping",
+              followUp: "What was in place for " + gain.row.studentName + " that you could extend to others?"
+            });
+          }
+          const short = quizUniqueExtreme(rows.filter((row) => row.metGrowth === false && isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth)),
+            (row) => row.observedGrowth - row.projectedGrowth, false);
+          if (short) {
+            const options = quizLabelOptions(short.row.studentName, short.others.concat(rows.map((row) => row.studentName)));
+            if (options) questions.push({
+              key: "furthest-short:" + subject, family: "furthest-short", topic: "Students", type: "mc", persona: "inspector",
+              stem: "Whose growth fell furthest short of their projection in " + subject + "?",
+              options, correct: short.row.studentName,
+              explanation: short.row.studentName + " grew " + formatSignedNumber(short.row.observedGrowth) + " RIT against a projection of " + formatSignedNumber(short.row.projectedGrowth) + ", " + formatNumber(short.row.projectedGrowth - short.row.observedGrowth, 0) + " points short. They finished at the " + ordinal(short.row.endPercentile) + " percentile.",
+              section: "sec-priority",
+              followUp: "Was that a surprise, and what did you change when you saw it?"
+            });
+          }
+        });
+        return questions;
+      },
+      function quizStudentMetTF(ctx) {
+        if (!ctx.growth) return null;
+        const rows = quizStudentRows(ctx.rows).filter((row) => row.metGrowth !== null && row.metCertainty !== "too-close");
+        if (rows.length < 2) return null;
+        const met = rows.filter((row) => row.metGrowth === true);
+        const missed = rows.filter((row) => row.metGrowth === false);
+        const picks = [quizPick(met), quizPick(missed)].filter(Boolean);
+        return picks.map((row) => ({
+          key: "student-met:" + studentKey(row) + ":" + row.subject, family: "student-met-tf", topic: "Students", type: "tf", persona: "datalead",
+          stem: "True or false: " + row.studentName + " met their projected growth in " + row.subject + ".",
+          ...quizTF(row.metGrowth === true),
+          explanation: isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth)
+            ? row.studentName + " grew " + formatSignedNumber(row.observedGrowth) + " RIT in " + row.subject + " against a projection of " + formatSignedNumber(row.projectedGrowth) + ", so growth is recorded as " + (row.metGrowth ? "met" : "not met") + "."
+            : "NWEA's export records " + row.studentName + "'s growth in " + row.subject + " as " + (row.metGrowth ? "met" : "not met") + ".",
+          section: "sec-grouping",
+          followUp: row.metGrowth ? "What is the next target for " + row.studentName + "?" : "What is different in your plan for " + row.studentName + " now?"
+        }));
+      },
+      function quizQuadrants(ctx) {
+        if (!ctx.growth) return null;
+        const withQuadrant = ctx.rows.filter((row) => row.endQuadrant !== "Missing");
+        if (withQuadrant.length < 3) return null;
+        const counts = countBy(withQuadrant, (row) => row.endQuadrant);
+        const questions = [];
+        const lowLow = counts["Lo-G/Lo-A"] || 0;
+        const lowOptions = quizCountOptions(lowLow, withQuadrant.length);
+        if (lowOptions) questions.push({
+          family: "quadrant-lowlow", topic: "Growth", type: "mc", persona: "inspector",
+          stem: "How many records finished " + ctx.window + " in the Low Growth / Low Achievement quadrant?",
+          options: lowOptions, correct: formatInteger(lowLow),
+          explanation: formatInteger(lowLow) + " of " + formatInteger(withQuadrant.length) + " records with quadrant data" + (lowLow ? ": " + quizNameList(unique(withQuadrant.filter((row) => row.endQuadrant === "Lo-G/Lo-A").map((row) => row.studentName))) + "." : ".") + " Low on both axes is the highest priority for support: behind, and not catching up.",
+          section: "sec-growth",
+          followUp: "What is the plan for each of them, and who owns it?"
+        });
+        const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+        if (ranked.length >= 2 && ranked[0][1] !== ranked[1][1]) {
+          const title = (key) => (QUADRANT_CELLS[key] || { title: key }).title;
+          const options = quizLabelOptions(title(ranked[0][0]), ranked.map((entry) => title(entry[0])), QUADRANTS.map(title));
+          if (options) questions.push({
+            family: "quadrant-largest", topic: "Growth", type: "mc", persona: "datalead",
+            stem: "Which growth-and-achievement quadrant holds the most records at the end of " + ctx.window + "?",
+            options, correct: title(ranked[0][0]),
+            explanation: ranked.map((entry) => title(entry[0]) + " " + formatInteger(entry[1])).join("; ") + ". " + (QUADRANT_CELLS[ranked[0][0]] ? QUADRANT_CELLS[ranked[0][0]].note + "." : ""),
+            section: "sec-growth",
+            followUp: "How many moved quadrant this year, and in which direction?"
+          });
+        }
+        return questions;
+      },
+      function quizMedianCGP(ctx) {
+        if (!ctx.growth) return null;
+        return ctx.subjectMetrics.filter((entry) => entry.metrics.cgpCount >= EQUITY_MIN_RECORDS && isFiniteNumber(entry.metrics.medianConditionalGrowthPercentile)).flatMap((entry) => {
+          const value = entry.metrics.medianConditionalGrowthPercentile;
+          const questions = [];
+          const options = quizNumberOptions(value, [4.5, 7.5, 11.5, 17.5, 24.5]);
+          if (options) questions.push({
+            key: "median-cgp:" + entry.subject, family: "median-cgp", topic: "Growth", type: "mc", persona: "datalead",
+            stem: "What is the median conditional growth percentile in " + entry.subject + "?",
+            options, correct: formatNumber(value),
+            explanation: "Median CGP in " + entry.subject + " is " + formatNumber(value) + " over " + formatInteger(entry.metrics.cgpCount) + " records. A conditional growth percentile compares each student's growth with students nationally who started at the same RIT and grade, so 50 is typical and the number is fair to low and high starters alike.",
+            section: "sec-overview",
+            followUp: "Is that above or below typical, and is it the same for your lowest starters?"
+          });
+          if (Math.abs(value - 50) >= 3) questions.push({
+            key: "cgp-typical-tf:" + entry.subject, family: "median-cgp", topic: "Growth", type: "tf", persona: "inspector",
+            stem: "True or false: in " + entry.subject + ", the median student grew faster than typical peers who started at the same RIT.",
+            ...quizTF(value > 50),
+            explanation: "Median conditional growth percentile in " + entry.subject + " is " + formatNumber(value) + ". 50 is typical growth for students who started in the same place, so " + formatNumber(value) + " is " + (value > 50 ? "above" : "below") + " typical.",
+            section: "sec-overview",
+            followUp: "What would move that median by ten points next year?"
+          });
+          return questions;
+        });
+      },
+      function quizEquityBand(ctx) {
+        if (!ctx.growth) return null;
+        const usable = growthEquityBands(ctx.rows).filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP));
+        if (usable.length < 2) return null;
+        const ranked = usable.slice().sort((a, b) => b.medianCGP - a.medianCGP);
+        if (ranked[0].medianCGP === ranked[1].medianCGP) return null;
+        const options = quizLabelOptions(ranked[0].band.name, usable.map((entry) => entry.band.name), QUIZ_BAND_NAMES);
+        if (!options) return null;
+        return {
+          family: "equity-band", topic: "Growth", type: "mc", persona: "inspector",
+          stem: "Students who started " + ctx.prior + " in which percentile band showed the strongest median conditional growth?",
+          options, correct: ranked[0].band.name,
+          explanation: ranked.map((entry) => entry.band.name + " starters " + formatNumber(entry.medianCGP, 0) + " (" + formatInteger(entry.count) + " records)").join("; ") + ". 50 is typical. " + growthEquityRead(growthEquityBands(ctx.rows)),
+          section: "sec-growth",
+          followUp: "So is the distance between your lowest and highest starters closing or widening?"
+        };
+      },
+      function quizGainSubject(ctx) {
+        if (!ctx.growth) return null;
+        const scored = ctx.subjectMetrics.map((entry) => ({
+          subject: entry.subject,
+          count: entry.rows.filter((row) => isFiniteNumber(row.percentileChange)).length,
+          value: entry.metrics.avgPercentileChange
+        })).filter((entry) => entry.count >= 3 && isFiniteNumber(entry.value));
+        if (scored.length < 2) return null;
+        const ranked = scored.slice().sort((a, b) => b.value - a.value);
+        if (ranked[0].value === ranked[1].value) return null;
+        const options = quizLabelOptions(ranked[0].subject, scored.map((entry) => entry.subject), SUBJECTS);
+        if (!options) return null;
+        const thin = scored.filter((entry) => entry.count < MIN_SHARE_N);
+        return {
+          family: "gain-subject", topic: "Subjects", type: "mc", persona: "hod",
+          stem: "In which subject did records gain the most percentile points on average between " + ctx.prior + " and " + ctx.window + "?",
+          options, correct: ranked[0].subject,
+          explanation: ranked.map((entry) => entry.subject + " " + formatSignedNumber(entry.value) + " (" + formatInteger(entry.count) + " records)").join("; ") + ". A rising percentile means faster-than-typical growth; holding steady is typical growth.",
+          caution: thin.length ? "Small numbers: " + thin.map((entry) => entry.subject + " has " + formatInteger(entry.count)).join(", ") + " records, so this describes the file rather than proving a difference between subjects." : "",
+          section: "sec-overview",
+          followUp: "What is " + ranked[0].subject + " doing that " + ranked[ranked.length - 1].subject + " is not?"
+        };
+      },
+      function quizNormGround(ctx) {
+        if (!ctx.growth) return null;
+        const rows = ctx.rows.filter((row) => isFiniteNumber(row.normDeltaChange));
+        const value = ctx.metrics.avgNormDeltaChange;
+        if (rows.length < 3 || !isFiniteNumber(value) || Math.abs(value) < 1) return null;
+        const options = quizSignedOptions(value, [1.5, 3, 5, 8]);
+        if (!options) return null;
+        return {
+          family: "norm-ground", topic: "Norms", type: "mc", persona: "datalead",
+          stem: "Between " + ctx.prior + " and " + ctx.window + ", how much ground did the group gain or lose against the US norm, in RIT?",
+          options, correct: formatSignedNumber(value),
+          explanation: "On average the group moved " + formatSignedNumber(value) + " RIT relative to the US grade/season norm across the two windows, over " + formatInteger(rows.length) + " records: " + (value > 0 ? "towards or past the norm mean." : "away from the norm mean.") + " The share that gained ground is " + formatShare(ctx.metrics.shares.gainedGround) + ".",
+          section: "sec-summary",
+          followUp: "Is that the same story in every subject?"
+        };
+      },
+      function quizChallengeCounts(ctx) {
+        if (!ctx.growth) return null;
+        const classified = ctx.rows.filter((row) => row.growthChallenge !== "Missing Growth Data");
+        if (classified.length < 3) return null;
+        const build = (challenge, family, persona, stem, explanation, followUp) => {
+          const names = unique(ctx.rows.filter((row) => row.growthChallenge === challenge).map((row) => row.studentName));
+          const options = quizCountOptions(names.length, ctx.studentCount);
+          if (!options) return null;
+          return {
+            key: family, family: "challenge-count", topic: "Growth", type: "mc", persona, stem, options, correct: formatInteger(names.length),
+            explanation: formatInteger(names.length) + " " + quizPlural(names.length, "student") + (names.length ? ": " + quizNameList(names) + ". " : ". ") + explanation,
+            section: "sec-actions",
+            followUp
+          };
+        };
+        return [
+          build("Monitor for Coasting", "coasting-count", "inspector",
+            "How many of your students show high achievement paired with low growth this year - the ones who may be coasting?",
+            "Coasting means a start at or above the 61st percentile with a conditional growth percentile under 40: the score hides a year of limited movement.",
+            "What are you doing to raise the challenge for them, and how will you measure it?"),
+          build("Strong Catch-Up Growth", "catchup-count", "principal",
+            "How many of your students started low and posted strong catch-up growth?",
+            "Catch-up growth means a start below the 41st percentile with a conditional growth percentile of 60 or more: whatever is in place is working.",
+            "What is producing that, and how do you make sure it does not get dropped next term?")
+        ];
+      },
+      function quizMixedOnlyCurrent(ctx) {
+        if (ctx.mode !== "mixed") return null;
+        const count = ctx.rows.filter((row) => row.hasCurrentScore && !row.hasGrowthPair).length;
+        const options = quizCountOptions(count, ctx.rows.length);
+        if (!options || !count) return null;
+        return {
+          family: "mixed-only-current", topic: "Data quality", type: "mc", persona: "datalead",
+          stem: "How many records in this view only have the " + ctx.window + " window, and are therefore left out of every growth figure?",
+          options, correct: formatInteger(count),
+          explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records have no " + ctx.prior + " score, usually because the student joined after that window. They are read from the achievement and norm columns instead, and the action board names them.",
+          section: "sec-actions",
+          followUp: "Do those students have a baseline now, so the next window can measure them?"
+        };
+      },
+      // -------------------------------------------------------------- Baseline
+      function quizBaselineNoGrowthTF(ctx) {
+        if (!ctx.baseline) return null;
+        return {
+          family: "baseline-no-growth-tf", topic: "Interpretation", type: "tf", persona: "inspector",
+          stem: "True or false: from this file you can say how much progress these students have made this year.",
+          ...quizTF(false),
+          explanation: "This export has one test window, so there is no earlier score to measure movement against. It shows where students are starting - percentile, tier, distance from the norm - not how far they have moved. Growth appears once a second window is uploaded.",
+          section: "sec-baseline",
+          followUp: "So when will you be able to say, and what are you doing in the meantime?"
+        };
+      },
+      function quizIntensiveCount(ctx) {
+        if (!ctx.baseline || ctx.metrics.percentileCount < 3) return null;
+        const count = ctx.metrics.tierCounts.intensive || 0;
+        const options = quizCountOptions(count, ctx.metrics.percentileCount);
+        if (!options) return null;
+        const names = unique(ctx.rows.filter((row) => row.currentTier.key === "intensive").map((row) => row.studentName));
+        return {
+          family: "intensive-count", topic: "Achievement", type: "mc", persona: "principal",
+          stem: "How many records start " + ctx.window + " in the Intensive tier, at or below the 20th percentile?",
+          options, correct: formatInteger(count),
+          explanation: formatInteger(count) + " of " + formatInteger(ctx.metrics.percentileCount) + " records with a percentile" + (names.length ? ", covering " + quizNameList(names) + "." : ".") + " Tier 3 is the widest starting distance from grade level and the first intervention group to open.",
+          section: "sec-baseline",
+          followUp: "When does that group start, and what are you diagnosing first?"
+        };
+      },
+      function quizTypicalGainTF(ctx) {
+        const value = ctx.metrics.avgTypicalGain;
+        if (ctx.metrics.goalRowCount < 3 || !isFiniteNumber(value) || value <= 0) return null;
+        const horizon = quizHorizonForRows(ctx.rows);
+        const truthful = Math.random() < 0.5;
+        const shown = truthful ? value : value + quizPick([-4, -3, 3, 4, 6]);
+        if (shown <= 0) return null;
+        return {
+          family: "typical-gain-tf", topic: "Goals", type: "tf", persona: "datalead",
+          stem: "True or false: a typical student at these grades gains about " + formatNumber(shown) + " RIT between " + ctx.window + " and " + horizon + ".",
+          ...quizTF(truthful),
+          explanation: "The typical gain ahead is " + formatSignedNumber(value) + " RIT on average across " + formatInteger(ctx.metrics.goalRowCount) + " records - the difference between the US norm means for the current season and " + horizon + ". A keep-pace target adds that gain to each student's current RIT.",
+          section: "sec-goals",
+          followUp: "How many of your students need more than that to reach grade level?"
+        };
+      },
+      function quizNeedStretch(ctx) {
+        const metrics = ctx.metrics;
+        if (metrics.goalRowCount < 3) return null;
+        const options = quizCountOptions(metrics.needsAcceleratedGrowthCount, metrics.goalRowCount);
+        if (!options) return null;
+        const horizon = quizHorizonForRows(ctx.rows);
+        return {
+          family: "need-stretch", topic: "Goals", type: "mc", persona: "principal",
+          stem: "How many records need more than typical growth to reach the grade-level norm by " + horizon + "?",
+          options, correct: formatInteger(metrics.needsAcceleratedGrowthCount),
+          explanation: formatInteger(metrics.needsAcceleratedGrowthCount) + " of " + formatInteger(metrics.goalRowCount) + " records with a target would still be below the grade-level norm after a typical gain, so their goals need setting deliberately rather than left to core instruction. " + formatInteger(ctx.rows.filter((row) => row.goals && row.goals.alreadyAtOrAbove).length) + " are already at or above it.",
+          section: "sec-goals",
+          followUp: "Have those students seen their own target, and do they know what it will take?"
+        };
+      },
+      function quizKeepPace(ctx) {
+        if (!ctx.baseline) return null;
+        const rows = quizStudentRows(ctx.rows).filter((row) => row.goals && isFiniteNumber(row.goals.keepPaceRIT) && row.goals.typicalGain > 0);
+        if (rows.length < 2) return null;
+        const row = quizPick(rows);
+        const options = quizNumberOptions(row.goals.keepPaceRIT, [2, 3, 5, 8], (value) => formatNumber(value, 0));
+        if (!options) return null;
+        return {
+          key: "keep-pace:" + studentKey(row) + ":" + row.subject, family: "keep-pace", topic: "Goals", type: "mc", persona: "datalead",
+          stem: "What RIT would " + row.studentName + " need in " + row.subject + " by " + quizHorizonPhrase(row.goals) + " to keep pace with typical growth?",
+          options, correct: formatNumber(row.goals.keepPaceRIT, 0),
+          explanation: "Current RIT " + formatNumber(row.currentRIT, 0) + " plus the typical gain of " + formatSignedNumber(row.goals.typicalGain) + " for grade " + formatUSNormGradeLabel(row.usNormStudentGrade) + " gives " + formatNumber(row.goals.keepPaceRIT, 0) + ". The grade-level target is " + formatNumber(row.goals.gradeLevelRIT, 0) + (row.goals.alreadyAtOrAbove ? ", which they are already above." : ", " + formatSignedNumber(row.goals.catchUpGain) + " from where they are."),
+          section: "sec-goals",
+          followUp: "And what would it take to reach grade level rather than just keep pace?"
+        };
+      },
+      function quizForwardProjection(ctx) {
+        const rows = quizStudentRows(ctx.rows).filter((row) => row.forwardProjection && isFiniteNumber(row.forwardProjection.gain));
+        if (rows.length < 2) return null;
+        const row = quizPick(rows);
+        const options = quizNumberOptions(row.forwardProjection.gain, [2, 3, 4, 6], formatSignedNumber);
+        if (!options) return null;
+        return {
+          key: "nwea-projection:" + studentKey(row) + ":" + row.subject, family: "nwea-projection", topic: "Goals", type: "mc", persona: "datalead",
+          stem: "How much growth does NWEA project for " + row.studentName + " in " + row.subject + " for the window ahead?",
+          options, correct: formatSignedNumber(row.forwardProjection.gain),
+          explanation: "NWEA projects " + formatSignedNumber(row.forwardProjection.gain) + " RIT, a target of " + formatNumber(row.forwardProjection.targetRIT, 0) + ". The projection is conditioned on " + row.studentName + "'s own starting RIT and grade, and it is the figure the next export will score 'met growth' against.",
+          section: "sec-goals",
+          followUp: "Is that more or less than a typical peer gains, and why?"
+        };
+      },
+      // ---------------------------------------------------------- Data quality
+      function quizNoScore(ctx) {
+        const diagnostics = ctx.diagnostics;
+        if (!diagnostics || !isFiniteNumber(diagnostics.noScoreCount) || state.allRows.length < 3) return null;
+        if (diagnostics.noScoreCount === 0) {
+          return {
+            family: "no-score", topic: "Data quality", type: "tf", persona: "inspector",
+            stem: "True or false: every record in this file carried a usable score for " + ctx.window + ".",
+            ...quizTF(true),
+            explanation: "All " + formatInteger(state.allRows.length) + " records carried a score in the " + ctx.window + " window, so nobody is missing from the figures for lack of a test.",
+            section: "sec-quality",
+            followUp: "And were any of those tests too short to trust?"
+          };
+        }
+        const options = quizCountOptions(diagnostics.noScoreCount, state.allRows.length);
+        if (!options) return null;
+        return {
+          family: "no-score", topic: "Data quality", type: "mc", persona: "inspector",
+          stem: "How many records in this file had no usable score in " + ctx.window + "?",
+          options, correct: formatInteger(diagnostics.noScoreCount),
+          explanation: formatInteger(diagnostics.noScoreCount) + " of " + formatInteger(state.allRows.length) + " records had no score in the window" + (diagnostics.noScoreStudents && diagnostics.noScoreStudents.length ? ": " + quizNameList(diagnostics.noScoreStudents, 5) + "." : ".") + " Those students are absent from every figure until they test.",
+          section: "sec-quality",
+          followUp: "Which students, and when will they be tested?"
+        };
+      },
+      function quizShortTestTF(ctx) {
+        const diagnostics = ctx.diagnostics;
+        if (!diagnostics || !isFiniteNumber(diagnostics.medianDuration) || state.allRows.length < 3) return null;
+        return {
+          family: "short-test-tf", topic: "Data quality", type: "tf", persona: "datalead",
+          stem: "True or false: no test in this file finished unusually quickly compared with the rest of the class.",
+          ...quizTF(diagnostics.shortTestCount === 0),
+          explanation: (diagnostics.shortTestCount
+            ? formatInteger(diagnostics.shortTestCount) + " " + quizPlural(diagnostics.shortTestCount, "test") + " finished in under " + SHORT_TEST_ABSOLUTE_MINUTES + " minutes and in less than half the median time for this file (" + formatNumber(diagnostics.medianDuration, 0) + " minutes), so those scores should be confirmed before they are used for placement."
+            : "No test finished in under " + SHORT_TEST_ABSOLUTE_MINUTES + " minutes and in less than half the median time for this file (" + formatNumber(diagnostics.medianDuration, 0) + " minutes).") +
+            " A very short test is a disengagement signal, not automatically an invalid one.",
+          section: "sec-quality",
+          followUp: diagnostics.shortTestCount ? "Which students, and have you checked with the proctor?" : "What is the median test time, and does anyone stand out at the other end?"
+        };
+      },
+      function quizThinShareTF(ctx) {
+        const candidates = [];
+        if (ctx.growth && ctx.metrics.shares.met && ctx.metrics.shares.met.of > 0) candidates.push({ entry: ctx.metrics.shares.met, label: "the share of records that met growth" });
+        if (ctx.metrics.shares.secure && ctx.metrics.shares.secure.of > 0) candidates.push({ entry: ctx.metrics.shares.secure, label: "the share of records at or above the secure benchmark" });
+        const pick = quizPick(candidates);
+        if (!pick) return null;
+        const thin = shareIsThin(pick.entry);
+        return {
+          family: "thin-share-tf", topic: "Interpretation", type: "tf", persona: "inspector",
+          stem: "True or false: with " + formatInteger(pick.entry.of) + " records behind it, the dashboard reports " + pick.label + " as a percentage.",
+          ...quizTF(!thin),
+          explanation: (thin
+            ? "It is shown as a count, " + formatInteger(pick.entry.n) + " of " + formatInteger(pick.entry.of) + ". "
+            : "It is shown as " + formatPercentWhole(sharePct(pick.entry)) + ", from " + formatInteger(pick.entry.n) + " of " + formatInteger(pick.entry.of) + " records. ") +
+            "A percentage needs at least " + MIN_SHARE_N + " records to mean anything: under that, one child rounded to a whole number looks like a rate and moves like a coin toss.",
+          section: "sec-quality",
+          followUp: "So when a figure here is a count, how would you answer if someone asked for the percentage?"
+        };
+      },
+      function quizSecureDefinitionTF(ctx) {
+        if (ctx.metrics.percentileCount < 1) return null;
+        return {
+          family: "secure-definition-tf", topic: "Interpretation", type: "tf", persona: "inspector",
+          stem: "True or false: the 61st-percentile 'secure' benchmark used on this dashboard is an NWEA definition.",
+          ...quizTF(false),
+          explanation: "The 61st percentile is a locally chosen secure line, not an NWEA definition, and gap closure counts percentile-rank points, which are positions in a distribution rather than equal-sized units. It is a planning convention to explain, not a national standard to cite.",
+          section: ctx.growth ? "sec-gap" : "sec-baseline",
+          followUp: "Then what does NWEA itself say about whether a student is on track?"
+        };
+      },
+      function quizCGPMeaningTF(ctx) {
+        if (!ctx.growth || ctx.metrics.cgpCount < 1) return null;
+        return {
+          family: "cgp-meaning-tf", topic: "Interpretation", type: "tf", persona: "datalead",
+          stem: "True or false: a conditional growth percentile of 50 means a student grew about as much as typical students nationally who started at the same RIT and grade.",
+          ...quizTF(true),
+          explanation: "Conditional growth percentile ranks a student's growth against students who started in the same place, so 50 is typical growth from that start - which makes it a fair measure for low and high starters alike. Achievement percentile, by contrast, says where the score sits, not how far it moved.",
+          section: "sec-growth",
+          followUp: "So can a student be high on achievement and low on growth at the same time - and do you have any?"
+        };
+      },
+      // --------------------------------------------------------------- Classes
+      function quizTopClass(ctx) {
+        if (ctx.classes.length < 2) return null;
+        const scored = ctx.classMetrics.map((entry) => ({
+          className: entry.className,
+          count: ctx.baseline ? entry.metrics.percentileCount : entry.rows.filter((row) => isFiniteNumber(row.endPercentile)).length,
+          value: ctx.baseline ? entry.metrics.medianCurrentPercentile : entry.metrics.avgEndPercentile
+        })).filter((entry) => entry.count >= 3 && isFiniteNumber(entry.value));
+        if (scored.length < 2) return null;
+        const ranked = scored.slice().sort((a, b) => b.value - a.value);
+        if (ranked[0].value === ranked[1].value) return null;
+        const options = quizLabelOptions(ranked[0].className, scored.map((entry) => entry.className));
+        if (!options) return null;
+        return {
+          key: "top-class", family: "class-rank", topic: "Classes", type: "mc", persona: "principal",
+          stem: ctx.baseline
+            ? "Which class has the highest median percentile in " + ctx.window + "?"
+            : "Which class finished " + ctx.window + " with the highest average percentile?",
+          options, correct: ranked[0].className,
+          explanation: ranked.map((entry) => entry.className + " " + formatNumber(entry.value) + " (" + formatInteger(entry.count) + " records)").join("; ") + ". Switch the Subject Overview lens to Class to see each class as a card.",
+          caution: "A comparison inside one school, not a national one, and classes are rarely alike at intake.",
+          section: "sec-overview",
+          followUp: "Did those classes start in the same place, or is this about intake rather than teaching?"
+        };
+      },
+      function quizClassMet(ctx) {
+        if (!ctx.growth || ctx.classes.length < 2) return null;
+        const scored = ctx.classMetrics.filter((entry) => entry.metrics.shares.met && entry.metrics.shares.met.of >= MIN_SHARE_N);
+        if (scored.length < 2) return null;
+        const ranked = scored.slice().sort((a, b) => sharePct(b.metrics.shares.met) - sharePct(a.metrics.shares.met));
+        if (sharePct(ranked[0].metrics.shares.met) === sharePct(ranked[1].metrics.shares.met)) return null;
+        const options = quizLabelOptions(ranked[0].className, scored.map((entry) => entry.className));
+        if (!options) return null;
+        return {
+          key: "class-met", family: "class-rank", topic: "Classes", type: "mc", persona: "principal",
+          stem: "In which class did the largest share of records meet their growth projection?",
+          options, correct: ranked[0].className,
+          explanation: ranked.map((entry) => entry.className + " " + formatShare(entry.metrics.shares.met)).join("; ") + ". Switch the Subject Overview lens to Class to see each class as a card.",
+          section: "sec-overview",
+          followUp: "What is that class doing differently, and is it the teaching or the intake?"
+        };
+      },
+      // ----------------------------------------------------------------- Areas
+      function quizAreas(ctx) {
+        const analysis = strandAnalysis(ctx.rows);
+        if (!analysis) return null;
+        const questions = [];
+        analysis.subjects.forEach((subject) => {
+          const names = subject.areas.map((area) => area.name);
+          if (names.length < 3) return;
+          [["gap", "area-gap", "Which instructional area is the class-wide gap in " + subject.subject + "?", "the area sitting furthest below the students' own overall scores"],
+            ["strength", "area-strength", "Which instructional area is the class-wide strength in " + subject.subject + "?", "the area sitting furthest above the students' own overall scores"]].forEach(([verdict, family, stem, phrase]) => {
+            const matching = subject.areas.filter((area) => area.verdict === verdict);
+            if (matching.length !== 1) return;
+            const area = matching[0];
+            const options = quizLabelOptions(area.name, names);
+            if (!options) return;
+            questions.push({
+              key: family + ":" + subject.subject, family, topic: "Areas", type: "mc", persona: "hod",
+              stem, options, correct: area.name,
+              explanation: area.name + " is " + phrase + ": a mean difference of " + formatSigned1(area.meanDelta) + " RIT from each student's overall " + subject.subject + " RIT, over " + formatInteger(area.count) + " students, with a 95% interval that clears zero.",
+              caution: "Area scores rest on a fraction of the items behind the overall score and have no norm of their own, so this is a pattern to check in class, not a diagnosis.",
+              section: "sec-strands",
+              followUp: verdict === "gap" ? "Is that a teaching-order effect or a real gap, and what will you reteach first?" : "How do you use that strength to lift the weaker areas?"
+            });
+          });
+        });
+        return questions;
+      }
+    ];
 
     function renderTables() {
       renderTableGroups();
