@@ -23,7 +23,7 @@
       --on-red: #ffffff;
       --on-orange: #10182b;
       --on-yellow: #10182b;
-      --on-green: #10182b;
+      --on-green: #ffffff;
       --on-blue: #ffffff;
       --on-slate: #ffffff;
       --on-brand: #ffffff;
@@ -31,20 +31,20 @@
       --brand-dark: #173d7d;
       --brand-soft: #e9f0ff;
       --brand-ink: #173d7d;
-      --red: #dc2626;
+      --red: #a50f1a;
       --red-soft: #fee2e2;
       --red-ink: #8d1a1a;
       --red-line: #fecaca;
-      --orange: #ea580c;
+      --orange: #f77f00;
       --orange-text: #c2410c;
       --orange-soft: #ffedd5;
       --orange-ink: #9a3412;
       --orange-line: #fed7aa;
-      --yellow: #ca8a04;
+      --yellow: #e5c11a;
       --yellow-soft: #fef3c7;
       --yellow-ink: #854d0e;
       --yellow-line: #fde68a;
-      --green: #16a34a;
+      --green: #0f7a45;
       --green-text: #15803d;
       --green-soft: #dcfce7;
       --green-ink: #166534;
@@ -89,7 +89,7 @@
       --line: #2a3648;
       --line-strong: #3a4860;
       --line-accent: #4c6da8;
-      --on-red: #10182b;
+      --on-red: #080c14;
       --on-orange: #10182b;
       --on-yellow: #10182b;
       --on-green: #10182b;
@@ -100,25 +100,25 @@
       --brand-dark: #8fb6f8;
       --brand-soft: rgba(108, 156, 240, 0.16);
       --brand-ink: #b6d0ff;
-      --red: #f87171;
+      --red: #d94452;
       --red-soft: rgba(248, 113, 113, 0.16);
       --red-ink: #fca5a5;
       --red-line: rgba(248, 113, 113, 0.36);
-      --orange: #fb923c;
+      --orange: #f59120;
       --orange-text: #fb923c;
       --orange-soft: rgba(251, 146, 60, 0.16);
       --orange-ink: #fdba74;
       --orange-line: rgba(251, 146, 60, 0.36);
-      --yellow: #eab308;
+      --yellow: #f2e07d;
       --yellow-soft: rgba(234, 179, 8, 0.16);
       --yellow-ink: #fcd34d;
       --yellow-line: rgba(234, 179, 8, 0.36);
-      --green: #34d399;
+      --green: #2bbd7a;
       --green-text: #34d399;
       --green-soft: rgba(52, 211, 153, 0.16);
       --green-ink: #6ee7b7;
       --green-line: rgba(52, 211, 153, 0.36);
-      --blue: #60a5fa;
+      --blue: #6fa3f4;
       --blue-soft: rgba(96, 165, 250, 0.16);
       --blue-ink: #93c5fd;
       --blue-line: rgba(96, 165, 250, 0.36);
@@ -149,7 +149,7 @@
         --line: #2a3648;
         --line-strong: #3a4860;
         --line-accent: #4c6da8;
-        --on-red: #10182b;
+        --on-red: #080c14;
         --on-orange: #10182b;
         --on-yellow: #10182b;
         --on-green: #10182b;
@@ -160,25 +160,25 @@
         --brand-dark: #8fb6f8;
         --brand-soft: rgba(108, 156, 240, 0.16);
         --brand-ink: #b6d0ff;
-        --red: #f87171;
+        --red: #d94452;
         --red-soft: rgba(248, 113, 113, 0.16);
         --red-ink: #fca5a5;
         --red-line: rgba(248, 113, 113, 0.36);
-        --orange: #fb923c;
+        --orange: #f59120;
         --orange-text: #fb923c;
         --orange-soft: rgba(251, 146, 60, 0.16);
         --orange-ink: #fdba74;
         --orange-line: rgba(251, 146, 60, 0.36);
-        --yellow: #eab308;
+        --yellow: #f2e07d;
         --yellow-soft: rgba(234, 179, 8, 0.16);
         --yellow-ink: #fcd34d;
         --yellow-line: rgba(234, 179, 8, 0.36);
-        --green: #34d399;
+        --green: #2bbd7a;
         --green-text: #34d399;
         --green-soft: rgba(52, 211, 153, 0.16);
         --green-ink: #6ee7b7;
         --green-line: rgba(52, 211, 153, 0.36);
-        --blue: #60a5fa;
+        --blue: #6fa3f4;
         --blue-soft: rgba(96, 165, 250, 0.16);
         --blue-ink: #93c5fd;
         --blue-line: rgba(96, 165, 250, 0.36);
@@ -2373,7 +2373,7 @@
     .stack-seg:hover { filter: brightness(1.12); }
 
     .stack-seg-text {
-      color: #fff;
+      color: inherit;
       font-size: 10px;
       font-weight: 900;
     }
@@ -7876,10 +7876,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         const style = "--start:" + offset.toFixed(3) + "%;--size:" + share.toFixed(3) + "%;--i:" + index + ";background:" + segment.color + ";";
         offset += share;
         if (!value) return "";
-        return '<span class="stack-seg" style="' + escapeAttr(style) + '" title="' +
+        return '<span class="stack-seg" style="' + escapeAttr(style) + "color:" + escapeAttr(segment.ink || "var(--on-slate)") + ';" title="' +
           escapeAttr(segment.label + ": " + formatInteger(value) + " (" + formatPercentWhole(share) + ")") + '">' +
-          (share >= 9 ? '<span class="stack-seg-text" style="color:' + escapeAttr(segment.ink || "var(--on-slate)") + '">' +
-            escapeHTML(formatInteger(value)) + "</span>" : "") + "</span>";
+          (share >= 9 ? '<span class="stack-seg-text">' + escapeHTML(formatInteger(value)) + "</span>" : "") + "</span>";
       }).join("");
       const legend = segments.filter((segment) => segment.value).map((segment) =>
         '<span class="stack-key"><i style="background:' + escapeAttr(segment.color) + '"></i>' +
