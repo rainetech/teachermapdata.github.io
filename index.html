@@ -248,6 +248,102 @@
       margin-bottom: 18px;
     }
 
+    /* Once a file is loaded the whole first screen was still setup: a title, a
+       description of what the tool does, a drop zone, a sample button, a
+       privacy paragraph and a help disclosure - and the first number appeared
+       below the fold. The setup collapses to one bar so the data starts on
+       screen one, and "Change file" brings it back. */
+    .filters-more {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--line);
+    }
+
+    .filter-active {
+      margin: 8px 0 0;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--orange-ink);
+      background: var(--orange-soft);
+      border: 1px solid var(--orange-line);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+    }
+
+    .filter-more { white-space: nowrap; }
+
+    .change-file { display: none; }
+    body.has-data .change-file { display: inline-flex; justify-self: start; }
+
+    body.has-data .topbar {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      margin-bottom: 14px;
+    }
+
+    body.has-data .brand-panel {
+      min-height: 0;
+      padding: 12px 16px;
+      flex-direction: row;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    body.has-data .brand-panel h1 { font-size: 19px; }
+    body.has-data .brand-panel .eyebrow { display: none; }
+    body.has-data .brand-panel .subtle { display: none; }
+    body.has-data .quick-questions { margin-top: 0; flex: 1 1 auto; justify-content: flex-end; }
+    body.has-data .brand-tools { margin-left: auto; display: flex; gap: 8px; }
+
+    body.has-data .upload-panel {
+      padding: 10px 16px 12px;
+      border-top: 0;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+      gap: 8px;
+      grid-template-columns: auto minmax(0, 1fr);
+      align-items: center;
+    }
+
+    body.has-data:not(.upload-open) .upload-panel > div:first-child,
+    body.has-data:not(.upload-open) .file-label,
+    body.has-data:not(.upload-open) .upload-controls,
+    body.has-data:not(.upload-open) .privacy-note { display: none; }
+
+    body.has-data .upload-meta {
+      grid-template-columns: repeat(3, minmax(0, auto));
+      gap: 18px;
+      justify-content: start;
+    }
+    body.has-data .upload-meta .mini-stat {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      padding: 0;
+      border: 0;
+      background: none;
+    }
+    body.has-data .upload-meta .label { font-size: 10px; }
+    body.has-data .upload-meta .value { font-size: 15px; }
+    body.has-data .status-line { grid-column: 1 / -1; }
+
+    /* First-run help is first-run only. */
+    body.has-data:not(.upload-open) .help-panel { display: none; }
+
+    /* The mode banner immediately below restates a successful load with more
+       detail. Errors stay, because nothing else carries them. */
+    body.has-data:not(.upload-open) .status-line:not(.is-error) { display: none; }
+
+    @media (max-width: 720px) {
+      body.has-data .brand-panel { flex-direction: column; align-items: flex-start; }
+      body.has-data .quick-questions { justify-content: flex-start; }
+      body.has-data .brand-tools { margin-left: 0; }
+      body.has-data .upload-panel { grid-template-columns: minmax(0, 1fr); }
+    }
+
     .topbar > *,
     .filters > *,
     .grid > *,
@@ -4028,6 +4124,7 @@
           <button class="btn ghost" id="sampleBtn" type="button">Load Sample Data</button>
           <button class="btn small ghost" id="helpBtn" type="button">How do I get this file?</button>
         </div>
+        <button class="btn small ghost change-file" id="changeFileBtn" type="button" aria-expanded="false">Change file</button>
         <div class="upload-meta">
           <div class="mini-stat">
             <span class="label">Records</span>
@@ -4128,6 +4225,14 @@
           <select id="subjectFilter"></select>
         </div>
         <div class="field">
+          <label for="classFilter">Class</label>
+          <select id="classFilter"></select>
+        </div>
+        <button class="btn ghost filter-more" id="moreFiltersBtn" type="button" aria-expanded="false" aria-controls="moreFilters">More filters</button>
+        <button class="btn" id="resetFiltersBtn" type="button">Reset</button>
+      </div>
+      <div class="filters filters-more" id="moreFilters" hidden>
+        <div class="field">
           <label for="dashboardLensSelect">Overview Lens</label>
           <select id="dashboardLensSelect">
             <option value="subject">By Subject</option>
@@ -4137,10 +4242,6 @@
         <div class="field">
           <label for="teacherFilter">Teacher</label>
           <select id="teacherFilter"></select>
-        </div>
-        <div class="field">
-          <label for="classFilter">Class</label>
-          <select id="classFilter"></select>
         </div>
         <div class="field">
           <label for="gradeFilter">Grade</label>
@@ -4175,8 +4276,8 @@
           <input type="checkbox" id="includeInvalidTests">
           <span id="includeInvalidLabel">Include invalid tests</span>
         </label>
-        <button class="btn" id="resetFiltersBtn" type="button">Reset</button>
       </div>
+      <p class="filter-active" id="filterActive" hidden></p>
     </section>
 
     <nav class="section-nav" id="sectionNav" aria-label="Jump to section" hidden>
@@ -5204,10 +5305,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "plannerClose", "plannerRefresh", "plannerPrint", "plannerExport", "plannerToggleControls",
         "spotlightBackdrop", "spotlight", "spotlightBody", "spotlightClose",
         "spotlightCopyBtn", "spotlightPrintBtn",
-        "csvInput", "sampleBtn", "recordCount", "studentCount", "fileName", "statusLine",
+        "csvInput", "sampleBtn", "changeFileBtn", "recordCount", "studentCount", "fileName", "statusLine",
         "searchInput", "subjectFilter", "dashboardLensSelect", "teacherFilter", "classFilter", "gradeFilter",
         "bandFilter", "metFilter", "groupFilter", "gapFilter", "resetFiltersBtn",
         "invalidToggleWrap", "includeInvalidTests", "includeInvalidLabel",
+        "moreFiltersBtn", "moreFilters", "filterActive",
         "filterContext", "summaryCards", "subjectOverview", "chartsWrap", "quadrantCards",
         "quadrantMovement", "quadrantSubjectBreakdown", "gapCards", "gapSubjectBreakdown",
         "summaryReport", "summaryEditNote", "regenerateSummaryBtn", "tableGroupContext", "groupSizeInput", "groupStrategySelect",
@@ -5429,6 +5531,19 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const openFileDialog = () => els.csvInput && els.csvInput.click();
       if (els.onboardUploadBtn) els.onboardUploadBtn.addEventListener("click", openFileDialog);
       if (els.onboardSampleBtn) els.onboardSampleBtn.addEventListener("click", loadSample);
+      if (els.moreFiltersBtn) els.moreFiltersBtn.addEventListener("click", () => {
+        const open = els.moreFilters.hidden;
+        els.moreFilters.hidden = !open;
+        els.moreFiltersBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        els.moreFiltersBtn.textContent = open ? "Fewer filters" : "More filters";
+        renderActiveFilterNote();
+      });
+      if (els.changeFileBtn) els.changeFileBtn.addEventListener("click", () => {
+        const open = document.body.classList.toggle("upload-open");
+        els.changeFileBtn.setAttribute("aria-expanded", open ? "true" : "false");
+        els.changeFileBtn.textContent = open ? "Hide upload" : "Change file";
+        if (open && els.dropZone) els.dropZone.focus();
+      });
       if (els.helpBtn) els.helpBtn.addEventListener("click", () => {
         if (!els.helpPanel) return;
         els.helpPanel.open = true;
@@ -5878,6 +5993,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function setStatus(message, isError) {
       els.statusLine.textContent = message;
       els.statusLine.style.color = isError ? "var(--red)" : "var(--muted)";
+      els.statusLine.classList.toggle("is-error", Boolean(isError));
     }
 
     // Delimiter-aware CSV/TSV reader. NWEA exports are comma separated, but
@@ -7452,13 +7568,51 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         .join("");
     }
 
+    function applyLoadedChrome() {
+      const loaded = state.allRows.length > 0;
+      document.body.classList.toggle("has-data", loaded);
+      if (!loaded) {
+        document.body.classList.remove("upload-open");
+        if (els.changeFileBtn) {
+          els.changeFileBtn.setAttribute("aria-expanded", "false");
+          els.changeFileBtn.textContent = "Change file";
+        }
+      }
+    }
+
     function renderUploadStats() {
+      applyLoadedChrome();
       els.recordCount.textContent = formatInteger(state.allRows.length);
       els.studentCount.textContent = formatInteger(new Set(state.allRows.map((row) => row.studentID || row.studentName)).size);
       els.fileName.textContent = state.fileName;
     }
 
+    // Eleven controls in two rows made the filter bar the second thing on the
+    // page and the least used. The four a teacher actually reaches for stay
+    // visible; the rest fold away - but a filter set inside the fold has to
+    // say so, or the totals change with no visible cause.
+    const HIDDEN_FILTER_LABELS = {
+      teacher: "Teacher", grade: "Grade", band: "Band", tier: "Tier",
+      met: "Met growth", group: "Group", gap: "Gap status"
+    };
+
+    function renderActiveFilterNote() {
+      if (!els.filterActive) return;
+      const filters = getFilters();
+      const active = Object.keys(HIDDEN_FILTER_LABELS)
+        .filter((key) => filters[key])
+        .map((key) => HIDDEN_FILTER_LABELS[key] + ": " + filters[key]);
+      if (filters.includeInvalid) active.push("Invalid tests included");
+      const hiddenPanel = els.moreFilters && els.moreFilters.hidden;
+      els.filterActive.hidden = !active.length || !hiddenPanel;
+      if (!els.filterActive.hidden) {
+        els.filterActive.textContent = "Also filtering by " + active.join("  |  ") +
+          ". Open More filters to change or clear these.";
+      }
+    }
+
     function renderFilterContext() {
+      renderActiveFilterNote();
       const total = state.allRows.length;
       const filtered = state.filteredRows.length;
       if (!total) {
