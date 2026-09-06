@@ -2807,6 +2807,77 @@
     .quality-note span { font-size: 12px; color: var(--muted); line-height: 1.45; }
 
     /* =====================================================================
+       Section help: the "?" in each section's corner
+       ===================================================================== */
+    .section { position: relative; }
+    .section-header { padding-right: 36px; }
+    .section-help-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid var(--line-strong);
+      background: var(--panel-2);
+      color: var(--muted-strong);
+      font: inherit;
+      font-size: 0.86rem;
+      font-weight: 900;
+      line-height: 1;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+    }
+    .section-help-btn:hover { transform: translateY(-1px); border-color: var(--brand); color: var(--brand-ink); }
+    .section-help-btn[aria-expanded="true"] { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+    .section-help-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; box-shadow: var(--focus); }
+    .section-help {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px 16px;
+      margin: -6px 0 18px;
+      padding: 14px 16px;
+      border: 1px solid var(--line-accent);
+      border-radius: var(--radius);
+      background: var(--brand-soft);
+    }
+    .section-help[hidden] { display: none; }
+    .section-help > div { min-width: 0; }
+    .section-help strong {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--brand-ink);
+      margin-bottom: 4px;
+    }
+    .section-help p { margin: 0; font-size: 0.86rem; line-height: 1.5; color: var(--text-soft); }
+    .section-help-foot {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 16px;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px dashed var(--line-accent);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .guide-link { color: var(--brand-ink); font-weight: 800; }
+    .onboarding-guide { margin: 12px 0 0; font-size: 0.86rem; }
+    @media (max-width: 860px) {
+      .section-help { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .section-help-btn { display: none !important; }
+      .section-help { background: #fff; border-color: #ccc; }
+    }
+
+    /* =====================================================================
        Check My Understanding (quiz)
        ===================================================================== */
     #sec-quiz .section-header h2::before { background: var(--purple); }
@@ -4501,6 +4572,7 @@
           <button class="btn primary" id="onboardSampleBtn" type="button">Try it with sample data</button>
           <button class="btn ghost" id="onboardUploadBtn" type="button">Upload my CSV</button>
         </div>
+        <p class="subtle onboarding-guide">Prefer a manual? <a class="guide-link" href="teacher-dashboard-guide.pdf" target="_blank" rel="noopener">Download the user guide (PDF)</a> &mdash; every section explained, with pictures. The <strong>?</strong> in the corner of each section explains it in place.</p>
       </div>
       <ol class="onboarding-steps">
         <li>
@@ -4548,6 +4620,10 @@
             <li>Nothing is persisted. Only your theme and motion preferences are remembered; no student data is ever written to disk or sent anywhere.</li>
             <li>Not ready to export? Click <em>Load Sample Data</em> to explore every feature first.</li>
           </ul>
+        </div>
+        <div>
+          <strong>The user guide</strong>
+          <p><a class="guide-link" href="teacher-dashboard-guide.pdf" target="_blank" rel="noopener">Download the user guide (PDF)</a>: how to export and load your file, what every number means, and what each section tells you and what to do with it. In the page itself, the <strong>?</strong> in the corner of every section says the same in three short answers.</p>
         </div>
       </div>
     </details>
@@ -4940,7 +5016,7 @@
           </div>
           <div class="explain-card">
             <strong>Printing</strong>
-            <span>A3 landscape, one poster per page. Choose &ldquo;Fit to page&rdquo; and turn on background graphics in the print dialog. A4 works too &mdash; it just prints smaller.</span>
+            <span>One poster per page, in A3 or A4, landscape or portrait. Choose &ldquo;Fit to page&rdquo; and turn on background graphics in the print dialog.</span>
           </div>
         </div>
         <div class="poster-toolbar">
@@ -4950,6 +5026,7 @@
               <option value="landscape">A3 landscape</option>
               <option value="portrait">A3 portrait</option>
               <option value="a4-landscape">A4 landscape</option>
+              <option value="a4-portrait">A4 portrait</option>
             </select>
           </div>
           <div class="field">
@@ -5632,6 +5709,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.prefs = readPreferences();
       applyPreferences();
       attachEvents();
+      installSectionHelp();
       populateTierFilter();
       populateTargetControls();
       setupSupportLinks();
@@ -5807,6 +5885,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
 
       document.addEventListener("keydown", (event) => {
+        // A help panel closes from inside itself and hands focus back to its "?".
+        if (event.key === "Escape" && event.target.closest && event.target.closest(".section-help")) {
+          toggleSectionHelp(event.target.closest(".section-help").id.replace(/^help-/, ""), false);
+          return;
+        }
         if (event.key === "Escape" && els.supportBackdrop && !els.supportBackdrop.hidden) {
           closeSupportPrompt(false);
           return;
@@ -5831,6 +5914,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // Delegated so dynamically rendered nav links, student names and tier
       // rows keep working after every re-render.
       document.addEventListener("click", (event) => {
+        const help = event.target.closest("[data-help]");
+        if (help) {
+          toggleSectionHelp(help.dataset.help);
+          return;
+        }
+        const helpClose = event.target.closest("[data-help-close]");
+        if (helpClose) {
+          toggleSectionHelp(helpClose.dataset.helpClose, false);
+          return;
+        }
         const quizAnswer = event.target.closest("[data-quiz-answer]");
         if (quizAnswer) {
           answerQuiz(Number(quizAnswer.dataset.quizAnswer));
@@ -7895,6 +7988,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const mode = state.dataWindow.mode;
       const baseline = mode === "baseline";
       document.body.dataset.dataMode = mode;
+      if (typeof closeSectionHelp === "function") closeSectionHelp();
 
       const visibleIds = new Set(visibleSections().map((section) => section.id));
       SECTION_PLAN.forEach((section) => {
@@ -10782,6 +10876,188 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     // ---------------------------------------------------------------------
+    // Section help
+    // ---------------------------------------------------------------------
+    // Every section carries a "?" in its corner that opens three short
+    // answers: what the section shows, how to read it, and what to do with
+    // it. The same text is the source for the printed user guide, so the two
+    // never disagree. Entries may carry a baseline variant for a
+    // single-window file, where the section means something different.
+    const GUIDE_URL = "teacher-dashboard-guide.pdf";
+
+    const SECTION_HELP = {
+      "sec-snapshot": {
+        what: "The headline figures for the records in view: how many records and students, the share that met and beat their growth projection, the average start and end percentile for records with both windows, pooled gap closure, and how many records are on the priority and celebration lists. The banner above it says which test windows the file covers.",
+        read: "A record is one student in one subject, so a student tested in three subjects is three records. Any share resting on fewer than 10 records prints as a count rather than a percentage. Met growth means growing at least as much as NWEA projected for that student from their own starting point.",
+        act: "This is the one-minute summary for a data meeting. Export it as text, or filter to one class or subject and the whole page, this card included, describes that group.",
+        baseline: {
+          what: "The headline figures for a single-window file: students and records, the median percentile, the mean RIT, distance from the US norm mean, the share at or above the norm and at or above the secure line, and how many records start in Tier 2 or 3. The banner explains why no growth figure appears.",
+          read: "Nothing here measures movement: with one test window there is no earlier score to compare against. A share resting on fewer than 10 records prints as a count."
+        }
+      },
+      "sec-baseline": {
+        what: "The instructional tier ladder for the current window (Intensive at or below the 20th percentile, Strategic 21st to 40th, On Track 41st to 60th, Secure 61st to 80th, Advanced 81st and above), placement against the US grade and season norms, and a breakdown by subject or class.",
+        read: "Tiers describe achievement only: where a student is, not how far they moved. The grade-level equivalence is an approximation from grade-mean RIT scores, not a reading or maths grade level, and it is least reliable at the top and bottom of the scale.",
+        act: "Click a tier row to filter the whole page to that tier. Use the counts to size intervention and extension groups before the timetable is fixed."
+      },
+      "sec-overview": {
+        what: "One card per subject with its key figures: records, averages or medians, the shares that met growth or sit above the norm, band movement and ground gained against the norm. The lens switch turns it into one card per class instead.",
+        read: "Compare cards, not students. Where a card shows a count instead of a percentage, it rests on fewer than 10 records and the comparison is a description of this file rather than a finding. The class lens compares groups inside one upload, which is not a national comparison.",
+        act: "Find the subject that needs attention first, or switch the lens to class and see how the groups in the file sit next to each other."
+      },
+      "sec-charts": {
+        what: "For each subject: start and end achievement, projected against observed growth, met and exceeded rates, and the distribution across the five colour bands.",
+        read: "Bars start at zero, so lengths compare fairly. Thin data is drawn from counts, and the same rule applies: fewer than 10 records is a handful of children, not a rate.",
+        act: "Use them in a team meeting where a picture is quicker than a table, and print the page when the meeting is on paper."
+      },
+      "sec-growth": {
+        what: "NWEA's growth and achievement quadrants for the end window, the movement between quadrants since the start window, a scatter of every record, and median conditional growth by starting band.",
+        read: "Achievement is where a score sits; growth is how far it moved compared with students who started in the same place, where 50 is typical. High achievement can hide low growth, and a low start can hide strong growth. Bands with fewer than 5 records are drawn but never read.",
+        act: "Look for the two patterns that matter most: secure students who are coasting, and low starters whose catch-up growth is working and needs protecting."
+      },
+      "sec-gap": {
+        what: "Among records that started below the 61st percentile: how many closed the gap, reduced it or widened it, and the pooled share of the total distance that was closed. Also band movement, and whether secure starters extended or slipped.",
+        read: "The 61st percentile is a locally chosen secure line, not an NWEA definition. Percentile points are positions in a distribution rather than equal units, so read gap closure as direction and rough size. Pooled closure is total points closed over total points to close, not an average of individual rates.",
+        act: "Celebrate the closers by name in class, and look first at the secure students who slipped, because core teaching alone rarely catches them."
+      },
+      "sec-goals": {
+        what: "Norm-referenced RIT targets for the next reporting point: the typical gain a peer makes, a keep-pace target, the grade-level target and the stretch above typical some students need. Where a fall export carries NWEA's own projection, that figure leads.",
+        read: "Keep pace means holding your relative position; grade level means reaching the norm mean. Typical gain comes from the difference between two norm means, not from NWEA's projection for an individual student. The norm table built in is a reference, not the official study.",
+        act: "Print the goal sheets, set a written target for every student who needs above-typical growth, and re-upload after the next window so the target becomes a result.",
+        baseline: {
+          what: "Norm-referenced RIT targets for the end of this school year, so the winter or spring upload has something to measure against: the typical gain, a keep-pace target, the grade-level target and the stretch above typical some students need. Where the export carries NWEA's own projection for the window ahead, that figure leads."
+        }
+      },
+      "sec-actions": {
+        what: "The handful of moves with the most leverage this week, ranked, each with the students it applies to and the move to make.",
+        read: "Each card names students, deduplicated across subjects and capped at forty names; the reason on the card is the rule that put them there. A student can appear on more than one card.",
+        act: "Treat it as this week's plan. Print it or copy it into your planning notes, and come back after the next window to see which cards emptied."
+      },
+      "sec-target": {
+        what: "How far the group is from having a chosen share of records at or above a chosen percentile line, and which records are closest to that line.",
+        read: "This sizes a goal; it does not decide who gets taught. Moving the students nearest the line is the fastest way to change a percentage and the wrong way to choose who needs help. The support list answers that question.",
+        act: "Pick the line and the share you would be judged against, see how many records it would take, and set a target the class can own."
+      },
+      "sec-crosssubject": {
+        what: "For every student with two or more subjects: their strongest and weakest subject, the spread between them in percentile points, and in a growth file the same comparison for conditional growth.",
+        read: "A spread of 30 points or more is an uneven profile. It usually means a different group in one subject than another, not a different child.",
+        act: "Use it when grouping: a student who is secure in reading and intensive in maths belongs in two different groups, and one grouping decision will not carry the day."
+      },
+      "sec-strands": {
+        what: "From a Class Profile export only: the instructional areas within each subject where the class stands out as a strength or a gap, and the students whose own area score sits well below their overall score.",
+        read: "Area scores are read against each student's own overall RIT, because NWEA publishes no norm for an area, so above means above their own level, not above grade level. Class patterns need a confidence interval that clears zero; individual flags need a difference larger than the noise floor.",
+        act: "Choose what to reteach to the whole class from the class patterns, and who needs the small group from the flagged students."
+      },
+      "sec-summary": {
+        what: "A copy-ready narrative of the current view, written from the same figures as the cards above it.",
+        read: "It follows your filters until you edit it; after that it keeps your words until you press Regenerate. Where a figure would rest on too few records it says so rather than quoting a percentage.",
+        act: "Paste it into PLC notes, a report to a leader, or the start of a data conversation, and edit it into your own voice."
+      },
+      "sec-quiz": {
+        what: "A practice run for the data conversation: multiple-choice and true-or-false questions a principal, inspector, governor, data lead or head of department would ask about the records in view, marked against the figures on this page.",
+        read: "Every question is built from the current view, so filter to one class or subject to rehearse for that meeting. Each answer is coached with the figure, a jump to the section that shows it, and the follow-up a leader would ask next.",
+        act: "Run a set before a data meeting, read back the ones you missed, and copy the prep notes."
+      },
+      "sec-posters": {
+        what: "Posters for the classroom wall, written for students in student language: class shares, medians and counts only, with no name, no individual score and no rank on any of them.",
+        read: "Which posters are available depends on the file: growth posters need two windows and at least 10 growth results, the learning-areas poster needs a Class Profile export, and every poster needs at least 5 students in view. The footer of each records which group it describes.",
+        act: "Tick the posters you want, choose A3 or A4, add the class name the students know, and print with background graphics on and fit-to-page."
+      },
+      "sec-tables": {
+        what: "Seating and table groups built from the data by a chosen strategy, with a full-screen planner where tables, the board, the door and the students can be dragged to match your room.",
+        read: "Mixed groups spread achievement across tables; similar groups keep it together for targeted teaching. Students without a usable score wait in a manual pool rather than being placed by a number they do not have.",
+        act: "Build the groups for the week, drag anyone the data placed badly, then print the A4 layout or export the list."
+      },
+      "sec-grouping": {
+        what: "Every record in view in one sortable table: scores, bands, growth, gap status, the planning group the dashboard suggests and the teacher action that goes with it.",
+        read: "This is the full evidence behind every card above. Sort a column by clicking its heading; the group and gap filters at the top narrow it.",
+        act: "Export it as a CSV for your own planning documents, or open a student's name for their one-page spotlight.",
+        baseline: {
+          what: "Every record in view in one sortable table: RIT, percentile, band, tier, distance from the norm, the planning group the dashboard suggests and the teacher action that goes with it. Growth columns appear once a second window exists."
+        }
+      },
+      "sec-priority": {
+        what: "Records that need attention first, each with the reasons: missed growth, a dropped band, a missing end score, negative growth, finishing below the 21st percentile, secure regression or a widened gap.",
+        read: "A record can be listed for a reason other than low achievement, so the reason column matters more than the tier. A met-growth call within measurement error is marked too close to call.",
+        act: "This is where the first small groups come from. Name three students and what changes for them this week, before anyone asks.",
+        baseline: {
+          what: "Records that need attention from the start of the year, each with the reasons: starting below the 41st percentile, testing a grade or more below placement, sitting well below the norm, needing above-typical growth to reach grade level, or a score that needs confirming.",
+          read: "A record can be listed for a reason other than low achievement, so the reason column matters more than the tier."
+        }
+      },
+      "sec-celebration": {
+        what: "Records with something to celebrate: growth beyond the projection, a band moved up, a gap closed or sharply reduced, a strong RIT gain, or a rise from low to high on a quadrant axis, each with a next extension.",
+        read: "Celebration is about growth, not just high scores. A secure student who grew slowly is not here; a low starter who beat their projection is.",
+        act: "Name the success to the student, then set the next measurable target so celebration does not turn into coasting.",
+        baseline: {
+          what: "Records already showing a strength at the start of the year: at or above the secure line, well above the norm mean, testing a grade or more above placement, or already above the grade-level target, each with an extension action.",
+          read: "These are strengths to build on from day one, not growth: with one window nothing here measures movement."
+        }
+      },
+      "sec-quality": {
+        what: "What was read from the file and what was not: rows, columns, suppressed cells, tests with no score, duplicate rows, tests marked not valid, short or rapidly guessed tests, the norms study the file was scored against, and the rule that turns thin percentages into counts.",
+        read: "Check it before you plan from anything else. A missing column hides a feature rather than showing a zero; a norms mismatch means the RIT-versus-norm figures will not match your MAP reports; a short test is a signal to confirm, not an invalid score.",
+        act: "Chase the students with no score, confirm the short tests, and read the counts-instead-of-percentages note if a figure surprised you."
+      }
+    };
+
+    function installSectionHelp() {
+      SECTION_PLAN.forEach((section) => {
+        const node = document.getElementById(section.id);
+        const header = node && node.querySelector(".section-header");
+        if (!header || !SECTION_HELP[section.id] || node.querySelector(".section-help-btn")) return;
+        const button = document.createElement("button");
+        button.className = "section-help-btn";
+        button.type = "button";
+        button.dataset.help = section.id;
+        button.setAttribute("aria-expanded", "false");
+        button.setAttribute("aria-controls", "help-" + section.id);
+        button.setAttribute("aria-label", "What this section tells you");
+        button.title = "What this section tells you";
+        button.textContent = "?";
+        node.insertBefore(button, header);
+        const panel = document.createElement("div");
+        panel.className = "section-help";
+        panel.id = "help-" + section.id;
+        panel.hidden = true;
+        panel.setAttribute("role", "region");
+        panel.setAttribute("aria-label", "About this section");
+        header.insertAdjacentElement("afterend", panel);
+      });
+    }
+
+    function sectionHelpHTML(id) {
+      const entry = SECTION_HELP[id];
+      if (!entry) return "";
+      const help = isBaselineMode() && entry.baseline ? Object.assign({}, entry, entry.baseline) : entry;
+      return "<div><strong>What it shows</strong><p>" + escapeHTML(help.what) + "</p></div>" +
+        "<div><strong>How to read it</strong><p>" + escapeHTML(help.read) + "</p></div>" +
+        "<div><strong>What to do with it</strong><p>" + escapeHTML(help.act) + "</p></div>" +
+        '<div class="section-help-foot"><span>More on every section, with pictures, in the user guide:</span>' +
+        '<a class="guide-link" href="' + escapeAttr(GUIDE_URL) + '" target="_blank" rel="noopener">Download the guide (PDF)</a>' +
+        '<button class="link-button" type="button" data-help-close="' + escapeAttr(id) + '">Close</button></div>';
+    }
+
+    function toggleSectionHelp(id, force) {
+      const button = document.querySelector('.section-help-btn[data-help="' + cssEscape(id) + '"]');
+      const panel = document.getElementById("help-" + id);
+      if (!button || !panel) return;
+      const open = force === undefined ? panel.hidden : Boolean(force);
+      if (open) panel.innerHTML = sectionHelpHTML(id);
+      panel.hidden = !open;
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+      if (!open) button.focus({ preventScroll: true });
+    }
+
+    // A new file can change what a section means, so anything open is
+    // closed and rebuilt on next use.
+    function closeSectionHelp() {
+      document.querySelectorAll(".section-help:not([hidden])").forEach((panel) => {
+        toggleSectionHelp(panel.id.replace(/^help-/, ""), false);
+      });
+    }
+
+    // ---------------------------------------------------------------------
     // Check My Understanding
     // ---------------------------------------------------------------------
     // A practice run for the data conversation. Every question is built from
@@ -12871,20 +13147,35 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         }
         return null;
       },
-      function quizMetDenominatorTF(ctx) {
-        if (!ctx.growth || ctx.rows.length < 2) return null;
+      // One record without a growth result is a technicality, not a question:
+      // the true/false form is asked only when every record counts, and the
+      // count form only when enough are left out for the answer to matter.
+      function quizMetDenominator(ctx) {
+        if (!ctx.growth || ctx.rows.length < 3) return null;
         const entry = ctx.metrics.shares.met;
         if (!entry || !entry.of) return null;
         if (ctx.mode === "mixed" && Math.random() < 0.5) return null;
         const excluded = ctx.rows.length - entry.of;
+        if (excluded === 0) {
+          return {
+            family: "met-denominator", topic: "Data quality", type: "tf", persona: "datalead", exclusive: "single-window",
+            stem: "The met-growth figure counts records that grew at least as much as NWEA projected. True or false: every record in this view has a growth result behind that figure.",
+            ...quizTF(true),
+            explanation: "All " + formatInteger(ctx.rows.length) + " records in view carry a growth result, so the met-growth figure describes the whole view. The Met growth card in Class Snapshot says how many records it rests on in its hint.",
+            section: "sec-snapshot",
+            followUp: "And how many of those results sit within measurement error of the projection?"
+          };
+        }
+        if (excluded < Math.max(3, Math.ceil(ctx.rows.length * 0.1))) return null;
+        const options = quizCountOptions(excluded, ctx.rows.length);
+        if (!options) return null;
         return {
-          family: "met-denominator-tf", topic: "Data quality", type: "tf", persona: "datalead", exclusive: "single-window",
-          stem: "The met-growth figure counts records that grew at least as much as NWEA projected. True or false: it is based on every record in this view.",
-          ...quizTF(excluded === 0),
-          explanation: "The figure rests on " + formatInteger(entry.of) + " of the " + formatInteger(ctx.rows.length) + " records in view" +
-            (excluded ? "; " + formatInteger(excluded) + " " + quizPlural(excluded, "record has", "records have") + " no growth result - a missing end score, only the " + ctx.window + " window, or a met-growth cell the export left blank. The Met growth card says how many records it rests on in its hint, and the Met Growth column in the Grouping table shows Missing for the excluded rows." : ". Every record carries a growth result, so nobody is left out of it."),
+          family: "met-denominator", topic: "Data quality", type: "mc", persona: "datalead", exclusive: "single-window",
+          stem: "The met-growth figure only counts records that have a growth result. How many records in this view are left out of it because they have none?",
+          options, correct: formatInteger(excluded),
+          explanation: formatInteger(excluded) + " of the " + formatInteger(ctx.rows.length) + " records in view have no growth result - a missing end score, only the " + ctx.window + " window, or a met-growth cell the export left blank - so the figure rests on " + formatInteger(entry.of) + ". The Met growth card in Class Snapshot says how many records it rests on in its hint, and the Met Growth column in the Grouping table shows Missing for the excluded rows.",
           section: "sec-snapshot",
-          followUp: excluded ? "Which students are the excluded ones, and is it that they have not tested yet or that the score was suppressed?" : "And how many of those results sit within measurement error of the projection?"
+          followUp: "Which students are the excluded ones, and is it that they have not tested yet or that the score was suppressed?"
         };
       },
       function quizCrossSubjectWidest(ctx) {
@@ -13091,8 +13382,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // scale drives every type size and gap, so one stylesheet fits three pages.
     const POSTER_PAGES = {
       landscape: { css: "A3 landscape", width: 400, height: 277, scale: 1 },
-      portrait: { css: "A3 portrait", width: 277, height: 400, scale: 0.78 },
-      "a4-landscape": { css: "A4 landscape", width: 277, height: 190, scale: 0.7 }
+      portrait: { css: "A3 portrait", width: 277, height: 400, scale: 0.86 },
+      "a4-landscape": { css: "A4 landscape", width: 277, height: 190, scale: 0.7 },
+      "a4-portrait": { css: "A4 portrait", width: 190, height: 277, scale: 0.6 }
     };
 
     // Sizes are expressed against --s so one stylesheet serves A3 landscape,
@@ -13322,6 +13614,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     min-height: calc(34 * var(--s));
     max-height: calc(72 * var(--s));
   }
+  .poster-stack-bands { min-height: calc(24 * var(--s)); max-height: calc(34 * var(--s)); flex: 0 0 auto; }
+
+  /* ---- portrait pages: the hero sits above the chart, not beside it ---- */
+  .poster.is-portrait .poster-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .poster.is-portrait .poster-hero {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: calc(2 * var(--s)) calc(8 * var(--s));
+    padding: calc(8 * var(--s)) calc(14 * var(--s)) calc(6 * var(--s));
+    border-right: 0;
+    border-bottom: calc(0.4 * var(--s)) solid var(--rule);
+  }
+  .poster.is-portrait .poster-hero-rule { display: none; }
+  .poster.is-portrait .poster-big { font-size: calc(46 * var(--s)); }
+  .poster.is-portrait .poster-big-label { flex: 1 1 45%; max-width: none; }
+  .poster.is-portrait .poster-main { padding-left: calc(14 * var(--s)); justify-content: space-evenly; gap: calc(10 * var(--s)); }
+  .poster.is-portrait .poster-bars { gap: calc(13 * var(--s)); }
+  .poster.is-portrait .poster-bar-track { height: calc(18 * var(--s)); }
+  .poster.is-portrait .poster-stack { min-height: calc(48 * var(--s)); max-height: calc(90 * var(--s)); }
+  .poster.is-portrait .poster-stack-bands { min-height: calc(28 * var(--s)); max-height: calc(36 * var(--s)); }
   .poster-stack span {
     display: flex;
     flex-direction: column;
@@ -13461,7 +13774,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function posterShell(poster, inner, page) {
       const scale = page && isFiniteNumber(page.scale) ? page.scale : 1;
-      return '<section class="poster" data-poster="' + escapeAttr(poster.id) + '" style="--s:' + scale + 'mm">' +
+      // On a portrait page the hero column would take a third of a narrow
+      // width and its number would spill into the chart, so the hero sits
+      // above the chart instead.
+      const portrait = page && isFiniteNumber(page.height) && isFiniteNumber(page.width) && page.height > page.width;
+      return '<section class="poster' + (portrait ? " is-portrait" : "") + '" data-poster="' + escapeAttr(poster.id) + '" style="--s:' + scale + 'mm">' +
         '<header class="poster-masthead"><span class="poster-eyebrow">' + escapeHTML(posterHeading()) + "</span>" +
         "<h1>" + escapeHTML(poster.headline()) + "</h1>" +
         (poster.sub ? '<p class="poster-sub">' + escapeHTML(poster.sub()) + "</p>" : "") + "</header>" +
@@ -13716,7 +14033,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         body: () => {
           const diagnostics = state.diagnostics || {};
           const metrics = aggregateRows(state.filteredRows);
-          const rushed = (diagnostics.rapidGuessFlagged || 0) + metrics.shortTestCount;
+          // Both flags are counted on the records in view, and a record that
+          // carries both is one rushed test, not two.
+          const rushed = state.filteredRows.filter((row) => row.shortTest || row.rapidGuessed).length;
           return '<div class="poster-body">' +
             posterHero(isFiniteNumber(diagnostics.medianDuration) ? formatNumber(diagnostics.medianDuration, 0) : "-",
               "minutes is how long our class usually takes", "blue") +
@@ -13771,8 +14090,165 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
                 escapeHTML(formatInteger(result.scored.length)) + "</b><small>results in this picture, and each one can move</small></div>") +
             "</div></div></div>";
         }
+      },
+      {
+        id: "catchup",
+        title: "Catching up",
+        blurb: "Of the results that started below the class benchmark, how many moved towards it or crossed it.",
+        available: () => hasGrowthContext() && posterBelowSecureRows().length >= MIN_SHARE_N,
+        headline: () => "Starting Behind Is Not Staying Behind",
+        sub: () => "Of the results that began below the 61st percentile, this is how many moved towards it.",
+        message: () => "Catching up means growing faster than students who started ahead of you. That is the hardest kind of growth there is, and this many of us did it.",
+        body: () => {
+          const rows = posterBelowSecureRows();
+          const total = rows.length;
+          const closed = rows.filter((row) => row.gapStatus === "Gap Closed").length;
+          const reduced = rows.filter((row) => row.gapStatus === "Gap Reduced").length;
+          const moved = closed + reduced;
+          const share = (count) => count / total * 100;
+          const pooled = pooledGapClosure(rows);
+          return '<div class="poster-body">' +
+            posterHero(formatPercentWhole(share(moved)), "of us who started behind closed some of the distance", share(moved) >= 50 ? "green" : "amber") +
+            '<div class="poster-main"><div class="poster-bars">' +
+            posterBarRow("Crossed the line", "Finished at or above the 61st percentile", share(closed),
+              formatPercentWhole(share(closed)), POSTER_INK.green.fill, POSTER_INK.green.track) +
+            posterBarRow("Closed some of the gap", "Nearer the line than they started", share(reduced),
+              formatPercentWhole(share(reduced)), POSTER_INK.blue.fill, POSTER_INK.blue.track) +
+            posterBarRow("Still to come", "Held their place or slipped", share(total - moved),
+              formatPercentWhole(share(total - moved)), POSTER_INK.amber.fill, POSTER_INK.amber.track) +
+            "</div>" +
+            '<div class="poster-callouts">' +
+            '<div class="poster-callout"><strong>Started behind</strong><b>' + escapeHTML(formatInteger(total)) +
+            "</b><small>results began below the 61st percentile</small></div>" +
+            // A negative pooled figure is a class that slipped; that belongs in
+            // the dashboard, not on a wall that is meant to be read by children.
+            (isFiniteNumber(pooled) && pooled > 0
+              ? '<div class="poster-callout is-good"><strong>Distance closed</strong><b>' + escapeHTML(formatFractionPercent(pooled)) +
+                "</b><small>of all the ground there was to make up, made up together</small></div>"
+              : "") +
+            "</div></div></div>";
+        }
+      },
+      {
+        id: "movement",
+        title: "Moving up",
+        blurb: "How many results moved up a whole colour band, stayed, or moved down, as counts rather than names.",
+        available: () => hasGrowthContext() && posterBandedRows().length >= MIN_SHARE_N,
+        headline: () => "We Moved Up",
+        sub: () => "A colour band is 20 percentile points wide. Moving up one means overtaking a lot of people your age.",
+        message: () => "Staying in your band already means you kept pace with students across the country. Moving up means you outgrew them.",
+        body: () => {
+          const rows = posterBandedRows();
+          const up = rows.filter((row) => row.bandMovement === "Moved Up").length;
+          const down = rows.filter((row) => row.bandMovement === "Moved Down").length;
+          const same = rows.length - up - down;
+          const twoPlus = rows.filter((row) => row.endBand.rank - row.startBand.rank >= 2).length;
+          const total = rows.length || 1;
+          const segments = [
+            { label: "Moved up", count: up, fill: POSTER_INK.green.fill },
+            { label: "Stayed", count: same, fill: POSTER_INK.slate.fill },
+            { label: "Moved down", count: down, fill: POSTER_INK.amber.fill }
+          ].filter((segment) => segment.count);
+          const stack = segments.map((segment) => '<span style="flex:' + segment.count + ";background:" + segment.fill +
+            ';color:#ffffff"><b>' + formatInteger(segment.count) + "</b>" +
+            (segment.count / total >= 0.14 ? "<i>" + escapeHTML(segment.label) + "</i>" : "") + "</span>").join("");
+          const key = segments.map((segment) => '<span><i style="background:' + segment.fill + '"></i>' + escapeHTML(segment.label) + "</span>").join("");
+          return '<div class="poster-body">' +
+            posterHero(formatInteger(up), up === 1 ? "result moved up a whole colour band" : "results moved up a whole colour band", "green") +
+            '<div class="poster-main"><div class="poster-block"><div class="poster-stack">' + stack + "</div>" +
+            '<div class="poster-key">' + key + "</div></div>" +
+            '<div class="poster-callouts">' +
+            (twoPlus
+              ? '<div class="poster-callout is-good"><strong>Two bands or more</strong><b>' + escapeHTML(formatInteger(twoPlus)) +
+                "</b><small>" + escapeHTML(twoPlus === 1 ? "result jumped" : "results jumped") + " at least 40 percentile points</small></div>"
+              : "") +
+            '<div class="poster-callout"><strong>Kept pace</strong><b>' + escapeHTML(formatInteger(same)) +
+            "</b><small>stayed in their band, which means growing as fast as everyone else</small></div>" +
+            "</div></div></div>";
+        }
+      },
+      {
+        id: "subjects",
+        title: "Our subjects side by side",
+        blurb: "The class's middle percentile in each subject, so the strongest subject and the next focus are both on the wall.",
+        available: () => posterSubjectEntries().length >= 2,
+        headline: () => "Our Subjects Side By Side",
+        sub: () => "Our middle score in each subject, out of 100 against students our age across the country.",
+        message: () => "A strong subject shows what this class can do. The next one along is where the same effort pays off fastest.",
+        body: () => {
+          const entries = posterSubjectEntries();
+          const best = entries[0];
+          const tops = entries.filter((entry) => entry.median === best.median).map((entry) => entry.subject);
+          const low = entries[entries.length - 1];
+          const lows = entries.filter((entry) => entry.median === low.median).map((entry) => entry.subject);
+          const bars = entries.map((entry) => {
+            const band = getBand(entry.median);
+            return posterBarRow(entry.subject, formatInteger(entry.count) + " results", entry.median, formatNumber(entry.median, 0),
+              bandPrintColour(band), "#eceff5", entry.median >= SECURE_BENCHMARK ? "secure" : "");
+          }).join("");
+          return '<div class="poster-body">' +
+            posterHero(formatNumber(best.median, 0), "is our middle score in " + tops.join(" and ") + ", our strongest " + (tops.length === 1 ? "subject" : "subjects"), "green") +
+            '<div class="poster-main"><div class="poster-bars">' + bars + "</div>" +
+            '<div class="poster-callouts">' +
+            (lows.length < entries.length
+              ? '<div class="poster-callout is-next"><strong>Next focus</strong><b>' + escapeHTML(lows.join(" and ")) +
+                "</b><small>" + escapeHTML("middle score " + formatNumber(low.median, 0) + " - the same effort moves this fastest") + "</small></div>"
+              : "") +
+            '<div class="poster-callout"><strong>What 50 means</strong><b>The middle</b><small>half of students your age across the country score above it, half below</small></div>' +
+            "</div></div></div>";
+        }
+      },
+      {
+        id: "explainer",
+        title: "How to read a MAP score",
+        blurb: "RIT, percentile and growth score explained in student language, with the five colour bands.",
+        available: () => true,
+        headline: () => "How To Read Your MAP Score",
+        sub: () => "Three numbers on your report, and what each one is measured against.",
+        message: () => "Your percentile compares you with students your age. Your growth score compares you with your own starting point. Only one of those is about how hard you worked this year.",
+        body: () => {
+          const medianRIT = median(state.filteredRows.map((row) => row.currentRIT));
+          const bands = BANDS.map((band) => '<span style="flex:1;background:' + bandPrintColour(band) + ";color:" + bandPrintInk(band) +
+            '"><b>' + escapeHTML(band.name) + "</b><i>" + escapeHTML(band.min + "-" + band.max) + "</i></span>").join("");
+          return '<div class="poster-body is-full"><div class="poster-main">' +
+            '<div class="poster-callouts poster-callouts-big">' +
+            '<div class="poster-callout"><strong>RIT score</strong><b>' + (isFiniteNumber(medianRIT) ? escapeHTML("Ours: " + formatNumber(medianRIT, 0)) : "One scale") +
+            "</b><small>one scale for every year of school, so it never restarts. It goes up as you learn, whatever grade you are in.</small></div>" +
+            '<div class="poster-callout"><strong>Percentile</strong><b>Out of 100</b><small>how your score compares with students in your grade across the country. 50 is the middle. It is not the share of questions you got right.</small></div>' +
+            '<div class="poster-callout is-good"><strong>Growth score</strong><b>50 is typical</b><small>how much you grew compared with students who started on the same score as you. Above 50 means faster than typical.</small></div>' +
+            "</div>" +
+            '<div class="poster-block"><div class="poster-stack poster-stack-bands">' + bands + "</div>" +
+            '<p class="poster-empty">The colour band is where your percentile sits today. It is a starting line, not a label.</p></div>' +
+            "</div></div>";
+        }
       }
     ];
+
+    // Records for the catching-up poster: started below the secure line and
+    // have an end score to judge movement by.
+    function posterBelowSecureRows() {
+      return state.filteredRows.filter((row) => isFiniteNumber(row.startPercentile) && row.startPercentile < SECURE_BENCHMARK && isFiniteNumber(row.endPercentile));
+    }
+
+    function posterBandedRows() {
+      return state.filteredRows.filter((row) => row.startBand.rank && row.endBand.rank);
+    }
+
+    // One row per subject with enough scored records for a median to stand
+    // on a wall, strongest first.
+    function posterSubjectEntries() {
+      const bySubject = new Map();
+      state.filteredRows.forEach((row) => {
+        if (!isFiniteNumber(row.currentPercentile)) return;
+        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+        bySubject.get(row.subject).push(row.currentPercentile);
+      });
+      return [...bySubject.entries()]
+        .filter(([, values]) => values.length >= POSTER_MIN_STUDENTS)
+        .map(([subject, values]) => ({ subject, count: values.length, median: median(values) }))
+        .filter((entry) => isFiniteNumber(entry.median))
+        .sort((a, b) => b.median - a.median || a.subject.localeCompare(b.subject));
+    }
 
     function ritLadderEntries() {
       const bySubject = new Map();
@@ -13878,6 +14354,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       }).join("");
       const picked = posters.filter((poster) => selection.has(poster.id)).length;
       setText("posterCount", formatInteger(picked) + " of " + formatInteger(posters.length) + " selected | " + page.css);
+      if (els.posterPrintSelected) els.posterPrintSelected.textContent = "Print selected (" + page.css + ")";
       applyStagger(els.posterGrid);
       scalePosterPreviews();
     }
