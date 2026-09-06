@@ -6259,6 +6259,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.diagnostics.mergedRecords = mergedRecords;
       state.spotlightKey = "";
       state.quiz = emptyQuizState();
+      resetQuizPool();
       populateFilters();
       resetFilters(false);
       applyModeToChrome();
@@ -6292,6 +6293,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.diagnostics = null;
       state.spotlightKey = "";
       state.quiz = emptyQuizState();
+      resetQuizPool();
       populateFilters();
       applyModeToChrome();
       safeRenderAll();
@@ -8019,7 +8021,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function renderUploadStats() {
       applyLoadedChrome();
       els.recordCount.textContent = formatInteger(state.allRows.length);
-      els.studentCount.textContent = formatInteger(new Set(state.allRows.map((row) => row.studentID || row.studentName)).size);
+      // The same key the Snapshot and the quiz use, so two students who both
+      // lack an ID are two students here as well.
+      els.studentCount.textContent = formatInteger(new Set(state.allRows.map((row) => studentKey(row))).size);
       els.fileName.textContent = state.fileName;
     }
 
@@ -10832,6 +10836,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         signature: "",
         poolSize: 0,
         reviewOpen: false,
+        scope: null,
         focus: ""
       };
     }
@@ -10911,27 +10916,49 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return quizOptionsFrom(formatInteger(correct), mixed.concat(filler).map(formatInteger), 3);
     }
 
-    // Wrong percentages a sensible distance away, kept inside 0-100.
+    // Wrong percentages a sensible distance away. The correct text comes from
+    // the same formatter the cards use, so a value like -12.5 rounds the same
+    // way in both places, and a negative value gets negative neighbours and
+    // its sign flip rather than being the one negative option.
+    // The flattened neighbour list is shuffled before it is cut, so the right
+    // answer is as often the largest or smallest option as any other.
     function quizPercentOptions(correct) {
-      const rounded = Math.round(correct);
-      const candidates = quizShuffle([5, 8, 10, 12, 15, 20, 25, 30])
-        .flatMap((step) => [rounded + step, rounded - step])
-        .filter((value) => value >= 0 && value <= 100 && Math.round(value) !== rounded);
-      return quizOptionsFrom(formatPercentWhole(rounded), candidates.map(formatPercentWhole), 3);
+      const negative = correct < 0;
+      const candidates = quizShuffle([5, 8, 10, 12, 15, 20, 25, 30]).flatMap((step) => [correct + step, correct - step])
+        .concat(negative ? [-correct] : [])
+        .filter((value) => value >= (negative ? -100 : 0) && value <= 100);
+      return quizSpreadOptions(correct, candidates, formatPercentWhole);
     }
 
     // Wrong values for a mean or median, formatted exactly as the page does.
     function quizNumberOptions(correct, steps, format) {
       const fmt = format || ((value) => formatNumber(value));
-      const candidates = quizShuffle(steps).flatMap((step) => [correct + step, correct - step]);
-      return quizOptionsFrom(fmt(correct), candidates.map(fmt), 3);
+      return quizSpreadOptions(correct, quizShuffle(steps).flatMap((step) => [correct + step, correct - step]), fmt);
     }
 
-    // A signed RIT distance. The sign flip is always offered because reading
-    // "+3" as "3 below" is the mistake a leader is most likely to catch.
+    // A signed RIT distance. The sign flip - reading "+3" as "3 below" - is
+    // offered often, but not always, so its presence never marks the answer.
+    // Neighbours that would print as zero are left out: the page prints a
+    // zero delta as "0", never "+0".
     function quizSignedOptions(correct, steps) {
-      const candidates = [-correct].concat(quizShuffle(steps).flatMap((step) => [correct + step, correct - step]));
-      return quizOptionsFrom(formatSignedNumber(correct), candidates.map(formatSignedNumber), 3);
+      const flip = Math.random() < 0.5 && Math.abs(correct) >= 1 ? [-correct] : [];
+      const candidates = flip.concat(quizShuffle(steps).flatMap((step) => [correct + step, correct - step]))
+        .filter((value) => Math.abs(value) >= 0.05);
+      return quizSpreadOptions(correct, candidates, formatSignedNumber);
+    }
+
+    // Picks the wrong numbers so that how many of them sit above the answer is
+    // drawn at random: the right answer is the largest or the smallest option
+    // as often as chance would put it there, and discarding the extremes is
+    // no strategy.
+    function quizSpreadOptions(correct, candidates, format) {
+      const correctText = format(correct);
+      const above = quizShuffle(candidates.filter((value) => value > correct));
+      const below = quizShuffle(candidates.filter((value) => value < correct));
+      const wantAbove = Math.min(above.length, Math.max(3 - below.length, Math.floor(Math.random() * 4)));
+      const picked = above.slice(0, wantAbove).concat(below.slice(0, 3 - wantAbove));
+      const rest = above.slice(wantAbove).concat(below.slice(3 - wantAbove));
+      return quizOptionsFrom(correctText, picked.concat(rest).map(format), 3);
     }
 
     // Wrong labels drawn from a list, preferring the ones that are actually in
@@ -11118,24 +11145,37 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         if (question.answerStudent) studentCount[question.answerStudent] = (studentCount[question.answerStudent] || 0) + 1;
         remaining = remaining.filter((item) => item !== question);
       };
-      const tfWanted = Math.min(3, Math.max(1, Math.round(count / 4)));
-      let lastTruth = null;
-      while (chosen.length < tfWanted) {
+      // A quarter of the set is true/false by design and never more than a
+      // third, and the True and False answers are kept within one of each
+      // other, so "always answer False" is no strategy.
+      const tfWanted = Math.max(1, Math.round(count / 4));
+      const tfMax = Math.max(tfWanted, Math.ceil(count / 3));
+      const truthCount = { True: 0, False: 0 };
+      const truthOf = (question) => question.options[question.answer];
+      const tfTaken = () => truthCount.True + truthCount.False;
+      const withinTFRoom = (question) => question.type !== "tf" || tfTaken() < tfMax;
+      const chooseFrom = (candidates) => {
+        const minority = truthCount.True < truthCount.False ? "True" : truthCount.False < truthCount.True ? "False" : null;
+        const balanced = candidates.filter((question) => question.type !== "tf" || !minority || truthOf(question) === minority);
+        return (balanced.length ? balanced : candidates)[0];
+      };
+      const takeCounted = (question) => {
+        if (question.type === "tf") truthCount[truthOf(question)] += 1;
+        take(question);
+      };
+      while (tfTaken() < tfWanted) {
         const candidates = remaining.filter((question) => question.type === "tf" && allowed(question, 1));
         if (!candidates.length) break;
-        const preferred = candidates.filter((question) => lastTruth === null || question.options[question.answer] !== lastTruth);
-        const pick = (preferred.length ? preferred : candidates)[0];
-        lastTruth = pick.options[pick.answer];
-        take(pick);
+        takeCounted(chooseFrom(candidates));
       }
       const topics = quizShuffle(unique(pool.map((question) => question.topic)));
       for (let pass = 0; chosen.length < count && remaining.length; pass += 1) {
         const cap = pass === 0 ? 1 : pass === 1 ? 2 : Infinity;
         let added = false;
         for (let i = 0; i < topics.length && chosen.length < count; i += 1) {
-          const candidate = remaining.find((question) => question.topic === topics[i] && allowed(question, cap));
-          if (!candidate) continue;
-          take(candidate);
+          const candidates = remaining.filter((question) => question.topic === topics[i] && allowed(question, cap) && withinTFRoom(question));
+          if (!candidates.length) continue;
+          takeCounted(chooseFrom(candidates));
           added = true;
         }
         if (!added && cap === Infinity) break;
@@ -11150,14 +11190,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     // --- Actions -----------------------------------------------------------
-    function startQuiz(count) {
-      const pool = buildQuizPool(state.filteredRows);
-      const wanted = Math.max(1, Math.min(count || state.quiz.count || QUIZ_DEFAULT_COUNT, pool.length));
-      const questions = pickQuizQuestions(pool, wanted);
+    // "Start" draws from the pool the intro card described, so the set is the
+    // one promised; "New questions" rebuilds it for fresh variants. The picker
+    // is random, so it gets a few tries to fill the count before settling.
+    function startQuiz(count, rebuild) {
+      const rows = state.filteredRows;
+      if (!rows.length) {
+        toast("No records match the current view, so there is nothing to ask about. Widen the filters.", "info");
+        return;
+      }
+      const cache = quizCachedPool(rows, rebuild);
+      const wanted = Math.max(1, Math.min(count || state.quiz.count || QUIZ_DEFAULT_COUNT, cache.selectable));
+      let questions = wanted >= cache.selectable ? quizShuffle(cache.fullSet) : [];
+      for (let attempt = 0; attempt < 4 && questions.length < wanted; attempt += 1) {
+        const picked = pickQuizQuestions(cache.pool, wanted);
+        if (picked.length > questions.length) questions = picked;
+      }
       if (!questions.length) {
         toast("Not enough data in view to build a quiz. Widen the filters.", "info");
         return;
       }
+      const students = new Set(rows.map((row) => studentKey(row))).size;
       state.quiz = {
         ...emptyQuizState(),
         status: "active",
@@ -11165,7 +11218,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         questions,
         answers: questions.map(() => null),
         signature: quizSignature(),
-        poolSize: pool.length,
+        poolSize: cache.selectable,
+        scope: {
+          files: state.fileNames.length ? state.fileNames.join(", ") : state.fileName,
+          records: rows.length,
+          students,
+          filtered: rows.length !== state.allRows.length,
+          span: isBaselineMode() ? currentWindowName() + " baseline" : state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel
+        },
         focus: "stem"
       };
       renderQuiz();
@@ -11220,6 +11280,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const count = state.quiz.count;
       state.quiz = emptyQuizState();
       state.quiz.count = count;
+      state.quiz.focus = "start";
       renderQuiz();
     }
 
@@ -11229,10 +11290,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function handleQuizAction(action, node) {
-      if (action === "start") startQuiz(Number(node.dataset.quizCount) || state.quiz.count);
+      if (action === "start") startQuiz(Number(node.dataset.quizCount) || state.quiz.count, false);
       else if (action === "next") advanceQuiz();
       else if (action === "retry") retryQuiz();
-      else if (action === "new") startQuiz(state.quiz.count);
+      else if (action === "new") startQuiz(state.quiz.count, true);
       else if (action === "reset") resetQuiz();
       else if (action === "review") {
         state.quiz.reviewOpen = !state.quiz.reviewOpen;
@@ -11278,26 +11339,44 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const target = quiz.focus;
       quiz.focus = "";
       if (!target) return;
-      const selector = target === "stem" ? ".quiz-stem" : target === "next" ? "[data-quiz-action='next']" : target === "results" ? ".quiz-score h3" : "[data-quiz-action='review']";
-      const node = els.quizBody.querySelector(selector);
+      const selector = target === "stem" ? ".quiz-stem"
+        : target === "next" ? "[data-quiz-action='next']"
+          : target === "results" ? ".quiz-score h3"
+            : target === "start" ? "[data-quiz-action='start']"
+              : "[data-quiz-action='review']";
+      const node = els.quizBody.querySelector(selector) || (target === "start" ? els.quizBody.querySelector(".quiz-intro-copy h3") : null);
       if (node && typeof node.focus === "function") node.focus({ preventScroll: true });
     }
 
-    // The intro card only needs the pool's size, and it re-renders on every
-    // filter keystroke, so the pool is kept for as long as the view it was
-    // built from is the one on screen.
-    let quizPoolCache = { signature: "", size: 0 };
+    // The pool is built once per view and kept: the intro re-renders on every
+    // filter keystroke, and the set a teacher starts should be drawn from the
+    // pool the intro described. "Selectable" is how many of the pool one set
+    // can actually hold once the picker's caps apply, which is the figure the
+    // count control offers.
+    let quizPoolCache = { signature: "", pool: [], selectable: 0, fullSet: [] };
 
-    function quizPoolSize(rows) {
+    function quizCachedPool(rows, rebuild) {
       const signature = quizSignature();
-      if (quizPoolCache.signature !== signature) {
-        quizPoolCache = { signature, size: buildQuizPool(rows).length };
+      if (rebuild || quizPoolCache.signature !== signature) {
+        const pool = buildQuizPool(rows);
+        let fullSet = [];
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          const picked = pickQuizQuestions(pool, pool.length);
+          if (picked.length > fullSet.length) fullSet = picked;
+        }
+        quizPoolCache = { signature, pool, selectable: fullSet.length, fullSet };
       }
-      return quizPoolCache.size;
+      return quizPoolCache;
+    }
+
+    // A re-export under the same name would otherwise keep the previous
+    // file's pool: the fingerprint cannot see inside the rows.
+    function resetQuizPool() {
+      quizPoolCache = { signature: "", pool: [], selectable: 0, fullSet: [] };
     }
 
     function quizIntroHTML(rows) {
-      const poolSize = quizPoolSize(rows);
+      const poolSize = quizCachedPool(rows).selectable;
       state.quiz.poolSize = poolSize;
       const counts = QUIZ_COUNT_OPTIONS.filter((value) => value <= poolSize);
       const options = counts.map((value) => ({ value, label: formatInteger(value) + " questions" }));
@@ -11312,7 +11391,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return '<div class="quiz-intro">' +
         '<div class="quiz-intro-copy">' +
         '<p class="eyebrow">Prep for the data conversation</p>' +
-        "<h3>Could you answer these tomorrow morning?</h3>" +
+        '<h3 tabindex="-1">Could you answer these tomorrow morning?</h3>' +
         "<p>" + escapeHTML("A leader asks about your class and you should not need to look anything up. This builds the questions they are likely to ask from the " + scope +
           ", marks your answers against the figures on this page, and shows you where each one lives. Filter to one class or subject first to practise for that conversation.") + "</p>" +
         '<div class="explain-grid">' +
@@ -11327,7 +11406,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             options.map((option) => '<option value="' + option.value + '"' + (option.value === preferred ? " selected" : "") + ">" + escapeHTML(option.label) + "</option>").join("") +
             "</select></div>" +
             '<button class="btn primary" type="button" data-quiz-action="start" data-quiz-count="' + preferred + '">Start the quiz</button>' +
-            '<p class="quiz-pool">' + escapeHTML(formatInteger(poolSize) + " different " + quizPlural(poolSize, "question") + " can be built from this view. Each set is drawn fresh, so you can go again with new questions.") +
+            '<p class="quiz-pool">' + escapeHTML("One set can hold up to " + formatInteger(poolSize) + " " + quizPlural(poolSize, "question") + " from this view. Each set is drawn fresh, so you can go again with new questions.") +
             (thin ? " " + escapeHTML("That is under the " + QUIZ_MIN_COUNT + " a full run needs: widen the filters for more.") : "") + "</p>"
           : '<p class="quiz-pool">' + escapeHTML("Nothing can be asked about this view yet: it needs records with a score. Widen the filters or load a fuller export.") + "</p>") +
         "</div></div>";
@@ -11442,12 +11521,17 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // Plain text of the whole set, for pasting into meeting prep notes.
     function quizPrepNotes() {
       const quiz = state.quiz;
-      const rows = state.filteredRows;
-      const students = new Set(rows.map((row) => studentKey(row))).size;
+      const scope = quiz.scope || {
+        files: state.fileNames.length ? state.fileNames.join(", ") : state.fileName,
+        records: state.filteredRows.length,
+        students: new Set(state.filteredRows.map((row) => studentKey(row))).size,
+        filtered: state.filteredRows.length !== state.allRows.length,
+        span: isBaselineMode() ? currentWindowName() + " baseline" : state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel
+      };
       const lines = [
         "Check my understanding - prep notes",
-        state.fileName + " - " + formatInteger(rows.length) + " records, " + formatInteger(students) + " students in view - " +
-          (isBaselineMode() ? currentWindowName() + " baseline" : state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel),
+        scope.files + " - " + formatInteger(scope.records) + " records, " + formatInteger(scope.students) + " students" + (scope.filtered ? " in the filtered view" : "") + " - " + scope.span +
+          (quiz.signature && quiz.signature !== quizSignature() ? " (the view has changed since these questions were built)" : ""),
         "Score: " + formatInteger(quizCorrectCount()) + " of " + formatInteger(quiz.questions.length),
         ""
       ];
@@ -11471,7 +11555,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // written in the leader's voice, in direct speech.
     function quizWindowQuestion(ctx) {
       const parse = (label) => {
-        const match = /^(fall|winter|spring)\s+(\d{4})$/i.exec(cleanString(label));
+        // NWEA writes a term as "Fall 2025" or "Fall 2025-2026"; either reads
+        // as the season and its first year.
+        const match = /^(fall|winter|spring)\s+(\d{4})(?:\s*[-\/]\s*\d{2,4})?$/i.exec(cleanString(label));
         return match ? { season: match[1].charAt(0).toUpperCase() + match[1].slice(1).toLowerCase(), year: Number(match[2]) } : null;
       };
       const seasons = ["Fall", "Winter", "Spring"];
@@ -11588,6 +11674,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       }
     }
 
+    // In a growth file a record with no end score is counted where the page
+    // counts it - at its earlier-window position - and the explanation says so.
+    function quizEarlierWindowNote(ctx) {
+      if (!ctx.growth) return "";
+      const stale = ctx.rows.filter((row) => row.hasMissingEndScore && row.hasCurrentScore).length;
+      return stale
+        ? " This includes " + formatInteger(stale) + " " + quizPlural(stale, "record whose latest score is", "records whose latest score is") + " from " + ctx.prior + ", counted where the dashboard counts them."
+        : "";
+    }
+
     function quizNameList(names, limit) {
       const shown = names.slice(0, limit || 6);
       const extra = names.length - shown.length;
@@ -11618,6 +11714,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           followUp: "Give me both numbers for your support list, records and students, and tell me which student is on it in two subjects."
         };
       },
+      quizWindowQuestion,
       function quizCentralPercentile(ctx) {
         const metrics = ctx.metrics;
         if (ctx.baseline) {
@@ -11658,7 +11755,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             ? "What is the mean RIT score of this group in " + ctx.window + "?"
             : "What is the median RIT score of this group at the end of " + ctx.window + "?",
           options, correct: formatNumber(value),
-          explanation: (ctx.baseline ? "Mean RIT " : "Median RIT ") + formatNumber(value) + " over " + formatInteger(metrics.scoredCount) + " scored records. RIT is NWEA's equal-interval scale, so it is the number to quote for growth; the percentile says where that RIT sits against same-grade peers.",
+          explanation: (ctx.baseline ? "Mean RIT " : "Median RIT ") + formatNumber(value) + " over " + formatInteger(metrics.scoredCount) + " scored records. RIT is NWEA's equal-interval scale, so it is the number to quote for growth; the percentile says where that RIT sits against same-grade peers." + quizEarlierWindowNote(ctx),
           section: ctx.baseline ? "sec-snapshot" : "sec-baseline",
           followUp: "How does that compare with the US norm for this grade and season?"
         };
@@ -11675,7 +11772,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             ? "Of the " + formatInteger(entry.of) + " records with a percentile, how many are at or above the secure benchmark, the 61st percentile?"
             : "What proportion of records are at or above the secure benchmark, the 61st percentile?",
           options: built.options, correct: built.correct,
-          explanation: quizShareSentence(entry, "records with a percentile") + " are at or above the 61st percentile. The 61st is a locally chosen secure line, not an NWEA definition." + quizThinNote(entry),
+          explanation: quizShareSentence(entry, "records with a percentile") + " are at or above the 61st percentile. The 61st is a locally chosen secure line, not an NWEA definition." + quizThinNote(entry) + quizEarlierWindowNote(ctx),
           section: ctx.baseline ? "sec-snapshot" : "sec-target",
           followUp: "What would it take to move that share up by ten points, and who is closest to the line?"
         };
@@ -11690,7 +11787,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           family: "below-41", topic: "Achievement", type: "mc", persona: "principal",
           stem: "How many records sit below the 41st percentile - Tier 2 or Tier 3 - in " + ctx.window + "?",
           options, correct: formatInteger(count),
-          explanation: formatInteger(count) + " of " + formatInteger(metrics.percentileCount) + " records with a percentile: " + formatInteger(metrics.tierCounts.intensive || 0) + " Intensive (at or below the 20th) and " + formatInteger(metrics.tierCounts.strategic || 0) + " Strategic (21st to 40th).",
+          explanation: formatInteger(count) + " of " + formatInteger(metrics.percentileCount) + " records with a percentile: " + formatInteger(metrics.tierCounts.intensive || 0) + " Intensive (at or below the 20th) and " + formatInteger(metrics.tierCounts.strategic || 0) + " Strategic (21st to 40th)." + quizEarlierWindowNote(ctx),
           section: ctx.baseline ? "sec-snapshot" : "sec-baseline",
           followUp: "Which of them are already in an intervention group, and who is not?"
         };
@@ -11705,7 +11802,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           family: "largest-tier", topic: "Achievement", type: "mc", persona: "hod",
           stem: "Which instructional tier holds the most records in " + ctx.window + "?",
           options, correct: ranked[0].tier.name,
-          explanation: ranked.map((entry) => entry.tier.name + " " + formatInteger(entry.count)).join(", ") + ". " + ranked[0].tier.name + " is " + ranked[0].tier.tierLabel + ": " + ranked[0].tier.blurb.toLowerCase() + ".",
+          explanation: ranked.map((entry) => entry.tier.name + " " + formatInteger(entry.count)).join(", ") + ". " + ranked[0].tier.name + " is " + ranked[0].tier.tierLabel + ": " + ranked[0].tier.blurb.toLowerCase() + "." + quizEarlierWindowNote(ctx),
           section: "sec-baseline",
           followUp: "What does core teaching look like for that tier, and what is different for the tiers either side of it?"
         };
@@ -11724,7 +11821,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           : "";
         const build = (highest) => {
           const sorted = scored.slice().sort((a, b) => highest ? b.value - a.value : a.value - b.value);
-          if (sorted[0].value === sorted[1].value) return null;
+          if (formatNumber(sorted[0].value) === formatNumber(sorted[1].value)) return null;
           const options = quizLabelOptions(sorted[0].subject, scored.map((entry) => entry.subject), SUBJECTS);
           if (!options) return null;
           return {
@@ -11764,7 +11861,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       function quizNormAboveTF(ctx) {
         const value = ctx.metrics.avgUSNormDeltaRIT;
         const matched = ctx.rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT)).length;
-        if (matched < 3 || !isFiniteNumber(value) || Math.abs(value) < 0.5) return null;
+        if (matched < 3 || !isFiniteNumber(value) || Math.abs(value) < 1) return null;
+        // A mean a point above the norm while most records sit below it is a
+        // trick, not a question.
+        const majority = sharePct(ctx.metrics.shares.atOrAboveUSNorm);
+        if (isFiniteNumber(majority) && (value > 0) !== (majority >= 50)) return null;
         const says = Math.random() < 0.5 ? "above" : "below";
         return {
           key: "norm-above-tf", family: "norm-delta", topic: "Norms", type: "tf", persona: "governor",
@@ -11798,6 +11899,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         if (graded.length < 3) return null;
         const count = graded.filter((row) => row.usNormGradeGap <= -1).length;
         const behindNames = unique(graded.filter((row) => row.usNormGradeGap <= -1).map((row) => row.studentName));
+        const behindStudents = new Set(graded.filter((row) => row.usNormGradeGap <= -1).map((row) => studentKey(row))).size;
         const options = quizCountOptions(count, graded.length);
         if (!options) return null;
         return {
@@ -11805,7 +11907,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           stem: "How many records are testing a grade or more below their grade placement, by the dashboard's approximate grade-level estimate?",
           options, correct: formatInteger(count),
           explanation: formatInteger(count) + " of " + formatInteger(graded.length) + " records with a grade-level estimate sit a grade or more below placement" +
-            (count ? ", covering " + formatInteger(behindNames.length) + " " + quizPlural(behindNames.length, "student") + ": " + quizNameList(behindNames, 5) + "." : "."),
+            (count ? ", covering " + formatInteger(behindStudents) + " " + quizPlural(behindStudents, "student") + ": " + quizNameList(behindNames, 5) + "." : "."),
           caution: "Approximate placement only: grade-level equivalence compares a RIT with the mean RIT of each grade in the same season. It is not a reading or maths grade level.",
           section: "sec-baseline",
           followUp: "What are those students getting that is different from the rest of the class?"
@@ -11827,7 +11929,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             options, correct: found.row.studentName,
             explanation: found.row.studentName + " is at the " + ordinal(found.row.currentPercentile) + " percentile in " + subject + " (RIT " + formatNumber(found.row.currentRIT, 0) + "). Next is " + runnerUp.studentName + " at the " + ordinal(runnerUp.currentPercentile) + ".",
             section: "sec-grouping",
-            followUp: "What are you doing to stretch " + found.row.studentName + ", and is their growth keeping up with their achievement?"
+            followUp: ctx.baseline
+              ? "What are you doing to stretch " + found.row.studentName + " from day one, and what will you look for in the next window?"
+              : "What are you doing to stretch " + found.row.studentName + ", and is their growth keeping up with their achievement?"
           };
         });
       },
@@ -11908,14 +12012,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const count = ctx.rows.filter((row) => focusReasons(row).length).length;
         const options = quizCountOptions(count, ctx.rows.length);
         if (!options || ctx.rows.length < 3) return null;
-        const names = unique(ctx.rows.filter((row) => focusReasons(row).length).map((row) => row.studentName));
+        const listedStudents = new Set(ctx.rows.filter((row) => focusReasons(row).length).map((row) => studentKey(row))).size;
         return {
           family: "priority-count", topic: "Planning groups", type: "mc", persona: "principal",
           stem: ctx.baseline
             ? "How many records are on your start-of-year support list?"
             : "How many records are on your priority list?",
           options, correct: formatInteger(count),
-          explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records, covering " + formatInteger(names.length) + " " + quizPlural(names.length, "student") +
+          explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records, covering " + formatInteger(listedStudents) + " " + quizPlural(listedStudents, "student") +
             (ctx.baseline
               ? ". A record is listed when it starts below the 41st percentile, tests a grade or more below placement, sits well below the norm, needs above-typical growth to reach grade level, or has a score that needs confirming."
               : ". A record is listed for missed growth, a band drop, a missing end score, negative growth, finishing below the 21st percentile, secure regression or a widened gap."),
@@ -11930,15 +12034,17 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         return {
           family: "celebration-count", topic: "Planning groups", type: "mc", persona: "governor",
           stem: ctx.baseline
-            ? "How many records are on the strengths list - already at or above the secure benchmark or the US norm?"
+            ? "How many records are on your Strengths to Build On list?"
             : "How many records are on the celebration list?",
           options, correct: formatInteger(count),
           explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records" +
             (ctx.baseline
-              ? " are already at or above the 61st percentile, above the norm, or ahead of the grade-level target."
+              ? " are listed because they are at or above the 61st percentile, at least 8 RIT above the grade/season norm mean, testing a grade or more above placement, or already above the grade-level target."
               : " exceeded projected growth, moved up a band, closed or sharply reduced a gap, made a strong RIT gain, or rose from low to high on a quadrant axis."),
           section: "sec-celebration",
-          followUp: "Who on that list is at risk of coasting now that they are secure?"
+          followUp: ctx.baseline
+            ? "Who on that list will need deliberate stretch so a secure start does not flatten by the next window?"
+            : "Who on that list is at risk of coasting now that they are secure?"
         };
       },
       function quizPriorityReason(ctx) {
@@ -11967,9 +12073,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             key: "priority-reason:" + studentKey(row) + ":" + row.subject, family: "priority-reason", topic: "Students", type: "mc", persona: "principal", answerStudent: row.studentName,
             stem: row.studentName + " is on your " + listName + " for " + row.subject + ". Which of these is one of the reasons the dashboard gives?",
             options, correct,
-            explanation: row.studentName + "'s " + row.subject + " record is listed for: " + entry.reasons.join("; ") + ". The reason column in " + (ctx.baseline ? "the Start-of-Year Support List" : "Priority Students") + " shows exactly these beside the suggested action." +
+            explanation: row.studentName + "'s " + row.subject + " record is listed for: " + entry.reasons.map((reason) => reason === "Did not meet growth" && row.metCertainty === "too-close" ? reason + " (too close to call)" : reason).join("; ") + ". The reason column in " + (ctx.baseline ? "the Start-of-Year Support List" : "Priority Students") + " shows exactly these beside the suggested action." +
               (entry.reasons.includes("EndPercentile below 21") ? " “EndPercentile below 21” means the record finished at or below the 20th percentile." : "") +
-              (ctx.growth && isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth) ? " Growth was " + formatSignedNumber(row.observedGrowth) + " RIT against a projection of " + formatSignedNumber(row.projectedGrowth) + "." : "") +
+              (ctx.growth && isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth) ? " Growth was " + formatSignedNumber(row.observedGrowth) + " RIT against a projection of " + formatSignedNumber(row.projectedGrowth) + (row.metCertainty === "too-close" ? ", within measurement error of the projection, so that call could go either way." : ".") : "") +
               " The other options are not true for this record.",
             section: "sec-priority",
             followUp: "Which of those reasons would you act on first, and what evidence by the next window would tell you it worked?"
@@ -11979,17 +12085,24 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       function quizCelebrationReason(ctx) {
         if (!ctx.growth) return null;
         const usable = (row) => row.celebrationReasons.filter((reason) => !(row.metCertainty === "too-close" && reason === "Exceeded projected growth"));
-        const rows = quizStudentRows(ctx.rows).filter((row) => usable(row).length && QUIZ_CELEBRATION_REASONS.filter((reason) => !row.celebrationReasons.includes(reason)).length >= 3);
+        // A +10 RIT gain against a +9 projection is not "strong" by the rule
+        // (8 RIT and 1.2 times the projection), but a teacher could defend it,
+        // so it is never offered as a wrong answer; nor is "reduced
+        // significantly" for any record that did reduce its gap.
+        const wrongFor = (row) => QUIZ_CELEBRATION_REASONS.filter((reason) => !row.celebrationReasons.includes(reason) &&
+          !(reason === "Improved RIT strongly" && isFiniteNumber(row.ritChange) && row.ritChange >= 8) &&
+          !(reason === "Reduced gap significantly" && row.gapStatus === "Gap Reduced"));
+        const rows = quizStudentRows(ctx.rows).filter((row) => usable(row).length && wrongFor(row).length >= 3);
         if (!rows.length) return null;
         return quizPickSome(rows, 2).map((row) => {
           const correct = quizPick(usable(row));
-          const options = quizLabelOptions(correct, QUIZ_CELEBRATION_REASONS.filter((reason) => !row.celebrationReasons.includes(reason)));
+          const options = quizLabelOptions(correct, wrongFor(row));
           if (!options) return null;
           return {
             key: "celebration-reason:" + studentKey(row) + ":" + row.subject, family: "celebration-reason", topic: "Students", type: "mc", persona: "hod", answerStudent: row.studentName,
             stem: row.studentName + " is on your celebration list for " + row.subject + ". Which of these is one of the reasons?",
             options, correct,
-            explanation: "The list gives: " + row.celebrationReasons.join("; ") + ". The other options do not apply to this record." +
+            explanation: "The list gives: " + row.celebrationReasons.map((reason) => reason === "Exceeded projected growth" && row.metCertainty === "too-close" ? reason + " (too close to call)" : reason).join("; ") + ". The other options do not apply to this record." +
               (isFiniteNumber(row.ritChange) ? " RIT moved " + formatSignedNumber(row.ritChange) + (isFiniteNumber(row.percentileChange) ? (row.percentileChange === 0 ? ", percentile unchanged" : ", percentile " + formatSignedNumber(row.percentileChange)) : "") + "." : ""),
             section: "sec-celebration",
             followUp: "What produced that, and how do you keep it going next term?"
@@ -12051,16 +12164,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       function quizBandMovement(ctx) {
         if (!ctx.growth) return null;
         const valid = ctx.rows.filter((row) => row.startBand.rank && row.endBand.rank);
+        const withEnd = ctx.rows.filter((row) => row.bandMovement !== "Missing End" && row.bandMovement !== "No Bands");
         if (valid.length < 3) return null;
         return [true, false].map((up) => {
           const count = up ? ctx.metrics.movedUpCount : ctx.metrics.movedDownCount;
           const options = quizCountOptions(count, valid.length);
           if (!options) return null;
+          const cardNote = withEnd.length !== valid.length
+            ? " The Gap Closure cards show it as " + formatShare({ n: count, of: withEnd.length }) + " of the " + formatInteger(withEnd.length) + " records with an end band, " + formatInteger(withEnd.length - valid.length) + " of which have no " + ctx.prior + " band and so could not have moved."
+            : "";
           return {
             key: up ? "moved-up" : "moved-down", family: "band-movement", topic: "Gap closure", type: "mc", persona: "hod",
             stem: "How many records moved " + (up ? "up" : "down") + " at least one percentile band between " + ctx.prior + " and " + ctx.window + "?",
             options, correct: formatInteger(count),
-            explanation: formatInteger(count) + " of " + formatInteger(valid.length) + " records with a band at both windows moved " + (up ? "up" : "down") + " (" + formatInteger(ctx.metrics.movedUpCount) + " up, " + formatInteger(ctx.metrics.movedDownCount) + " down, " + formatInteger(valid.length - ctx.metrics.movedUpCount - ctx.metrics.movedDownCount) + " stayed). Bands are 20 percentile points wide, so a move is a large shift, not noise.",
+            explanation: formatInteger(count) + " of " + formatInteger(valid.length) + " records with a band at both windows moved " + (up ? "up" : "down") + " (" + formatInteger(ctx.metrics.movedUpCount) + " up, " + formatInteger(ctx.metrics.movedDownCount) + " down, " + formatInteger(valid.length - ctx.metrics.movedUpCount - ctx.metrics.movedDownCount) + " stayed). Bands are 20 percentile points wide, so a move is a large shift, not noise." + cardNote,
             section: "sec-gap",
             followUp: up ? "Who moved up, and what did they get that others did not?" : "Who dropped a band, and did anyone see it coming?"
           };
@@ -12123,7 +12240,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         return {
           family: "gap-pooled", topic: "Gap closure", type: "mc", persona: "datalead",
           stem: "Among students who started below the 61st percentile, what share of the total distance to that benchmark was closed by " + ctx.window + "?",
-          options, correct: formatPercentWhole(Math.round(pct)),
+          options, correct: formatPercentWhole(pct),
           explanation: "Pooled gap closure is " + formatFractionPercent(metrics.avgGapClosurePct) + " over " + formatInteger(metrics.gapContributorCount) + " students: the total percentile points closed divided by the total points there were to close, not an average of individual rates.",
           caution: "Percentile points are not equal-sized units, so read this as direction and rough size rather than a precise quantity.",
           section: "sec-gap",
@@ -12149,7 +12266,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               followUp: "What was in place for " + gain.row.studentName + " that you could extend to others?"
             });
           }
-          const short = quizUniqueExtreme(rows.filter((row) => row.metGrowth === false && isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth)),
+          const short = quizUniqueExtreme(rows.filter((row) => row.metGrowth === false && row.metCertainty !== "too-close" && isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth)),
             (row) => row.observedGrowth - row.projectedGrowth, false);
           if (short) {
             const options = quizLabelOptions(short.row.studentName, short.others.concat(rows.map((row) => row.studentName)));
@@ -12254,12 +12371,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const usable = growthEquityBands(ctx.rows).filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP));
         if (usable.length < 2) return null;
         const ranked = usable.slice().sort((a, b) => b.medianCGP - a.medianCGP);
-        if (ranked[0].medianCGP === ranked[1].medianCGP) return null;
-        const options = quizLabelOptions(ranked[0].band.name, usable.map((entry) => entry.band.name), QUIZ_BAND_NAMES);
+        if (formatNumber(ranked[0].medianCGP, 0) === formatNumber(ranked[1].medianCGP, 0)) return null;
+        const options = quizLabelOptions(ranked[0].band.name, usable.map((entry) => entry.band.name));
         if (!options) return null;
         return {
           family: "equity-band", topic: "Growth", type: "mc", persona: "inspector",
-          stem: "Students who started " + ctx.prior + " in which percentile band showed the strongest median conditional growth?",
+          stem: "Among starting bands with at least " + EQUITY_MIN_RECORDS + " records, students who started " + ctx.prior + " in which percentile band showed the strongest median conditional growth?",
           options, correct: ranked[0].band.name,
           explanation: ranked.map((entry) => entry.band.name + " starters " + formatNumber(entry.medianCGP, 0) + " (" + formatInteger(entry.count) + " records)").join("; ") + ". 50 is typical. " + growthEquityRead(growthEquityBands(ctx.rows)),
           section: "sec-growth",
@@ -12275,7 +12392,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         })).filter((entry) => entry.count >= 3 && isFiniteNumber(entry.value));
         if (scored.length < 2) return null;
         const ranked = scored.slice().sort((a, b) => b.value - a.value);
-        if (ranked[0].value === ranked[1].value) return null;
+        if (formatNumber(ranked[0].value) === formatNumber(ranked[1].value)) return null;
         const options = quizLabelOptions(ranked[0].subject, scored.map((entry) => entry.subject), SUBJECTS);
         if (!options) return null;
         const thin = scored.filter((entry) => entry.count < MIN_SHARE_N);
@@ -12310,12 +12427,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const classified = ctx.rows.filter((row) => row.growthChallenge !== "Missing Growth Data");
         if (classified.length < 3) return null;
         const build = (challenge, family, persona, stem, explanation, followUp) => {
-          const names = unique(ctx.rows.filter((row) => row.growthChallenge === challenge).map((row) => row.studentName));
-          const options = quizCountOptions(names.length, ctx.studentCount);
+          const matched = ctx.rows.filter((row) => row.growthChallenge === challenge);
+          const names = unique(matched.map((row) => row.studentName));
+          const total = new Set(matched.map((row) => studentKey(row))).size;
+          const options = quizCountOptions(total, ctx.studentCount);
           if (!options) return null;
           return {
-            key: family, family: "challenge-count", topic: "Growth", type: "mc", persona, stem, options, correct: formatInteger(names.length),
-            explanation: formatInteger(names.length) + " " + quizPlural(names.length, "student") + (names.length ? ": " + quizNameList(names) + ". " : ". ") + explanation,
+            key: family, family: "challenge-count", topic: "Growth", type: "mc", persona, stem, options, correct: formatInteger(total),
+            explanation: formatInteger(total) + " " + quizPlural(total, "student") + (names.length ? ": " + quizNameList(names) + ". " : ". ") + explanation,
             section: "sec-actions",
             followUp
           };
@@ -12333,16 +12452,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       },
       function quizMixedOnlyCurrent(ctx) {
         if (ctx.mode !== "mixed") return null;
-        const only = ctx.rows.filter((row) => row.hasCurrentScore && !row.hasGrowthPair);
-        const names = unique(only.map((row) => row.studentName));
-        const options = quizCountOptions(names.length, ctx.studentCount);
-        if (!options || !names.length) return null;
+        const only = ctx.rows.filter((row) => row.hasCurrentScore && !row.hasStartScore);
+        const students = new Set(only.map((row) => studentKey(row))).size;
+        const options = quizCountOptions(only.length, ctx.rows.length);
+        if (!options || !only.length) return null;
         return {
           family: "mixed-only-current", topic: "Data quality", type: "mc", persona: "datalead", exclusive: "single-window",
-          stem: "How many students in this view only have a " + ctx.window + " score, so they sit outside every growth figure on this page?",
-          options, correct: formatInteger(names.length),
-          explanation: formatInteger(names.length) + " " + quizPlural(names.length, "student") + " (" + formatInteger(only.length) + " " + quizPlural(only.length, "record") + ") have no " + ctx.prior + " score, usually because they joined after that window. The mode banner gives the file-level count, the Action Board names them on its “No prior window to compare” card, and they are read from the achievement and norm columns instead.",
-          section: "sec-actions",
+          stem: "How many records in this view have no " + ctx.prior + " score, so they sit outside every growth figure on this page?",
+          options, correct: formatInteger(only.length),
+          explanation: formatInteger(only.length) + " " + quizPlural(only.length, "record") + " across " + formatInteger(students) + " " + quizPlural(students, "student") + " carry a " + ctx.window + " score but no " + ctx.prior + " score, usually because the student joined after that window. The mode banner above Class Snapshot reports the file-level count, and the Action Board's “No prior window to compare” card names the students, some of whom have a matched pair in another subject.",
+          section: "sec-snapshot",
           followUp: "Do those students have a baseline now, so the next window can measure them?"
         };
       },
@@ -12447,7 +12566,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       // ---------------------------------------------------------- Data quality
       function quizNoScore(ctx) {
         const diagnostics = ctx.diagnostics;
-        if (!diagnostics || !isFiniteNumber(diagnostics.noScoreCount) || state.allRows.length < 3) return null;
+        if (!diagnostics || !isFiniteNumber(diagnostics.noScoreCount) || state.allRows.length < 3 || ctx.rows.length < 3) return null;
         if (diagnostics.noScoreCount === 0) {
           return {
             family: "no-score", topic: "Data quality", type: "tf", persona: "inspector",
@@ -12471,7 +12590,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       },
       function quizShortTestTF(ctx) {
         const diagnostics = ctx.diagnostics;
-        if (!diagnostics || !isFiniteNumber(diagnostics.medianDuration) || state.allRows.length < 3) return null;
+        if (!diagnostics || !isFiniteNumber(diagnostics.medianDuration) || state.allRows.length < 3 || ctx.rows.length < 3) return null;
         return {
           family: "short-test-tf", topic: "Data quality", type: "tf", persona: "datalead",
           stem: "True or false: no test in this file finished unusually quickly compared with the rest of the class.",
@@ -12515,7 +12634,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const thin = shareIsThin(pick.entry);
         return {
           key: "thin-share:" + pick.share + pick.scope, family: "thin-share-tf", topic: "Interpretation", type: "tf", persona: "inspector", exclusive: "floor",
-          stem: "You have " + formatInteger(pick.entry.of) + " records in this view with " + pick.what + pick.scope + ". True or false: that is enough for this dashboard to report the share " + pick.share + " as a percentage rather than as a count.",
+          stem: "You have " + formatInteger(pick.entry.of) + " " + quizPlural(pick.entry.of, "record") + " in this view with " + pick.what + pick.scope + ". True or false: that is enough for this dashboard to report the share " + pick.share + " as a percentage rather than as a count.",
           ...quizTF(!thin),
           explanation: (thin
             ? "With only " + formatInteger(pick.entry.of) + " records the figure prints as “" + formatShare(pick.entry) + "”, with a hint that there are too few records for a percentage. "
@@ -12535,7 +12654,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         })).filter((entry) => entry.count >= 3 && isFiniteNumber(entry.value));
         if (scored.length < 2) return null;
         const ranked = scored.slice().sort((a, b) => b.value - a.value);
-        if (ranked[0].value === ranked[1].value) return null;
+        if (formatNumber(ranked[0].value) === formatNumber(ranked[1].value)) return null;
         const options = quizLabelOptions(ranked[0].className, scored.map((entry) => entry.className));
         if (!options) return null;
         return {
@@ -12555,7 +12674,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const scored = ctx.classMetrics.filter((entry) => entry.metrics.shares.met && entry.metrics.shares.met.of >= MIN_SHARE_N);
         if (scored.length < 2) return null;
         const ranked = scored.slice().sort((a, b) => sharePct(b.metrics.shares.met) - sharePct(a.metrics.shares.met));
-        if (sharePct(ranked[0].metrics.shares.met) === sharePct(ranked[1].metrics.shares.met)) return null;
+        if (formatShare(ranked[0].metrics.shares.met) === formatShare(ranked[1].metrics.shares.met)) return null;
         const options = quizLabelOptions(ranked[0].className, scored.map((entry) => entry.className));
         if (!options) return null;
         return {
@@ -12648,7 +12767,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           const secure = row.endPercentile >= SECURE_BENCHMARK;
           return {
             key: "exceeded-secure-tf:" + studentKey(row) + ":" + row.subject, family: "exceeded-secure-tf", topic: "Interpretation", type: "tf", persona: "inspector", exclusive: "exceeded-secure", answerStudent: row.studentName,
-            stem: row.studentName + " grew more than NWEA projected for them in " + row.subject + ". True or false: that means they are now at or above the 61st percentile, this dashboard's secure line.",
+            stem: row.studentName + " grew more than NWEA projected for them in " + row.subject + ". True or false: they finished " + ctx.window + " at or above the 61st percentile, this dashboard's secure line.",
             ...quizTF(secure),
             explanation: "Growth and achievement are separate axes. " + row.studentName + " grew " + formatSignedNumber(row.observedGrowth) + " RIT against a projection of " + formatSignedNumber(row.projectedGrowth) + " but finished at the " + ordinal(row.endPercentile) + " percentile, " + (secure ? "at or above" : "below") + " the 61st. The quadrant map puts growth on one axis and achievement on the other; the gap status reads “" + row.gapStatus + "” and the suggested group is " + row.suggestedGroup + (row.suggestedGroup === "Catch-Up Growth" ? ": protect the supports that produced the growth." : row.suggestedGroup === "Enrichment" ? ": extend." : "."),
             section: "sec-growth",
@@ -12667,7 +12786,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const listName = ctx.baseline ? "start-of-year support list" : "priority list";
         return {
           family: "priority-not-just-low", topic: "Interpretation", type: "tf", persona: "inspector",
-          stem: "True or false: every record on your " + listName + " is there because the student scored in the bottom two tiers, at or below the 40th percentile.",
+          stem: "True or false: every record on your " + listName + " is one that " + (ctx.baseline ? "starts" : "finished") + " in the bottom two tiers, at or below the 40th percentile.",
           ...quizTF(counter.length === 0),
           explanation: counter.length
             ? "Of the " + formatInteger(listed.length) + " records on the list, " + formatInteger(counter.length) + " " + (counter.length === 1 ? "is" : "are") + " not in the Intensive or Strategic tier - for example " + example.studentName + ", " + example.subject + (isFiniteNumber(example.currentPercentile) ? " (" + ordinal(example.currentPercentile) + " percentile)" : "") + ", listed for “" + focusReasons(example)[0] + "”. The reason column shows why: " + (ctx.baseline ? "grade-level gaps, distance from the norm, needing above-typical growth and short tests" : "band drops, secure regression, missing scores, negative growth and widened gaps") + " put a student on the list regardless of achievement."
@@ -12791,7 +12910,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const result = computeTarget(ctx.rows);
         if (result.scored.length < 3 || result.needed < 1) return null;
         const total = Math.ceil(result.scored.length * result.targetShare / 100);
-        const candidates = [result.below.length, total, result.needed + 1, result.needed - 1, result.needed + 2, result.needed - 2].filter((value) => value >= 0).map(formatInteger);
+        const candidates = [result.below.length, total, result.needed + 1, result.needed - 1, result.needed + 2, result.needed - 2]
+          .filter((value) => value >= 0 && value <= result.below.length).map(formatInteger);
         const options = quizOptionsFrom(formatInteger(result.needed), quizShuffle(candidates), 3);
         if (!options) return null;
         return {
