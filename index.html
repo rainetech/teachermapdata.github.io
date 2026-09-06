@@ -2668,6 +2668,80 @@
     .method-note.wide { grid-column: 1 / -1; }
     .muted-cell { color: var(--muted); font-style: italic; }
     .card-story { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+
+    /* =====================================================================
+       Spoken briefing
+       ===================================================================== */
+    .briefing {
+      display: grid;
+      gap: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(150deg, var(--brand-soft), var(--panel-2) 58%);
+      padding: 16px;
+    }
+    .briefing-stage { min-height: 232px; display: flex; }
+    .briefing-scene {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px 22px;
+    }
+    .briefing-eyebrow {
+      font-size: 11.5px; font-weight: 800; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--brand);
+    }
+    .briefing-scene h3 { margin: 0; font-size: 24px; line-height: 1.15; letter-spacing: -0.02em; }
+    .briefing-stats { display: flex; flex-wrap: wrap; gap: 22px; }
+    .briefing-stats b {
+      display: block; font-size: 34px; line-height: 1; font-weight: 800;
+      letter-spacing: -0.03em; color: var(--text);
+    }
+    .briefing-stats span { display: block; font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .briefing-list { margin: 0; padding-left: 18px; color: var(--text-soft); font-size: 14px; line-height: 1.55; }
+    .briefing-say { font-size: 14px; line-height: 1.6; color: var(--muted-strong); margin: auto 0 0; }
+    .briefing-bar {
+      display: flex; flex-wrap: wrap; gap: 14px;
+      align-items: center; justify-content: space-between;
+    }
+    .briefing-steps { display: flex; gap: 6px; flex-wrap: wrap; }
+    .briefing-step {
+      display: inline-flex; align-items: center; gap: 7px;
+      border: 1px solid var(--line); background: var(--panel);
+      border-radius: 999px; padding: 5px 12px; cursor: pointer;
+      font: inherit; font-size: 12px; font-weight: 700; color: var(--muted);
+    }
+    .briefing-step i {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--line-strong); flex: none;
+    }
+    .briefing-step.is-done i { background: var(--green); }
+    .briefing-step[aria-selected="true"] {
+      border-color: var(--brand); color: var(--brand); background: var(--brand-soft);
+    }
+    .briefing-step[aria-selected="true"] i { background: var(--brand); }
+    .briefing-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .briefing-voice, .briefing-rate {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+    }
+    .briefing-voice select { max-width: 190px; }
+    .briefing-rate input { width: 110px; }
+    .briefing-transcript { font-size: 13px; color: var(--text-soft); }
+    .briefing-transcript summary { cursor: pointer; font-weight: 700; color: var(--brand); }
+    .briefing-transcript p { margin: 10px 0 0; line-height: 1.6; }
+    /* The playing state is a steady edge, not a pulse: a poster-sized animation
+       running for four minutes behind text someone is reading is a nuisance. */
+    .briefing.is-playing { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand) inset; }
+
+    @media (max-width: 700px) {
+      .briefing-bar { flex-direction: column; align-items: stretch; }
+      .briefing-controls { justify-content: space-between; }
+    }
     .cell-sub { font-size: 11px; color: var(--muted); }
     .card-floor-note {
       font-size: 11.5px; line-height: 1.45; color: var(--muted); margin: 10px 0 0;
@@ -4645,6 +4719,44 @@
         </div>
       </section>
 
+      <section class="section" id="sec-briefing" aria-labelledby="briefingTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="briefingTitle">Spoken Briefing</h2>
+            <p>A narrated walk through what this file says, read aloud by your own device. Nothing is sent anywhere.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="briefingPlay" type="button">&#9654; Play briefing</button>
+            <button class="btn small ghost" id="briefingStop" type="button" disabled>Stop</button>
+          </div>
+        </div>
+        <div class="briefing" id="briefing">
+          <div class="briefing-stage" id="briefingStage" aria-live="polite">
+            <div class="empty-state">Load a file to build the briefing.</div>
+          </div>
+          <div class="briefing-bar">
+            <div class="briefing-steps" id="briefingSteps" role="tablist" aria-label="Briefing scenes"></div>
+            <div class="briefing-controls">
+              <button class="btn small ghost" id="briefingPrev" type="button" aria-label="Previous scene">&#8592;</button>
+              <button class="btn small ghost" id="briefingNext" type="button" aria-label="Next scene">&#8594;</button>
+              <label class="briefing-voice">
+                <span>Voice</span>
+                <select id="briefingVoice" aria-label="Briefing voice"></select>
+              </label>
+              <label class="briefing-rate">
+                <span>Speed</span>
+                <input type="range" id="briefingRate" min="0.6" max="1.4" step="0.05" value="0.95" aria-label="Speaking speed">
+              </label>
+            </div>
+          </div>
+          <p class="method-note" id="briefingNote"></p>
+          <details class="briefing-transcript">
+            <summary>Read the transcript instead</summary>
+            <div id="briefingTranscript"></div>
+          </details>
+        </div>
+      </section>
+
       <section class="section" id="sec-summary" aria-labelledby="summaryTitle">
         <div class="section-header">
           <div>
@@ -5538,6 +5650,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "moreFiltersBtn", "moreFilters", "filterActive",
         "filterContext", "summaryCards", "subjectOverview", "chartsWrap", "quadrantCards",
         "quadrantMovement", "quadrantSubjectBreakdown", "gapCards", "gapSubjectBreakdown",
+        "briefing", "briefingStage", "briefingSteps", "briefingPlay", "briefingStop", "briefingPrev",
+        "briefingNext", "briefingVoice", "briefingRate", "briefingNote", "briefingTranscript",
         "summaryReport", "summaryEditNote", "regenerateSummaryBtn", "tableGroupContext", "groupSizeInput", "groupStrategySelect",
         "groupScoreSelect", "roomRatioInput", "layoutSnapSelect", "refreshGroupsBtn", "tableGroups", "groupingCount", "groupingTable",
         "priorityCount", "priorityTable", "celebrationCount", "celebrationTable",
@@ -5643,6 +5757,36 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         els.posterSelectAll.textContent = allPicked ? "Select all" : "Clear selection";
         renderPosters();
       });
+      if (els.briefingPlay) els.briefingPlay.addEventListener("click", () => {
+        if (briefing.playing) pauseBriefing();
+        else startBriefing();
+      });
+      if (els.briefingStop) els.briefingStop.addEventListener("click", stopBriefing);
+      if (els.briefingPrev) els.briefingPrev.addEventListener("click", () => stepBriefing(-1));
+      if (els.briefingNext) els.briefingNext.addEventListener("click", () => stepBriefing(1));
+      if (els.briefingRate) els.briefingRate.addEventListener("change", () => {
+        if (briefing.playing) briefingSay(briefing.scenes[briefing.index].say);
+      });
+      if (els.briefingVoice) els.briefingVoice.addEventListener("change", () => {
+        if (briefing.playing) briefingSay(briefing.scenes[briefing.index].say);
+      });
+      if (els.briefingSteps) els.briefingSteps.addEventListener("click", (event) => {
+        const step = event.target.closest ? event.target.closest("[data-briefing-step]") : null;
+        if (!step) return;
+        const wasPlaying = briefing.playing;
+        briefing.token += 1;
+        if (speechSupported()) window.speechSynthesis.cancel();
+        showBriefingScene(Number(step.dataset.briefingStep) || 0, wasPlaying);
+        if (wasPlaying && !briefing.voices.length) runSilentBriefing();
+      });
+      if (speechSupported()) {
+        loadBriefingVoices();
+        window.speechSynthesis.addEventListener("voiceschanged", loadBriefingVoices);
+        // A briefing that keeps talking after the tab is closed, or over the
+        // top of whatever the teacher opened next, is the worst version of this.
+        window.addEventListener("beforeunload", () => { try { window.speechSynthesis.cancel(); } catch (error) {} });
+        document.addEventListener("visibilitychange", () => { if (document.hidden && briefing.playing) pauseBriefing(); });
+      }
       if (els.posterOrientation) els.posterOrientation.addEventListener("change", renderPosters);
       if (els.posterHeading) els.posterHeading.addEventListener("input", debounce(renderPosters, 220));
       if (els.plannerLaunch) els.plannerLaunch.addEventListener("click", openPlanner);
@@ -7700,6 +7844,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       renderCrossSubject();
       renderStrands();
       renderSummaryReport();
+      // A filter change rewrites the briefing, so anything mid-sentence is now
+      // narrating numbers that are no longer on screen.
+      if (briefing.playing) pauseBriefing();
+      renderBriefing();
       renderPosters();
       renderTables();
       renderDataCheck();
@@ -7726,6 +7874,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // Only a Class Profile export carries instructional areas, so the section
       // exists only when the loaded files actually have them.
       { id: "sec-strands", label: "Areas", modes: ["growth", "mixed", "baseline"], available: hasStrandData },
+      { id: "sec-briefing", label: "Briefing", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-posters", label: "Posters", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
@@ -9470,6 +9619,175 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     }
 
     // ---------------------------------------------------------------------
+    // The spoken briefing
+    // ---------------------------------------------------------------------
+    // A narrated walk through what the file says, built from the same numbers
+    // the panels use. The voice is the browser's own speech synthesiser: it
+    // ships with the operating system, needs no network and no account, and so
+    // it keeps the one promise this whole page is built on - nothing leaves the
+    // machine. It follows that there is no audio file to save; a synthesiser is
+    // a thing that speaks, not a thing that renders.
+    //
+    // Every scene is readable without sound. Plenty of school machines have no
+    // voices installed, have audio locked, or are used by someone who does not
+    // want a computer talking at them, and a briefing only they cannot follow
+    // is worse than no briefing.
+    function briefingScenes() {
+      const rows = state.filteredRows;
+      if (!rows.length) return [];
+      const metrics = aggregateRows(rows);
+      const students = new Set(rows.map((row) => studentKey(row))).size;
+      const baseline = isBaselineMode();
+      const lens = currentOverviewLens();
+      const subjects = unique(rows.map((row) => row.subject));
+      const scenes = [];
+
+      const windowText = baseline
+        ? currentWindowName() + ", a single window"
+        : state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel;
+      scenes.push({
+        key: "opening",
+        eyebrow: "The file",
+        title: posterHeading(),
+        stats: [
+          [formatInteger(students), students === 1 ? "student" : "students"],
+          [formatInteger(rows.length), "records"],
+          [formatInteger(subjects.length), subjects.length === 1 ? "subject" : "subjects"]
+        ],
+        say: "Here is what this file says. " + formatInteger(students) + " students, " +
+          formatInteger(rows.length) + " records, covering " + windowText + ". " +
+          (subjects.length > 1 ? "It carries " + formatInteger(subjects.length) + " subjects: " + listSentence(subjects) + "." : "")
+      });
+
+      // Where the group is now.
+      const secure = metrics.shares.secure;
+      const below = metrics.shares.belowStrategic;
+      scenes.push({
+        key: "position",
+        eyebrow: "Where the group is",
+        title: "Achievement right now",
+        stats: [
+          [formatNumber(metrics.medianCurrentPercentile, 0), "median percentile"],
+          [formatShare(secure), "at or above the 61st"],
+          [formatShare(below), "below the 41st"]
+        ],
+        say: (isFiniteNumber(metrics.medianCurrentPercentile)
+            ? "The middle of this group sits at the " + ordinal(Math.round(metrics.medianCurrentPercentile)) + " percentile. "
+            : "No record in view carries a percentile, so there is no middle to report. ") +
+          capitalizeFirst(formatShareInline(secure, "records")) +
+          " are at or above the secure benchmark, and " + formatShareInline(below, "records") + " are below the 41st. " +
+          (isFiniteNumber(metrics.avgUSNormDeltaRIT)
+            ? "Against the 2025 US norms for the same grade and season, the group averages " +
+              formatSignedNumber(metrics.avgUSNormDeltaRIT) + " RIT."
+            : "")
+      });
+
+      if (!baseline && metrics.shares.met.of) {
+        scenes.push({
+          key: "growth",
+          eyebrow: "Growth",
+          title: "Did they grow as much as expected",
+          stats: [
+            [formatShare(metrics.shares.met), "met their projection"],
+            [formatShare(metrics.shares.exceeded), "beat it outright"],
+            [formatMedianCGP(metrics.medianConditionalGrowthPercentile, metrics.cgpCount), "median growth score"]
+          ],
+          say: capitalizeFirst(formatShareInline(metrics.shares.met, "records")) + " met the growth NWEA projected, and " +
+            formatShareInline(metrics.shares.exceeded, "records") + " beat it outright. " +
+            (metrics.cgpCount >= EQUITY_MIN_RECORDS && isFiniteNumber(metrics.medianConditionalGrowthPercentile)
+              ? "The median conditional growth percentile is " + formatNumber(metrics.medianConditionalGrowthPercentile, 0) +
+                ", where 50 is typical for students who started in the same place. "
+              : "") +
+            gapClosureSentence(metrics)
+        });
+      }
+
+      // Which subject or class needs the attention. Ranked only where the
+      // groups are big enough to rank, same floor the written summary uses.
+      const buckets = getOverviewBuckets(rows, lens)
+        .map((bucket) => ({ bucket, metrics: aggregateRows(bucketRows(rows, bucket, lens)) }))
+        .filter((item) => item.metrics.percentileCount >= MIN_SHARE_N);
+      if (buckets.length >= 2) {
+        const sorted = buckets.slice().sort((a, b) =>
+          (b.metrics.medianCurrentPercentile || 0) - (a.metrics.medianCurrentPercentile || 0));
+        const best = sorted[0];
+        const worst = sorted[sorted.length - 1];
+        scenes.push({
+          key: "subjects",
+          eyebrow: lens === "class" ? "By class" : "By subject",
+          title: "Where the group is strongest, and where it is not",
+          stats: sorted.slice(0, 4).map((item) => [
+            formatNumber(item.metrics.medianCurrentPercentile, 0),
+            item.bucket
+          ]),
+          say: best.bucket + " is the strongest, with a median percentile of " +
+            formatNumber(best.metrics.medianCurrentPercentile, 0) + ". " +
+            worst.bucket + " sits furthest back at " + formatNumber(worst.metrics.medianCurrentPercentile, 0) +
+            ". That gap is " + formatNumber(Math.abs((best.metrics.medianCurrentPercentile || 0) - (worst.metrics.medianCurrentPercentile || 0)), 0) +
+            " percentile points, and it is the clearest place to put time."
+        });
+      }
+
+      // Who needs a person to look at them, as counts. No names are spoken.
+      const focus = rows.filter((row) => focusReasons(row).length).length;
+      const strength = rows.filter((row) => strengthReasons(row).length).length;
+      const goalRows = rows.filter((row) => row.goals || row.forwardProjection);
+      scenes.push({
+        key: "action",
+        eyebrow: "What to do next",
+        title: "Who needs a closer look",
+        stats: [
+          [formatInteger(focus), "flagged for support"],
+          [formatInteger(strength), "worth celebrating"],
+          [formatInteger(metrics.needsAcceleratedGrowthCount), "need above-typical growth"]
+        ],
+        say: formatInteger(focus) + " records carry a flag worth a closer look, and " + formatInteger(strength) +
+          " are worth celebrating. " +
+          (metrics.needsAcceleratedGrowthCount
+            ? formatInteger(metrics.needsAcceleratedGrowthCount) + " need more than a typical year's growth to reach grade level, " +
+              "which is the group that will not get there on core instruction alone. "
+            : "") +
+          (goalRows.length ? "Growth Goals has a target for " + formatInteger(goalRows.length) + " records." : "")
+      });
+
+      // Never end on a number without saying what it does not cover.
+      const caveats = [];
+      if (state.diagnostics && state.diagnostics.noScoreCount) {
+        caveats.push(formatInteger(state.diagnostics.noScoreCount) + " records have no usable score and sit outside every figure here");
+      }
+      if (metrics.shortTestCount) caveats.push(formatInteger(metrics.shortTestCount) + " tests were unusually short");
+      if (state.diagnostics && state.diagnostics.rapidGuessFlagged) {
+        caveats.push(formatInteger(state.diagnostics.rapidGuessFlagged) + " were flagged for rapid guessing");
+      }
+      if (state.dataWindow.mode === "mixed") {
+        caveats.push(formatInteger(state.dataWindow.baselineRowCount) + " records have only one window and are left out of every growth figure");
+      }
+      scenes.push({
+        key: "caveats",
+        eyebrow: "Before you act on it",
+        title: caveats.length ? "What this does not cover" : "The data behind this",
+        stats: caveats.length
+          ? []
+          : [[formatInteger(metrics.scoredCount), "records with a usable score"]],
+        body: caveats,
+        say: (caveats.length
+          ? (caveats.length === 1 ? "One thing before you act on any of this. " : "A few things before you act on any of this. ") +
+            capitalizeFirst(listSentence(caveats)) + ". "
+          : "Every record in view carries a usable score. ") +
+          "These are group figures, and no number here decides anything about one child on its own."
+      });
+
+      return scenes;
+    }
+
+    function listSentence(items) {
+      const list = items.filter(Boolean);
+      if (!list.length) return "";
+      if (list.length === 1) return list[0];
+      return list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
+    }
+
+    // ---------------------------------------------------------------------
     // Growth by starting band
     // ---------------------------------------------------------------------
     // A class median hides distribution: a group can post a healthy overall
@@ -10523,6 +10841,205 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       lines.push("");
       lines.push(METHOD_NOTES.normEquivalent);
       return lines.join("\n");
+    }
+
+    // ---------------------------------------------------------------------
+    // Briefing playback
+    // ---------------------------------------------------------------------
+    const briefing = {
+      scenes: [],
+      index: 0,
+      playing: false,
+      voices: [],
+      // Chrome stops a synthesiser mid-sentence somewhere past a quarter of a
+      // minute of continuous speech, so a long scene is spoken as a queue of
+      // sentences rather than one utterance, and a heartbeat nudges the engine
+      // between them. Both are worked around rather than relied upon.
+      keepAlive: null,
+      queue: [],
+      token: 0
+    };
+
+    function speechSupported() {
+      return typeof window !== "undefined" && "speechSynthesis" in window &&
+        typeof window.SpeechSynthesisUtterance === "function";
+    }
+
+    function loadBriefingVoices() {
+      if (!speechSupported() || !els.briefingVoice) return;
+      // The voice list arrives asynchronously in most browsers and is empty on
+      // the first synchronous read, so this runs again on voiceschanged.
+      const all = window.speechSynthesis.getVoices() || [];
+      briefing.voices = all.filter((voice) => /^en\b|^en-/i.test(voice.lang || ""));
+      if (!briefing.voices.length) briefing.voices = all;
+      const previous = els.briefingVoice.value;
+      els.briefingVoice.innerHTML = briefing.voices.length
+        ? briefing.voices.map((voice, index) =>
+            '<option value="' + index + '">' + escapeHTML(voice.name + (voice.lang ? " (" + voice.lang + ")" : "")) + "</option>").join("")
+        : '<option value="">No voices on this device</option>';
+      if (previous && briefing.voices[previous]) els.briefingVoice.value = previous;
+      els.briefingVoice.disabled = !briefing.voices.length;
+      updateBriefingNote();
+    }
+
+    function updateBriefingNote() {
+      if (!els.briefingNote) return;
+      if (!speechSupported()) {
+        setText("briefingNote", "This browser has no speech synthesiser, so the briefing is text only. Every scene below reads the same either way, and the transcript is at the foot of this panel.");
+        return;
+      }
+      if (!briefing.voices.length) {
+        setText("briefingNote", "No voices are installed on this device, so the briefing plays as slides without sound. Adding a system voice in your operating system's accessibility settings will enable it.");
+        return;
+      }
+      setText("briefingNote", "The voice is your device's own, and the speaking happens on this machine: no audio is uploaded, downloaded, or generated by a service. That also means there is no file to save - use Copy on the Class Summary Report if you need the words to travel.");
+    }
+
+    function briefingSay(text) {
+      if (!speechSupported() || !briefing.voices.length || !text) return false;
+      const chosen = briefing.voices[Number(els.briefingVoice && els.briefingVoice.value) || 0];
+      const rate = els.briefingRate ? Number(els.briefingRate.value) || 0.95 : 0.95;
+      // Split on sentence ends so no single utterance runs long enough to be
+      // cut off, and so Stop takes effect between sentences rather than after
+      // a paragraph.
+      const parts = String(text).split(/(?<=[.!?])\s+/).map((part) => part.trim()).filter(Boolean);
+      briefing.queue = parts;
+      const token = ++briefing.token;
+      const speakNext = () => {
+        if (token !== briefing.token || !briefing.playing) return;
+        const next = briefing.queue.shift();
+        if (!next) {
+          window.clearInterval(briefing.keepAlive);
+          briefing.keepAlive = null;
+          // The scene is finished; move on unless the teacher already has.
+          window.setTimeout(() => {
+            if (token !== briefing.token || !briefing.playing) return;
+            if (briefing.index >= briefing.scenes.length - 1) stopBriefing();
+            else showBriefingScene(briefing.index + 1, true);
+          }, 420);
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(next);
+        if (chosen) utterance.voice = chosen;
+        utterance.rate = rate;
+        utterance.pitch = 1;
+        utterance.onend = speakNext;
+        utterance.onerror = speakNext;
+        window.speechSynthesis.speak(utterance);
+      };
+      window.speechSynthesis.cancel();
+      window.clearInterval(briefing.keepAlive);
+      briefing.keepAlive = window.setInterval(() => {
+        if (!briefing.playing) return;
+        // A no-op pause/resume keeps Chrome's queue from going to sleep.
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }, 9000);
+      speakNext();
+      return true;
+    }
+
+    function renderBriefing() {
+      if (!els.briefingStage) return;
+      briefing.scenes = briefingScenes();
+      if (!briefing.scenes.length) {
+        els.briefingStage.innerHTML = '<div class="empty-state">Load a file to build the briefing.</div>';
+        if (els.briefingSteps) els.briefingSteps.innerHTML = "";
+        if (els.briefingTranscript) els.briefingTranscript.innerHTML = "";
+        setText("briefingNote", "");
+        return;
+      }
+      if (briefing.index >= briefing.scenes.length) briefing.index = 0;
+      els.briefingSteps.innerHTML = briefing.scenes.map((scene, index) =>
+        '<button class="briefing-step" type="button" role="tab" data-briefing-step="' + index + '"' +
+        (index === briefing.index ? ' aria-selected="true"' : ' aria-selected="false"') + ">" +
+        '<i></i><span>' + escapeHTML(scene.eyebrow) + "</span></button>").join("");
+      els.briefingTranscript.innerHTML = briefing.scenes.map((scene) =>
+        "<p><strong>" + escapeHTML(scene.title) + ".</strong> " + escapeHTML(scene.say) + "</p>").join("");
+      showBriefingScene(briefing.index, false);
+      updateBriefingNote();
+    }
+
+    function showBriefingScene(index, speak) {
+      const scene = briefing.scenes[index];
+      if (!scene) return;
+      briefing.index = index;
+      els.briefingStage.innerHTML = '<article class="briefing-scene">' +
+        '<span class="briefing-eyebrow">' + escapeHTML(scene.eyebrow) + "</span>" +
+        "<h3>" + escapeHTML(scene.title) + "</h3>" +
+        (scene.stats && scene.stats.length
+          ? '<div class="briefing-stats">' + scene.stats.map(([value, label]) =>
+              '<div><b>' + escapeHTML(value) + "</b><span>" + escapeHTML(label) + "</span></div>").join("") + "</div>"
+          : "") +
+        (scene.body && scene.body.length
+          ? '<ul class="briefing-list">' + scene.body.map((line) => "<li>" + escapeHTML(line) + "</li>").join("") + "</ul>"
+          : "") +
+        '<p class="briefing-say">' + escapeHTML(scene.say) + "</p>" +
+        "</article>";
+      [...els.briefingSteps.querySelectorAll("[data-briefing-step]")].forEach((node, i) => {
+        node.setAttribute("aria-selected", i === index ? "true" : "false");
+        node.classList.toggle("is-done", i < index);
+      });
+      if (speak) briefingSay(scene.say);
+    }
+
+    function startBriefing() {
+      if (!briefing.scenes.length) renderBriefing();
+      if (!briefing.scenes.length) {
+        toast("Load a file first - there is nothing to brief on yet.", "info");
+        return;
+      }
+      briefing.playing = true;
+      els.briefingPlay.textContent = "\u23F8 Pause";
+      els.briefingStop.disabled = false;
+      els.briefing.classList.add("is-playing");
+      // With no voice this still advances, on a timer, as a slideshow.
+      if (!briefingSay(briefing.scenes[briefing.index].say)) runSilentBriefing();
+    }
+
+    // Roughly the time it takes to read the scene aloud, so the pacing of a
+    // silent briefing matches a spoken one instead of racing ahead.
+    function runSilentBriefing() {
+      const token = ++briefing.token;
+      const step = () => {
+        if (token !== briefing.token || !briefing.playing) return;
+        const scene = briefing.scenes[briefing.index];
+        const words = scene ? String(scene.say).split(/\s+/).length : 12;
+        window.setTimeout(() => {
+          if (token !== briefing.token || !briefing.playing) return;
+          if (briefing.index >= briefing.scenes.length - 1) { stopBriefing(); return; }
+          showBriefingScene(briefing.index + 1, false);
+          step();
+        }, Math.max(3200, words / 2.6 * 1000));
+      };
+      step();
+    }
+
+    function pauseBriefing() {
+      briefing.playing = false;
+      briefing.token += 1;
+      window.clearInterval(briefing.keepAlive);
+      briefing.keepAlive = null;
+      if (speechSupported()) window.speechSynthesis.cancel();
+      if (els.briefingPlay) els.briefingPlay.textContent = "\u25B6 Play briefing";
+      if (els.briefing) els.briefing.classList.remove("is-playing");
+    }
+
+    function stopBriefing() {
+      pauseBriefing();
+      briefing.index = 0;
+      if (els.briefingStop) els.briefingStop.disabled = true;
+      if (briefing.scenes.length) showBriefingScene(0, false);
+    }
+
+    function stepBriefing(delta) {
+      if (!briefing.scenes.length) return;
+      const next = clampBetween(briefing.index + delta, 0, briefing.scenes.length - 1);
+      const wasPlaying = briefing.playing;
+      briefing.token += 1;
+      if (speechSupported()) window.speechSynthesis.cancel();
+      showBriefingScene(next, wasPlaying);
+      if (wasPlaying && !briefing.voices.length) runSilentBriefing();
     }
 
     function renderSummaryReport() {
