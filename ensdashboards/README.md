@@ -17,20 +17,32 @@ the build, commit both.
 
 ## Where the brand comes from
 
-Nothing here is invented. The palette steps and the mark are both taken from
-the ENS Dashboards portal (`rainetech/ens-portal`) so this dashboard and the
-portal that links to it read as one product:
+The logo is the Emirates National Schools mark, checked in at
+`build/assets/ens-logo.png` (the full lockup) and `build/assets/ens-symbol.png`
+(the symbol alone, for the favicon — 709x130 of Arabic and English is a smear
+at 16px). Replace either file and rebuild; nothing else needs editing.
 
-- `tailwind.config.ts` — the teal and plum scales, including the names. The
-  portal calls the second colour *plum*, so this does too.
-- `src/app/page.tsx` — the mark: four rounded squares, two solid and two at
-  55%. Copied, not approximated.
+Both are inlined as data URIs. A logo on a CDN would be the one request that
+breaks the promise the upload panel makes, and the first thing to vanish on a
+school network that blocks image hosts.
 
-The mark is inlined as SVG in the masthead and the poster footer, and as a
-data-URI favicon. Like every other asset in this file it is never fetched — a
-logo on a CDN would be the one request that breaks the promise the upload
-panel makes, and the first thing to vanish on a school network that blocks
-image hosts.
+The palette steps come from the ENS Dashboards portal (`rainetech/ens-portal`,
+`tailwind.config.ts`), so this dashboard and the portal that links to it read
+as one product. The portal calls the second colour *plum*, so this does too.
+
+### The logo and the brand colours do not match
+
+Worth knowing before anyone tries to "fix" it. The logo file is plain sRGB and
+contains **teal #007c85 and plum #a30046**. The brand colours specified for
+this instance — and the ones the portal's config uses — are **#007272 and
+#8e2344**. That is a CIE76 Delta E of 6.8 and 13.4: not a colour-management
+artefact, and far enough apart to look like a printing error if the two teals
+ever share an edge.
+
+The interface therefore uses the specified colours, and the logo is always
+placed on white, where its own teal never abuts the interface's. If the logo
+file is the canonical brand rather than the hex values, the fix is to change
+the palette in `build/build-clone.mjs` — not to recolour the logo.
 
 ## The Vercel project
 

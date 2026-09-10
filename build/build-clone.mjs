@@ -96,47 +96,53 @@ swap("accent tokens (dark)", "      --brand: #4fbdb8;", `      --brand: #4fbdb8;
 // ---------------------------------------------------------------------------
 swap("title", "<title>NWEA MAP ASG Teacher Dashboard</title>",
   "<title>Teacher MAP Dashboard | ENS Dashboards</title>");
-// The bar-chart tile is replaced outright: a tab belonging to this instance
-// should be identifiably ENS at 16px, so it carries their mark. Single quotes
-// are percent-encoded so the URI sits inside a JS string without escaping.
-{
-  const icon = html.match(/  <link rel="icon" href="[^"]*">/);
-  if (!icon) throw new Error("build-clone: favicon link not found.");
-  swap("favicon", icon[0], '  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2732%27 height=%2732%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23007272%27/%3E%3Cg fill=%27%23ffffff%27%3E%3Crect x=%277%27 y=%277%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27 opacity=%27.55%27/%3E%3Crect x=%2716.6%27 y=%277%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27/%3E%3Crect x=%277%27 y=%2716.6%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27/%3E%3Crect x=%2716.6%27 y=%2716.6%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27 opacity=%27.55%27/%3E%3C/g%3E%3C/svg%3E">');
-}
 swap("theme colour (light)", '<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)">',
   '<meta name="theme-color" content="#e6f2f2" media="(prefers-color-scheme: light)">');
 
 // ---------------------------------------------------------------------------
-// The ENS mark
+// The ENS logo
 // ---------------------------------------------------------------------------
-// Four rounded squares, two solid and two at 55%, exactly as the ENS
-// Dashboards portal draws it (rainetech/ens-portal, src/app/page.tsx). Their
-// mark, copied rather than approximated.
+// The Emirates National Schools mark, from build/assets. Two files rather than
+// one: the full lockup for anywhere with room for a wordmark, and the symbol
+// on its own for the favicon, where 709x130 of Arabic and English would be a
+// smear at 16px. Both are checked in as real files so they can be reviewed and
+// replaced without touching this script.
 //
-// Inlined everywhere it appears, like every other asset in this file. A logo
-// fetched from a CDN would be the one request that breaks the promise the
-// upload panel makes, and the first thing to vanish on a school network that
-// blocks image hosts.
-const ENS_MARK = (size) =>
-  '<svg viewBox="0 0 24 24" fill="currentColor" width="' + size + '" height="' + size +
-  '" aria-hidden="true" focusable="false">' +
-  '<rect x="3" y="3" width="8" height="8" rx="2" opacity="0.55"></rect>' +
-  '<rect x="13" y="3" width="8" height="8" rx="2"></rect>' +
-  '<rect x="3" y="13" width="8" height="8" rx="2"></rect>' +
-  '<rect x="13" y="13" width="8" height="8" rx="2" opacity="0.55"></rect></svg>';
+// Inlined as data URIs, like every other asset here. A logo fetched from a CDN
+// would be the one request that breaks the promise the upload panel makes, and
+// the first thing to vanish on a school network that blocks image hosts.
+//
+// A note on colour, because the two do not match. The logo file is plain sRGB
+// and contains teal #007c85 and plum #a30046, while the brand colours given
+// for this instance - and the ones the ENS Dashboards portal uses - are
+// #007272 and #8e2344. That is a CIE76 Delta E of 6.8 and 13.4: not a colour
+// management artefact, and far enough apart to read as a mistake if the two
+// teals ever touch. So the chrome uses the specified colours, and the logo is
+// always placed on white, where its own teal never abuts the interface's.
+const logoDataUri = (file) =>
+  "data:image/png;base64," + fs.readFileSync(path.join(root, "build", "assets", file)).toString("base64");
+const ENS_LOGO = logoDataUri("ens-logo.png");
+const ENS_SYMBOL = logoDataUri("ens-symbol.png");
 
-swap("masthead mark",
+{
+  const icon = html.match(/  <link rel="icon" href="[^"]*">/);
+  if (!icon) throw new Error("build-clone: favicon link not found.");
+  swap("favicon", icon[0], '  <link rel="icon" href="' + ENS_SYMBOL + '">');
+}
+
+swap("masthead logo",
   '      <section class="brand-panel">\n        <div>\n          <p class="eyebrow">NWEA MAP ASG</p>',
-  '      <section class="brand-panel">\n        <div>\n          <span class="ens-mark">' + ENS_MARK(24) +
-  '</span>\n          <p class="eyebrow">ENS Dashboards \u00b7 NWEA MAP ASG</p>');
+  '      <section class="brand-panel">\n        <div>\n' +
+  '          <img class="ens-logo" src="' + ENS_LOGO +
+  '" alt="Emirates National Schools" width="709" height="130">\n' +
+  '          <p class="eyebrow">ENS Dashboards \u00b7 NWEA MAP ASG</p>');
 
-// The poster carries it small, in the footer beside the class line, so a sheet
-// on a wall is identifiably theirs without a logo competing with the data.
-swap("poster mark",
+// A poster goes on a wall in a school, so it carries the school's name rather
+// than an abstract mark. It sits in the footer, small, beside the class line.
+swap("poster logo",
   '\'<span class="poster-meta">\' + escapeHTML(posterContextLine(scope)) + "</span></footer>" +',
   '\'<span class="poster-meta">\' + escapeHTML(posterContextLine(scope)) + "</span>" +\n' +
-  '        \'<span class="poster-mark">' + ENS_MARK(15) + '</span>\' + "</footer>" +');
+  '        \'<img class="poster-logo" src="' + ENS_LOGO + '" alt="Emirates National Schools">\' + "</footer>" +');
 
 // ---------------------------------------------------------------------------
 // 3. No support asks on this instance
@@ -188,13 +194,20 @@ if (/buy me a coffee|bmc-blue/i.test(html)) {
 // moments the teacher is producing something rather than reading.
 swap("instance stylesheet", "\n  </style>\n</head>\n<body>\n  <script>", `
     /* ---- ENS Dashboards instance ------------------------------------- */
-    .ens-mark {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 42px; height: 42px;
-      border-radius: 13px;
-      background: var(--brand);
-      color: #ffffff;
-      margin-bottom: 10px;
+    /* Always on white. The logo's own teal is a few Delta E off the interface
+       teal, which is invisible apart and looks like a printing error together,
+       so the two never share an edge. White is also the background the mark
+       was drawn for, and the one it keeps in dark mode. */
+    .ens-logo {
+      display: block;
+      width: auto;
+      height: 52px;
+      max-width: 100%;
+      margin: 0 0 16px;
+      padding: 9px 14px;
+      background: #ffffff;
+      border-radius: 10px;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
     }
 
     #sec-briefing .section-header h2::before { background: var(--accent); }
@@ -219,17 +232,15 @@ swap("instance stylesheet", "\n  </style>\n</head>\n<body>\n  <script>", `
   <script>`);
 
 // The poster stylesheet is separate and printed, so it gets its own rule.
-swap("poster footer mark styling", "  .poster-foot {", `  .poster-mark {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: calc(9 * var(--s));
+swap("poster footer logo styling", "  .poster-foot {", `  .poster-logo {
+    display: block;
     height: calc(9 * var(--s));
-    border-radius: calc(2.6 * var(--s));
-    background: #007272;
-    color: #ffffff;
-    flex: none;
+    width: auto;
     align-self: center;
+    flex: none;
+    background: #ffffff;
+    padding: calc(1.6 * var(--s)) calc(2.4 * var(--s));
+    border-radius: calc(2 * var(--s));
   }
   .poster-foot {`);
 
