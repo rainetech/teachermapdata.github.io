@@ -14255,6 +14255,301 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     max-width: 84%;
   }
 
+  /* ---- the skyline: every test as a bar as tall as it took ---------------- */
+  .poster-skyline { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  .poster-sky-bars {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: calc(0.8 * var(--s));
+    padding-top: calc(8 * var(--s));
+  }
+  /* Square where it leaves the baseline, rounded at the data end. */
+  .poster-sky-bar {
+    flex: 1 1 0;
+    min-width: 0;
+    background: #007c85;
+    border-radius: calc(1.2 * var(--s)) calc(1.2 * var(--s)) 0 0;
+  }
+  .poster-sky-bar.is-rushed { background: #b45309; }
+  .poster-sky-median {
+    position: absolute;
+    left: 0; right: 0;
+    border-top: calc(0.6 * var(--s)) dashed var(--ink);
+    pointer-events: none;
+  }
+  .poster-sky-median b,
+  .poster-sky-max b {
+    position: absolute;
+    right: 0;
+    top: calc(-5.2 * var(--s));
+    padding: calc(0.5 * var(--s)) calc(1.6 * var(--s));
+    border-radius: calc(1.2 * var(--s));
+    background: rgba(255, 255, 255, 0.85);
+    font-size: calc(3.8 * var(--s));
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .poster-sky-max { position: absolute; right: 0; top: calc(8 * var(--s)); }
+  .poster-sky-max b { top: calc(-6 * var(--s)); color: var(--ink-3); }
+
+  /* ---- the graphic format ------------------------------------------------
+     One picture that fills the sheet, and one strip of figures under it that
+     says only what the picture already shows. No hero column, no callout
+     boxes: those are a dashboard card scaled up, and a wall is not a
+     dashboard. */
+  .poster-body.is-graphic {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .poster-graphic {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: calc(7 * var(--s)) calc(14 * var(--s)) 0;
+  }
+  .poster-graphic .poster-empty { margin: auto; text-align: center; }
+  .poster-caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(4 * var(--s)) calc(13 * var(--s));
+    padding: calc(4.5 * var(--s)) calc(14 * var(--s)) calc(7 * var(--s));
+    margin-top: calc(4 * var(--s));
+    border-top: calc(0.3 * var(--s)) solid var(--rule);
+  }
+  .poster-caption > div { display: flex; align-items: baseline; gap: calc(2.6 * var(--s)); }
+  .poster-caption b {
+    font-size: calc(12.5 * var(--s));
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.035em;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .poster-caption span {
+    font-size: calc(4.5 * var(--s));
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--ink-2);
+    max-width: calc(64 * var(--s));
+  }
+  .poster-caption .is-up b { color: #0f7a45; }
+  .poster-caption .is-down b { color: #b45309; }
+  .poster-caption .is-flat b { color: #6b7688; }
+  .poster-caption .is-blue b { color: #2f79bd; }
+
+  /* ---- the slope chart: every result as a line from then to now --------- */
+  .poster-slope {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: calc(30 * var(--s)) minmax(0, 1fr) calc(30 * var(--s));
+    gap: calc(3 * var(--s));
+  }
+  .poster-slope.is-compact {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .poster-slope-axis {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+  }
+  .poster-slope-axis b { font-size: calc(6.6 * var(--s)); font-weight: 800; line-height: 1.1; color: var(--ink); }
+  .poster-slope-axis small {
+    margin-top: calc(1.2 * var(--s));
+    font-size: calc(3.8 * var(--s));
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  /* Compact panels put "then" and "now" under the field, at its two ends. */
+  .poster-slope-axis.is-compact {
+    grid-row: 2;
+    font-size: calc(3.6 * var(--s));
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .poster-slope-axis.is-compact.is-left { justify-self: start; }
+  .poster-slope-axis.is-compact.is-right { justify-self: end; }
+  .poster-slope.is-compact .poster-slope-axis.is-left,
+  .poster-slope.is-compact .poster-slope-axis.is-right { grid-column: 1; }
+  .poster-slope.is-compact .poster-slope-field { grid-row: 1; grid-column: 1; }
+  .poster-slope-field {
+    position: relative;
+    min-height: 0;
+    border-radius: calc(2 * var(--s));
+    overflow: hidden;
+    background: #ffffff;
+    /* Room at each edge for the end dots to sit fully inside the box. */
+    --inset: calc(2.2 * var(--s));
+  }
+  .poster-slope-stripe { position: absolute; left: 0; right: 0; opacity: .13; }
+  .poster-slope-band {
+    position: absolute;
+    right: calc(5 * var(--s));
+    transform: translateY(-50%);
+    padding: calc(0.6 * var(--s)) calc(1.6 * var(--s));
+    border-radius: calc(1.2 * var(--s));
+    background: rgba(255, 255, 255, 0.82);
+    font-size: calc(3.8 * var(--s));
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .poster-slope-field svg {
+    position: absolute;
+    top: 0;
+    left: var(--inset);
+    width: calc(100% - 2 * var(--inset));
+    height: 100%;
+    overflow: visible;
+  }
+  .poster-slope-field svg line {
+    vector-effect: non-scaling-stroke;
+    stroke-width: calc(0.75 * var(--s));
+    stroke-linecap: round;
+    opacity: .78;
+  }
+  .poster-slope-dot {
+    position: absolute;
+    width: calc(2 * var(--s));
+    height: calc(2 * var(--s));
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .poster-slope-dot.is-start { left: var(--inset); }
+  .poster-slope-dot.is-end { left: calc(100% - var(--inset)); }
+
+  /* ---- panels: the slope chart once per starting band ------------------- */
+  .poster-panels { flex: 1 1 auto; min-height: 0; display: flex; gap: calc(4.5 * var(--s)); }
+  .poster-panel { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: calc(2.2 * var(--s)); }
+  .poster-panel .poster-slope { min-height: 0; }
+  .poster-panel-head { display: flex; align-items: center; gap: calc(1.8 * var(--s)); font-size: calc(4.8 * var(--s)); font-weight: 800; color: var(--ink); }
+  .poster-panel-head i { width: calc(3.4 * var(--s)); height: calc(3.4 * var(--s)); border-radius: calc(1 * var(--s)); flex: none; }
+  .poster-panel-head small { margin-left: auto; font-size: calc(3.6 * var(--s)); font-weight: 700; color: var(--ink-3); }
+  .poster-panel-foot { display: flex; align-items: baseline; gap: calc(1.8 * var(--s)); }
+  .poster-panel-foot b { font-size: calc(9.5 * var(--s)); font-weight: 800; letter-spacing: -0.03em; line-height: 1; color: var(--ink); }
+  .poster-panel-foot.is-up b { color: #0f7a45; }
+  .poster-panel-foot span { font-size: calc(3.7 * var(--s)); font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* ---- the race: one lane per runner who started below the line --------- */
+  .poster-race {
+    flex: 1 1 auto;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding-top: calc(7 * var(--s));
+    --lane-inset: calc(2.2 * var(--s));
+  }
+  .poster-race-lanes {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    margin: 0 var(--lane-inset);
+  }
+  .poster-lane { position: relative; flex: 1 1 0; min-height: calc(1.5 * var(--s)); max-height: calc(7 * var(--s)); }
+  .poster-lane-run {
+    position: absolute;
+    top: 50%;
+    height: calc(1.5 * var(--s));
+    transform: translateY(-50%);
+    border-radius: 999px;
+  }
+  .poster-lane-run.is-crossed { background: #0f7a45; }
+  .poster-lane-run.is-forward { background: #2f79bd; }
+  .poster-lane-run.is-back { background: #b45309; }
+  .poster-lane-run.is-still { background: #c3cbd8; }
+  .poster-lane-start {
+    position: absolute;
+    top: 50%;
+    width: calc(1.9 * var(--s));
+    height: calc(1.9 * var(--s));
+    border-radius: 50%;
+    background: #ffffff;
+    border: calc(0.45 * var(--s)) solid #8a94a6;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+  }
+  .poster-lane-end {
+    position: absolute;
+    top: 50%;
+    width: calc(2.5 * var(--s));
+    height: calc(2.5 * var(--s));
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .poster-lane-end.is-crossed { background: #0f7a45; }
+  .poster-lane-end.is-forward { background: #2f79bd; }
+  .poster-lane-end.is-back { background: #b45309; }
+  .poster-lane-end.is-still { background: #8a94a6; }
+  .poster-race-zone {
+    position: absolute;
+    top: 0;
+    bottom: calc(7 * var(--s));
+    right: 0;
+    margin-left: var(--lane-inset);
+    background: rgba(15, 122, 69, 0.07);
+    border-radius: 0 calc(2 * var(--s)) calc(2 * var(--s)) 0;
+  }
+  .poster-race-zone b {
+    position: absolute;
+    right: calc(3 * var(--s));
+    bottom: calc(2 * var(--s));
+    font-size: calc(9 * var(--s));
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: rgba(15, 122, 69, 0.28);
+  }
+  .poster-race-line {
+    position: absolute;
+    top: 0;
+    bottom: calc(7 * var(--s));
+    width: 0;
+    margin-left: var(--lane-inset);
+    border-left: calc(0.7 * var(--s)) dashed #0f7a45;
+    z-index: 1;
+  }
+  .poster-race-line b {
+    position: absolute;
+    top: 0;
+    left: calc(1.8 * var(--s));
+    font-size: calc(3.9 * var(--s));
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #0f7a45;
+    white-space: nowrap;
+  }
+  .poster-race-scale {
+    display: flex;
+    justify-content: space-between;
+    margin: calc(2 * var(--s)) var(--lane-inset) 0;
+    padding-top: calc(1 * var(--s));
+    border-top: calc(0.3 * var(--s)) solid var(--rule);
+    font-size: calc(3.8 * var(--s));
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
   /* ---- the dot strips: the distribution drawn as itself ----------------
      One mark per result, ordered low to high. The marks are the chart; there
      is no axis line, no gridlines and no bar, because the population is the
@@ -14833,55 +15128,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         // rather than printed with counts: "2 of 3 of us met our growth goal"
         // in a room of three tells the two who did which one did not.
         perSubject: true,
-        available: (scope) => {
-          if (!hasGrowthContext()) return false;
-          return aggregateRows(scope.rows).shares.met.of >= MIN_SHARE_N;
-        },
+        available: (scope) => hasGrowthContext() && posterPairedRows(scope.rows).length >= MIN_SHARE_N,
         headline: (scope) => scope.label ? "How Far We Came In " + scope.label : "We Grew This Year",
         sub: (scope) => (scope.label ? "This is " + scope.label.toLowerCase() + " only. " : "") +
-          "Growth is measured against students who started exactly where you did.",
+          "Every line is one result: where it started on the left, where it is now on the right.",
         message: () => "Your score tells you where you are. Your growth tells you how hard you have been working. Growth is the part you control.",
         body: (scope) => {
           const metrics = aggregateRows(scope.rows);
-          const met = metrics.metPct;
-          const exceeded = metrics.exceededPct;
+          const chart = posterSlopeChart(scope.rows, {
+            startLabel: state.dataWindow.priorWindowLabel,
+            endLabel: state.dataWindow.currentWindowLabel
+          });
           const median = metrics.medianConditionalGrowthPercentile;
-          // Both meters are the same measure - a share of the class - at two
-          // thresholds, so they share a hue and a scale. The median growth
-          // score is a percentile, a different unit entirely, and putting it on
-          // the same track made 76 read as 76%. It is a stat tile instead.
-          const metWidth = clampBetween(isFiniteNumber(met) ? met : 0, 0, 100);
-          const beatWidth = clampBetween(isFiniteNumber(exceeded) ? exceeded : 0, 0, 100);
-          const nested = '<div class="poster-nested">' +
-            '<span class="poster-nested-track">' +
-            '<i class="poster-nested-met" style="width:' + metWidth.toFixed(1) + '%"></i>' +
-            '<i class="poster-nested-beat" style="width:' + beatWidth.toFixed(1) + '%"></i>' +
-            "</span>" +
-            '<div class="poster-nested-key">' +
-            '<span><i class="is-beat"></i><b>' + escapeHTML(formatShare(metrics.shares.exceeded)) +
-            "</b>beat their projection outright</span>" +
-            '<span><i class="is-met"></i><b>' + escapeHTML(formatShare(metrics.shares.met)) +
-            "</b>met it, which includes everyone who beat it</span>" +
-            '<span><i class="is-rest"></i><b>' +
-            escapeHTML(formatShare({ n: metrics.shares.met.of - metrics.shares.met.n, of: metrics.shares.met.of })) +
-            "</b>did not reach it this time</span>" +
-            "</div></div>";
-          return '<div class="poster-body">' +
-            posterHero(isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N ? formatNumber(median, 0) : formatShare(metrics.shares.met),
+          return '<div class="poster-body is-graphic"><div class="poster-graphic">' + chart.html + "</div>" +
+            posterCaption([
+              [formatInteger(chart.counts.up), "lines climbed - at least " + SLOPE_DEADBAND + " percentile points up", "up"],
+              [formatInteger(chart.counts.flat), "held about level", "flat"],
+              [formatInteger(chart.counts.down), "slipped", "down"],
               isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N
-                ? "is our middle growth score, out of 100, and a typical student who started where we did lands on 50"
-                : "of us met or beat our growth goal",
-              (isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N ? median >= 50 : met >= 50) ? "green" : "amber") +
-            '<div class="poster-main">' + nested +
-            '<div class="poster-callouts">' +
-            '<div class="poster-callout"><strong>Results behind these figures</strong><b>' +
-            escapeHTML(formatInteger(metrics.shares.met.of)) +
-            "</b><small>every one of them tested twice, so the growth is measured, not estimated</small></div>" +
-            (isFiniteNumber(metrics.avgRITChange)
-              ? '<div class="poster-callout is-good"><strong>Average RIT gain</strong><b>' +
-                escapeHTML(formatSignedNumber(metrics.avgRITChange)) + "</b><small>points added since the last test window</small></div>"
-              : "") +
-            "</div></div></div>";
+                ? [formatNumber(median, 0), "our middle growth score, where 50 is typical for students who started where we did"]
+                : null
+            ]) + "</div>";
         }
       },
       {
@@ -15026,30 +15293,31 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         headline: (scope) => scope.label
           ? "In " + scope.label + ", You Are Compared With People Who Started Where You Did"
           : "You Are Compared With People Who Started Where You Did",
-        sub: () => "Growth is not a race against the top of the class.",
+        sub: () => "The same picture, drawn separately for each starting band. Growth is not a race against the top of the class.",
         message: () => "50 means you grew as much as students across the country who started on the same score as you. Anyone in this room can be above 50.",
         body: (scope) => {
-          // available() screens out thin bands; body() used to re-derive with a
-          // count > 0 test, so a band of one student could be rendered - and
-          // become the 56mm hero number, captioned with their starting band.
-          const bands = growthEquityBands(scope.rows)
-            .filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP));
-          const rows = bands.map((entry) => posterBarRow(
-            entry.band.name + " start",
-            "Started between the " + entry.band.min + "th and " + entry.band.max + "th percentile",
-            isFiniteNumber(entry.medianCGP) ? entry.medianCGP : 0,
-            isFiniteNumber(entry.medianCGP) ? formatNumber(entry.medianCGP, 0) : "n/a",
-            bandPrintColour(entry.band), "#eceff5",
-            isFiniteNumber(entry.medianCGP) && entry.medianCGP >= 50 ? "above typical" : "")).join("");
-          const best = bands.slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
-          return '<div class="poster-body">' +
-            posterHero(formatShare({ n: bands.filter((entry) => entry.medianCGP >= 50).length, of: bands.length }),
-              bands.length === 1
-                ? "of the starting bands with enough results is growing at or above typical"
-                : "of our starting bands are growing at or above typical, whatever they started on",
-              bands.filter((entry) => entry.medianCGP >= 50).length >= bands.length / 2 ? "green" : "amber") +
-            '<div class="poster-main"><div class="poster-bars">' + rows + "</div>" +
-            '<p class="poster-empty">Each bar is a growth score out of 100. 50 is typical.</p></div></div>';
+          // available() screens out thin bands, so no panel is one child's
+          // line with their starting band written over it.
+          const panels = BANDS.map((band) => {
+            const rows = posterPairedRows(scope.rows).filter((row) => row.hasGrowthPair && row.startBand && row.startBand.name === band.name);
+            const cgp = median(rows.map((row) => row.conditionalGrowthPercentile));
+            return { band, rows, cgp };
+          }).filter((panel) => panel.rows.length >= EQUITY_MIN_RECORDS && isFiniteNumber(panel.cgp));
+          const html = '<div class="poster-panels">' + panels.map((panel) => {
+            const chart = posterSlopeChart(panel.rows, { compact: true, startLabel: "then", endLabel: "now" });
+            return '<div class="poster-panel">' +
+              '<div class="poster-panel-head"><i style="background:' + bandPrintColour(panel.band) + '"></i><b>' +
+              escapeHTML("Started " + panel.band.name) + "</b><small>" + escapeHTML(formatInteger(panel.rows.length) + " results") + "</small></div>" +
+              chart.html +
+              '<div class="poster-panel-foot' + (panel.cgp >= 50 ? " is-up" : "") + '"><b>' + escapeHTML(formatNumber(panel.cgp, 0)) +
+              "</b><span>growth score</span></div></div>";
+          }).join("") + "</div>";
+          const above = panels.filter((panel) => panel.cgp >= 50).length;
+          return '<div class="poster-body is-graphic"><div class="poster-graphic">' + html + "</div>" +
+            posterCaption([
+              [formatInteger(above) + " of " + formatInteger(panels.length), "starting bands are growing at or above typical, whatever they started on", above >= panels.length / 2 ? "up" : "down"],
+              [formatInteger(panels.reduce((sum, panel) => sum + panel.rows.length, 0)), "lines, each one a result that sat both tests"]
+            ]) + "</div>";
         }
       },
       {
@@ -15061,22 +15329,32 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           return Boolean(diagnostics && (isFiniteNumber(diagnostics.medianDuration) || diagnostics.rapidGuessReported));
         },
         headline: () => "Your Score Is Only As Honest As Your Effort",
-        sub: () => "A MAP test gets harder when you get answers right. Guessing makes it easier, and the score goes down.",
+        sub: () => "Every test we sat, fastest to slowest. A MAP test gets harder when you get answers right; guessing makes it easier, and the score goes down.",
         message: () => "Read the whole question. A test finished fast is not a test done well - it is a lower score than you can actually earn.",
         body: (scope) => {
           const diagnostics = state.diagnostics || {};
           // Both flags are counted on the records in view, and a record that
           // carries both is one rushed test, not two.
           const rushed = scope.rows.filter((row) => row.shortTest || row.rapidGuessed).length;
-          return '<div class="poster-body">' +
-            posterHero(isFiniteNumber(diagnostics.medianDuration) ? formatNumber(diagnostics.medianDuration, 0) : "-",
-              "minutes is how long our class usually takes", "blue") +
-            '<div class="poster-main"><div class="poster-callouts">' +
-            '<div class="poster-callout is-next"><strong>Tests finished too fast</strong><b>' +
-            escapeHTML(formatInteger(rushed)) + "</b><small>rushed or rapidly guessed, and worth taking again</small></div>" +
-            '<div class="poster-callout is-good"><strong>What careful work looks like</strong><b>Read it twice</b>' +
-            "<small>the question, then the answers, before you choose</small></div>" +
-            "</div></div></div>";
+          const strip = posterDurationStrip(scope.rows);
+          if (!strip) {
+            // No durations in this export: the poster keeps its message and
+            // says what it knows, rather than drawing a strip of nothing.
+            return '<div class="poster-body is-graphic"><div class="poster-graphic">' +
+              '<p class="poster-empty">This export does not record how long each test took.</p></div>' +
+              posterCaption([
+                isFiniteNumber(diagnostics.medianDuration) ? [formatNumber(diagnostics.medianDuration, 0) + " min", "is how long a typical test took"] : null,
+                [formatInteger(rushed), rushed === 1 ? "test was rushed, and is worth taking again" : "tests were rushed, and are worth taking again", rushed ? "down" : null]
+              ]) + "</div>";
+          }
+          return '<div class="poster-body is-graphic"><div class="poster-graphic">' + strip.html + "</div>" +
+            posterCaption([
+              [formatNumber(strip.median, 0) + " min", "is how long a typical test took - the dashed line"],
+              strip.rushed
+                ? [formatInteger(strip.rushed), strip.rushed === 1 ? "amber bar was rushed, and is worth taking again" : "amber bars were rushed, and are worth taking again", "down"]
+                : ["None", "of our tests were rushed - not one bar is amber", "up"],
+              [formatInteger(strip.n), "tests, one bar each"]
+            ]) + "</div>";
         }
       },
       {
@@ -15128,41 +15406,24 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         title: "Catching up",
         blurb: "Of the results that started below the class benchmark, how many moved towards it or crossed it.",
         perSubject: true,
-        available: (scope) => hasGrowthContext() && posterBelowSecureRows(scope.rows).length >= MIN_SHARE_N,
+        available: (scope) => hasGrowthContext() &&
+          posterPairedRows(scope.rows).filter((row) => row.startPercentile < SECURE_BENCHMARK).length >= MIN_SHARE_N,
         headline: (scope) => scope.label
           ? "In " + scope.label + ", Starting Behind Is Not Staying Behind"
           : "Starting Behind Is Not Staying Behind",
-        sub: (scope) => "Of the " + (scope.label ? scope.label.toLowerCase() + " " : "") +
-          "results that began below the 61st percentile, this is how many moved towards it.",
+        sub: (scope) => "One lane for every " + (scope.label ? scope.label.toLowerCase() + " " : "") +
+          "result that began below the 61st percentile, running from where it started to where it is now.",
         message: () => "Catching up means growing faster than students who started ahead of you. That is the hardest kind of growth there is, and this many of us did it.",
         body: (scope) => {
-          const rows = posterBelowSecureRows(scope.rows);
-          const total = rows.length;
-          const closed = rows.filter((row) => row.gapStatus === "Gap Closed").length;
-          const reduced = rows.filter((row) => row.gapStatus === "Gap Reduced").length;
-          const moved = closed + reduced;
-          const share = (count) => count / total * 100;
-          const pooled = pooledGapClosure(rows);
-          return '<div class="poster-body">' +
-            posterHero(formatPercentWhole(share(moved)), "of us who started behind closed some of the distance", share(moved) >= 50 ? "green" : "amber") +
-            '<div class="poster-main"><div class="poster-bars">' +
-            posterBarRow("Crossed the line", "Finished at or above the 61st percentile", share(closed),
-              formatPercentWhole(share(closed)), POSTER_INK.green.fill, POSTER_INK.green.track) +
-            posterBarRow("Closed some of the gap", "Nearer the line than they started", share(reduced),
-              formatPercentWhole(share(reduced)), POSTER_INK.blue.fill, POSTER_INK.blue.track) +
-            posterBarRow("Still to come", "Held their place or slipped", share(total - moved),
-              formatPercentWhole(share(total - moved)), POSTER_INK.amber.fill, POSTER_INK.amber.track) +
-            "</div>" +
-            '<div class="poster-callouts">' +
-            '<div class="poster-callout"><strong>Started behind</strong><b>' + escapeHTML(formatInteger(total)) +
-            "</b><small>results began below the 61st percentile</small></div>" +
-            // A negative pooled figure is a class that slipped; that belongs in
-            // the dashboard, not on a wall that is meant to be read by children.
-            (isFiniteNumber(pooled) && pooled > 0
-              ? '<div class="poster-callout is-good"><strong>Distance closed</strong><b>' + escapeHTML(formatFractionPercent(pooled)) +
-                "</b><small>of all the ground there was to make up, made up together</small></div>"
-              : "") +
-            "</div></div></div>";
+          const race = posterRaceTrack(scope.rows);
+          return '<div class="poster-body is-graphic"><div class="poster-graphic">' + race.html + "</div>" +
+            posterCaption([
+              [formatInteger(race.counts.crossed), "crossed the line", "up"],
+              [formatInteger(race.counts.forward), "got closer to it", "blue"],
+              [formatInteger(race.counts.back), "lost ground", "down"],
+              race.counts.still ? [formatInteger(race.counts.still), "stayed where they were", "flat"] : null,
+              [formatInteger(race.n), "started behind it - one lane each"]
+            ]) + "</div>";
         }
       },
       {
@@ -15312,6 +15573,149 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         horizon: rows[0].goals.horizonLabel
       })).filter((entry) => isFiniteNumber(entry.now) && isFiniteNumber(entry.gain) && entry.gain > 0)
         .sort((a, b) => a.subject.localeCompare(b.subject));
+    }
+
+    // ---- Graphics that carry the story on their own ------------------------
+    // Everything below draws a population, not a summary. A child reading the
+    // wall should be able to find the shape of the class without a number,
+    // and the caption under each graphic only says what the graphic already
+    // shows.
+
+    // The one caption strip every graphic poster uses: a few figures, each
+    // read from the picture above it, and nothing the picture does not show.
+    function posterCaption(items) {
+      return '<div class="poster-caption">' + items.filter(Boolean).map(([big, small, tone]) =>
+        "<div" + (tone ? ' class="is-' + tone + '"' : "") + "><b>" + escapeHTML(big) + "</b><span>" +
+        escapeHTML(small) + "</span></div>").join("") + "</div>";
+    }
+
+    function posterPairedRows(rows) {
+      return rows.filter((row) => isFiniteNumber(row.startPercentile) && isFiniteNumber(row.endPercentile));
+    }
+
+    // Five percentile points either way reads as "about the same". Under that
+    // a line is drawn level and counted as level, because one point of
+    // movement on a norm-referenced scale is noise, not news.
+    const SLOPE_DEADBAND = 5;
+    const SLOPE_INK = { up: "#0f7a45", down: "#b45309", flat: "#8a94a6" };
+
+    function slopeTone(row) {
+      const change = row.endPercentile - row.startPercentile;
+      return change >= SLOPE_DEADBAND ? "up" : change <= -SLOPE_DEADBAND ? "down" : "flat";
+    }
+
+    // One line per result, from where it started to where it is now, on a
+    // percentile axis with the five bands as stripes behind. If most lines
+    // climb, the class grew, and nobody has to read a number to know it. The
+    // lines are an SVG stretched to the box with non-scaling strokes; every
+    // dot and label is HTML positioned by percentage, so the chart fills any
+    // page shape without a single distorted glyph.
+    function posterSlopeChart(rows, options) {
+      const opts = options || {};
+      const paired = posterPairedRows(rows);
+      if (!paired.length) return null;
+      const y = (pct) => 100 - clampBetween(pct, 0, 100);
+      const stripes = BANDS.map((band) => {
+        const top = y(Math.min(100, band.upper));
+        const bottom = y(band.min);
+        return '<i class="poster-slope-stripe" style="top:' + top.toFixed(2) + "%;height:" + (bottom - top).toFixed(2) +
+          "%;background:" + bandPrintColour(band) + '"></i>' +
+          (opts.compact ? "" : '<b class="poster-slope-band" style="top:' + ((top + bottom) / 2).toFixed(2) + '%">' +
+            escapeHTML(band.name) + "</b>");
+      }).join("");
+      // Level lines first, then the ones that slipped, then the ones that
+      // climbed, so the story sits on top of the noise.
+      const order = { flat: 0, down: 1, up: 2 };
+      const sorted = paired.slice().sort((a, b) => order[slopeTone(a)] - order[slopeTone(b)]);
+      const lines = sorted.map((row) => {
+        const tone = slopeTone(row);
+        return '<line x1="0" y1="' + y(row.startPercentile).toFixed(2) + '" x2="100" y2="' + y(row.endPercentile).toFixed(2) +
+          '" stroke="' + SLOPE_INK[tone] + '"></line>';
+      }).join("");
+      const dots = sorted.map((row) => {
+        const tone = slopeTone(row);
+        return '<i class="poster-slope-dot is-start" style="top:' + y(row.startPercentile).toFixed(2) + "%;background:" + SLOPE_INK[tone] + '"></i>' +
+          '<i class="poster-slope-dot is-end" style="top:' + y(row.endPercentile).toFixed(2) + "%;background:" + SLOPE_INK[tone] + '"></i>';
+      }).join("");
+      const counts = { up: 0, down: 0, flat: 0 };
+      paired.forEach((row) => { counts[slopeTone(row)] += 1; });
+      const axis = (label, side) => opts.compact
+        ? '<span class="poster-slope-axis is-' + side + ' is-compact">' + escapeHTML(label) + "</span>"
+        : '<div class="poster-slope-axis is-' + side + '"><b>' + escapeHTML(label) + "</b><small>percentile</small></div>";
+      return {
+        n: paired.length,
+        counts,
+        html: '<div class="poster-slope' + (opts.compact ? " is-compact" : "") + '">' +
+          axis(opts.startLabel || "Then", "left") +
+          '<div class="poster-slope-field">' + stripes +
+          '<svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" focusable="false">' + lines + "</svg>" +
+          dots + "</div>" +
+          axis(opts.endLabel || "Now", "right") +
+          "</div>"
+      };
+    }
+
+    // The race to the line. One lane per result that started below the secure
+    // benchmark, running from its start to where it is now, with the line drawn
+    // where it is. Runners who crossed it, runners who got closer, runners who
+    // lost ground: three colours, no percentages, and the finish line is a line.
+    function posterRaceTrack(rows) {
+      const runners = posterPairedRows(rows)
+        .filter((row) => row.startPercentile < SECURE_BENCHMARK)
+        // Nearest the line at the top, so the lanes that crossed sit together.
+        .sort((a, b) => b.startPercentile - a.startPercentile || b.endPercentile - a.endPercentile);
+      if (!runners.length) return null;
+      const counts = { crossed: 0, forward: 0, back: 0, still: 0 };
+      const lanes = runners.map((row) => {
+        const from = clampBetween(row.startPercentile, 0, 100);
+        const to = clampBetween(row.endPercentile, 0, 100);
+        const tone = to >= SECURE_BENCHMARK ? "crossed" : to - from >= 1 ? "forward" : from - to >= 1 ? "back" : "still";
+        counts[tone] += 1;
+        const left = Math.min(from, to);
+        return '<div class="poster-lane">' +
+          '<i class="poster-lane-run is-' + tone + '" style="left:' + left.toFixed(2) + "%;width:" + Math.abs(to - from).toFixed(2) + '%"></i>' +
+          '<i class="poster-lane-start" style="left:' + from.toFixed(2) + '%"></i>' +
+          '<i class="poster-lane-end is-' + tone + '" style="left:' + to.toFixed(2) + '%"></i>' +
+          "</div>";
+      }).join("");
+      return {
+        n: runners.length,
+        counts,
+        html: '<div class="poster-race">' +
+          '<i class="poster-race-zone" style="left:' + SECURE_BENCHMARK + '%"><b>secure</b></i>' +
+          '<i class="poster-race-line" style="left:' + SECURE_BENCHMARK + '%"><b>' + escapeHTML("the line: " + ordinal(SECURE_BENCHMARK) + " percentile") + "</b></i>" +
+          '<div class="poster-race-lanes">' + lanes + "</div>" +
+          '<div class="poster-race-scale"><span>' + escapeHTML("percentile 0") + "</span><span>50</span><span>100</span></div>" +
+          "</div>"
+      };
+    }
+
+    // Every test as a bar whose height is how long it took, fastest to slowest,
+    // with the rushed ones in amber. Rank alone hid the story - a 20-minute test
+    // and a 48-minute one drew the same mark - so the value is the height, and
+    // the amber bars are visibly the short ones.
+    function posterDurationStrip(rows) {
+      const timed = rows.filter((row) => isFiniteNumber(row.currentDuration) && row.currentDuration > 0)
+        .sort((a, b) => a.currentDuration - b.currentDuration);
+      if (timed.length < MIN_SHARE_N) return null;
+      const rushedCount = timed.filter((row) => row.shortTest || row.rapidGuessed).length;
+      const med = median(timed.map((row) => row.currentDuration));
+      const max = Math.max(...timed.map((row) => row.currentDuration));
+      const bars = timed.map((row) =>
+        '<i class="poster-sky-bar' + ((row.shortTest || row.rapidGuessed) ? " is-rushed" : "") +
+        '" style="height:' + (row.currentDuration / max * 100).toFixed(1) + '%"></i>').join("");
+      return {
+        n: timed.length,
+        median: med,
+        rushed: rushedCount,
+        html: '<div class="poster-skyline">' +
+          '<div class="poster-sky-bars">' + bars +
+          '<i class="poster-sky-median" style="bottom:' + (med / max * 100).toFixed(1) + '%"><b>' +
+          escapeHTML("the middle: " + formatNumber(med, 0) + " minutes") + "</b></i>" +
+          '<i class="poster-sky-max"><b>' + escapeHTML(formatNumber(max, 0) + " min") + "</b></i>" +
+          "</div>" +
+          '<div class="poster-strip-scale"><span>fastest test</span><span>every test we sat, one bar each</span><span>slowest</span></div></div>'
+      };
     }
 
     // One mark per result, ordered by percentile, coloured by band. The strip
