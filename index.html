@@ -14267,6 +14267,133 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     max-width: 84%;
   }
 
+  /* ---- the ladder: one per subject, grades as rungs ----------------------- */
+  .poster-ladders { flex: 1 1 auto; min-height: 0; display: flex; gap: calc(6 * var(--s)); }
+  .poster-ladder { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: calc(2 * var(--s)); }
+  .poster-ladder-head { text-align: center; }
+  .poster-ladder-head b { display: block; font-size: calc(6.4 * var(--s)); font-weight: 800; color: var(--ink); line-height: 1.1; }
+  .poster-ladder-head small { display: block; margin-top: calc(0.8 * var(--s)); font-size: calc(3.7 * var(--s)); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
+  .poster-ladder-field {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    /* rung labels left of the rails, our marks to the right of them */
+    --rail-left: 46%;
+    --rail-right: 60%;
+  }
+  .poster-ladder-rail {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: calc(1.1 * var(--s));
+    border-radius: 999px;
+    background: #c3cbd8;
+  }
+  .poster-ladder-rail.is-left { left: var(--rail-left); }
+  .poster-ladder-rail.is-right { left: var(--rail-right); }
+  .poster-rung { position: absolute; left: 0; right: 0; height: 0; }
+  .poster-rung i {
+    position: absolute;
+    left: var(--rail-left); right: calc(100% - var(--rail-right));
+    top: calc(-0.55 * var(--s));
+    height: calc(1.1 * var(--s));
+    background: #c3cbd8;
+    border-radius: 999px;
+  }
+  .poster-rung.is-own i { background: var(--ink-2); height: calc(1.5 * var(--s)); top: calc(-0.75 * var(--s)); }
+  .poster-rung span {
+    position: absolute;
+    right: calc(100% - var(--rail-left) + 2.2 * var(--s));
+    top: 0;
+    transform: translateY(-50%);
+    text-align: right;
+    font-size: calc(3.6 * var(--s));
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .poster-rung.is-own span { color: var(--ink); font-weight: 800; }
+  .poster-rung span b { display: block; font-size: calc(4.6 * var(--s)); font-weight: 800; color: var(--ink-2); }
+  .poster-rung.is-own span b { color: var(--ink); }
+  .poster-ladder-climb {
+    position: absolute;
+    left: calc((var(--rail-left) + var(--rail-right)) / 2);
+    width: calc(1.6 * var(--s));
+    transform: translateX(-50%);
+    background: #0f7a45;
+    border-radius: 999px;
+    opacity: .55;
+  }
+  .poster-ladder-mark { position: absolute; left: 0; right: 0; height: 0; }
+  .poster-ladder-mark i {
+    position: absolute;
+    left: calc((var(--rail-left) + var(--rail-right)) / 2);
+    top: 0;
+    width: calc(4.6 * var(--s));
+    height: calc(4.6 * var(--s));
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+  }
+  .poster-ladder-mark.is-now i { background: #0f7a45; border: calc(0.7 * var(--s)) solid #ffffff; box-shadow: 0 0 0 calc(0.5 * var(--s)) #0f7a45; }
+  .poster-ladder-mark.is-next i { background: #ffffff; border: calc(0.9 * var(--s)) solid #0f7a45; }
+  .poster-ladder-mark span {
+    position: absolute;
+    left: calc(var(--rail-right) + 4 * var(--s));
+    top: 0;
+    transform: translateY(-50%);
+    font-size: calc(3.8 * var(--s));
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #0f7a45;
+    white-space: nowrap;
+  }
+  .poster-ladder-mark span b { display: block; font-size: calc(7.5 * var(--s)); font-weight: 800; letter-spacing: -0.03em; text-transform: none; color: var(--ink); }
+  /* When a small typical gain puts the two marks a few millimetres apart,
+     the "next" label steps up out of the way of "now". */
+  .poster-ladder-mark.is-next.is-tight span { transform: translateY(-100%); }
+
+  /* ---- the goal strip: hollow marks are the ones next to cross ------------ */
+  /* On a sheet that is only this strip, it gets more height than the bands
+     poster gives it - but not the whole page, which turns 96 marks into a
+     barcode. The field also leaves room below for the bracket and its label,
+     so neither lands on the scale text. */
+  .poster-graphic .poster-strip.is-solo .poster-dots { height: calc(72 * var(--s)); }
+  .poster-graphic .poster-strip.is-solo .poster-strip-field { margin-bottom: calc(12 * var(--s)); }
+  .poster-graphic .poster-strip.is-solo .poster-strip-cut { top: calc(-3 * var(--s)); bottom: calc(-3 * var(--s)); }
+  .poster-dot.is-next {
+    background: #ffffff;
+    border: calc(0.9 * var(--s)) solid;
+    box-sizing: border-box;
+  }
+  .poster-strip-cut.is-today { border-left-color: var(--ink); }
+  .poster-strip-cut.is-goal { border-left-color: #0f7a45; }
+  .poster-strip.is-solo .poster-strip-cut b { display: block; }
+  .poster-strip-cut.is-today b, .poster-strip-cut.is-goal b { top: calc(-6 * var(--s)); }
+  .poster-strip-cut.is-goal b { color: #0f7a45; left: auto; right: calc(1.6 * var(--s)); }
+  .poster-goal-span {
+    position: absolute;
+    bottom: calc(-4.2 * var(--s));
+    height: calc(2.2 * var(--s));
+    border: calc(0.5 * var(--s)) solid #0f7a45;
+    border-top: 0;
+    border-radius: 0 0 calc(1.2 * var(--s)) calc(1.2 * var(--s));
+  }
+  .poster-goal-span b {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    transform: translate(-50%, calc(0.8 * var(--s)));
+    font-size: calc(4.2 * var(--s));
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #0f7a45;
+    white-space: nowrap;
+  }
+
   /* ---- the skyline: every test as a bar as tall as it took ---------------- */
   .poster-skyline { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
   .poster-sky-bars {
@@ -15240,48 +15367,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         id: "ladder",
         title: "The RIT ladder",
         blurb: "What a year of growth looks like on the RIT scale, from where the class is now.",
-        available: (scope) => ritLadderEntries(scope.rows).length > 0,
+        available: (scope) => Boolean(posterLadder(scope.rows)),
         headline: () => "Where We Are, And Where We Are Going",
-        sub: () => "RIT is one scale that keeps going all the way through school. It does not restart each year.",
+        sub: () => "RIT is one scale that keeps going all the way through school. The rungs are what a typical student in each grade scores; the solid mark is us.",
         message: () => "A RIT point is small. A year of them is not. Growth happens in the lessons you turn up for, not on the day of the test.",
         body: (scope) => {
-          // Typical growth differs by subject and shrinks as students get
-          // older, so one averaged number across four subjects would be a
-          // number that describes none of them. Each subject gets its own row.
-          const entries = ritLadderEntries(scope.rows);
-          const horizon = entries.length ? entries[0].horizon : "";
-          const floor = Math.min(...entries.map((entry) => entry.now)) - 8;
-          const ceiling = Math.max(...entries.map((entry) => entry.now + entry.gain)) + 4;
-          const span = Math.max(1, ceiling - floor);
-          // A bar whose baseline is not zero misstates the values: on a scale
-          // starting at 146, a 168 reads as three times a 154. This is a
-          // now-to-target range, so it is drawn as one - two dots on a shared,
-          // labelled scale - and the axis ends are printed so the reader can
-          // see the scale does not start at zero.
-          const bars = entries.map((entry) => {
-            const nowPct = clampBetween((entry.now - floor) / span * 100, 0, 100);
-            const targetPct = clampBetween((entry.now + entry.gain - floor) / span * 100, 0, 100);
-            return '<div class="poster-bar-row"><span class="poster-bar-name">' + escapeHTML(entry.subject) +
-              "<small>" + escapeHTML("a typical year adds " + formatSignedNumber(entry.gain) + " RIT") + "</small></span>" +
-              '<span class="poster-range">' +
-              '<i class="poster-range-axis"></i>' +
-              '<i class="poster-range-link" style="left:' + nowPct.toFixed(1) + "%;width:" + Math.max(0, targetPct - nowPct).toFixed(1) + '%"></i>' +
-              '<i class="poster-range-dot is-target" style="left:' + targetPct.toFixed(1) + '%"></i>' +
-              '<i class="poster-range-dot is-now" style="left:' + nowPct.toFixed(1) + '%"></i>' +
-              "</span>" +
-              '<span class="poster-bar-value">' + escapeHTML(formatNumber(entry.now, 0)) +
-              '<small>&rarr; ' + escapeHTML(formatNumber(entry.now + entry.gain, 0)) + "</small></span></div>";
-          }).join("");
-          const best = entries.slice().sort((a, b) => b.gain - a.gain)[0];
-          return '<div class="poster-body">' +
-            posterHero(formatSignedNumber(best.gain), "RIT points is a typical year in " + best.subject.toLowerCase(), "green") +
-            '<div class="poster-main"><div class="poster-bars">' + bars + "</div>" +
-            '<div class="poster-scale"><span>RIT ' + escapeHTML(formatNumber(floor, 0)) + "</span>" +
-            "<span>the scale on these lines runs left to right, and does not start at zero</span>" +
-            "<span>RIT " + escapeHTML(formatNumber(ceiling, 0)) + "</span></div>" +
-            '<div class="poster-key"><span><i style="background:' + POSTER_INK.blue.fill + '"></i>Where our middle score sits today</span>' +
-            '<span><i style="background:' + POSTER_INK.green.fill + '"></i>After a typical year, by ' + escapeHTML(horizon || "this time next year") +
-            "</span></div></div></div>";
+          const ladder = posterLadder(scope.rows);
+          const climbing = ladder.panels.filter((panel) => !panel.flat);
+          const best = climbing.slice().sort((a, b) => b.gain - a.gain)[0];
+          const atOrAbove = ladder.panels.filter((panel) => panel.atOrAboveOwnRung).length;
+          return '<div class="poster-body is-graphic"><div class="poster-graphic">' + ladder.html + "</div>" +
+            posterCaption([
+              [formatInteger(atOrAbove) + " of " + formatInteger(ladder.panels.length),
+                ladder.panels.length === 1 ? "subject is already at or above our own grade's rung" : "subjects are already at or above our own grade's rung",
+                atOrAbove >= ladder.panels.length / 2 ? "up" : "flat"],
+              best ? [formatSignedNumber(best.gain), "RIT is a typical year in " + best.subject.toLowerCase() + " - the longest climb on the wall", "up"] : null,
+              [formatInteger(ladder.panels.length), ladder.panels.length === 1 ? "ladder; the rungs are typical scores for each grade" : "ladders; the rungs are typical scores for each grade"]
+            ]) + "</div>";
         }
       },
       {
@@ -15370,36 +15472,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         sub: () => {
           const result = state.targetResult;
           return "Getting to " + formatPercentWhole(result.targetShare) + " of us at or above the " +
-            ordinal(result.threshold) + " percentile.";
+            ordinal(result.threshold) + " percentile. Every mark is one result; the hollow ones are the next to cross.";
         },
         message: () => "A class goal is not a competition. Every person who moves up moves the whole bar along.",
         body: (scope) => {
           const result = state.targetResult;
-          const share = clampBetween(result.currentShare, 0, 100);
-          const target = clampBetween(result.targetShare, 0, 100);
-          const withinReach = result.below.filter((entry) => entry.distance <= 10).length;
-          return '<div class="poster-body">' +
-            posterHero(formatInteger(result.needed), result.needed
-              ? "more results to reach our goal"
-              : "more needed - we are already there", result.needed ? "amber" : "green") +
-            '<div class="poster-main"><div class="poster-bars">' +
-            posterBarRow("Where we are today", "Results at or above the line", share, formatPercentWhole(share),
-              POSTER_INK.blue.fill, POSTER_INK.blue.track) +
-            posterBarRow("Where we are going", "The share we are aiming for", target, formatPercentWhole(target),
-              POSTER_INK.green.fill, POSTER_INK.green.track) +
-            "</div>" +
-            '<div class="poster-callouts"><div class="poster-callout is-good"><strong>Already there</strong><b>' +
-            escapeHTML(formatInteger(result.above.length)) + "</b><small>results at or above the line</small></div>" +
-            // "Closest to it" was one student's distance, and the poster names
-            // the threshold, so the wall published their exact percentile by
-            // subtraction. A count of who is within reach is the class fact
-            // that callout was reaching for, and no single record determines it.
-            (withinReach >= 3
-              ? '<div class="poster-callout"><strong>Within reach</strong><b>' + escapeHTML(formatInteger(withinReach)) +
-                "</b><small>results are less than 10 points below the line</small></div>"
-              : '<div class="poster-callout"><strong>Every step counts</strong><b>' +
-                escapeHTML(formatInteger(result.scored.length)) + "</b><small>results in this picture, and each one can move</small></div>") +
-            "</div></div></div>";
+          const strip = posterGoalStrip(result);
+          return '<div class="poster-body is-graphic"><div class="poster-graphic">' + strip.html + "</div>" +
+            posterCaption([
+              strip.needed
+                ? [formatInteger(strip.needed), strip.needed === 1 ? "more result across the line reaches our goal - the hollow one" : "more results across the line reach our goal - the hollow ones", "up"]
+                : ["There", "already - every mark we need is past the line", "up"],
+              [formatInteger(strip.aboveN), "already at or above it"],
+              [formatInteger(strip.n), "results, one mark each"]
+            ]) + "</div>";
         }
       },
       {
@@ -15716,6 +15802,123 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           '<i class="poster-sky-max"><b>' + escapeHTML(formatNumber(max, 0) + " min") + "</b></i>" +
           "</div>" +
           '<div class="poster-strip-scale"><span>fastest test</span><span>every test we sat, one bar each</span><span>slowest</span></div></div>'
+      };
+    }
+
+    // The most common value in a list - the class's grade, when a file spans a
+    // couple of grades the odd student out does not move the rungs.
+    function modeOf(values) {
+      const tally = new Map();
+      values.forEach((value) => { if (value !== null && value !== undefined && value !== "") tally.set(value, (tally.get(value) || 0) + 1); });
+      let best = null; let bestCount = 0;
+      tally.forEach((count, value) => { if (count > bestCount) { best = value; bestCount = count; } });
+      return best;
+    }
+
+    // An actual ladder, one per subject. The rungs are what a typical student
+    // in each grade scores, in this subject, at this season - so the scale
+    // that "keeps going all the way through school" is drawn as one, with the
+    // grades on it. The class's middle score is a solid mark on the rails, and
+    // where a typical year of growth takes it is a hollow one above, with the
+    // climb between them.
+    function posterLadder(rows) {
+      const bySubject = new Map();
+      rows.forEach((row) => {
+        if (!row.goals || !isFiniteNumber(row.currentRIT)) return;
+        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+        bySubject.get(row.subject).push(row);
+      });
+      const panels = [...bySubject.entries()].map(([subject, group]) => {
+        const now = median(group.map((row) => row.currentRIT));
+        const gain = avg(group.map((row) => row.goals.typicalGain));
+        const gradeKey = modeOf(group.map((row) => row.usNormStudentGrade));
+        const season = modeOf(group.map((row) => row.currentSeason)) || "fall";
+        const horizon = group[0].goals.horizonLabel;
+        if (!isFiniteNumber(now) || !isFiniteNumber(gain) || gain < 0 || !gradeKey) return null;
+        const flat = gain <= 0;
+        const gradeValue = gradeKeyToValue(gradeKey);
+        // Rungs two grades either side of the class's own, where the study has
+        // them. Grades whose typical scores sit within three RIT of each other
+        // share one rung, because two rungs three millimetres apart is one
+        // rung with a smudged label.
+        const rungs = [];
+        for (let g = gradeValue - 2; g <= gradeValue + 2; g += 1) {
+          const key = g === 0 ? "K" : String(g);
+          const rit = getUSNormRIT(subject, key, season);
+          if (!isFiniteNumber(rit)) continue;
+          const last = rungs[rungs.length - 1];
+          if (last && Math.abs(rit - last.rit) < 3) { last.grades.push(key); continue; }
+          rungs.push({ rit, grades: [key], own: key === gradeKey });
+        }
+        rungs.forEach((rung) => { rung.own = rung.grades.includes(gradeKey); });
+        const next = now + gain;
+        const ownRung = rungs.find((rung) => rung.own);
+        const values = rungs.map((rung) => rung.rit).concat([now, next]);
+        const bottom = Math.min(...values) - 5;
+        const top = Math.max(...values) + 5;
+        const y = (rit) => (top - rit) / (top - bottom) * 100;
+        const rungHtml = rungs.map((rung) => {
+          const label = "Grade " + rung.grades.map(formatUSNormGradeLabel).join(" & ") + " typical";
+          return '<div class="poster-rung' + (rung.own ? " is-own" : "") + '" style="top:' + y(rung.rit).toFixed(2) + '%">' +
+            "<span>" + escapeHTML(label) + "<b>" + escapeHTML(formatNumber(rung.rit, 0)) + "</b></span><i></i></div>";
+        }).join("");
+        const tight = Math.abs(y(now) - y(next)) < 7;
+        return {
+          subject, now, gain, next, horizon, flat,
+          atOrAboveOwnRung: Boolean(ownRung) && now >= ownRung.rit,
+          html: '<div class="poster-ladder">' +
+            '<div class="poster-ladder-head"><b>' + escapeHTML(subject) + "</b><small>" +
+            escapeHTML(flat ? "typical scores are level between these grades" : "a typical year adds " + formatSignedNumber(gain) + " RIT") + "</small></div>" +
+            '<div class="poster-ladder-field">' +
+            '<i class="poster-ladder-rail is-left"></i><i class="poster-ladder-rail is-right"></i>' +
+            rungHtml +
+            (flat ? "" :
+              '<i class="poster-ladder-climb" style="top:' + y(next).toFixed(2) + "%;height:" + (y(now) - y(next)).toFixed(2) + '%"></i>' +
+              '<div class="poster-ladder-mark is-next' + (tight ? " is-tight" : "") + '" style="top:' + y(next).toFixed(2) + '%"><i></i><span>' +
+              escapeHTML("by " + (horizon || "next year").toLowerCase()) + "<b>" + escapeHTML(formatNumber(next, 0)) + "</b></span></div>") +
+            '<div class="poster-ladder-mark is-now" style="top:' + y(now).toFixed(2) + '%"><i></i><span>' +
+            "us, now<b>" + escapeHTML(formatNumber(now, 0)) + "</b></span></div>" +
+            "</div></div>"
+        };
+      }).filter(Boolean).sort((a, b) => a.subject.localeCompare(b.subject));
+      if (!panels.length) return null;
+      return { panels, html: '<div class="poster-ladders">' + panels.map((panel) => panel.html).join("") + "</div>" };
+    }
+
+    // The bands strip with the goal drawn on it. Results sit lowest to highest
+    // with the threshold as today's line; the results that would have to cross
+    // it to reach the class target are drawn hollow - outlines waiting to be
+    // filled in - and a second line shows where the cut would sit once they
+    // have. The gap between the two lines is the goal, and it is countable.
+    function posterGoalStrip(result) {
+      const scored = result.scored.slice().sort((a, b) => a.currentPercentile - b.currentPercentile);
+      const n = scored.length;
+      if (!n) return null;
+      const aboveN = result.above.length;
+      const needed = Math.min(result.needed, n - aboveN);
+      const nextRows = new Set(result.below.slice(0, needed).map((entry) => entry.row));
+      const marks = scored.map((row) => {
+        const colour = bandPrintColour(row.currentBand);
+        return nextRows.has(row)
+          ? '<i class="poster-dot is-next" style="border-color:' + colour + '"></i>'
+          : '<i class="poster-dot" style="background:' + colour + '"></i>';
+      }).join("");
+      const todayCut = (n - aboveN) / n * 100;
+      const goalCut = (n - aboveN - needed) / n * 100;
+      return {
+        n, aboveN, needed,
+        html: '<div class="poster-strips"><div class="poster-strip is-solo"><span class="poster-strip-field">' +
+          '<span class="poster-dots">' + marks + "</span>" +
+          (needed > 0
+            ? '<i class="poster-goal-span" style="left:' + goalCut.toFixed(2) + "%;width:" + (todayCut - goalCut).toFixed(2) + '%"><b>' +
+              escapeHTML(formatInteger(needed) + " to go") + "</b></i>" +
+              '<i class="poster-strip-cut is-goal" style="left:' + goalCut.toFixed(2) + '%"><b>our goal</b></i>'
+            : "") +
+          '<i class="poster-strip-cut is-today" style="left:' + todayCut.toFixed(2) + '%"><b>' +
+          escapeHTML("the line: " + ordinal(result.threshold) + " percentile") + "</b></i>" +
+          "</span></div>" +
+          '<div class="poster-strip-scale"><span>lowest result</span><span>' +
+          escapeHTML("hollow marks are the ones nearest the line") + "</span><span>highest</span></div></div>"
       };
     }
 
