@@ -15,6 +15,23 @@ rather than shipping a half-themed page.
 So the workflow for any dashboard change is: edit the root `index.html`, run
 the build, commit both.
 
+## Where the brand comes from
+
+Nothing here is invented. The palette steps and the mark are both taken from
+the ENS Dashboards portal (`rainetech/ens-portal`) so this dashboard and the
+portal that links to it read as one product:
+
+- `tailwind.config.ts` — the teal and plum scales, including the names. The
+  portal calls the second colour *plum*, so this does too.
+- `src/app/page.tsx` — the mark: four rounded squares, two solid and two at
+  55%. Copied, not approximated.
+
+The mark is inlined as SVG in the masthead and the poster footer, and as a
+data-URI favicon. Like every other asset in this file it is never fetched — a
+logo on a CDN would be the one request that breaks the promise the upload
+panel makes, and the first thing to vanish on a school network that blocks
+image hosts.
+
 ## The Vercel project
 
 Already created and building from this directory:
