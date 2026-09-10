@@ -12,8 +12,8 @@
        mark spec the charts inside use. The tile carries its own background so
        it stays legible on a light or a dark tab bar without needing a second
        icon. -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23007272'/%3E%3Cpath d='M6.5 26.0L6.5 19.1Q6.5 17.5 8.1 17.5L9.9 17.5Q11.5 17.5 11.5 19.1L11.5 26.0Z' fill='%23ffffff' fill-opacity='.72'/%3E%3Cpath d='M13.5 26.0L13.5 14.1Q13.5 12.5 15.1 12.5L16.9 12.5Q18.5 12.5 18.5 14.1L18.5 26.0Z' fill='%23ffffff' fill-opacity='.88'/%3E%3Cpath d='M20.5 26.0L20.5 8.1Q20.5 6.5 22.1 6.5L23.9 6.5Q25.5 6.5 25.5 8.1L25.5 26.0Z' fill='%238e2344'/%3E%3C/svg%3E">
-  <meta name="theme-color" content="#e2f1f0" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2732%27 height=%2732%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23007272%27/%3E%3Cg fill=%27%23ffffff%27%3E%3Crect x=%277%27 y=%277%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27 opacity=%27.55%27/%3E%3Crect x=%2716.6%27 y=%277%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27/%3E%3Crect x=%277%27 y=%2716.6%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27/%3E%3Crect x=%2716.6%27 y=%2716.6%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27 opacity=%27.55%27/%3E%3C/g%3E%3C/svg%3E">
+  <meta name="theme-color" content="#e6f2f2" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#10182b" media="(prefers-color-scheme: dark)">
   <style>
     :root {
@@ -29,7 +29,7 @@
       --muted-strong: #475569;
       --line: #dbe2ee;
       --line-strong: #c7d1e1;
-      --line-accent: #5ea6a6;
+      --line-accent: #0a8a8a;
       /* Ink that actually reads on each band fill in this theme. */
       --on-red: #ffffff;
       --on-orange: #10182b;
@@ -40,11 +40,11 @@
       --on-brand: #ffffff;
       --brand: #007272;
       --accent: #8e2344;
-      --accent-soft: #fbe7ec;
-      --accent-ink: #74172f;
-      --brand-dark: #00504f;
-      --brand-soft: #e2f1f0;
-      --brand-ink: #00504f;
+      --accent-soft: #f9ebef;
+      --accent-ink: #741c38;
+      --brand-dark: #005c5c;
+      --brand-soft: #e6f2f2;
+      --brand-ink: #005c5c;
       --red: #a50f1a;
       --red-soft: #fee2e2;
       --red-ink: #8d1a1a;
@@ -117,9 +117,9 @@
       --on-slate: #10182b;
       --on-brand: #10182b;
       --brand: #4fbdb8;
-      --accent: #e88ba1;
-      --accent-soft: rgba(232, 139, 161, 0.18);
-      --accent-ink: #f6c3ce;
+      --accent: #d4809a;
+      --accent-soft: rgba(212, 128, 154, 0.18);
+      --accent-ink: #f0d3dc;
       --brand-dark: #7fd6d1;
       --brand-soft: rgba(79, 189, 184, 0.18);
       --brand-ink: #a5e6e2;
@@ -186,9 +186,9 @@
         --on-slate: #10182b;
         --on-brand: #10182b;
         --brand: #4fbdb8;
-      --accent: #e88ba1;
-      --accent-soft: rgba(232, 139, 161, 0.18);
-      --accent-ink: #f6c3ce;
+      --accent: #d4809a;
+      --accent-soft: rgba(212, 128, 154, 0.18);
+      --accent-ink: #f0d3dc;
         --brand-dark: #7fd6d1;
         --brand-soft: rgba(79, 189, 184, 0.18);
         --brand-ink: #a5e6e2;
@@ -4574,6 +4574,15 @@
 
 
     /* ---- ENS Dashboards instance ------------------------------------- */
+    .ens-mark {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 42px; height: 42px;
+      border-radius: 13px;
+      background: var(--brand);
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
     #sec-briefing .section-header h2::before { background: var(--accent); }
     .briefing { border-color: var(--accent-soft); }
     .briefing.is-playing {
@@ -4610,7 +4619,8 @@
     <header class="topbar">
       <section class="brand-panel">
         <div>
-          <p class="eyebrow">NWEA MAP ASG</p>
+          <span class="ens-mark"><svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24" aria-hidden="true" focusable="false"><rect x="3" y="3" width="8" height="8" rx="2" opacity="0.55"></rect><rect x="13" y="3" width="8" height="8" rx="2"></rect><rect x="3" y="13" width="8" height="8" rx="2"></rect><rect x="13" y="13" width="8" height="8" rx="2" opacity="0.55"></rect></svg></span>
+          <p class="eyebrow">ENS Dashboards · NWEA MAP ASG</p>
           <h1>Teacher Dashboard</h1>
           <p class="subtle">Upload an ASG CSV and turn growth, achievement, gap closure, intervention, and enrichment data into a classroom-ready planning view.</p>
         </div>
@@ -14187,8 +14197,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     --ink-3: #6b7688;
     --rule: #d9dee8;
     --brand: #007272;
-    --brand-deep: #04403f;
-    --brand-wash: #e2f1f0;
+    --brand-deep: #00393a;
+    --brand-wash: #e6f2f2;
     --good: #0f7a45;
     --good-wash: #daf0e4;
     --warn: #b45309;
@@ -14682,9 +14692,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .poster-callout.is-next { background: var(--warn-wash); border-left-color: var(--warn); }
 
   /* ---- footer: the sentence a student should leave with ---- */
+  .poster-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(9 * var(--s));
+    height: calc(9 * var(--s));
+    border-radius: calc(2.6 * var(--s));
+    background: #007272;
+    color: #ffffff;
+    flex: none;
+    align-self: center;
+  }
   .poster-foot {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     gap: calc(8 * var(--s));
     align-items: end;
     padding: calc(8 * var(--s)) calc(14 * var(--s)) calc(9 * var(--s));
@@ -14762,7 +14784,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         (poster.sub ? '<p class="poster-sub">' + escapeHTML(poster.sub(scope)) + "</p>" : "") + "</header>" +
         inner +
         '<footer class="poster-foot"><p class="poster-message">' + escapeHTML(poster.message(scope)) + "</p>" +
-        '<span class="poster-meta">' + escapeHTML(posterContextLine(scope)) + "</span></footer>" +
+        '<span class="poster-meta">' + escapeHTML(posterContextLine(scope)) + "</span>" +
+        '<span class="poster-mark"><svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15" aria-hidden="true" focusable="false"><rect x="3" y="3" width="8" height="8" rx="2" opacity="0.55"></rect><rect x="13" y="3" width="8" height="8" rx="2"></rect><rect x="3" y="13" width="8" height="8" rx="2"></rect><rect x="13" y="13" width="8" height="8" rx="2" opacity="0.55"></rect></svg></span>' + "</footer>" +
         "</section>";
     }
 

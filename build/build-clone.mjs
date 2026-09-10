@@ -41,21 +41,28 @@ function cut(label, find, expected = 1) {
 // ---------------------------------------------------------------------------
 // 1. Palette
 // ---------------------------------------------------------------------------
-// Teal #007272 and wine #8e2344. Measured before use: on white they run
-// 5.75:1 and 8.49:1, so both carry normal-size text, and both clear a CIE76
-// Delta E of 15 against all five NWEA achievement bands (closest are teal to
-// the green band at 32.6 and wine to the red band at 31.8).
+// The ENS brand teal #007272 and plum #8e2344. The intermediate steps are not
+// invented here: they come from the ENS Dashboards portal's own Tailwind
+// config (rainetech/ens-portal, tailwind.config.ts), so this dashboard and the
+// portal that links to it read as one product rather than two things that
+// happen to share two hex values. The portal calls the second colour plum, so
+// so does this.
+//
+// Both were measured before use: on white they run 5.75:1 and 8.49:1, which
+// matches the portal's own note, and both clear a CIE76 Delta E of 15 against
+// all five NWEA achievement bands (closest are teal to the green band at 32.6
+// and plum to the red band at 31.8).
 //
 // The five band colours are NOT touched. They are not decoration - NWEA names
 // those bands Red, Orange, Yellow, Green and Blue, and a poster that prints a
 // teal square under the word "Red" is wrong in a way no brand guideline
 // outranks.
 swap("light: page accent wash", "--bg-accent: rgba(36, 84, 166, 0.06);", "--bg-accent: rgba(0, 114, 114, 0.07);");
-swap("light: accent rule", "--line-accent: #87a4dc;", "--line-accent: #5ea6a6;");
+swap("light: accent rule", "--line-accent: #87a4dc;", "--line-accent: #0a8a8a;");
 swap("light: brand", "--brand: #2454a6;", "--brand: #007272;");
-swap("light: brand dark", "--brand-dark: #173d7d;", "--brand-dark: #00504f;");
-swap("light: brand soft", "--brand-soft: #e9f0ff;", "--brand-soft: #e2f1f0;");
-swap("light: brand ink", "--brand-ink: #173d7d;", "--brand-ink: #00504f;");
+swap("light: brand dark", "--brand-dark: #173d7d;", "--brand-dark: #005c5c;");
+swap("light: brand soft", "--brand-soft: #e9f0ff;", "--brand-soft: #e6f2f2;");
+swap("light: brand ink", "--brand-ink: #173d7d;", "--brand-ink: #005c5c;");
 
 // Dark theme is declared twice: once for the explicit toggle, once for the
 // system preference. Both carry the same values upstream, so both are swapped.
@@ -69,30 +76,67 @@ swap("dark: brand ink", "--brand-ink: #b6d0ff;", "--brand-ink: #a5e6e2;", 2);
 // The print stylesheet is its own world: a poster carries no CSS variables from
 // the page, so it declares fixed values.
 swap("poster: brand", "--brand: #1d4ed8;", "--brand: #007272;");
-swap("poster: brand deep", "--brand-deep: #14307f;", "--brand-deep: #04403f;");
-swap("poster: brand wash", "--brand-wash: #e3ecfd;", "--brand-wash: #e2f1f0;");
+swap("poster: brand deep", "--brand-deep: #14307f;", "--brand-deep: #00393a;");
+swap("poster: brand wash", "--brand-wash: #e3ecfd;", "--brand-wash: #e6f2f2;");
 
 // The wine is the second voice: section rules, the poster's secondary mark and
 // anywhere the page needs emphasis that is not the primary action. It is added
 // rather than swapped, because upstream has no equivalent token.
 swap("accent tokens (light)", "      --brand: #007272;", `      --brand: #007272;
       --accent: #8e2344;
-      --accent-soft: #fbe7ec;
-      --accent-ink: #74172f;`);
+      --accent-soft: #f9ebef;
+      --accent-ink: #741c38;`);
 swap("accent tokens (dark)", "      --brand: #4fbdb8;", `      --brand: #4fbdb8;
-      --accent: #e88ba1;
-      --accent-soft: rgba(232, 139, 161, 0.18);
-      --accent-ink: #f6c3ce;`, 2);
+      --accent: #d4809a;
+      --accent-soft: rgba(212, 128, 154, 0.18);
+      --accent-ink: #f0d3dc;`, 2);
 
 // ---------------------------------------------------------------------------
 // 2. Identity
 // ---------------------------------------------------------------------------
 swap("title", "<title>NWEA MAP ASG Teacher Dashboard</title>",
   "<title>Teacher MAP Dashboard | ENS Dashboards</title>");
-swap("favicon tile", "fill='%232454a6'", "fill='%23007272'");
-swap("favicon accent bar", "fill='%235fd6a0'", "fill='%238e2344'");
+// The bar-chart tile is replaced outright: a tab belonging to this instance
+// should be identifiably ENS at 16px, so it carries their mark. Single quotes
+// are percent-encoded so the URI sits inside a JS string without escaping.
+{
+  const icon = html.match(/  <link rel="icon" href="[^"]*">/);
+  if (!icon) throw new Error("build-clone: favicon link not found.");
+  swap("favicon", icon[0], '  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2732%27 height=%2732%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23007272%27/%3E%3Cg fill=%27%23ffffff%27%3E%3Crect x=%277%27 y=%277%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27 opacity=%27.55%27/%3E%3Crect x=%2716.6%27 y=%277%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27/%3E%3Crect x=%277%27 y=%2716.6%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27/%3E%3Crect x=%2716.6%27 y=%2716.6%27 width=%278.4%27 height=%278.4%27 rx=%272.2%27 opacity=%27.55%27/%3E%3C/g%3E%3C/svg%3E">');
+}
 swap("theme colour (light)", '<meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)">',
-  '<meta name="theme-color" content="#e2f1f0" media="(prefers-color-scheme: light)">');
+  '<meta name="theme-color" content="#e6f2f2" media="(prefers-color-scheme: light)">');
+
+// ---------------------------------------------------------------------------
+// The ENS mark
+// ---------------------------------------------------------------------------
+// Four rounded squares, two solid and two at 55%, exactly as the ENS
+// Dashboards portal draws it (rainetech/ens-portal, src/app/page.tsx). Their
+// mark, copied rather than approximated.
+//
+// Inlined everywhere it appears, like every other asset in this file. A logo
+// fetched from a CDN would be the one request that breaks the promise the
+// upload panel makes, and the first thing to vanish on a school network that
+// blocks image hosts.
+const ENS_MARK = (size) =>
+  '<svg viewBox="0 0 24 24" fill="currentColor" width="' + size + '" height="' + size +
+  '" aria-hidden="true" focusable="false">' +
+  '<rect x="3" y="3" width="8" height="8" rx="2" opacity="0.55"></rect>' +
+  '<rect x="13" y="3" width="8" height="8" rx="2"></rect>' +
+  '<rect x="3" y="13" width="8" height="8" rx="2"></rect>' +
+  '<rect x="13" y="13" width="8" height="8" rx="2" opacity="0.55"></rect></svg>';
+
+swap("masthead mark",
+  '      <section class="brand-panel">\n        <div>\n          <p class="eyebrow">NWEA MAP ASG</p>',
+  '      <section class="brand-panel">\n        <div>\n          <span class="ens-mark">' + ENS_MARK(24) +
+  '</span>\n          <p class="eyebrow">ENS Dashboards \u00b7 NWEA MAP ASG</p>');
+
+// The poster carries it small, in the footer beside the class line, so a sheet
+// on a wall is identifiably theirs without a logo competing with the data.
+swap("poster mark",
+  '\'<span class="poster-meta">\' + escapeHTML(posterContextLine(scope)) + "</span></footer>" +',
+  '\'<span class="poster-meta">\' + escapeHTML(posterContextLine(scope)) + "</span>" +\n' +
+  '        \'<span class="poster-mark">' + ENS_MARK(15) + '</span>\' + "</footer>" +');
 
 // ---------------------------------------------------------------------------
 // 3. No support asks on this instance
@@ -144,6 +188,15 @@ if (/buy me a coffee|bmc-blue/i.test(html)) {
 // moments the teacher is producing something rather than reading.
 swap("instance stylesheet", "\n  </style>\n</head>\n<body>\n  <script>", `
     /* ---- ENS Dashboards instance ------------------------------------- */
+    .ens-mark {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 42px; height: 42px;
+      border-radius: 13px;
+      background: var(--brand);
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+
     #sec-briefing .section-header h2::before { background: var(--accent); }
     .briefing { border-color: var(--accent-soft); }
     .briefing.is-playing {
@@ -166,6 +219,26 @@ swap("instance stylesheet", "\n  </style>\n</head>\n<body>\n  <script>", `
   <script>`);
 
 // The poster stylesheet is separate and printed, so it gets its own rule.
+swap("poster footer mark styling", "  .poster-foot {", `  .poster-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: calc(9 * var(--s));
+    height: calc(9 * var(--s));
+    border-radius: calc(2.6 * var(--s));
+    background: #007272;
+    color: #ffffff;
+    flex: none;
+    align-self: center;
+  }
+  .poster-foot {`);
+
+// The footer was a two-column grid and the mark is a third child, which
+// otherwise wraps to a new row and pushes the callouts off the sheet.
+swap("poster footer columns",
+  "  .poster-foot {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) auto;",
+  "  .poster-foot {\n    display: grid;\n    grid-template-columns: minmax(0, 1fr) auto auto;");
+
 swap("poster accent rule", "  .poster-masthead {\n    background: var(--brand-deep);", `  .poster-masthead {
     border-bottom: calc(1.6 * var(--s)) solid #8e2344;
     background: var(--brand-deep);`);
@@ -174,6 +247,17 @@ swap("poster subject chip accent",
   "    background: #8e2344;\n    color: #ffffff;");
 
 // ---------------------------------------------------------------------------
+// A substitution that lands inside a JS string literal can produce a file that
+// looks right and does not parse, which takes the whole page down rather than
+// one feature. Check before writing.
+for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
+  try {
+    new Function(block[1]);
+  } catch (error) {
+    throw new Error("build-clone: the generated page has a script error and was not written.\n" + error.message);
+  }
+}
+
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(OUT, html);
 const kb = (Buffer.byteLength(html) / 1024).toFixed(0);
