@@ -14365,6 +14365,41 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .poster-strip-scale span:nth-child(2) { text-align: center; }
   .poster-strip-scale span:last-child { text-align: right; }
 
+  /* A nested meter, for a share that contains another share. Drawing "met"
+     and "beat" as two bars on two tracks invites the reader to add them; one
+     track with the smaller figure sitting inside the larger says outright that
+     everyone who beat their projection also met it. */
+  .poster-nested { display: flex; flex-direction: column; gap: calc(6 * var(--s)); flex: 1 1 auto; justify-content: center; }
+  .poster-nested-track {
+    position: relative;
+    display: block;
+    height: calc(26 * var(--s));
+    border-radius: calc(2 * var(--s));
+    background: #e8edf6;
+    overflow: hidden;
+  }
+  .poster-nested-met, .poster-nested-beat {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    display: block;
+  }
+  .poster-nested-met { background: #7fc9a3; }
+  .poster-nested-beat { background: #0f7a45; }
+  .poster-nested-key { display: flex; flex-wrap: wrap; gap: calc(3 * var(--s)) calc(9 * var(--s)); }
+  .poster-nested-key span {
+    display: flex; align-items: baseline; gap: calc(2 * var(--s));
+    font-size: calc(4.6 * var(--s)); font-weight: 700; color: var(--ink-2);
+    max-width: calc(80 * var(--s));
+  }
+  .poster-nested-key b { font-size: calc(7.4 * var(--s)); font-weight: 800; color: var(--ink); }
+  .poster-nested-key i {
+    width: calc(4.2 * var(--s)); height: calc(4.2 * var(--s));
+    border-radius: calc(1.2 * var(--s)); align-self: center; flex: none;
+  }
+  .poster-nested-key i.is-beat { background: #0f7a45; }
+  .poster-nested-key i.is-met { background: #7fc9a3; }
+  .poster-nested-key i.is-rest { background: #e8edf6; box-shadow: inset 0 0 0 calc(0.4 * var(--s)) #c3cbd8; }
+
   .poster-key.is-bands {
     display: flex;
     gap: calc(3 * var(--s));
@@ -14803,8 +14838,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           if (!hasGrowthContext()) return false;
           return aggregateRows(scope.rows).shares.met.of >= MIN_SHARE_N;
         },
-        headline: () => "We Grew This Year",
-        sub: () => "Growth is measured against students who started exactly where you did.",
+        headline: (scope) => scope.label ? "How Far We Came In " + scope.label : "We Grew This Year",
+        sub: (scope) => (scope.label ? "This is " + scope.label.toLowerCase() + " only. " : "") +
+          "Growth is measured against students who started exactly where you did.",
         message: () => "Your score tells you where you are. Your growth tells you how hard you have been working. Growth is the part you control.",
         body: (scope) => {
           const metrics = aggregateRows(scope.rows);
@@ -14815,19 +14851,33 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           // thresholds, so they share a hue and a scale. The median growth
           // score is a percentile, a different unit entirely, and putting it on
           // the same track made 76 read as 76%. It is a stat tile instead.
+          const metWidth = clampBetween(isFiniteNumber(met) ? met : 0, 0, 100);
+          const beatWidth = clampBetween(isFiniteNumber(exceeded) ? exceeded : 0, 0, 100);
+          const nested = '<div class="poster-nested">' +
+            '<span class="poster-nested-track">' +
+            '<i class="poster-nested-met" style="width:' + metWidth.toFixed(1) + '%"></i>' +
+            '<i class="poster-nested-beat" style="width:' + beatWidth.toFixed(1) + '%"></i>' +
+            "</span>" +
+            '<div class="poster-nested-key">' +
+            '<span><i class="is-beat"></i><b>' + escapeHTML(formatShare(metrics.shares.exceeded)) +
+            "</b>beat their projection outright</span>" +
+            '<span><i class="is-met"></i><b>' + escapeHTML(formatShare(metrics.shares.met)) +
+            "</b>met it, which includes everyone who beat it</span>" +
+            '<span><i class="is-rest"></i><b>' +
+            escapeHTML(formatShare({ n: metrics.shares.met.of - metrics.shares.met.n, of: metrics.shares.met.of })) +
+            "</b>did not reach it this time</span>" +
+            "</div></div>";
           return '<div class="poster-body">' +
-            posterHero(formatPercentWhole(met), "of us met or beat our growth goal", met >= 50 ? "green" : "amber") +
-            '<div class="poster-main"><div class="poster-bars">' +
-            posterBarRow("Met our growth goal", "Grew at least as much as projected", met,
-              formatPercentWhole(met), POSTER_INK.green.fill, POSTER_INK.green.track) +
-            posterBarRow("Beat it outright", "Grew more than projected", exceeded,
-              formatPercentWhole(exceeded), POSTER_INK.green.fill, POSTER_INK.green.track) +
-            "</div>" +
+            posterHero(isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N ? formatNumber(median, 0) : formatShare(metrics.shares.met),
+              isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N
+                ? "is our middle growth score, out of 100, where the typical student who started where we did scores 50"
+                : "of us met or beat our growth goal",
+              (isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N ? median >= 50 : met >= 50) ? "green" : "amber") +
+            '<div class="poster-main">' + nested +
             '<div class="poster-callouts">' +
-            (isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N
-              ? '<div class="poster-callout"><strong>Our typical growth score</strong><b>' +
-                escapeHTML(formatNumber(median, 0)) + "</b><small>out of 100, where 50 is typical for students who started where we did</small></div>"
-              : "") +
+            '<div class="poster-callout"><strong>Results behind these figures</strong><b>' +
+            escapeHTML(formatInteger(metrics.shares.met.of)) +
+            "</b><small>every one of them tested twice, so the growth is measured, not estimated</small></div>" +
             (isFiniteNumber(metrics.avgRITChange)
               ? '<div class="poster-callout is-good"><strong>Average RIT gain</strong><b>' +
                 escapeHTML(formatSignedNumber(metrics.avgRITChange)) + "</b><small>points added since the last test window</small></div>"
@@ -14974,7 +15024,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         perSubject: true,
         available: (scope) => hasGrowthContext() &&
           growthEquityBands(scope.rows).filter((entry) => !entry.thin && isFiniteNumber(entry.medianCGP)).length >= 2,
-        headline: () => "You Are Compared With People Who Started Where You Did",
+        headline: (scope) => scope.label
+          ? "In " + scope.label + ", You Are Compared With People Who Started Where You Did"
+          : "You Are Compared With People Who Started Where You Did",
         sub: () => "Growth is not a race against the top of the class.",
         message: () => "50 means you grew as much as students across the country who started on the same score as you. Anyone in this room can be above 50.",
         body: (scope) => {
@@ -14992,8 +15044,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             isFiniteNumber(entry.medianCGP) && entry.medianCGP >= 50 ? "above typical" : "")).join("");
           const best = bands.slice().sort((a, b) => b.medianCGP - a.medianCGP)[0];
           return '<div class="poster-body">' +
-            posterHero(best ? formatNumber(best.medianCGP, 0) : "-",
-              best ? "was the strongest growth in the class, from the " + best.band.name.toLowerCase() + " starting band" : "", "green") +
+            posterHero(formatShare({ n: bands.filter((entry) => entry.medianCGP >= 50).length, of: bands.length }),
+              bands.length === 1
+                ? "of the starting bands with enough results is growing at or above typical"
+                : "of our starting bands are growing at or above typical, whatever they started on",
+              bands.filter((entry) => entry.medianCGP >= 50).length >= bands.length / 2 ? "green" : "amber") +
             '<div class="poster-main"><div class="poster-bars">' + rows + "</div>" +
             '<p class="poster-empty">Each bar is a growth score out of 100. 50 is typical.</p></div></div>';
         }
@@ -15075,8 +15130,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         blurb: "Of the results that started below the class benchmark, how many moved towards it or crossed it.",
         perSubject: true,
         available: (scope) => hasGrowthContext() && posterBelowSecureRows(scope.rows).length >= MIN_SHARE_N,
-        headline: () => "Starting Behind Is Not Staying Behind",
-        sub: () => "Of the results that began below the 61st percentile, this is how many moved towards it.",
+        headline: (scope) => scope.label
+          ? "In " + scope.label + ", Starting Behind Is Not Staying Behind"
+          : "Starting Behind Is Not Staying Behind",
+        sub: (scope) => "Of the " + (scope.label ? scope.label.toLowerCase() + " " : "") +
+          "results that began below the 61st percentile, this is how many moved towards it.",
         message: () => "Catching up means growing faster than students who started ahead of you. That is the hardest kind of growth there is, and this many of us did it.",
         body: (scope) => {
           const rows = posterBelowSecureRows(scope.rows);
@@ -15114,7 +15172,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         blurb: "How many results moved up a whole colour band, stayed, or moved down, as counts rather than names.",
         perSubject: true,
         available: (scope) => hasGrowthContext() && posterBandedRows(scope.rows).length >= MIN_SHARE_N,
-        headline: () => "We Moved Up",
+        headline: (scope) => scope.label ? "We Moved Up In " + scope.label : "We Moved Up",
         sub: () => "A colour band is 20 percentile points wide. Moving up one means overtaking a lot of people your age.",
         message: () => "Staying in your band already means you kept pace with students across the country. Moving up means you outgrew them.",
         body: (scope) => {
@@ -15132,18 +15190,28 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           const stack = segments.map((segment) => '<span style="flex:' + segment.count + ";background:" + segment.fill +
             ';color:#ffffff"><b>' + formatInteger(segment.count) + "</b>" +
             (segment.count / total >= 0.14 ? "<i>" + escapeHTML(segment.label) + "</i>" : "") + "</span>").join("");
-          const key = segments.map((segment) => '<span><i style="background:' + segment.fill + '"></i>' + escapeHTML(segment.label) + "</span>").join("");
+          // A segment wide enough to hold its own name does not need a second
+          // copy of that name underneath it. The key is only for the slivers
+          // too narrow to label, and disappears when there are none.
+          const unlabelled = segments.filter((segment) => segment.count / total < 0.14);
+          const key = unlabelled.map((segment) =>
+            '<span><i style="background:' + segment.fill + '"></i>' + escapeHTML(segment.label) +
+            " " + formatInteger(segment.count) + "</span>").join("");
+          // "Kept pace: 59" sat under a segment already reading "59 STAYED",
+          // which is a third of an A3 sheet spent restating one number. Held or
+          // improved is a different fact, and the better one to put on a wall.
+          const heldOrBetter = up + same;
           return '<div class="poster-body">' +
-            posterHero(formatInteger(up), up === 1 ? "result moved up a whole colour band" : "results moved up a whole colour band", "green") +
+            posterHero(formatShare({ n: heldOrBetter, of: total }), "of us held our place or moved up a whole band",
+              heldOrBetter / total >= 0.5 ? "green" : "amber") +
             '<div class="poster-main"><div class="poster-block"><div class="poster-stack">' + stack + "</div>" +
-            '<div class="poster-key">' + key + "</div></div>" +
+            (key ? '<div class="poster-key">' + key + "</div>" : "") + "</div>" +
             '<div class="poster-callouts">' +
             (twoPlus
               ? '<div class="poster-callout is-good"><strong>Two bands or more</strong><b>' + escapeHTML(formatInteger(twoPlus)) +
                 "</b><small>" + escapeHTML(twoPlus === 1 ? "result jumped" : "results jumped") + " at least 40 percentile points</small></div>"
-              : "") +
-            '<div class="poster-callout"><strong>Kept pace</strong><b>' + escapeHTML(formatInteger(same)) +
-            "</b><small>stayed in their band, which means growing as fast as everyone else</small></div>" +
+              : '<div class="poster-callout"><strong>What a band is</strong><b>20 points</b>' +
+                "<small>wide, so moving up one means overtaking a fifth of the country</small></div>") +
             "</div></div></div>";
         }
       },
