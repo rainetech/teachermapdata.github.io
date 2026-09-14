@@ -3350,6 +3350,26 @@
       gap: 16px;
     }
 
+    /* A section heading spans the grid: the whole class first, then one per
+       subject, in the order they go up on the wall. */
+    .poster-section {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 6px 16px;
+      margin-top: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .poster-section:first-child { margin-top: 0; }
+    .poster-section h3 { margin: 0; font-size: 16px; line-height: 1.2; }
+    .poster-section small { display: block; margin-top: 3px; font-size: 12px; font-weight: 700; color: var(--muted); }
+    .poster-section-pick { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+    .poster-section-pick input { width: 16px; height: 16px; margin: 0; accent-color: var(--brand); }
+
     .poster-card {
       display: grid;
       gap: 10px;
@@ -5161,7 +5181,7 @@
         <div class="section-header">
           <div>
             <h2 id="posterTitle">Wall Posters</h2>
-            <p id="posterNote">Data stories for the classroom wall, sized for A3. Class-level only &mdash; no student is named and no individual score appears.</p>
+            <p id="posterNote">Data stories for the classroom wall, sized for A3, in sections: the whole class first, then one section per subject. Class-level only &mdash; no student is named and no individual score appears.</p>
           </div>
           <div class="btn-row">
             <button class="btn small" id="posterPrintSelected" type="button">Print selected (A3)</button>
@@ -6285,14 +6305,24 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           if (start) start.dataset.quizCount = String(state.quiz.count);
           return;
         }
+        const sectionPick = event.target.closest ? event.target.closest("[data-poster-section-pick]") : null;
+        if (sectionPick) {
+          const selection = editablePosterSelection();
+          availablePosters()
+            .filter((poster) => posterSectionKey(poster.scope) === sectionPick.dataset.posterSectionPick)
+            .forEach((poster) => {
+              if (sectionPick.checked) selection.add(poster.key);
+              else selection.delete(poster.key);
+            });
+          syncPosterPicks();
+          return;
+        }
         const pick = event.target.closest ? event.target.closest("[data-poster-pick]") : null;
         if (!pick) return;
         const selection = editablePosterSelection();
         if (pick.checked) selection.add(pick.dataset.posterPick);
         else selection.delete(pick.dataset.posterPick);
-        const posters = availablePosters();
-        setText("posterCount", formatInteger(posters.filter((poster) => selection.has(poster.key)).length) +
-          " of " + formatInteger(posters.length) + " selected | " + posterPage().css);
+        syncPosterPicks();
       });
       document.addEventListener("keydown", handleTableGroupKeydown);
       document.addEventListener("keydown", handleLayoutKeydown);
@@ -14256,8 +14286,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   }
 
   /* ---- the ladder: one per subject, grades as rungs ----------------------- */
-  .poster-ladders { flex: 1 1 auto; min-height: 0; display: flex; gap: calc(6 * var(--s)); }
-  .poster-ladder { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: calc(2 * var(--s)); }
+  .poster-ladders { flex: 1 1 auto; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: calc(6 * var(--s)); }
+  /* Three or four ladders side by side on a portrait sheet leave each one
+     too narrow for its own labels. Two rows of two do not. */
+  .poster.is-portrait .poster-ladders.has-many {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(0, 1fr);
+    row-gap: calc(9 * var(--s));
+  }
+  .poster-ladder { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: calc(2 * var(--s)); }
   .poster-ladder-head { text-align: center; }
   .poster-ladder-head b { display: block; font-size: calc(6.4 * var(--s)); font-weight: 800; color: var(--ink); line-height: 1.1; }
   .poster-ladder-head small { display: block; margin-top: calc(0.8 * var(--s)); font-size: calc(3.7 * var(--s)); font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); }
@@ -14290,6 +14328,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .poster-rung.is-own i { background: var(--ink-2); height: calc(1.5 * var(--s)); top: calc(-0.75 * var(--s)); }
   .poster-rung span {
     position: absolute;
+    left: 0;
     right: calc(100% - var(--rail-left) + 2.2 * var(--s));
     top: 0;
     transform: translateY(-50%);
@@ -14298,7 +14337,6 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     font-weight: 700;
     line-height: 1.15;
     color: var(--ink-3);
-    white-space: nowrap;
   }
   .poster-rung.is-own span { color: var(--ink); font-weight: 800; }
   .poster-rung span b { display: block; font-size: calc(4.6 * var(--s)); font-weight: 800; color: var(--ink-2); }
@@ -14325,9 +14363,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   }
   .poster-ladder-mark.is-now i { background: #0f7a45; border: calc(0.7 * var(--s)) solid #ffffff; box-shadow: 0 0 0 calc(0.5 * var(--s)) #0f7a45; }
   .poster-ladder-mark.is-next i { background: #ffffff; border: calc(0.9 * var(--s)) solid #0f7a45; }
+  /* The label is boxed by its own panel's right edge, so a long horizon
+     wraps onto a second line instead of walking off the sheet. */
   .poster-ladder-mark span {
     position: absolute;
     left: calc(var(--rail-right) + 4 * var(--s));
+    right: 0;
     top: 0;
     transform: translateY(-50%);
     font-size: calc(3.8 * var(--s));
@@ -14336,12 +14377,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     letter-spacing: .04em;
     text-transform: uppercase;
     color: #0f7a45;
-    white-space: nowrap;
   }
   .poster-ladder-mark span b { display: block; font-size: calc(7.5 * var(--s)); font-weight: 800; letter-spacing: -0.03em; text-transform: none; color: var(--ink); }
   /* When a small typical gain puts the two marks a few millimetres apart,
-     the "next" label steps up out of the way of "now". */
+     the "next" label steps up off its mark line and the "now" label steps
+     down off its own, so neither can land on the other. */
   .poster-ladder-mark.is-next.is-tight span { transform: translateY(-100%); }
+  .poster-ladder-mark.is-now.is-tight span { transform: translateY(0); }
 
   /* ---- the goal strip: hollow marks are the ones next to cross ------------ */
   /* On a sheet that is only this strip, it gets more height than the bands
@@ -14349,6 +14391,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
      barcode. The field also leaves room below for the bracket and its label,
      so neither lands on the scale text. */
   .poster-graphic .poster-strip.is-solo .poster-dots { height: calc(72 * var(--s)); }
+  .poster.is-portrait .poster-graphic .poster-strip.is-solo .poster-dots { height: calc(110 * var(--s)); }
   .poster-graphic .poster-strip.is-solo .poster-strip-field { margin-bottom: calc(12 * var(--s)); }
   .poster-graphic .poster-strip.is-solo .poster-strip-cut { top: calc(-3 * var(--s)); bottom: calc(-3 * var(--s)); }
   .poster-dot.is-next {
@@ -14361,6 +14404,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .poster-strip.is-solo .poster-strip-cut b { display: block; }
   .poster-strip-cut.is-today b, .poster-strip-cut.is-goal b { top: calc(-6 * var(--s)); }
   .poster-strip-cut.is-goal b { color: #0f7a45; left: auto; right: calc(1.6 * var(--s)); }
+  .poster-strip-cut.is-today.is-flip b { left: auto; right: calc(1.6 * var(--s)); top: calc(-11.5 * var(--s)); }
+  .poster-strip-cut.is-goal.is-flip b { right: auto; left: calc(1.6 * var(--s)); }
   .poster-goal-span {
     position: absolute;
     bottom: calc(-4.2 * var(--s));
@@ -14590,7 +14635,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     justify-content: space-evenly;
     margin: 0 var(--lane-inset);
   }
-  .poster-lane { position: relative; flex: 1 1 0; min-height: calc(1.5 * var(--s)); max-height: calc(7 * var(--s)); }
+  .poster-lane { position: relative; flex: 1 1 0; min-height: 0; max-height: calc(7 * var(--s)); }
+  .poster-race.is-dense .poster-lane-run { height: calc(0.9 * var(--s)); }
+  .poster-race.is-dense .poster-lane-start { width: calc(1.3 * var(--s)); height: calc(1.3 * var(--s)); border-width: calc(0.3 * var(--s)); }
+  .poster-race.is-dense .poster-lane-end { width: calc(1.6 * var(--s)); height: calc(1.6 * var(--s)); }
+  .poster-race.is-hairline .poster-lane-run { height: calc(0.45 * var(--s)); }
+  .poster-race.is-hairline .poster-lane-start { display: none; }
+  .poster-race.is-hairline .poster-lane-end { width: calc(0.9 * var(--s)); height: calc(0.9 * var(--s)); }
   .poster-lane-run {
     position: absolute;
     top: 50%;
@@ -15028,6 +15079,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
   /* ---- portrait pages: the hero sits above the chart, not beside it ---- */
   .poster.is-portrait .poster-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  /* The rule above hands the stretch row to whatever sits under the hero.
+     A graphic poster has no hero: its picture is the first row and must be
+     the one that stretches, or a race of hairlines collapses to one. */
+  .poster.is-portrait .poster-body.is-graphic { grid-template-rows: minmax(0, 1fr) auto; }
   .poster.is-portrait .poster-hero {
     flex-direction: row;
     align-items: center;
@@ -15298,7 +15353,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           // "where are we strongest" is a question the eye answers. Squashing
           // four subjects into one bar of five colours was the old answer, and
           // it made 96 results look like 96 children.
-          const subjects = scope.subject ? [] : unique(rows.map((row) => row.subject));
+          const subjects = scope.subject ? [] : sortPosterSubjects(unique(rows.map((row) => row.subject)));
           const strips = subjects.length > 1
             ? subjects.map((subject) => posterDotStrip(rows.filter((row) => row.subject === subject), { label: subject })).join("")
             : posterDotStrip(rows, { label: scope.label || null, solo: true });
@@ -15453,9 +15508,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             posterCaption([
               [formatNumber(strip.median, 0) + " min", "is how long a typical test took - the dashed line"],
               strip.rushed
-                ? [formatInteger(strip.rushed), strip.rushed === 1 ? "amber bar was rushed, and is worth taking again" : "amber bars were rushed, and are worth taking again", "down"]
+                ? [formatInteger(strip.rushed), strip.countable
+                    ? (strip.rushed === 1 ? "amber bar was rushed, and is worth taking again" : "amber bars were rushed, and are worth taking again")
+                    : (strip.rushed === 1 ? "test was rushed, and is worth taking again" : "tests were rushed, and are worth taking again"), "down"]
                 : ["None", "of our tests were rushed - not one bar is amber", "up"],
-              [formatInteger(strip.n), "tests, one bar each"]
+              [formatInteger(strip.n), strip.countable ? "tests, one bar each" : "tests, drawn to scale"]
             ]) + "</div>";
         }
       },
@@ -15471,7 +15528,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         sub: () => {
           const result = state.targetResult;
           return "Getting to " + formatPercentWhole(result.targetShare) + " of us at or above the " +
-            ordinal(result.threshold) + " percentile. Every mark is one result; the hollow ones are the next to cross.";
+            ordinal(result.threshold) + " percentile. " + (result.scored.length > POSTER_MAX_MARKS
+              ? "Every result, lowest to highest, drawn to scale; the hollow stretch is the next to cross."
+              : "Every mark is one result; the hollow ones are the next to cross.");
         },
         message: () => "A class goal is not a competition. Every person who moves up moves the whole bar along.",
         body: (scope) => {
@@ -15480,10 +15539,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           return '<div class="poster-body is-graphic"><div class="poster-graphic">' + strip.html + "</div>" +
             posterCaption([
               strip.needed
-                ? [formatInteger(strip.needed), strip.needed === 1 ? "more result across the line reaches our goal - the hollow one" : "more results across the line reach our goal - the hollow ones", "up"]
+                ? [formatInteger(strip.needed), strip.needed === 1
+                    ? "more result across the line reaches our goal - the hollow one"
+                    : "more results across the line reach our goal - the hollow " + (strip.countable ? "ones" : "stretch"), "up"]
                 : ["There", "already - every mark we need is past the line", "up"],
               [formatInteger(strip.aboveN), "already at or above it"],
-              [formatInteger(strip.n), "results, one mark each"]
+              [formatInteger(strip.n), strip.countable ? "results, one mark each" : "results, drawn to scale"]
             ]) + "</div>";
         }
       },
@@ -15767,7 +15828,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return {
         n: runners.length,
         counts,
-        html: '<div class="poster-race">' +
+        // Past sixty lanes the sheet is full. The runs thin and the marks
+        // shrink so every lane still fits on it, one per result; past a
+        // hundred and forty the start marks go, and the run is a hairline.
+        html: '<div class="poster-race' + (runners.length > 140 ? " is-hairline" : runners.length > 60 ? " is-dense" : "") + '">' +
           '<i class="poster-race-zone" style="left:' + SECURE_BENCHMARK + '%"><b>secure</b></i>' +
           '<i class="poster-race-line" style="left:' + SECURE_BENCHMARK + '%"><b>' + escapeHTML("the line: " + ordinal(SECURE_BENCHMARK) + " percentile") + "</b></i>" +
           '<div class="poster-race-lanes">' + lanes + "</div>" +
@@ -15787,11 +15851,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const rushedCount = timed.filter((row) => row.shortTest || row.rapidGuessed).length;
       const med = median(timed.map((row) => row.currentDuration));
       const max = Math.max(...timed.map((row) => row.currentDuration));
-      const bars = timed.map((row) =>
+      // Above the cap one bar per test is a barcode. The bars become an even
+      // sample of the sorted tests, which keeps the shape and the share of
+      // amber, and the scale line says so.
+      const countable = timed.length <= POSTER_MAX_MARKS;
+      const drawn = countable
+        ? timed
+        : Array.from({ length: POSTER_MAX_MARKS }, (_, index) =>
+            timed[Math.round(index * (timed.length - 1) / (POSTER_MAX_MARKS - 1))]);
+      const bars = drawn.map((row) =>
         '<i class="poster-sky-bar' + ((row.shortTest || row.rapidGuessed) ? " is-rushed" : "") +
         '" style="height:' + (row.currentDuration / max * 100).toFixed(1) + '%"></i>').join("");
       return {
         n: timed.length,
+        countable,
         median: med,
         rushed: rushedCount,
         html: '<div class="poster-skyline">' +
@@ -15800,8 +15873,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           escapeHTML("the middle: " + formatNumber(med, 0) + " minutes") + "</b></i>" +
           '<i class="poster-sky-max"><b>' + escapeHTML(formatNumber(max, 0) + " min") + "</b></i>" +
           "</div>" +
-          '<div class="poster-strip-scale"><span>fastest test</span><span>every test we sat, one bar each</span><span>slowest</span></div></div>'
+          '<div class="poster-strip-scale"><span>fastest test</span><span>' +
+          escapeHTML(countable
+            ? "every test we sat, one bar each"
+            : formatInteger(timed.length) + " tests, drawn as " + formatInteger(POSTER_MAX_MARKS) + " bars from fastest to slowest") +
+          "</span><span>slowest</span></div></div>"
       };
+    }
+
+    // "Spring, same grade" is a column label. Beside a mark on a ladder it is
+    // two words; the panel head has already said what a typical year adds.
+    function posterHorizonShort(label) {
+      if (!label) return "next year";
+      if (/same grade/i.test(label)) return "by spring";
+      if (/^spring of grade/i.test(label)) return "by next spring";
+      return "by " + String(label).toLowerCase();
     }
 
     // The most common value in a list - the class's grade, when a file spans a
@@ -15861,7 +15947,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           return '<div class="poster-rung' + (rung.own ? " is-own" : "") + '" style="top:' + y(rung.rit).toFixed(2) + '%">' +
             "<span>" + escapeHTML(label) + "<b>" + escapeHTML(formatNumber(rung.rit, 0)) + "</b></span><i></i></div>";
         }).join("");
-        const tight = Math.abs(y(now) - y(next)) < 7;
+        // Two marks a few millimetres apart would print their labels on top
+        // of each other. Below this gap the "next" label sits above its mark
+        // and the "now" label below its own, so the gap between them is the
+        // climb itself, whatever its size.
+        const tight = Math.abs(y(now) - y(next)) < 12;
         return {
           subject, now, gain, next, horizon, flat,
           atOrAboveOwnRung: Boolean(ownRung) && now >= ownRung.rit,
@@ -15874,14 +15964,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             (flat ? "" :
               '<i class="poster-ladder-climb" style="top:' + y(next).toFixed(2) + "%;height:" + (y(now) - y(next)).toFixed(2) + '%"></i>' +
               '<div class="poster-ladder-mark is-next' + (tight ? " is-tight" : "") + '" style="top:' + y(next).toFixed(2) + '%"><i></i><span>' +
-              escapeHTML("by " + (horizon || "next year").toLowerCase()) + "<b>" + escapeHTML(formatNumber(next, 0)) + "</b></span></div>") +
-            '<div class="poster-ladder-mark is-now" style="top:' + y(now).toFixed(2) + '%"><i></i><span>' +
+              escapeHTML(posterHorizonShort(horizon)) + "<b>" + escapeHTML(formatNumber(next, 0)) + "</b></span></div>") +
+            '<div class="poster-ladder-mark is-now' + (tight && !flat ? " is-tight" : "") + '" style="top:' + y(now).toFixed(2) + '%"><i></i><span>' +
             "us, now<b>" + escapeHTML(formatNumber(now, 0)) + "</b></span></div>" +
             "</div></div>"
         };
-      }).filter(Boolean).sort((a, b) => a.subject.localeCompare(b.subject));
+      }).filter(Boolean).sort((a, b) => posterSubjectRank(a.subject) - posterSubjectRank(b.subject) || a.subject.localeCompare(b.subject));
       if (!panels.length) return null;
-      return { panels, html: '<div class="poster-ladders">' + panels.map((panel) => panel.html).join("") + "</div>" };
+      return {
+        panels,
+        html: '<div class="poster-ladders' + (panels.length > 2 ? " has-many" : "") + '">' +
+          panels.map((panel) => panel.html).join("") + "</div>"
+      };
     }
 
     // The bands strip with the goal drawn on it. Results sit lowest to highest
@@ -15896,28 +15990,50 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const aboveN = result.above.length;
       const needed = Math.min(result.needed, n - aboveN);
       const nextRows = new Set(result.below.slice(0, needed).map((entry) => entry.row));
-      const marks = scored.map((row) => {
-        const colour = bandPrintColour(row.currentBand);
-        return nextRows.has(row)
-          ? '<i class="poster-dot is-next" style="border-color:' + colour + '"></i>'
-          : '<i class="poster-dot" style="background:' + colour + '"></i>';
-      }).join("");
+      const countable = n <= POSTER_MAX_MARKS;
+      let marks;
+      if (countable) {
+        marks = scored.map((row) => {
+          const colour = bandPrintColour(row.currentBand);
+          return nextRows.has(row)
+            ? '<i class="poster-dot is-next" style="border-color:' + colour + '"></i>'
+            : '<i class="poster-dot" style="background:' + colour + '"></i>';
+        }).join("");
+      } else {
+        // Above the cap a run of results in one band is one segment sized by
+        // its share, and the results next to cross are a hollow segment of
+        // their own - the same picture, without pretending to be countable.
+        const segments = [];
+        scored.forEach((row) => {
+          const next = nextRows.has(row);
+          const last = segments[segments.length - 1];
+          if (last && last.band === row.currentBand.name && last.next === next) { last.count += 1; return; }
+          segments.push({ band: row.currentBand.name, colour: bandPrintColour(row.currentBand), next, count: 1 });
+        });
+        marks = segments.map((segment) =>
+          '<i class="poster-dot is-grouped' + (segment.next ? " is-next" : "") + '" style="flex-grow:' + segment.count + ";" +
+          (segment.next ? "border-color:" : "background:") + segment.colour + '"></i>').join("");
+      }
       const todayCut = (n - aboveN) / n * 100;
       const goalCut = (n - aboveN - needed) / n * 100;
       return {
-        n, aboveN, needed,
+        n, aboveN, needed, countable,
         html: '<div class="poster-strips"><div class="poster-strip is-solo"><span class="poster-strip-field">' +
           '<span class="poster-dots">' + marks + "</span>" +
           (needed > 0
             ? '<i class="poster-goal-span" style="left:' + goalCut.toFixed(2) + "%;width:" + (todayCut - goalCut).toFixed(2) + '%"><b>' +
               escapeHTML(formatInteger(needed) + " to go") + "</b></i>" +
-              '<i class="poster-strip-cut is-goal" style="left:' + goalCut.toFixed(2) + '%"><b>our goal</b></i>'
+              '<i class="poster-strip-cut is-goal' + (goalCut < 12 ? " is-flip" : "") + '" style="left:' + goalCut.toFixed(2) + '%"><b>our goal</b></i>'
             : "") +
-          '<i class="poster-strip-cut is-today" style="left:' + todayCut.toFixed(2) + '%"><b>' +
+          // A label hangs off the right of its line; a line in the last fifth
+          // of the strip would hang it off the sheet, so it swaps sides and
+          // steps up a row, clear of the goal label that lives on that side.
+          '<i class="poster-strip-cut is-today' + (todayCut > 78 ? " is-flip" : "") + '" style="left:' + todayCut.toFixed(2) + '%"><b>' +
           escapeHTML("the line: " + ordinal(result.threshold) + " percentile") + "</b></i>" +
           "</span></div>" +
           '<div class="poster-strip-scale"><span>lowest result</span><span>' +
-          escapeHTML("hollow marks are the ones nearest the line") + "</span><span>highest</span></div></div>"
+          escapeHTML(countable ? "hollow marks are the ones nearest the line" : "the hollow stretch is the results nearest the line") +
+          "</span><span>highest</span></div></div>"
       };
     }
 
@@ -16007,10 +16123,26 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return (BAND_PRINT_COLOURS[band.name] || ["#5d6a7e", "#ffffff"])[1];
     }
 
+    // The order the subjects go up on the wall: the four a teacher lists,
+    // in the order they list them, then anything else the export carries.
+    const POSTER_SUBJECT_ORDER = ["Mathematics", "Reading", "Language", "Science"];
+
+    function posterSubjectRank(subject) {
+      const index = POSTER_SUBJECT_ORDER.indexOf(subject);
+      return index === -1 ? POSTER_SUBJECT_ORDER.length : index;
+    }
+
+    function sortPosterSubjects(subjects) {
+      return subjects.slice().sort((a, b) => posterSubjectRank(a) - posterSubjectRank(b) || a.localeCompare(b));
+    }
+
+    // The whole class first, then one scope per subject. The posters print
+    // and are picked in this order, so the wall reads as sections: the class
+    // together, then mathematics, reading, language, science.
     function posterScopes() {
       const rows = state.filteredRows;
       const across = { rows, subject: null, key: "", label: null };
-      const subjects = unique(rows.map((row) => row.subject));
+      const subjects = sortPosterSubjects(unique(rows.map((row) => row.subject)));
       if (subjects.length < 2) return [across];
       const perSubject = subjects
         .map((subject) => ({ rows: rows.filter((row) => row.subject === subject), subject, key: "::" + subject, label: subject }))
@@ -16023,8 +16155,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (posterStudentCount() < POSTER_MIN_STUDENTS) return [];
       const scopes = posterScopes();
       const out = [];
-      POSTERS.forEach((poster) => {
-        scopes.forEach((scope) => {
+      // Scope outermost: every whole-class poster, then every poster for the
+      // first subject, and so on - a section per scope rather than a poster
+      // repeated four times in a row.
+      scopes.forEach((scope) => {
+        POSTERS.forEach((poster) => {
           // Test-taking behaviour is not a per-subject story, and a poster that
           // is already a subject comparison must not be split into its own rows.
           if (scope.subject && !poster.perSubject) return;
@@ -16067,6 +16202,46 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return state.posterSelection;
     }
 
+    // The whole-class scope has an empty key; as a section it needs a name.
+    function posterSectionKey(scope) {
+      return scope && scope.key ? scope.key : "all";
+    }
+
+    function posterSectionHeader(group, selection, subjectCount) {
+      const scope = group.scope;
+      const students = new Set(scope.rows.map((row) => studentKey(row))).size;
+      const subjects = unique(scope.rows.map((row) => row.subject));
+      const title = scope.label || (subjectCount > 1 ? "Whole class, every subject together" : "Whole class");
+      const parts = [
+        !scope.label && subjects.length === 1 ? subjects[0] : null,
+        formatInteger(students) + (students === 1 ? " student" : " students"),
+        formatInteger(group.posters.length) + (group.posters.length === 1 ? " poster" : " posters")
+      ].filter(Boolean);
+      const all = group.posters.every((poster) => selection.has(poster.key));
+      const key = posterSectionKey(scope);
+      return '<div class="poster-section" role="group" aria-label="' + escapeAttr(title) + '">' +
+        "<div><h3>" + escapeHTML(title) + "</h3><small>" + escapeHTML(parts.join(" | ")) + "</small></div>" +
+        '<label class="poster-section-pick"><input type="checkbox" data-poster-section-pick="' + escapeAttr(key) + '"' +
+        (all ? " checked" : "") + "> Select all in this section</label></div>";
+    }
+
+    // Checkbox state and the count line, refreshed from the selection without
+    // redrawing every poster: a tick should not cost a repaint of the wall.
+    function syncPosterPicks() {
+      if (!els.posterGrid) return;
+      const posters = availablePosters();
+      const selection = posterSelection();
+      els.posterGrid.querySelectorAll("[data-poster-pick]").forEach((input) => {
+        input.checked = selection.has(input.dataset.posterPick);
+      });
+      els.posterGrid.querySelectorAll("[data-poster-section-pick]").forEach((input) => {
+        const own = posters.filter((poster) => posterSectionKey(poster.scope) === input.dataset.posterSectionPick);
+        input.checked = own.length > 0 && own.every((poster) => selection.has(poster.key));
+      });
+      setText("posterCount", formatInteger(posters.filter((poster) => selection.has(poster.key)).length) +
+        " of " + formatInteger(posters.length) + " selected | " + posterPage().css);
+    }
+
     function renderPosters() {
       if (!els.posterGrid) return;
       const posters = availablePosters();
@@ -16084,7 +16259,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         return;
       }
       const page = posterPage();
-      els.posterGrid.innerHTML = posters.map((poster) => {
+      const groups = [];
+      posters.forEach((poster) => {
+        const last = groups[groups.length - 1];
+        if (last && last.scope.key === poster.scope.key) last.posters.push(poster);
+        else groups.push({ scope: poster.scope, posters: [poster] });
+      });
+      const subjectCount = unique(state.filteredRows.map((row) => row.subject)).length;
+      els.posterGrid.innerHTML = groups.map((group) => posterSectionHeader(group, selection, subjectCount) +
+        group.posters.map((poster) => {
         const checked = selection.has(poster.key) ? " checked" : "";
         let inner;
         try {
@@ -16103,7 +16286,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           '<div class="poster-scale" style="width:' + page.width + "mm;height:" + page.height + 'mm">' + inner + "</div></div>" +
           '<div class="btn-row"><button class="btn small ghost" type="button" data-poster-print="' + escapeAttr(poster.key) + '">Print this one</button></div>' +
           "</article>";
-      }).join("");
+        }).join("")).join("");
       const picked = posters.filter((poster) => selection.has(poster.key)).length;
       setText("posterCount", formatInteger(picked) + " of " + formatInteger(posters.length) + " selected | " + page.css);
       if (els.posterPrintSelected) els.posterPrintSelected.textContent = "Print selected (" + page.css + ")";
