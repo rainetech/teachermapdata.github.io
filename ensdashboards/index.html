@@ -5203,7 +5203,7 @@
           </div>
           <div class="explain-card">
             <strong>Printing</strong>
-            <span>One poster per page, in A3 or A4, landscape or portrait. Choose &ldquo;Fit to page&rdquo; and turn on background graphics in the print dialog.</span>
+            <span>One poster per page, in A3 or A4, landscape or portrait. In the print dialog set the paper size to match, margins to none, scale to 100%, and turn on background graphics.</span>
           </div>
         </div>
         <div class="poster-toolbar">
@@ -14218,11 +14218,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // screen is what comes out of the printer.
 
     // scale drives every type size and gap, so one stylesheet fits three pages.
+    // Each option names the paper and the poster drawn on it. The poster is
+    // the paper less 8mm a side: no office printer reaches the edge, and the
+    // sheet is centred on the paper at print time, so the white around it is
+    // an even frame rather than a gap down one side.
     const POSTER_PAGES = {
-      landscape: { css: "A3 landscape", width: 400, height: 277, scale: 1 },
-      portrait: { css: "A3 portrait", width: 277, height: 400, scale: 0.86 },
-      "a4-landscape": { css: "A4 landscape", width: 277, height: 190, scale: 0.7 },
-      "a4-portrait": { css: "A4 portrait", width: 190, height: 277, scale: 0.6 }
+      landscape: { css: "A3 landscape", paper: { width: 420, height: 297 }, width: 404, height: 281, scale: 1 },
+      portrait: { css: "A3 portrait", paper: { width: 297, height: 420 }, width: 281, height: 404, scale: 0.86 },
+      "a4-landscape": { css: "A4 landscape", paper: { width: 297, height: 210 }, width: 281, height: 194, scale: 0.7 },
+      "a4-portrait": { css: "A4 portrait", paper: { width: 210, height: 297 }, width: 194, height: 281, scale: 0.6 }
     };
 
     // Sizes are expressed against --s so one stylesheet serves A3 landscape,
@@ -16339,9 +16343,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         escapeHTML(posterHeading() + " - wall posters") + "</title><style>" +
         "@page { size: " + page.css + "; margin: 0; }" +
         "html, body { margin: 0; padding: 0; background: #fff; }" +
-        ".poster-page { width: " + page.width + "mm; height: " + page.height + "mm; page-break-after: always; }" +
-        ".poster-page:last-child { page-break-after: auto; }" +
-        ".poster { width: 100%; height: 100%; }" +
+        // The page block is the whole sheet of paper and the poster sits in
+        // the middle of it. A block the size of the poster alone printed at
+        // the top-left corner of the paper with the spare paper down one side.
+        ".poster-page { width: " + page.paper.width + "mm; height: " + page.paper.height + "mm; box-sizing: border-box;" +
+        " display: flex; align-items: center; justify-content: center; overflow: hidden; break-after: page; page-break-after: always; }" +
+        ".poster-page:last-child { break-after: auto; page-break-after: auto; }" +
+        ".poster { width: " + page.width + "mm; height: " + page.height + "mm; flex: none; }" +
         POSTER_CSS +
         "</style></head><body>" + body + "</body></html>";
       const printWindow = window.open("", "_blank");
