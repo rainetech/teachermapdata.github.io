@@ -6711,6 +6711,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.allRows.forEach((row) => { delete row._raw; });
       const gradesRecovered = backfillStudentGrades(state.allRows);
       const testQuality = flagTestQuality(state.allRows);
+      // One record per student, subject and window. Two exports that disagree
+      // on the same test, or a second attempt in the same term, would
+      // otherwise both count, and a class of 24 reports 27 results.
+      const setAside = setAsideRepeatedRecords(state.allRows);
+      if (setAside.length) state.allRows = state.allRows.filter((row) => !row.setAside);
       state.dataWindow = state.allRows.length ? detectDataMode(state.allRows) : { ...DEFAULT_DATA_WINDOW };
       cacheBaselineDerivations(state.allRows);
       state.tableLimits = {};
@@ -6725,6 +6730,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.diagnostics.rejectedFiles = rejected;
       state.diagnostics.unreadableFiles = unreadableCount || 0;
       state.diagnostics.mergedRecords = mergedRecords;
+      state.diagnostics.setAside = setAside;
+      state.diagnostics.setAsideCount = setAside.length;
       state.spotlightKey = "";
       state.quiz = emptyQuizState();
       resetQuizPool();
@@ -7575,6 +7582,55 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // Neither is a duplicate of the other, so they are folded into one record
     // rather than counted twice. A genuine duplicate - one that adds nothing -
     // is left alone so the Data Check still reports it.
+    // One record per student, subject and window. Two records for the same
+    // window that could not be folded together - a Class Profile and an ASG
+    // export that disagree on the score, or a second attempt in the same
+    // term - would otherwise both count, and a class of 24 reports 27
+    // results. The record kept is the growth pair if there is one, then a
+    // valid test over an invalid one, then the later test date, then the
+    // richer row. Nothing goes quietly: every row set aside is listed in the
+    // Data Check with both values, so the teacher can see which export is
+    // wrong rather than trust a figure that averages the two.
+    function setAsideRepeatedRecords(rows) {
+      const groups = new Map();
+      rows.forEach((row) => {
+        if (!row.hasCurrentScore) return;
+        const order = windowOrder(row);
+        const key = studentKey(row) + "|" + row.subject + "|" + (order === null ? windowKey(row) : order);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(row);
+      });
+      const setAside = [];
+      groups.forEach((group) => {
+        if (group.length < 2) return;
+        const ranked = group.slice().sort((a, b) =>
+          (b.hasGrowthPair ? 1 : 0) - (a.hasGrowthPair ? 1 : 0) ||
+          (a.testNotValid ? 1 : 0) - (b.testNotValid ? 1 : 0) ||
+          (testDateOrder(b) || 0) - (testDateOrder(a) || 0) ||
+          recordRichness(b) - recordRichness(a));
+        const kept = ranked[0];
+        ranked.slice(1).forEach((row) => {
+          row.setAside = true;
+          const sameDate = Boolean(row.currentTestDate) && row.currentTestDate === kept.currentTestDate;
+          const sameScore = row.currentRIT === kept.currentRIT;
+          // The same score on the same day is one test twice. Different
+          // kinds of export, or the same day with different scores, is a
+          // disagreement between files. Otherwise it is an earlier attempt.
+          const reason = sameScore && sameDate ? "same"
+            : (Boolean(kept.hasGrowthPair) !== Boolean(row.hasGrowthPair) || sameDate) ? "conflict"
+            : "retest";
+          setAside.push({
+            studentName: row.studentName,
+            subject: row.subject,
+            reason,
+            kept: { rit: kept.currentRIT, date: kept.currentTestDate, file: kept.sourceFile, growth: Boolean(kept.hasGrowthPair) },
+            aside: { rit: row.currentRIT, date: row.currentTestDate, file: row.sourceFile }
+          });
+        });
+      });
+      return setAside;
+    }
+
     function mergeComplementaryRecords(rows) {
       const groups = new Map();
       rows.forEach((row) => {
@@ -11210,7 +11266,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         els.qualityDetail.innerHTML = '<div class="empty-state">Upload a CSV to see what was read from it.</div>';
         return;
       }
-      const issues = diagnostics.noScoreCount + diagnostics.duplicateCount + diagnostics.shortTestCount +
+      const setAsideCount = diagnostics.setAsideCount || 0;
+      const issues = diagnostics.noScoreCount + diagnostics.duplicateCount + setAsideCount + diagnostics.shortTestCount +
         diagnostics.raggedRows + (diagnostics.rapidGuessFlagged || 0);
       els.qualityCards.innerHTML = [
         statCard("Rows read", formatInteger(diagnostics.parsedRows), { raw: diagnostics.parsedRows, format: "integer", hint: diagnostics.headerCount + " columns, " + delimiterName(diagnostics.delimiter) + " separated" }),
@@ -11228,7 +11285,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             tone: !diagnostics.rapidGuessReported ? undefined : diagnostics.rapidGuessFlagged ? "warn" : "good",
             hint: diagnostics.rapidGuessReported ? "Tests at or above " + RAPID_GUESS_FLAG_PCT + "% rapid guessing" : "Not reported in this export",
             title: METHOD_NOTES.rapidGuess }),
-        statCard("Duplicate rows", formatInteger(diagnostics.duplicateCount), { raw: diagnostics.duplicateCount, format: "integer", tone: diagnostics.duplicateCount ? "warn" : "good", hint: "Same student and subject appearing twice" }),
+        statCard("Records set aside", formatInteger(setAsideCount), { raw: setAsideCount, format: "integer", tone: setAsideCount ? "warn" : "good", hint: "One record per student, subject and window is kept" }),
         statCard("No grade recorded", formatInteger(diagnostics.noGradeCount), { raw: diagnostics.noGradeCount, format: "integer", tone: diagnostics.noGradeCount ? "warn" : "good", hint: "Norm comparison needs a grade" }),
         statCard("Issues to review", formatInteger(issues), { raw: issues, format: "integer", tone: issues ? "warn" : "good" })
       ].join("");
@@ -11246,6 +11303,29 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         notes.push(["Files that could not be read", formatInteger(diagnostics.unreadableFiles) +
           " file(s) could not be opened by the browser at all. That is usually a permissions problem or a file still syncing to the drive."]);
       }
+      if (diagnostics.setAside && diagnostics.setAside.length) {
+        const entries = diagnostics.setAside;
+        const conflicts = entries.filter((entry) => entry.reason === "conflict");
+        const retests = entries.filter((entry) => entry.reason === "retest");
+        const same = entries.filter((entry) => entry.reason === "same");
+        const cell = (side) => formatNumber(side.rit, 0) + " on " + (side.date || "an unknown date") + " in " + (side.file || "the file");
+        const describe = (entry) => entry.studentName + ", " + entry.subject + ": kept " + cell(entry.kept) +
+          (entry.kept.growth ? " (the growth record)" : "") + ", set aside " + cell(entry.aside);
+        const list = (items) => items.slice(0, 12).map(describe).join("; ") +
+          (items.length > 12 ? "; and " + formatInteger(items.length - 12) + " more" : "") + ".";
+        notes.push(["Records set aside", formatInteger(entries.length) +
+          " record(s) repeated a student, subject and test window, and one record is kept for each so nobody is counted twice. " +
+          (conflicts.length
+            ? formatInteger(conflicts.length) + " disagree on the score for the same window, which means two of your exports do not match - " +
+              "check which one is wrong before trusting either figure for these students: " + list(conflicts) + " "
+            : "") +
+          (retests.length
+            ? formatInteger(retests.length) + " were earlier attempts in the same term; the later test is used: " + list(retests) + " "
+            : "") +
+          (same.length
+            ? formatInteger(same.length) + " were the same test twice - the same file loaded twice, or two exports of one sitting."
+            : "")]);
+      }
       if (diagnostics.multiWindowCount) {
         notes.push(["Two test windows for the same subject", formatInteger(diagnostics.multiWindowCount) +
           " student-subject record(s) appear in more than one test window - two Class Profile terms loaded together, most likely. " +
@@ -11253,9 +11333,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           "so for class-level reading load one term at a time, or an ASG export, which carries both windows as one growth record."]);
       }
       if (diagnostics.duplicateCount) {
-        notes.push(["Duplicate rows", formatInteger(diagnostics.duplicateCount) +
-          " row(s) repeat a student and subject inside the same window - a retest, or the same file loaded twice. " +
-          "Goal sheets show the latest test; the class figures on this page count every row."]);
+        notes.push(["Repeated rows without a score", formatInteger(diagnostics.duplicateCount) +
+          " row(s) without a score repeat a student and subject inside the same window - a student rostered twice for a test not yet taken. " +
+          "The no-score list names each student once."]);
       }
       if (diagnostics.mergedRecords) {
         notes.push(["Records combined across files", formatInteger(diagnostics.mergedRecords) +
