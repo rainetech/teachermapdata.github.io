@@ -2172,6 +2172,31 @@
       box-shadow: var(--focus);
     }
 
+    /* The chip that opens or closes the rest of the page reads as a control,
+       not as one more place to jump to. */
+    .section-nav-links button.section-nav-view {
+      border-style: dashed;
+      border-color: var(--brand);
+      color: var(--brand);
+      background: transparent;
+    }
+
+    .section-nav-links button.section-nav-view:hover,
+    .section-nav-links button.section-nav-view:focus-visible {
+      background: var(--brand);
+      color: var(--on-brand);
+      border-style: solid;
+    }
+
+    .section-more .section-header {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: 0;
+      align-items: center;
+    }
+
+    .section-more p { max-width: 72ch; }
+
     /* Offset scroll targets so the sticky bars don't cover section headings */
     main > .section {
       scroll-margin-top: var(--scroll-offset, 160px);
@@ -5164,55 +5189,6 @@
         <div class="quiz" id="quizBody"></div>
       </section>
 
-      <section class="section" id="sec-posters" aria-labelledby="posterTitle">
-        <div class="section-header">
-          <div>
-            <h2 id="posterTitle">Wall Posters</h2>
-            <p id="posterNote">Data stories for the classroom wall, sized for A3, in sections: the whole class first, then one section per subject. Class-level only &mdash; no student is named and no individual score appears.</p>
-          </div>
-          <div class="btn-row">
-            <button class="btn small" id="posterPrintSelected" type="button">Print selected (A3)</button>
-            <button class="btn small ghost" id="posterSelectAll" type="button">Select all</button>
-          </div>
-        </div>
-        <div class="explain-grid">
-          <div class="explain-card">
-            <strong>Written for students, not for you</strong>
-            <span>Each poster says one thing a student can act on, in language they can read. The method notes stay in the dashboard.</span>
-          </div>
-          <div class="explain-card">
-            <strong>Nobody is named</strong>
-            <span>Every figure is a class total, share or median. A poster on a wall is seen by visitors, so no name, no individual score and no rank appears on one.</span>
-          </div>
-          <div class="explain-card">
-            <strong>They follow your filters</strong>
-            <span>Filter to one class or one subject and the posters describe that group. The footer of each poster records which group it came from.</span>
-          </div>
-          <div class="explain-card">
-            <strong>Printing</strong>
-            <span>One poster per page, in A3 or A4, landscape or portrait. In the print dialog set the paper size to match, margins to none, scale to 100%, and turn on background graphics.</span>
-          </div>
-        </div>
-        <div class="poster-toolbar">
-          <div class="field">
-            <label for="posterOrientation">Page</label>
-            <select id="posterOrientation">
-              <option value="landscape">A3 landscape</option>
-              <option value="portrait">A3 portrait</option>
-              <option value="a4-landscape">A4 landscape</option>
-              <option value="a4-portrait">A4 portrait</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="posterHeading">Heading on every poster</label>
-            <input id="posterHeading" type="text" placeholder="Our class" maxlength="60">
-            <span class="hint">Optional. Use the class name the students know.</span>
-          </div>
-          <p class="poster-count" id="posterCount"></p>
-        </div>
-        <div class="poster-grid" id="posterGrid"></div>
-      </section>
-
       <section class="section" id="sec-tables" aria-labelledby="tableGroupsTitle">
         <div class="section-header">
           <div>
@@ -5323,6 +5299,70 @@
             <strong id="priorityCount">0 students</strong>
           </div>
           <div class="table-scroll" id="priorityTable"></div>
+        </div>
+      </section>
+
+      <section class="section" id="sec-posters" aria-labelledby="posterTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="posterTitle">Wall Posters</h2>
+            <p id="posterNote">Data stories for the classroom wall, sized for A3, in sections: the whole class first, then one section per subject. The whole-class set is selected to start; tick a subject section to add it. Class-level only &mdash; no student is named and no individual score appears.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn small" id="posterPrintSelected" type="button">Print selected (A3)</button>
+            <button class="btn small ghost" id="posterSelectAll" type="button">Select all</button>
+          </div>
+        </div>
+        <div class="explain-grid">
+          <div class="explain-card">
+            <strong>Written for students, not for you</strong>
+            <span>Each poster says one thing a student can act on, in language they can read. The method notes stay in the dashboard.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Nobody is named</strong>
+            <span>Every figure is a class total, share or median. A poster on a wall is seen by visitors, so no name, no individual score and no rank appears on one.</span>
+          </div>
+          <div class="explain-card">
+            <strong>They follow your filters</strong>
+            <span>Filter to one class or one subject and the posters describe that group. The footer of each poster records which group it came from.</span>
+          </div>
+          <div class="explain-card">
+            <strong>Printing</strong>
+            <span>One poster per page, in A3 or A4, landscape or portrait. In the print dialog set the paper size to match, margins to none, scale to 100%, and turn on background graphics.</span>
+          </div>
+        </div>
+        <div class="poster-toolbar">
+          <div class="field">
+            <label for="posterOrientation">Page</label>
+            <select id="posterOrientation">
+              <option value="landscape">A3 landscape</option>
+              <option value="portrait">A3 portrait</option>
+              <option value="a4-landscape">A4 landscape</option>
+              <option value="a4-portrait">A4 portrait</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="posterHeading">Heading on every poster</label>
+            <input id="posterHeading" type="text" placeholder="Our class" maxlength="60">
+            <span class="hint">Optional. Use the class name the students know.</span>
+          </div>
+          <p class="poster-count" id="posterCount"></p>
+        </div>
+        <div class="poster-grid" id="posterGrid"></div>
+      </section>
+
+      <!-- The foot of the essentials view. The other sections are one click
+           away, and the click is remembered; this is where a teacher who has
+           read the six that matter finds out there are more. -->
+      <section class="section section-more" id="sec-more" aria-labelledby="moreTitle" hidden>
+        <div class="section-header">
+          <div>
+            <h2 id="moreTitle">More analysis</h2>
+            <p id="moreLead"></p>
+          </div>
+          <div class="btn-row">
+            <button class="btn" type="button" data-view="full">Show the full analysis</button>
+          </div>
         </div>
       </section>
 
@@ -5958,7 +5998,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       groupSignature: "",
       spotlightKey: "",
       quiz: null,
-      prefs: { theme: "auto", reducedMotion: false, supportPromptOff: false },
+      prefs: { theme: "auto", reducedMotion: false, supportPromptOff: false, view: "essentials" },
       supportPromptTimer: null,
       // Set by any non-permanent dismissal; lives for this page only.
       supportPromptSnoozed: false,
@@ -6263,6 +6303,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           handleQuizAction(quizAction.dataset.quizAction, quizAction);
           return;
         }
+        const viewControl = event.target.closest("[data-view]");
+        if (viewControl) {
+          setView(viewControl.dataset.view);
+          return;
+        }
         const jump = event.target.closest("[data-jump]");
         if (jump) {
           jumpToSection(jump.dataset.jump);
@@ -6476,6 +6521,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function jumpToSection(id) {
       const target = document.getElementById(id);
       if (!target) return;
+      // A planning question or a quiz answer that points into a section the
+      // essentials view keeps back opens the full view first. A jump to
+      // nothing would teach nobody anything.
+      if (target.hidden && !viewIsFull() && modeSections().some((section) => section.id === id)) setView("full", { scroll: false });
       target.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
     }
 
@@ -8320,18 +8369,57 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       { id: "sec-strands", label: "Areas", modes: ["growth", "mixed", "baseline"], available: hasStrandData },
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-quiz", label: "Quiz", modes: ["growth", "mixed", "baseline"] },
-      { id: "sec-posters", label: "Posters", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-grouping", label: "Grouping", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-priority", label: "Priority", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-posters", label: "Posters", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-celebration", label: "Celebration", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-quality", label: "Data Check", modes: ["growth", "mixed", "baseline"] }
     ];
 
-    function visibleSections() {
+    // The teacher's first screen. A class teacher opening this once a term
+    // acts on six sections; the other fourteen are for a closer look, and a
+    // page that shows all twenty at equal weight hides the six. So the page
+    // opens on the essentials, the rest are one click away, and the click is
+    // remembered - a preference about the page, not about any student.
+    const ESSENTIAL_SECTIONS = new Set(["sec-briefing", "sec-snapshot", "sec-growth", "sec-actions", "sec-priority", "sec-posters"]);
+
+    function viewIsFull() {
+      return Boolean(state.prefs) && state.prefs.view === "full";
+    }
+
+    // Every section this file supports, whatever the view.
+    function modeSections() {
       const mode = state.dataWindow.mode;
       return SECTION_PLAN.filter((section) =>
         section.modes.includes(mode) && (!section.available || section.available()));
+    }
+
+    // The sections on the page right now.
+    function visibleSections() {
+      const sections = modeSections();
+      return viewIsFull() ? sections : sections.filter((section) => ESSENTIAL_SECTIONS.has(section.id));
+    }
+
+    // The sections the essentials view is keeping back.
+    function sectionsBehindView() {
+      return viewIsFull() ? [] : modeSections().filter((section) => !ESSENTIAL_SECTIONS.has(section.id));
+    }
+
+    function setView(view, options) {
+      const opts = options || {};
+      const next = view === "full" ? "full" : "essentials";
+      if (state.prefs.view === next) return;
+      const revealed = next === "full" ? sectionsBehindView() : [];
+      state.prefs.view = next;
+      writePreferences();
+      applyModeToChrome();
+      if (opts.scroll === false) return;
+      // Opening the full view from the foot of the page changes nothing in
+      // sight, so the page goes to the first section that appeared; closing
+      // it goes back to the top, where the essentials start.
+      if (next === "full" && revealed.length) jumpToSection(revealed[0].id);
+      else if (next === "essentials") window.scrollTo({ top: 0, behavior: scrollBehavior() });
     }
 
     function applyModeToChrome() {
@@ -8345,6 +8433,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         const node = document.getElementById(section.id);
         if (node) node.hidden = !visibleIds.has(section.id);
       });
+
+      const behind = sectionsBehindView();
+      const moreCard = document.getElementById("sec-more");
+      if (moreCard) {
+        moreCard.hidden = !state.allRows.length || !behind.length;
+        setText("moreLead", formatInteger(behind.length) + " more section" + (behind.length === 1 ? "" : "s") +
+          " for a closer look: " + behind.map((section) => navLabel(section)).join(", ") +
+          ". They stay out of the way until you ask, and the page remembers your choice.");
+      }
 
       document.querySelectorAll(".growth-only").forEach((node) => {
         node.hidden = baseline;
@@ -8427,9 +8524,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function renderSectionNav() {
       const container = els.sectionNavLinks;
       if (!container) return;
+      const behind = sectionsBehindView();
+      const viewChip = behind.length
+        ? '<button type="button" class="section-nav-view" data-view="full">' + escapeHTML("More analysis (" + formatInteger(behind.length) + ")") + "</button>"
+        : viewIsFull() && modeSections().some((section) => !ESSENTIAL_SECTIONS.has(section.id))
+          ? '<button type="button" class="section-nav-view" data-view="essentials">Essentials only</button>'
+          : "";
       container.innerHTML = visibleSections()
         .map((section) => '<button type="button" data-jump="' + escapeAttr(section.id) + '">' + escapeHTML(navLabel(section)) + "</button>")
-        .join("");
+        .join("") + viewChip;
     }
 
     function navLabel(section) {
@@ -16197,7 +16300,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // arrived unselected.
     function posterSelection() {
       if (state.posterSelection) return state.posterSelection;
-      return new Set(availablePosters().map((poster) => poster.key));
+      // Until the teacher picks, the whole-class section is selected and the
+      // subject sections are not. A four-subject growth file offers thirty
+      // posters, and thirty sheets is a print run nobody wants by accident.
+      return new Set(availablePosters().filter((poster) => !poster.scope.subject).map((poster) => poster.key));
     }
 
     // Called only where the selection is about to be changed, which is the
@@ -18730,10 +18836,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           reducedMotion: stored.reducedMotion === true,
           // Only the prompt's own state is remembered. Nothing here identifies
           // a student, a class or a file.
-          supportPromptOff: stored.supportPromptOff === true
+          supportPromptOff: stored.supportPromptOff === true,
+          // Which sections the page opens on. Anything but an explicit "full"
+          // is the essentials, so a stale or hand-edited value cannot widen it.
+          view: stored.view === "full" ? "full" : "essentials"
         };
       } catch (error) {
-        return { theme: "auto", reducedMotion: false, supportPromptOff: false };
+        return { theme: "auto", reducedMotion: false, supportPromptOff: false, view: "essentials" };
       }
     }
 
