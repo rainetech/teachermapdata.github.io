@@ -5178,17 +5178,6 @@
         <p class="summary-edit-note" id="summaryEditNote" hidden>You have edited this text, so it will no longer update when you change the filters. Regenerate to go back to the generated version.</p>
       </section>
 
-      <section class="section" id="sec-quiz" aria-labelledby="quizTitle">
-        <div class="section-header">
-          <div>
-            <h2 id="quizTitle">Check My Understanding</h2>
-            <p id="quizLead">The questions a principal, inspector or governor is likely to ask about this data, with every answer worked out from the records currently in view. A practice run before the real conversation.</p>
-          </div>
-          <div class="btn-row" id="quizTools"></div>
-        </div>
-        <div class="quiz" id="quizBody"></div>
-      </section>
-
       <section class="section" id="sec-tables" aria-labelledby="tableGroupsTitle">
         <div class="section-header">
           <div>
@@ -5351,9 +5340,20 @@
         <div class="poster-grid" id="posterGrid"></div>
       </section>
 
+      <section class="section" id="sec-quiz" aria-labelledby="quizTitle">
+        <div class="section-header">
+          <div>
+            <h2 id="quizTitle">Check My Understanding</h2>
+            <p id="quizLead">The questions a principal, inspector or governor is likely to ask about this data, with every answer worked out from the records currently in view. A practice run before the real conversation.</p>
+          </div>
+          <div class="btn-row" id="quizTools"></div>
+        </div>
+        <div class="quiz" id="quizBody"></div>
+      </section>
+
       <!-- The foot of the essentials view. The other sections are one click
            away, and the click is remembered; this is where a teacher who has
-           read the six that matter finds out there are more. -->
+           read the eight that matter finds out there are more. -->
       <section class="section section-more" id="sec-more" aria-labelledby="moreTitle" hidden>
         <div class="section-header">
           <div>
@@ -8368,21 +8368,23 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // exists only when the loaded files actually have them.
       { id: "sec-strands", label: "Areas", modes: ["growth", "mixed", "baseline"], available: hasStrandData },
       { id: "sec-summary", label: "Summary", modes: ["growth", "mixed", "baseline"] },
-      { id: "sec-quiz", label: "Quiz", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-tables", label: "Table Groups", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-grouping", label: "Grouping", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-priority", label: "Priority", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-posters", label: "Posters", modes: ["growth", "mixed", "baseline"] },
+      { id: "sec-quiz", label: "Quiz", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-celebration", label: "Celebration", modes: ["growth", "mixed", "baseline"] },
       { id: "sec-quality", label: "Data Check", modes: ["growth", "mixed", "baseline"] }
     ];
 
     // The teacher's first screen. A class teacher opening this once a term
-    // acts on six sections; the other fourteen are for a closer look, and a
-    // page that shows all twenty at equal weight hides the six. So the page
+    // acts on eight sections: what the file says, what happened, the targets
+    // ahead, who needs what, the wall, and the quiz that readies them for the
+    // conversation about it. The other twelve are for a closer look, and a
+    // page that shows all twenty at equal weight hides the eight. So the page
     // opens on the essentials, the rest are one click away, and the click is
     // remembered - a preference about the page, not about any student.
-    const ESSENTIAL_SECTIONS = new Set(["sec-briefing", "sec-snapshot", "sec-growth", "sec-actions", "sec-priority", "sec-posters"]);
+    const ESSENTIAL_SECTIONS = new Set(["sec-briefing", "sec-snapshot", "sec-growth", "sec-goals", "sec-actions", "sec-priority", "sec-posters", "sec-quiz"]);
 
     function viewIsFull() {
       return Boolean(state.prefs) && state.prefs.view === "full";
