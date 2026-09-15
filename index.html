@@ -18611,6 +18611,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     border-bottom: 0.35mm solid #c8cfdb;
   }
   .gs-write.is-short { height: 12.7mm; }
+  .gs-write.is-mid { height: 26.5mm; }
+  .gs-write.is-tall { height: 53mm; }
+
+  /* The plan page always starts a new sheet: the data page is the
+     teacher's and the school's; this one is the student's. */
+  .gs-page-plan { break-before: page; page-break-before: always; }
+  .gs-page-plan .gs-section { margin-top: 5mm; }
+  .gs-prompt { margin: -2mm 0 1mm; font-size: 8.5pt; color: #4a5568; font-style: italic; }
+  .gs-targets { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5mm; }
+  .gs-targets li {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 5mm; align-items: baseline;
+    padding: 1.8mm 4mm; border: 0.4mm solid #d9dee8; border-radius: 2mm;
+    font-size: 10pt;
+  }
+  .gs-targets b { font-size: 11pt; }
+  .gs-targets span:nth-of-type(2) { font-weight: 800; color: #0f5c34; }
+  .gs-targets small { font-size: 8.5pt; color: #4a5568; font-weight: 700; min-width: 18mm; text-align: right; }
+  .gs-sign { display: flex; gap: 10mm; margin-top: 7mm; font-size: 9.5pt; font-weight: 700; color: #4a5568; }
+  .gs-sign span { flex: 1 1 0; display: flex; align-items: baseline; gap: 3mm; }
+  .gs-sign i { flex: 1 1 auto; border-bottom: 0.35mm solid #10151f; height: 5mm; }
   /* A section that will not fit moves whole to the next page rather than
      splitting a set of ruled lines across the fold. */
   .gs-section { break-inside: avoid; }
@@ -18664,13 +18685,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           (repeated ? '<p class="gs-note">' + escapeHTML("Where I tested more than once, this is my latest test.") + "</p>" : "") +
           "</div>" +
           goalSheetAreas(studentRows, floor) +
-          '<div class="gs-section"><h2>The goal I am setting myself</h2><div class="gs-write"></div></div>' +
-          '<div class="gs-section"><h2>What I will do to get there, and how my teacher will help</h2><div class="gs-write"></div></div>' +
           "</div>" +
           '<p class="gs-foot">' + escapeHTML(studentRows.some((row) => row.forwardProjection)
             ? METHOD_NOTES.forwardProjection
             : METHOD_NOTES.keepPace) + "</p>" +
-          "</section>";
+          "</section>" +
+          // Page two is the student's, not the data's: the targets repeated
+          // in one line each so the numbers are in front of them, then room
+          // to write. The data page never shares a sheet with the plan.
+          '<section class="sheet gs-page-plan">' +
+          '<header class="gs-head"><span class="gs-kicker">My plan</span>' +
+          "<h1>" + escapeHTML(first.studentName) + "</h1>" +
+          "<p>" + escapeHTML(meta) + "</p></header>" +
+          '<div class="gs-body">' +
+          '<div class="gs-section"><h2>My targets</h2><ul class="gs-targets">' + subjects.map(goalSheetTargetLine).join("") + "</ul></div>" +
+          '<div class="gs-section"><h2>The goal I am setting myself</h2>' +
+          '<p class="gs-prompt">One thing I want to be able to do by then, in my own words.</p><div class="gs-write is-mid"></div></div>' +
+          '<div class="gs-section"><h2>What I will do to get there</h2>' +
+          '<p class="gs-prompt">The practice and the habits: what I will do, when, and how often.</p><div class="gs-write is-tall"></div></div>' +
+          '<div class="gs-section"><h2>How my teacher will help</h2><div class="gs-write is-mid"></div></div>' +
+          '<div class="gs-sign"><span>Me <i></i></span><span>My teacher <i></i></span><span>Date <i></i></span></div>' +
+          "</div></section>";
       }).join("");
       const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' +
         escapeHTML("Growth goal sheets") + "</title><style>" + GOAL_SHEET_CSS + "</style></head><body>" +
@@ -18687,6 +18722,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       printWindow.document.close();
       printWindow.focus();
       setTimeout(() => printWindow.print(), 280);
+    }
+
+    // One line per subject for the plan page: where I am, where I am going,
+    // and by how much - the same figures as the cards, in a form a student
+    // can copy into a sentence.
+    function goalSheetTargetLine(entry) {
+      const row = entry.current;
+      const goal = row.goals;
+      const target = row.forwardProjection ? row.forwardProjection.targetRIT : goal ? goal.keepPaceRIT : null;
+      const gain = row.forwardProjection ? row.forwardProjection.gain : goal ? goal.typicalGain : null;
+      const by = (goal ? goal.horizonLabel : "the next test").toLowerCase();
+      return "<li><b>" + escapeHTML(row.subject) + "</b>" +
+        "<span>" + escapeHTML(formatNumber(row.currentRIT, 0) + " now") + "</span>" +
+        "<span>" + escapeHTML(isFiniteNumber(target) ? formatNumber(target, 0) + " by " + by : "no target yet") + "</span>" +
+        "<small>" + escapeHTML(isFiniteNumber(gain) ? (gain > 0 ? formatSignedNumber(gain) + " RIT" : "hold my ground") : "") + "</small></li>";
     }
 
     // The target that leads is the reachable one. A child at the first
