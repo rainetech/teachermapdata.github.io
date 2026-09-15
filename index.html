@@ -5295,7 +5295,7 @@
         <div class="section-header">
           <div>
             <h2 id="posterTitle">Wall Posters</h2>
-            <p id="posterNote">Data stories for the classroom wall, sized for A3, in sections: the whole class first, then one section per subject. The whole-class set is selected to start; tick a subject section to add it. Class-level only &mdash; no student is named and no individual score appears.</p>
+            <p id="posterNote">Data stories for the classroom wall, sized for A3, in sections: the whole class first, then one section per subject. The subject sections are selected to start; tick the whole-class section to add the combined set. Class-level only &mdash; no student is named and no individual score appears.</p>
           </div>
           <div class="btn-row">
             <button class="btn small" id="posterPrintSelected" type="button">Print selected (A3)</button>
@@ -6824,6 +6824,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         if (seen.has(key)) duplicates.push(row);
         else seen.set(key, row);
       });
+      // The same student and subject in two windows that were not paired
+      // into growth: two Class Profile terms loaded together. Counted so the
+      // page can say that class figures carry both.
+      const windowsBySubject = new Map();
+      rows.forEach((row) => {
+        if (row.hasGrowthPair) return;
+        const key = studentKey(row) + "|" + row.subject;
+        if (!windowsBySubject.has(key)) windowsBySubject.set(key, new Set());
+        windowsBySubject.get(key).add(windowKey(row));
+      });
+      const multiWindow = [...windowsBySubject.values()].filter((windows) => windows.size > 1).length;
       return {
         delimiter: parsed.delimiter,
         totalLines: parsed.totalLines,
@@ -6840,6 +6851,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         noGradeCount: noGrade.length,
         noNormCount: noNorm.length,
         duplicateCount: duplicates.length,
+        multiWindowCount: multiWindow,
         shortTestCount: testQuality.flagged,
         medianDuration: testQuality.medianDuration,
         metTooCloseCount: rows.filter((row) => row.metCertainty === "too-close").length,
@@ -6871,6 +6883,68 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return row.studentID && row.studentID !== "Missing"
         ? row.studentID
         : row.studentName + "|" + row.studentGrade + "|" + row.className;
+    }
+
+    // Windows in the order they happen, from a label like "Fall 2025",
+    // "Spring 2026" or "Spring 2025-2026". A school year starts in the fall,
+    // so spring of calendar 2026 belongs to the year that began in 2025 and
+    // sorts after fall 2025, not before it. Null when the label says nothing.
+    const SEASON_RANK = { fall: 0, winter: 1, spring: 2 };
+
+    function windowOrder(row) {
+      const label = String(row.currentWindowLabel || "");
+      const season = row.currentSeason || detectSeasonFromText(label);
+      const years = label.match(/\d{4}/g);
+      if (!season || !years || !(season in SEASON_RANK)) return null;
+      const numbers = years.map(Number);
+      const startYear = numbers.length > 1 ? Math.min(...numbers) : (season === "fall" ? numbers[0] : numbers[0] - 1);
+      return startYear * 10 + SEASON_RANK[season];
+    }
+
+    // A sortable value for a test date: ISO, or the month-first form NWEA's
+    // Class Profile export uses. Null when there is no date to read.
+    function testDateOrder(row) {
+      const text = cleanString(row.currentTestDate);
+      if (!text || text === "Missing") return null;
+      const iso = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+      if (iso) return Number(iso[1]) * 10000 + Number(iso[2]) * 100 + Number(iso[3]);
+      const us = text.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+      if (!us) return null;
+      let year = Number(us[3]);
+      if (year < 100) year += 2000;
+      // Month first unless the first number cannot be a month.
+      const dayFirst = Number(us[1]) > 12;
+      const month = dayFirst ? Number(us[2]) : Number(us[1]);
+      const day = dayFirst ? Number(us[1]) : Number(us[2]);
+      return year * 10000 + month * 100 + day;
+    }
+
+    // One record per subject for one student. A retest in the same term, or
+    // a second Class Profile file from an earlier term, gives a student two
+    // records for one subject. The current one is the growth pair if there
+    // is one, then a valid test over an invalid one, then the later window,
+    // then the later test date, then the richer record. Earlier windows come
+    // back as history; an earlier attempt in the same window does not.
+    function latestSubjectRecords(studentRows) {
+      const bySubject = new Map();
+      studentRows.forEach((row) => {
+        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+        bySubject.get(row.subject).push(row);
+      });
+      return [...bySubject.values()].map((group) => {
+        const sorted = group.slice().sort((a, b) =>
+          (b.hasGrowthPair ? 1 : 0) - (a.hasGrowthPair ? 1 : 0) ||
+          (a.testNotValid ? 1 : 0) - (b.testNotValid ? 1 : 0) ||
+          (windowOrder(b) || 0) - (windowOrder(a) || 0) ||
+          (testDateOrder(b) || 0) - (testDateOrder(a) || 0) ||
+          recordRichness(b) - recordRichness(a));
+        const current = sorted[0];
+        const earlier = sorted.slice(1)
+          .filter((row) => windowKey(row) !== windowKey(current) && isFiniteNumber(row.currentRIT))
+          .sort((a, b) => (windowOrder(b) || 0) - (windowOrder(a) || 0));
+        return { current, earlier, retests: sorted.length - 1 - earlier.length };
+      }).sort((a, b) => posterSubjectRank(a.current.subject) - posterSubjectRank(b.current.subject) ||
+        a.current.subject.localeCompare(b.current.subject));
     }
 
     function setStatus(message, isError) {
@@ -7422,9 +7496,24 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         growthShare,
         dominantSeason,
         dominantSeasonLabel: seasonLabel(dominantSeason),
-        currentWindowLabel: mostCommon(windowLabels) || seasonLabel(dominantSeason),
+        // Two Class Profile files from different terms are two windows; the
+        // one the page describes as "now" is the later of them, not the one
+        // with more rows or the one that happened to be read first.
+        currentWindowLabel: latestWindowLabel(rows) || mostCommon(windowLabels) || seasonLabel(dominantSeason),
         priorWindowLabel: mostCommon(countBy(growthRows.filter((row) => row.priorWindowLabel), (row) => row.priorWindowLabel)) || "Prior window"
       };
+    }
+
+    function latestWindowLabel(rows) {
+      let best = null;
+      let bestOrder = null;
+      rows.forEach((row) => {
+        if (!row.currentWindowLabel) return;
+        const order = windowOrder(row);
+        if (order === null) return;
+        if (bestOrder === null || order > bestOrder) { best = row.currentWindowLabel; bestOrder = order; }
+      });
+      return best;
     }
 
     function isBaselineMode() {
@@ -11169,6 +11258,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (diagnostics.unreadableFiles) {
         notes.push(["Files that could not be read", formatInteger(diagnostics.unreadableFiles) +
           " file(s) could not be opened by the browser at all. That is usually a permissions problem or a file still syncing to the drive."]);
+      }
+      if (diagnostics.multiWindowCount) {
+        notes.push(["Two test windows for the same subject", formatInteger(diagnostics.multiWindowCount) +
+          " student-subject record(s) appear in more than one test window - two Class Profile terms loaded together, most likely. " +
+          "Goal sheets show the latest window and the earlier one as history. The class figures on this page count both windows, " +
+          "so for class-level reading load one term at a time, or an ASG export, which carries both windows as one growth record."]);
+      }
+      if (diagnostics.duplicateCount) {
+        notes.push(["Duplicate rows", formatInteger(diagnostics.duplicateCount) +
+          " row(s) repeat a student and subject inside the same window - a retest, or the same file loaded twice. " +
+          "Goal sheets show the latest test; the class figures on this page count every row."]);
       }
       if (diagnostics.mergedRecords) {
         notes.push(["Records combined across files", formatInteger(diagnostics.mergedRecords) +
@@ -16323,10 +16423,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // arrived unselected.
     function posterSelection() {
       if (state.posterSelection) return state.posterSelection;
-      // Until the teacher picks, the whole-class section is selected and the
-      // subject sections are not. A four-subject growth file offers thirty
-      // posters, and thirty sheets is a print run nobody wants by accident.
-      return new Set(availablePosters().filter((poster) => !poster.scope.subject).map((poster) => poster.key));
+      // Until the teacher picks, the subject sections are selected and the
+      // combined whole-class section is not: the wall is done by subject. A
+      // file with one subject has no subject sections, so there everything
+      // on offer is selected.
+      const posters = availablePosters();
+      const bySubject = posters.filter((poster) => poster.scope.subject);
+      return new Set((bySubject.length ? bySubject : posters).map((poster) => poster.key));
     }
 
     // Called only where the selection is about to be changed, which is the
@@ -18386,6 +18489,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .gs-now { display: flex; align-items: baseline; gap: 2.5mm; }
   .gs-now b { font-size: 23pt; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: #14307f; }
   .gs-now span { font-size: 9pt; color: #4a5568; font-weight: 700; }
+  /* History sits under the subject name, where there is room, not beside
+     the score, where it would push the score onto the name. */
+  .gs-subject h3 .gs-was { display: block; margin-top: 1mm; font-size: 8pt; font-weight: 600; letter-spacing: 0; color: #4a5568; }
   .gs-chip {
     display: inline-block; padding: 1.2mm 3mm; border-radius: 10mm;
     font-size: 8.5pt; font-weight: 800; white-space: nowrap;
@@ -18458,8 +18564,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           " students. Filter to a class to print the rest.", "info");
       }
       const floor = state.strandAnalysis ? state.strandAnalysis.floor : AREA_MIN_FLOOR;
-      const sheets = printed.map(([, studentRows]) => {
+      const sheets = printed.map(([, allRows]) => {
+        const subjects = latestSubjectRecords(allRows);
+        const studentRows = subjects.map((entry) => entry.current);
         const first = studentRows[0];
+        const repeated = subjects.some((entry) => entry.earlier.length || entry.retests);
         const meta = [
           first.studentGrade && first.studentGrade !== "Missing" ? "Year " + first.studentGrade : "",
           first.className && first.className !== "Missing" ? "Class " + first.className : "",
@@ -18471,7 +18580,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           "<p>" + escapeHTML(meta) + "</p></header>" +
           '<div class="gs-body">' +
           '<div class="gs-section"><h2>Where I am now</h2>' +
-          '<div class="gs-subjects">' + studentRows.map(goalSheetSubject).join("") + "</div></div>" +
+          '<div class="gs-subjects">' + subjects.map(goalSheetSubject).join("") + "</div>" +
+          (repeated ? '<p class="gs-note">' + escapeHTML("Where I tested more than once, this is my latest test.") + "</p>" : "") +
+          "</div>" +
           goalSheetAreas(studentRows, floor) +
           '<div class="gs-section"><h2>The goal I am setting myself</h2><div class="gs-write"></div></div>' +
           '<div class="gs-section"><h2>What I will do to get there, and how my teacher will help</h2><div class="gs-write"></div></div>' +
@@ -18503,11 +18614,19 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // printed at them in bold - the grade-level figure stays available in the
     // small print, where a teacher can use it and a ten-year-old is not
     // handed it as their headline.
-    function goalSheetSubject(row) {
+    function goalSheetSubject(entry) {
+      const row = entry.current;
       const goal = row.goals;
       const band = row.currentBand;
       const colours = BAND_PRINT_COLOURS[band.name] || ["#64748b", "#ffffff"];
-      return '<article class="gs-subject"><h3>' + escapeHTML(row.subject) + "</h3>" +
+      // An earlier window is the student's own history, and the most
+      // motivating line on the sheet: where I was, where I am.
+      const was = entry.earlier.length && isFiniteNumber(row.currentRIT) ? entry.earlier[0] : null;
+      const wasLine = was
+        ? '<small class="gs-was">' + escapeHTML("was " + formatNumber(was.currentRIT, 0) + " in " + was.currentWindowLabel +
+            " (" + formatSignedNumber(row.currentRIT - was.currentRIT) + ")") + "</small>"
+        : "";
+      return '<article class="gs-subject"><h3>' + escapeHTML(row.subject) + wasLine + "</h3>" +
         '<div class="gs-now"><b>' + escapeHTML(formatNumber(row.currentRIT, 0)) + "</b>" +
         "<span>RIT</span>" +
         (isFiniteNumber(row.currentPercentile)
