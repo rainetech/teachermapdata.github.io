@@ -15530,7 +15530,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         blurb: "What a year of growth looks like on the RIT scale, from where the class is now.",
         available: (scope) => Boolean(posterLadder(scope.rows)),
         headline: () => "Where We Are, And Where We Are Going",
-        sub: () => "RIT is one scale that keeps going all the way through school. The rungs are what a typical student in each grade scores; the solid mark is us.",
+        sub: (scope) => {
+          const ladder = posterLadder(scope.rows);
+          const projected = Boolean(ladder) && ladder.panels.some((panel) => panel.gainSource === "projection");
+          return "RIT is one scale that keeps going all the way through school. The rungs are what a typical student in each grade scores; the solid mark is us" +
+            (projected ? ", the hollow one where NWEA projects us to be." : ".");
+        },
         message: () => "A RIT point is small. A year of them is not. Growth happens in the lessons you turn up for, not on the day of the test.",
         body: (scope) => {
           const ladder = posterLadder(scope.rows);
@@ -15542,7 +15547,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               [formatInteger(atOrAbove) + " of " + formatInteger(ladder.panels.length),
                 ladder.panels.length === 1 ? "subject is already at or above our own grade's rung" : "subjects are already at or above our own grade's rung",
                 atOrAbove >= ladder.panels.length / 2 ? "up" : "flat"],
-              best ? [formatSignedNumber(best.gain), "RIT is a typical year in " + best.subject.toLowerCase() + " - the longest climb on the wall", "up"] : null,
+              best ? [formatSignedNumber(best.gain),
+                (best.gainSource === "projection" ? "RIT is NWEA's projection for us in " : "RIT is a typical year in ") +
+                best.subject.toLowerCase() + " - the longest climb on the wall", "up"] : null,
               [formatInteger(ladder.panels.length), ladder.panels.length === 1 ? "ladder; the rungs are typical scores for each grade" : "ladders; the rungs are typical scores for each grade"]
             ]) + "</div>";
         }
@@ -16022,7 +16029,16 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       });
       const panels = [...bySubject.entries()].map(([subject, group]) => {
         const now = median(group.map((row) => row.currentRIT));
-        const gain = avg(group.map((row) => row.goals.typicalGain));
+        // A fall export carries NWEA's own projection for each student,
+        // conditioned on that student's starting score; the norm's typical
+        // gain is the grade's mean. Where at least half the group has a
+        // projection the climb is their average projected gain - the same
+        // figure the Goals section leads with - and the head says whose it is.
+        const projected = group.filter((row) => row.forwardProjection && isFiniteNumber(row.forwardProjection.gain));
+        const useProjection = projected.length > 0 && projected.length >= group.length / 2;
+        const gain = useProjection
+          ? avg(projected.map((row) => row.forwardProjection.gain))
+          : avg(group.map((row) => row.goals.typicalGain));
         const gradeKey = modeOf(group.map((row) => row.usNormStudentGrade));
         const season = modeOf(group.map((row) => row.currentSeason)) || "fall";
         const horizon = group[0].goals.horizonLabel;
@@ -16059,12 +16075,17 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         // and the "now" label below its own, so the gap between them is the
         // climb itself, whatever its size.
         const tight = Math.abs(y(now) - y(next)) < 12;
+        const headNote = useProjection
+          ? (flat ? "NWEA projects a level score for us " : "NWEA projects " + formatSignedNumber(gain) + " RIT for us ") + posterHorizonShort(horizon)
+          : (flat ? "typical scores are level between these grades" : "a typical year adds " + formatSignedNumber(gain) + " RIT");
         return {
           subject, now, gain, next, horizon, flat,
+          gainSource: useProjection ? "projection" : "norm",
+          projectedCount: projected.length,
           atOrAboveOwnRung: Boolean(ownRung) && now >= ownRung.rit,
           html: '<div class="poster-ladder">' +
             '<div class="poster-ladder-head"><b>' + escapeHTML(subject) + "</b><small>" +
-            escapeHTML(flat ? "typical scores are level between these grades" : "a typical year adds " + formatSignedNumber(gain) + " RIT") + "</small></div>" +
+            escapeHTML(headNote) + "</small></div>" +
             '<div class="poster-ladder-field">' +
             '<i class="poster-ladder-rail is-left"></i><i class="poster-ladder-rail is-right"></i>' +
             rungHtml +
