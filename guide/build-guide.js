@@ -18,8 +18,14 @@ const path = require("path");
 const { chromium } = require("playwright");
 
 const ROOT = path.resolve(__dirname, "..");
-const INDEX = "file://" + path.join(ROOT, "index.html");
-const OUTPUT = path.join(ROOT, "teacher-dashboard-guide.pdf");
+// A second instance of the dashboard - a branded clone in another directory -
+// builds its own guide from its own page, so the pictures carry its colours
+// and its name. Point GUIDE_INDEX at the page and GUIDE_OUTPUT at the PDF.
+const INDEX = "file://" + path.resolve(ROOT, process.env.GUIDE_INDEX || "index.html");
+const OUTPUT = path.resolve(ROOT, process.env.GUIDE_OUTPUT || "teacher-dashboard-guide.pdf");
+const TITLE = process.env.GUIDE_TITLE || "NWEA MAP ASG Teacher Dashboard";
+// For checking the text without opening the PDF.
+const HTML_OUT = process.env.GUIDE_HTML ? path.resolve(ROOT, process.env.GUIDE_HTML) : null;
 const HIDE_STICKY = ".filter-bar,.section-nav,.toast-stack,.support-dock,.back-to-top,.celebrate-layer{display:none!important}";
 
 function escapeHTML(value) {
@@ -79,7 +85,8 @@ async function main() {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce", colorScheme: "light" });
   await context.addInitScript(() => {
     try {
-      localStorage.setItem("asg-dashboard-preferences", JSON.stringify({ theme: "light", reducedMotion: true, supportPromptOff: true, supportPromptLastShown: 0 }));
+      // The page opens on the essentials; the guide photographs every section.
+      localStorage.setItem("asg-dashboard-preferences", JSON.stringify({ theme: "light", reducedMotion: true, supportPromptOff: true, supportPromptLastShown: 0, view: "full" }));
     } catch (error) { /* private mode */ }
   });
   const page = await context.newPage();
@@ -150,6 +157,7 @@ async function main() {
 
   // ---- the document --------------------------------------------------------
   const html = buildHTML(data, pictures, baselineTitles);
+  if (HTML_OUT) fs.writeFileSync(HTML_OUT, html);
   const printer = await chromium.launch({ headless: true, executablePath: process.env.PLAYWRIGHT_CHROMIUM || undefined });
   const printPage = await printer.newPage();
   await printPage.setContent(html, { waitUntil: "load" });
@@ -160,7 +168,7 @@ async function main() {
     preferCSSPageSize: false,
     margin: { top: "18mm", bottom: "18mm", left: "16mm", right: "16mm" },
     displayHeaderFooter: true,
-    headerTemplate: '<div style="font-size:8px;color:#5d6a7e;width:100%;padding:0 16mm;font-family:Segoe UI,Arial,sans-serif;">NWEA MAP ASG Teacher Dashboard - User guide</div>',
+    headerTemplate: '<div style="font-size:8px;color:#5d6a7e;width:100%;padding:0 16mm;font-family:Segoe UI,Arial,sans-serif;">' + escapeHTML(TITLE) + ' - User guide</div>',
     footerTemplate: '<div style="font-size:8px;color:#5d6a7e;width:100%;padding:0 16mm;font-family:Segoe UI,Arial,sans-serif;display:flex;justify-content:space-between;"><span>Your file never leaves your computer.</span><span>Page <span class="pageNumber"></span> of <span class="totalPages"></span></span></div>'
   });
   await printer.close();
@@ -218,7 +226,7 @@ function buildHTML(data, pictures, baselineTitles) {
   const posterRows = data.posters.map((poster) => "<tr><td>" + escapeHTML(poster.title) + "</td><td>" + escapeHTML(poster.blurb) + "</td></tr>").join("");
   const contents = [
     ["1", "What this tool is, and what it never does"],
-    ["2", "Getting your file out of NWEA MAP"],
+    ["2", "Getting your files out of NWEA MAP"],
     ["3", "Loading a file and choosing what you look at"],
     ["4", "Reading the numbers"],
     ["5", "The sections, one by one"],
@@ -228,7 +236,7 @@ function buildHTML(data, pictures, baselineTitles) {
     ["A", "Glossary and reference tables"]
   ].map(([number, title]) => "<li><span>" + number + "</span>" + escapeHTML(title) + "</li>").join("");
 
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>NWEA MAP ASG Teacher Dashboard - User guide</title>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHTML(TITLE)} - User guide</title>
 <style>
   :root { --ink: #172033; --muted: #5d6a7e; --brand: #2454a6; --brand-deep: #173d7d; --wash: #e9f0ff; --line: #dbe2ee; --green: #0f7a45; --amber: #b45309; }
   * { box-sizing: border-box; }
@@ -280,9 +288,9 @@ function buildHTML(data, pictures, baselineTitles) {
 <div class="cover">
   <div>
     <div class="stripe"></div>
-    <p class="eyebrow" style="margin-top:28mm">NWEA MAP ASG Teacher Dashboard</p>
+    <p class="eyebrow" style="margin-top:28mm">${escapeHTML(TITLE)}</p>
     <h1>User guide</h1>
-    <p class="lede">How to get your file out of NWEA, what every number means, what each section of the dashboard tells you, and what to do about it before the next data conversation.</p>
+    <p class="lede">How to get your files out of NWEA, what every number means, what each section of the dashboard tells you, and what to do about it before the next data conversation.</p>
   </div>
   <div class="meta">
     <p>Built from the dashboard itself, using its own sample data, so the pictures and the section text are the same ones you see on screen. Every section on the page also carries a <strong>?</strong> in its corner that says the same in three short answers.</p>
@@ -312,7 +320,8 @@ function buildHTML(data, pictures, baselineTitles) {
 </div>
 
 <div class="chapter">
-  <h2>2. Getting your file out of NWEA MAP</h2>
+  <h2>2. Getting your files out of NWEA MAP</h2>
+  <p>You need two kinds of export for the whole picture, and they have to match. The <strong>Achievement Status and Growth (ASG)</strong> report carries growth: where each student started, where they are now, and NWEA's projection. The <strong>Class Profile</strong> report carries the instructional areas inside each subject, one file per subject. Load both and the dashboard folds each student's two records into one.</p>
   <h3>The Achievement Status and Growth (ASG) export</h3>
   <ol>
     <li>Sign in to MAP Growth and open <em>MAP Reports</em>.</li>
@@ -320,11 +329,21 @@ function buildHTML(data, pictures, baselineTitles) {
     <li>Use the export or download option and choose <em>CSV</em>.</li>
     <li>Save the file somewhere you can find it. You do not need to open or edit it.</li>
   </ol>
+  <h3>The Class Profile exports</h3>
+  <ol>
+    <li>In <em>MAP Reports</em>, choose the <em>Class Profile</em> report for the same class and the current term.</li>
+    <li>Run it once per subject - mathematics, reading, language usage, science - and download each as <em>CSV</em>. Each file is one test.</li>
+    <li>Keep them with the ASG file. You will upload all of them together.</li>
+  </ol>
+  <div class="callout">
+    <h4>Get both right</h4>
+    <p>Same class, same term, every student in both. The dashboard matches each student's ASG record to their Class Profile record by student ID and subject. If the two exports disagree about a student's score - the same test with two different results - the Data Check names the student, both figures and both files, and keeps the growth record. Check the exports rather than trust either number for that student.</p>
+  </div>
   <p>Column names are matched automatically, so slightly different exports still work, and comma, semicolon and tab separated files are all read. Suppressed values (the asterisks NWEA prints for small groups) and missing scores are handled.</p>
   <h3>A fall upload with one test window</h3>
   <p>In September there is nothing to compare against yet. Upload the single-window export anyway: the dashboard detects it and switches to a start-of-year view with tiers, norm placement and growth targets instead of showing empty growth panels. It does not matter whether the export puts the fall test in the Start or the End columns.</p>
-  <h3>Class Profile exports and several files at once</h3>
-  <p>A <em>Class Profile</em> export is one file per test and carries the instructional areas (the strands within a subject). Select several files at once when you upload and they are read as one data set; where an ASG file and a Class Profile file describe the same test, the two are folded into one record so growth and instructional areas sit on the same student.</p>
+  <h3>Several files at once</h3>
+  <p>Select all the files at once when you upload and they are read as one data set. Where an ASG file and a Class Profile file describe the same test, the two are folded into one record so growth and instructional areas sit on the same student. An ASG file on its own gives you everything except the instructional areas; Class Profile files on their own give you the areas and one window, but no growth.</p>
   <div class="callout">
     <h4>Not ready to export?</h4>
     <p>Click <em>Load Sample Data</em> on the upload panel to explore every feature with a small made-up class first. Everything in this guide was pictured with that sample.</p>
