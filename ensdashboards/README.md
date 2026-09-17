@@ -15,6 +15,21 @@ rather than shipping a half-themed page.
 So the workflow for any dashboard change is: edit the root `index.html`, run
 the build, commit both.
 
+## The user guide
+
+`teacher-dashboard-guide.pdf` in this directory is the instance's own copy of
+the guide, built from this instance's page so the pictures carry its colours
+and its name. The page links to it relatively, so it has to be here or the
+link is dead. Rebuild it after the clone build whenever a section changes:
+
+    GUIDE_INDEX=ensdashboards/index.html \
+    GUIDE_OUTPUT=ensdashboards/teacher-dashboard-guide.pdf \
+    GUIDE_TITLE="Teacher MAP Dashboard | ENS Dashboards" \
+    node guide/build-guide.js
+
+`vercel.json` exempts the PDF from the frame-denying headers the page itself
+carries, because a browser's PDF viewer loads the document inside a frame.
+
 ## Where the brand comes from
 
 The logo is the Emirates National Schools mark, checked in at

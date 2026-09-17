@@ -4685,7 +4685,7 @@
           <span class="file-label-icon" aria-hidden="true">&#8682;</span>
           <span class="file-label-text">
             <strong>Choose or drop your MAP CSV files</strong>
-            <small>Click to browse, or drag files here. Select several at once &mdash; a Class Profile export is one file per test.</small>
+            <small>Click to browse, or drag files here. Select them all at once: your ASG export plus the Class Profile export for each subject, same class and term.</small>
           </span>
           <input id="csvInput" type="file" accept=".csv,text/csv" multiple>
         </label>
@@ -4727,7 +4727,7 @@
       <div class="onboarding-intro">
         <p class="eyebrow">Getting Started</p>
         <h2 id="onboardingTitle">Turn your MAP data into a plan in under a minute</h2>
-        <p class="subtle">No sign-in, no setup. Upload your NWEA ASG export and this dashboard instantly shows who grew, who needs support, who closed gaps, and how to group your class &mdash; all in your browser. <strong>Uploading in the fall with only one test window?</strong> The dashboard detects that and switches to a start-of-year view with tiers, norm placement and growth targets instead of showing empty growth panels.</p>
+        <p class="subtle">No sign-in, no setup. Upload your NWEA ASG export, plus the Class Profile export for each subject, and this dashboard instantly shows who grew, who needs support, who closed gaps, and how to group your class &mdash; all in your browser. <strong>Uploading in the fall with only one test window?</strong> The dashboard detects that and switches to a start-of-year view with tiers, norm placement and growth targets instead of showing empty growth panels.</p>
         <div class="btn-row">
           <button class="btn primary" id="onboardSampleBtn" type="button">Try it with sample data</button>
           <button class="btn ghost" id="onboardUploadBtn" type="button">Upload my CSV</button>
@@ -4738,8 +4738,8 @@
         <li>
           <span class="step-num">1</span>
           <div>
-            <strong>Export from NWEA MAP</strong>
-            <span>In MAP Growth reports, open your ASG (Achievement Status &amp; Growth) report and download it as a CSV. In the fall, a single-term export works too.</span>
+            <strong>Export two reports from NWEA MAP</strong>
+            <span>The ASG (Achievement Status &amp; Growth) report for your class, and the Class Profile report for each subject, both as CSV. Same class, same term, every student in both. In the fall, a single-term export works too.</span>
           </div>
         </li>
         <li>
@@ -4760,16 +4760,17 @@
     </section>
 
     <details class="help-panel" id="helpPanel">
-      <summary>Where do I find my ASG CSV? &amp; what does this tool read?</summary>
+      <summary>Which files do I export, and what does this tool read?</summary>
       <div class="help-body">
         <div>
-          <strong>Exporting from NWEA MAP Growth</strong>
+          <strong>Exporting from NWEA MAP Growth &mdash; you need both</strong>
           <ol>
             <li>Sign in to MAP Growth and open <em>MAP Reports</em>.</li>
-            <li>Choose the <em>Achievement Status and Growth (ASG)</em> report for your class and terms.</li>
-            <li>Use the export/download option and select <em>CSV</em>.</li>
-            <li>Return here and upload that file &mdash; nothing is sent anywhere.</li>
+            <li>Run the <em>Achievement Status and Growth (ASG)</em> report for your class and terms, and download it as <em>CSV</em>. This file carries growth.</li>
+            <li>Run the <em>Class Profile</em> report for the same class and term, once per subject, and download each as <em>CSV</em>. These files carry the instructional areas inside each subject.</li>
+            <li>Return here and upload all of them together &mdash; nothing is sent anywhere.</li>
           </ol>
+          <p><strong>Get both right.</strong> Same class, same term, every student in both. The dashboard folds each student's ASG record and Class Profile record into one. If the two exports disagree about a student's score, the Data Check names the student and both figures: check the exports rather than trust either number for that student.</p>
         </div>
         <div>
           <strong>Good to know</strong>
@@ -4777,6 +4778,7 @@
             <li>Column names are matched automatically, so slightly different exports still work. Comma, semicolon and tab separated files are all read.</li>
             <li>Suppressed values (<code>***</code>) and missing scores are handled gracefully.</li>
             <li><strong>Fall uploads with no prior window are fully supported.</strong> When the export has a single test window the dashboard hides the growth, gap-closure and quadrant panels &mdash; which would only show blanks &mdash; and analyses the window it has: percentile distribution, instructional tiers, distance from the US grade and season norm, and RIT targets for the rest of the year. It does not matter whether your export puts the fall test in the Start or the End columns.</li>
+            <li>An ASG file on its own gives you everything except the instructional areas; Class Profile files on their own give you the areas and a single window, but no growth. Load both for the whole picture.</li>
             <li>Nothing is persisted. Only your theme and motion preferences are remembered; no student data is ever written to disk or sent anywhere.</li>
             <li>Not ready to export? Click <em>Load Sample Data</em> to explore every feature first.</li>
           </ul>
