@@ -231,6 +231,40 @@ swap("instance stylesheet", "\n  </style>\n</head>\n<body>\n  <script>", `
 <body>
   <script>`);
 
+// ---------------------------------------------------------------------------
+// The goal sheet is a third stylesheet - printed, and the one page that goes
+// home with a child - so it carries the instance's colours and its mark too.
+// Measured on the sheet's own dark header (#00393a): kicker 6.85:1, meta
+// 8.97:1, the name in white 12.76:1, all at or above the blue they replace.
+// ---------------------------------------------------------------------------
+swap("goal sheet header", "  .gs-head { background: #14307f; color: #fff; padding: 7mm 16mm 6mm; }",
+  `  .gs-head {
+    background: #00393a; color: #fff; padding: 7mm 16mm 6mm;
+    border-bottom: 1.4mm solid #8e2344;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0 6mm; align-items: center;
+  }
+  /* The mark sits on white, never against the header's own teal: the logo
+     carries a teal of its own and the two do not match. */
+  .gs-logo {
+    grid-row: 1 / span 3; grid-column: 2;
+    height: 11mm; width: auto; align-self: center;
+    background: #ffffff; padding: 2mm 3mm; border-radius: 2mm;
+  }`);
+swap("goal sheet kicker", "text-transform: uppercase; color: #a9c6f7;", "text-transform: uppercase; color: #7fcbc7;");
+swap("goal sheet meta", "font-size: 10pt; color: #cfe0fb; }", "font-size: 10pt; color: #b9e0dd; }");
+swap("goal sheet section rule", "border-bottom: 0.5mm solid #1d4ed8; padding-bottom: 1.5mm;",
+  "border-bottom: 0.5mm solid #007272; padding-bottom: 1.5mm;");
+swap("goal sheet RIT ink", "letter-spacing: -0.03em; color: #14307f; }", "letter-spacing: -0.03em; color: #00393a; }");
+
+// Both sheets a student is handed carry the school's mark.
+swap("goal sheet data page logo",
+  '\'<header class="gs-head"><span class="gs-kicker">My learning goals</span>\' +',
+  '\'<header class="gs-head"><img class="gs-logo" src="' + ENS_LOGO + '" alt="Emirates National Schools"><span class="gs-kicker">My learning goals</span>\' +');
+swap("goal sheet plan page logo",
+  '\'<header class="gs-head"><span class="gs-kicker">My plan</span>\' +',
+  '\'<header class="gs-head"><img class="gs-logo" src="' + ENS_LOGO + '" alt="Emirates National Schools"><span class="gs-kicker">My plan</span>\' +');
+
 // The poster stylesheet is separate and printed, so it gets its own rule.
 swap("poster footer logo styling", "  .poster-foot {", `  .poster-logo {
     display: block;

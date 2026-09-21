@@ -415,7 +415,7 @@ function buildHTML(data, pictures, baselineTitles) {
   </ul>
   <h3>Printing</h3>
   <ul>
-    <li><strong>Goal sheets</strong> - one page per student from Growth Goals, with their targets and space to write.</li>
+    <li><strong>Goal sheets</strong> - two pages per student from Growth Goals. Page one is the data: where they are now in each subject, their next step, and the instructional areas inside each subject. Page two is theirs to fill in: the same targets in one line each, the part of each subject to work on first, and ruled space for the goal they set, what they will do about it and how you will help, with a line for both signatures and the date.</li>
     <li><strong>The action plan</strong> - the Action Board as a printable list of moves with the students named.</li>
     <li><strong>The seating layout</strong> - the room you arranged in the seating planner, on A4.</li>
     <li><strong>A student one-pager</strong> - open any student's name for their spotlight, then print it for a conference.</li>
