@@ -18613,8 +18613,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     border-bottom: 0.35mm solid #c8cfdb;
   }
   .gs-write.is-short { height: 12.7mm; }
-  .gs-write.is-mid { height: 26.5mm; }
-  .gs-write.is-tall { height: 53mm; }
+  /* Ruled lines run on a 5.3mm pitch, so these are whole numbers of lines:
+     four, and seven. The plan page now carries the area to work on under
+     each target, and that room comes out of the writing boxes. */
+  .gs-write.is-mid { height: 21.2mm; }
+  .gs-write.is-tall { height: 37.1mm; }
 
   /* The plan page always starts a new sheet: the data page is the
      teacher's and the school's; this one is the student's. */
@@ -18624,13 +18627,24 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .gs-targets { list-style: none; margin: 0; padding: 0; display: grid; gap: 1.5mm; }
   .gs-targets li {
     display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto;
-    gap: 5mm; align-items: baseline;
+    gap: 1mm 5mm; align-items: baseline;
     padding: 1.8mm 4mm; border: 0.4mm solid #d9dee8; border-radius: 2mm;
     font-size: 10pt;
   }
   .gs-targets b { font-size: 11pt; }
   .gs-targets span:nth-of-type(2) { font-weight: 800; color: #0f5c34; }
-  .gs-targets small { font-size: 8.5pt; color: #4a5568; font-weight: 700; min-width: 18mm; text-align: right; }
+  .gs-target-gain { font-size: 8.5pt; color: #4a5568; font-weight: 700; min-width: 18mm; text-align: right; }
+  /* The part to work on runs under the whole row: it is a sentence, not a
+     fourth column, and a column of it would wrap to three lines. */
+  .gs-focus {
+    grid-column: 1 / -1; font-size: 8.5pt; line-height: 1.3;
+    font-weight: 700; color: #7a4a12;
+  }
+  .gs-focus.is-even { font-weight: 600; color: #4a5568; }
+  .gs-focus i {
+    font-style: normal; font-size: 7.5pt; letter-spacing: .08em;
+    text-transform: uppercase; margin-right: 2mm;
+  }
   .gs-sign { display: flex; gap: 10mm; margin-top: 7mm; font-size: 9.5pt; font-weight: 700; color: #4a5568; }
   .gs-sign span { flex: 1 1 0; display: flex; align-items: baseline; gap: 3mm; }
   .gs-sign i { flex: 1 1 auto; border-bottom: 0.35mm solid #10151f; height: 5mm; }
@@ -18673,7 +18687,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const first = studentRows[0];
         const repeated = subjects.some((entry) => entry.earlier.length || entry.retests);
         const meta = [
-          first.studentGrade && first.studentGrade !== "Missing" ? "Year " + first.studentGrade : "",
+          first.studentGrade && first.studentGrade !== "Missing" ? "Grade " + first.studentGrade : "",
           first.className && first.className !== "Missing" ? "Class " + first.className : "",
           currentWindowName()
         ].filter(Boolean).join("  ·  ");
@@ -18700,11 +18714,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           "<h1>" + escapeHTML(first.studentName) + "</h1>" +
           "<p>" + escapeHTML(meta) + "</p></header>" +
           '<div class="gs-body">' +
-          '<div class="gs-section"><h2>My targets</h2><ul class="gs-targets">' + subjects.map(goalSheetTargetLine).join("") + "</ul></div>" +
+          '<div class="gs-section"><h2>My targets, and the part to work on first</h2><ul class="gs-targets">' +
+          subjects.map((entry) => goalSheetTargetLine(entry, floor)).join("") + "</ul></div>" +
           '<div class="gs-section"><h2>The goal I am setting myself</h2>' +
           '<p class="gs-prompt">One thing I want to be able to do by then, in my own words.</p><div class="gs-write is-mid"></div></div>' +
           '<div class="gs-section"><h2>What I will do to get there</h2>' +
-          '<p class="gs-prompt">The practice and the habits: what I will do, when, and how often.</p><div class="gs-write is-tall"></div></div>' +
+          '<p class="gs-prompt">The practice and the habits: what I will do, when, and how often. Start with the part named above.</p><div class="gs-write is-tall"></div></div>' +
           '<div class="gs-section"><h2>How my teacher will help</h2><div class="gs-write is-mid"></div></div>' +
           '<div class="gs-sign"><span>Me <i></i></span><span>My teacher <i></i></span><span>Date <i></i></span></div>' +
           "</div></section>";
@@ -18726,10 +18741,40 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       setTimeout(() => printWindow.print(), 280);
     }
 
+    // The part of a subject a student can move furthest, fastest: the
+    // instructional area sitting lowest against their own overall score in
+    // that subject. An area RIT comes from far fewer questions than the
+    // overall score, so only a gap past the noise floor is named - below that
+    // the "weakest area" is measurement error wearing a label, and sending a
+    // child to practise it is worse than sending them nowhere.
+    function goalSheetFocusArea(row, floor) {
+      if (!row.hasInstructionalAreas || !isFiniteNumber(row.currentRIT)) return null;
+      const areas = (row.instructionalAreas || []).filter((area) => isFiniteNumber(area.delta));
+      if (!areas.length) return null;
+      const weakest = areas.slice().sort((a, b) => a.delta - b.delta)[0];
+      // Every part within the floor of the overall score is its own finding,
+      // and a better one than silence: nothing here is the weak link.
+      if (weakest.delta > -floor) return { even: true };
+      return { even: false, area: weakest, overall: row.currentRIT };
+    }
+
+    function goalSheetFocusLine(row, floor) {
+      const focus = goalSheetFocusArea(row, floor);
+      if (!focus) return "";
+      if (focus.even) {
+        return '<small class="gs-focus is-even">' + escapeHTML("Every part of this subject is within " +
+          formatInteger(floor) + " RIT of my overall score, so my practice is across the whole subject.") + "</small>";
+      }
+      return '<small class="gs-focus"><i>Work on first</i>' + escapeHTML(focus.area.name + " - " +
+        formatNumber(focus.area.rit, 0) + " now, " + formatNumber(focus.overall, 0) +
+        " would match the rest of my " + row.subject.toLowerCase() + ".") + "</small>";
+    }
+
     // One line per subject for the plan page: where I am, where I am going,
     // and by how much - the same figures as the cards, in a form a student
-    // can copy into a sentence.
-    function goalSheetTargetLine(entry) {
+    // can copy into a sentence - with the part of that subject to work on
+    // first underneath it, so the target and the practice sit together.
+    function goalSheetTargetLine(entry, floor) {
       const row = entry.current;
       const goal = row.goals;
       const target = row.forwardProjection ? row.forwardProjection.targetRIT : goal ? goal.keepPaceRIT : null;
@@ -18738,7 +18783,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return "<li><b>" + escapeHTML(row.subject) + "</b>" +
         "<span>" + escapeHTML(formatNumber(row.currentRIT, 0) + " now") + "</span>" +
         "<span>" + escapeHTML(isFiniteNumber(target) ? formatNumber(target, 0) + " by " + by : "no target yet") + "</span>" +
-        "<small>" + escapeHTML(isFiniteNumber(gain) ? (gain > 0 ? formatSignedNumber(gain) + " RIT" : "hold my ground") : "") + "</small></li>";
+        '<small class="gs-target-gain">' + escapeHTML(isFiniteNumber(gain) ? (gain > 0 ? formatSignedNumber(gain) + " RIT" : "hold my ground") : "") + "</small>" +
+        goalSheetFocusLine(row, floor) + "</li>";
     }
 
     // The target that leads is the reachable one. A child at the first
