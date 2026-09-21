@@ -64,7 +64,7 @@ the palette in `build/build-clone.mjs` — not to recolour the logo.
 Already created and building from this directory:
 
 - Project: `teachermap` (`prj_Ty8HzQDdj0dv0k6jLM0KAtU2u7kH`)
-- Team: `rainetech-7414s-projects`
+- Team: `ENS_Platforms` (slug `ensplatforms`, `team_Iwl363H4TKfoqdwtWfICSO0V`)
 - Linked to `rainetech/teachermapdata.github.io`, production branch `main`
 - Root Directory: `ensdashboards`
 
