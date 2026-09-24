@@ -94,6 +94,15 @@ check(await page.evaluate((k) => state.tableGroups[1].some((p) => p.key === k), 
 await page.keyboard.press("Control+z");
 await page.waitForTimeout(200);
 check(await page.evaluate((k) => !(state.tableGroups[0][0] && state.tableGroups[0][0].key === k), firstKey), "Ctrl+Z undoes the swap");
+const before = await page.evaluate(() => ({ history: state.roomHistory.length, moved: state.movedKeys.size, order: state.tableGroups.map((g) => g.map((p) => p.key).join(",")).join("|") }));
+const ownSeat = await page.evaluate(() => {
+  const chip = document.querySelector("[data-classroom-board] .seat.is-filled .drag-card[data-profile-key]");
+  const seat = chip.closest(".seat");
+  state.draggedProfileKey = chip.dataset.profileKey;
+  seat.dispatchEvent(new Event("drop", { bubbles: true, cancelable: true }));
+  return { history: state.roomHistory.length, moved: state.movedKeys.size, order: state.tableGroups.map((g) => g.map((p) => p.key).join(",")).join("|") };
+});
+check(ownSeat.history === before.history && ownSeat.moved === before.moved && ownSeat.order === before.order, "dropping a student on their own seat changes nothing");
 
 console.log("Furniture");
 await page.click("#plannerAddMenu summary");
@@ -114,6 +123,20 @@ await page.waitForTimeout(200);
 await page.keyboard.press("Delete");
 await page.waitForTimeout(200);
 check(await page.evaluate(() => !state.classroomLayout.fixtures.some((f) => f.kind === "window")), "Delete removes the selected fixture");
+const emptyRoom = await page.evaluate(() => {
+  state.classroomLayout.fixtures = [];
+  initializeClassroomLayout(state.tableGroups.length, false);
+  rerenderRoom();
+  return state.classroomLayout.fixtures.length;
+});
+check(emptyRoom === 0, "a room with no furniture stays empty");
+const hostile = await page.evaluate(() => {
+  const migrated = migrateClassroomLayout({ version: 2, roomRatio: { width: 1, height: 30 }, tables: [{ x: "a", y: 20, shape: "toString", rot: 45 }], fixtures: [{ id: "Jane_Smith_desk", kind: "constructor", x: 1, y: 1 }, { id: "x", kind: "board", x: 24, y: 0 }] });
+  const ratio = migrated.roomRatio.height / migrated.roomRatio.width;
+  return { kinds: migrated.fixtures.map((f) => f.kind).join(","), ids: migrated.fixtures.map((f) => f.id).join(","), shape: migrated.tables[0].shape, rot: migrated.tables[0].rot, ratio, x: migrated.tables[0].x };
+});
+check(hostile.kinds === "board" && !hostile.ids.includes("Jane") && hostile.shape === "rect" && [0, 90, 180, 270].includes(hostile.rot) && hostile.ratio <= 2.5 && Number.isFinite(hostile.x), "a hostile room file is tamed: unknown kinds dropped, ids regenerated, shape and turn defaulted, ratio bounded (" + JSON.stringify(hostile) + ")");
+await page.evaluate(() => { state.classroomLayout.fixtures = defaultRoomFixtures(); initializeClassroomLayout(state.tableGroups.length, false); rerenderRoom(); });
 
 console.log("Privacy");
 const names = await page.evaluate(() => Array.from(new Set(state.filteredRows.map((row) => row.studentName.split(/\s+/)[0]).filter((n) => n.length > 2))));

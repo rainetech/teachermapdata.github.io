@@ -6317,7 +6317,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // Typing in a large file should not re-render on every keystroke.
       els.searchInput.addEventListener("input", debounce(renderAll, 180));
       [els.groupSizeInput, els.groupStrategySelect, els.groupScoreSelect].forEach((control) => control.addEventListener("input", () => {
+        // A new pattern, strategy or score is a new plan: the hand-made
+        // arrangement goes, and so does the history that led to it.
         state.manualArrangement = false;
+        clearRoomHistory();
         renderTableGroups();
       }));
       [els.roomRatioInput, els.layoutSnapSelect, els.roomScaleSelect].filter(Boolean).forEach((control) => control.addEventListener("input", refreshLayoutControlsOnly));
@@ -6493,7 +6496,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             return;
           }
           if (state.roomSelection) {
+            const was = state.roomSelection;
             setRoomSelection(null);
+            // Leaving the inspector's fields puts focus on the table or the
+            // furniture they described, not at the top of the page.
+            if (event.target.closest && event.target.closest(".room-inspector")) focusRoomSelection(was);
             return;
           }
           closePlanner();
@@ -14662,6 +14669,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         renderPlannerChrome();
         return;
       }
+      const studentsChanged = !state.roomHistory || !state.roomHistory.length ||
+        state.roomHistory[state.roomHistory.length - 1].students !== profileSetSignature();
+      if (studentsChanged) clearRoomHistory();
       state.groupSignature = signature;
       // A rebuilt plan has no hand-made moves in it yet.
       state.movedKeys = new Set();
@@ -16914,16 +16924,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     const ROOM_PAD = 1;
     const ROOM_TOP_RESERVE = 14;
     const ROOM_HISTORY_MAX = 40;
-    const TABLE_SHAPES = {
+    // Null-prototype maps: a kind or shape read from a file is looked up by
+    // name, and "constructor" must not be one.
+    const TABLE_SHAPES = Object.assign(Object.create(null), {
       rect: { label: "Rectangle" },
       round: { label: "Round" },
       horseshoe: { label: "Horseshoe" },
       row: { label: "Row of desks" }
-    };
+    });
     const TABLE_SHAPE_ORDER = ["rect", "round", "horseshoe", "row"];
     // Fixture sizes are the footprint in room units at rotation 0. Wall
     // fixtures lie along a wall and turn to follow it.
-    const FIXTURE_KINDS = {
+    const FIXTURE_KINDS = Object.assign(Object.create(null), {
       board: { label: "Board", w: 52, h: 6, wall: true },
       door: { label: "Door", w: 10, h: 4, wall: true },
       window: { label: "Window", w: 26, h: 3, wall: true },
@@ -16934,7 +16946,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       sink: { label: "Sink", w: 10, h: 5, wall: true },
       screen: { label: "Screen", w: 24, h: 3, wall: true },
       note: { label: "Area label", w: 18, h: 5, wall: false, preset: true }
-    };
+    });
     const FIXTURE_ORDER = ["board", "door", "window", "teacherDesk", "carpet", "shelf", "cupboard", "sink", "screen", "note"];
     // An area label is chosen from this list rather than typed, so the room
     // that is remembered can never hold a student's name.
@@ -16946,7 +16958,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function normalizeShape(value) {
-      return TABLE_SHAPES[value] ? value : "rect";
+      return typeof value === "string" && TABLE_SHAPES[value] ? value : "rect";
     }
 
     // A run of seats laid horizontally (a row) or vertically (a column).
@@ -17017,8 +17029,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function roundGeometry(n) {
       const extra = Math.max(0, n - 6);
-      const rx = 14.5 + extra * 2.8;
-      const ry = 9 + extra * 1.7;
+      const rx = 15.5 + extra * 2.8;
+      const ry = 11 + extra * 1.7;
       const width = rx * 2 + SEAT_W + ROOM_PAD * 2;
       const height = ry * 2 + SEAT_H + ROOM_PAD * 2;
       const cx = width / 2;
@@ -17043,35 +17055,36 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const horizontal = rot === 0 || rot === 180;
       if (horizontal) {
         const longRun = runLength(long, false);
-        const width = SEAT_W + SEAT_GAP + longRun + SEAT_GAP + SEAT_W + ROOM_PAD * 2;
+        // Left arm seat, gap, arm, the long side, arm, gap, right arm seat.
+        const width = ROOM_PAD + SEAT_W + SEAT_GAP + U + longRun + U + SEAT_GAP + SEAT_W + ROOM_PAD;
         const armRun = runLength(armSeats, true);
         const height = SEAT_H + SEAT_GAP + U + armRun + ARM_END + ROOM_PAD * 2;
         const opensDown = rot === 0;
         const longY = opensDown ? ROOM_PAD : height - ROOM_PAD - SEAT_H;
         const armY = opensDown ? ROOM_PAD + SEAT_H + SEAT_GAP + U : ROOM_PAD + ARM_END;
-        const seats = chipRun(long, ROOM_PAD + SEAT_W + SEAT_GAP, longY, false)
+        const seats = chipRun(long, ROOM_PAD + SEAT_W + SEAT_GAP + U, longY, false)
           .concat(chipRun(armSeats, ROOM_PAD, armY, true))
           .concat(chipRun(armSeats, width - ROOM_PAD - SEAT_W, armY, true));
         const topY = opensDown ? ROOM_PAD + SEAT_H + SEAT_GAP : ROOM_PAD;
         return {
           width, height, seats,
-          top: { x: ROOM_PAD + SEAT_W + SEAT_GAP - U, y: topY, width: longRun + U * 2, height: height - ROOM_PAD * 2 - SEAT_H - SEAT_GAP, kind: opensDown ? "u-down" : "u-up" }
+          top: { x: ROOM_PAD + SEAT_W + SEAT_GAP, y: topY, width: longRun + U * 2, height: height - ROOM_PAD * 2 - SEAT_H - SEAT_GAP, kind: opensDown ? "u-down" : "u-up" }
         };
       }
       const longRun = runLength(long, true);
-      const height = SEAT_H + SEAT_GAP + longRun + SEAT_GAP + SEAT_H + ROOM_PAD * 2;
+      const height = ROOM_PAD + SEAT_H + SEAT_GAP + U + longRun + U + SEAT_GAP + SEAT_H + ROOM_PAD;
       const armRun = runLength(armSeats, false);
       const width = SEAT_W + SEAT_GAP + U + armRun + ARM_END + ROOM_PAD * 2;
       const opensRight = rot === 90;
       const longX = opensRight ? ROOM_PAD : width - ROOM_PAD - SEAT_W;
       const armX = opensRight ? ROOM_PAD + SEAT_W + SEAT_GAP + U : ROOM_PAD + ARM_END;
-      const seats = chipRun(long, longX, ROOM_PAD + SEAT_H + SEAT_GAP, true)
+      const seats = chipRun(long, longX, ROOM_PAD + SEAT_H + SEAT_GAP + U, true)
         .concat(chipRun(armSeats, armX, ROOM_PAD, false))
         .concat(chipRun(armSeats, armX, height - ROOM_PAD - SEAT_H, false));
       const topX = opensRight ? ROOM_PAD + SEAT_W + SEAT_GAP : ROOM_PAD;
       return {
         width, height, seats,
-        top: { x: topX, y: ROOM_PAD + SEAT_H + SEAT_GAP - U, width: width - ROOM_PAD * 2 - SEAT_W - SEAT_GAP, height: longRun + U * 2, kind: opensRight ? "u-right" : "u-left" }
+        top: { x: topX, y: ROOM_PAD + SEAT_H + SEAT_GAP, width: width - ROOM_PAD * 2 - SEAT_W - SEAT_GAP, height: longRun + U * 2, kind: opensRight ? "u-right" : "u-left" }
       };
     }
 
@@ -17150,9 +17163,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       }));
       if (Array.isArray(raw.fixtures)) {
         layout.fixtures = raw.fixtures.slice(0, 40)
-          .filter((fixture) => fixture && FIXTURE_KINDS[fixture.kind])
+          .filter((fixture) => fixture && typeof fixture.kind === "string" && FIXTURE_KINDS[fixture.kind])
+          // Ids only ever tell two fixtures apart within a session, so a file's
+          // own ids are not kept: they are the one free-text field a file has.
           .map((fixture, index) => ({
-            id: cleanString(fixture.id).replace(/[^\w-]/g, "").slice(0, 24) || "f-" + index,
+            id: "f" + index,
             kind: fixture.kind,
             x: clampBetween(finiteLayoutNumber(fixture.x, 40), 0, 99),
             y: clampBetween(finiteLayoutNumber(fixture.y, 40), 0, 99),
@@ -17212,6 +17227,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     const writeRoomLayout = debounce(writeRoomLayoutNow, 300);
+    window.addEventListener("pagehide", () => { if (state.classroomLayout) writeRoomLayoutNow(); });
 
     function exportRoomLayout() {
       downloadText("classroom-room-layout.json", JSON.stringify(storableRoomLayout(), null, 2), "application/json");
@@ -17222,17 +17238,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
+        const previous = state.classroomLayout;
+        const previousSelection = state.roomSelection;
         try {
           const parsed = JSON.parse(String(reader.result || ""));
-          pushRoomHistory();
           const layout = migrateClassroomLayout(parsed);
+          pushRoomHistory();
           state.classroomLayout = layout;
+          state.roomSelection = null;
           syncRoomControls();
           initializeClassroomLayout(state.tableGroups.length, false);
           rerenderRoom();
           writeRoomLayoutNow();
           toast("Room layout loaded.", "success");
         } catch (error) {
+          // Nothing of a file that fails part-way is kept.
+          state.classroomLayout = previous;
+          state.roomSelection = previousSelection;
+          if (state.roomHistory && state.roomHistory.length) state.roomHistory.pop();
+          syncRoomControls();
+          try { initializeClassroomLayout(state.tableGroups.length, false); rerenderRoom(); } catch (again) { /* the previous room rendered before */ }
+          updateUndoButton();
           toast("That file is not a room layout.", "error");
         }
       };
@@ -17381,7 +17407,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function initializeClassroomLayout(tableCount, reset = false) {
       const layout = state.classroomLayout;
       if (!Array.isArray(layout.tables)) layout.tables = [];
-      if (!Array.isArray(layout.fixtures) || !layout.fixtures.length) layout.fixtures = defaultRoomFixtures();
+      if (!Array.isArray(layout.fixtures)) layout.fixtures = defaultRoomFixtures();
       // Positions come from the grid when the table count changes; shapes and
       // turns survive, as does every fixture.
       for (let index = 0; index < tableCount; index += 1) {
@@ -17432,10 +17458,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const width = finiteLayoutNumber(widthValue, fallback.width);
       const height = finiteLayoutNumber(heightValue, fallback.height);
       if (width <= 0 || height <= 0) return fallback;
-      return {
-        width: clampBetween(width, 1, 30),
-        height: clampBetween(height, 1, 30)
-      };
+      let w = clampBetween(width, 1, 30);
+      let h = clampBetween(height, 1, 30);
+      // No classroom is a corridor: the shape stays within 2.5:1 either way.
+      if (w / h > 2.5) h = w / 2.5;
+      if (h / w > 2.5) w = h / 2.5;
+      return { width: Number(w.toFixed(3)), height: Number(h.toFixed(3)) };
     }
 
     function parseSnapPercent(value) {
@@ -17489,9 +17517,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const y = clampBetween(finiteLayoutNumber(position?.y), 0, Math.max(0, 100 - height));
       const cx = x + width / 2;
       const cy = y + height / 2;
+      // Distances in room units: a percent of height is a different length
+      // from a percent of width on any room that is not square.
       const walls = [
-        { name: "top", distance: cy, rot: 0 },
-        { name: "bottom", distance: 100 - cy, rot: 0 },
+        { name: "top", distance: yPercentToUnits(cy), rot: 0 },
+        { name: "bottom", distance: yPercentToUnits(100 - cy), rot: 0 },
         { name: "left", distance: cx, rot: 90 },
         { name: "right", distance: 100 - cx, rot: 90 }
       ].sort((a, b) => a.distance - b.distance);
@@ -17527,8 +17557,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // One snapshot before every change a teacher makes by hand: a student
     // moved, a table dragged, a fixture added. Undo restores the seating from
     // the student keys, so nothing but keys and positions is kept.
+    function profileSetSignature() {
+      return filteredProfiles().map((profile) => profile.key).sort().join("|");
+    }
+
     function roomSnapshot() {
       return {
+        students: profileSetSignature(),
+        dealOrder: state.dealOrder ? Array.from(state.dealOrder.entries()) : [],
+        unseatedCount: state.unseatedCount || 0,
         groups: state.tableGroups.map((group) => group.map((profile) => profile.key)),
         pool: state.tableManualPool.map((profile) => profile.key),
         capacities: state.tableCapacities.slice(),
@@ -17547,9 +17584,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       updateUndoButton();
     }
 
+    function clearRoomHistory() {
+      state.roomHistory = [];
+      updateUndoButton();
+    }
+
     function undoRoom() {
-      const snapshot = state.roomHistory && state.roomHistory.pop();
-      if (!snapshot) return;
+      if (!state.roomHistory) return;
+      // A snapshot taken over a different set of students (another filter,
+      // another file) cannot be put back: dropping it is the only safe move.
+      const current = profileSetSignature();
+      while (state.roomHistory.length && state.roomHistory[state.roomHistory.length - 1].students !== current) state.roomHistory.pop();
+      const snapshot = state.roomHistory.pop();
+      if (!snapshot) {
+        updateUndoButton();
+        announce("Nothing to undo for this set of students.");
+        return;
+      }
       const byKey = new Map(filteredProfiles().map((profile) => [profile.key, profile]));
       state.tableGroups = snapshot.groups.map((keys) => keys.map((key) => byKey.get(key)).filter(Boolean));
       state.tableManualPool = snapshot.pool.map((key) => byKey.get(key)).filter(Boolean);
@@ -17558,6 +17609,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.classroomLayout = migrateClassroomLayout(snapshot.layout);
       state.tableLabels = snapshot.labels;
       state.movedKeys = new Set(snapshot.moved);
+      state.dealOrder = new Map(snapshot.dealOrder || []);
+      state.unseatedCount = snapshot.unseatedCount || 0;
       state.manualArrangement = snapshot.manual;
       syncRoomControls();
       initializeClassroomLayout(state.tableGroups.length, false);
@@ -17604,6 +17657,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         else home.appendChild(els.groupControls);
       }
       if (home && els.tableGroups) home.appendChild(els.tableGroups);
+      if (state.classroomLayout) writeRoomLayoutNow();
       state.plannerOpen = false;
       els.plannerBackdrop.classList.remove("is-open");
       document.body.classList.remove("modal-open", "planner-open");
@@ -17927,8 +17981,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return null;
     }
 
-    function focusRoomSelection() {
-      const selection = state.roomSelection;
+    function focusRoomSelection(selection = state.roomSelection) {
       if (!selection) return;
       const el = selection.kind === "table"
         ? document.querySelector(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(selection.index)}"]`)
@@ -17995,7 +18048,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const index = Number(input.dataset.tableIndex);
         pushRoomHistory();
         roomTable(index).shape = normalizeShape(input.value);
-        settleAndRender("Table shape changed to " + TABLE_SHAPES[roomTable(index).shape].label.toLowerCase() + ".");
+        settleAndRender("Table shape changed to " + TABLE_SHAPES[roomTable(index).shape].label.toLowerCase() + ".", kind);
         return;
       }
       if (kind === "fixturePreset") {
@@ -18003,15 +18056,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         if (!fixture) return;
         pushRoomHistory();
         fixture.preset = clampInteger(Number(input.value), 0, NOTE_PRESETS.length - 1) || 0;
-        settleAndRender("Label changed to " + NOTE_PRESETS[fixture.preset] + ".");
+        settleAndRender("Label changed to " + NOTE_PRESETS[fixture.preset] + ".", kind);
       }
     }
 
-    function settleAndRender(message) {
+    // Redraws the room after a change and puts focus back where it was: on
+    // the inspector control that made the change, or else on the selection,
+    // so a keyboard user arrowing through a list is not thrown onto the table.
+    function settleAndRender(message, refocusInput) {
       initializeClassroomLayout(state.tableGroups.length, false);
       rerenderRoom();
       writeRoomLayout();
-      focusRoomSelection();
+      const again = refocusInput ? document.querySelector('#roomInspector [data-room-input="' + refocusInput + '"]') : null;
+      if (again) again.focus();
+      else focusRoomSelection();
       if (message) announce(message);
     }
 
@@ -18109,7 +18167,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function addFixture(kind) {
-      if (!FIXTURE_KINDS[kind]) return;
+      if (typeof kind !== "string" || !FIXTURE_KINDS[kind]) return;
       pushRoomHistory();
       const fixture = { id: newFixtureId(), kind, x: 40, y: 40, rot: 0, preset: kind === "note" ? 0 : undefined };
       const meta = FIXTURE_KINDS[kind];
@@ -18208,6 +18266,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       else if (/^[1-9]$/.test(key)) target = Math.min(tableCount - 1, Number(key) - 1);
       else return;
       event.preventDefault();
+      if (target === currentIndex) return;
       moveProfileTo(profileKey, target);
     }
 
@@ -18241,11 +18300,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function moveProfileTo(profileKey, target, seatIndex = null) {
       const located = locateProfile(profileKey);
       if (!located) return;
+      const toPool = target === "pool" || !state.tableGroups[target];
+      // Dropped where they already were: nothing to do, nothing to undo.
+      if (toPool && located.tableIndex < 0) return;
+      if (!toPool && located.tableIndex === target && (seatIndex === null || seatIndex === located.seatIndex)) return;
       pushRoomHistory();
       const profile = removeProfileFromTableGroups(profileKey);
       if (!profile) return;
       let announcement;
-      if (target === "pool" || !state.tableGroups[target]) {
+      if (toPool) {
         state.tableManualPool.push(profile);
         announcement = profile.studentName + " moved to Unplaced.";
       } else {
@@ -18253,7 +18316,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         let wanted = seatIndex === null || !Number.isFinite(seatIndex) ? group.length : Math.max(0, seatIndex);
         // Leaving a seat earlier at the same table shifts the later seats up
         // by one, so the seat the teacher dropped on is now one index lower.
-        if (located.tableIndex === target && located.seatIndex < wanted) wanted -= 1;
+        if (seatIndex !== null && located.tableIndex === target && located.seatIndex < wanted) wanted -= 1;
         const at = Math.min(wanted, group.length);
         const occupant = at < group.length ? group[at] : null;
         if (occupant && located.tableIndex >= 0) {
