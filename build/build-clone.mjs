@@ -265,6 +265,19 @@ swap("goal sheet plan page logo",
   '\'<header class="gs-head"><span class="gs-kicker">My plan</span>\' +',
   '\'<header class="gs-head"><img class="gs-logo" src="' + ENS_LOGO + '" alt="Emirates National Schools"><span class="gs-kicker">My plan</span>\' +');
 
+// The seating plan prints (the teacher copy and the wall plan) share one
+// masthead. Its three colours are declared once as tokens, and the empty
+// logo slot upstream becomes the school's mark on white, as on the goal sheet.
+swap("seating print tokens",
+  "  :root { --sp-brand-deep: #14307f; --sp-brand: #1d4ed8; --sp-brand-soft: #a9c6f7; }",
+  "  :root { --sp-brand-deep: #00393a; --sp-brand: #007272; --sp-brand-soft: #7fcbc7; }\n" +
+  "  .sp-head { border-bottom: 1.2mm solid #8e2344; }\n" +
+  "  .sp-head-meta { color: #b9e0dd; }\n" +
+  "  .sp-logo { height: 10mm; width: auto; background: #ffffff; padding: 1.5mm 2.5mm; border-radius: 1.5mm; flex: 0 0 auto; }");
+swap("seating print logo",
+  '\'<header class="sp-head"><span class="sp-logo-slot"></span>',
+  '\'<header class="sp-head"><img class="sp-logo" src="' + ENS_LOGO + '" alt="Emirates National Schools">');
+
 // The poster stylesheet is separate and printed, so it gets its own rule.
 swap("poster footer logo styling", "  .poster-foot {", `  .poster-logo {
     display: block;
