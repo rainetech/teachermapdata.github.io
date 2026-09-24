@@ -18724,6 +18724,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // is never reached by keyboard while it is open.
     function trapPlannerFocus(event) {
       if (event.key !== "Tab" || !state.plannerOpen || !els.plannerBackdrop) return;
+      // The move menu handles its own Tab: it closes and returns to the seat.
+      if (state.seatMenuKey) return;
       const focusable = Array.from(els.plannerBackdrop.querySelectorAll(
         'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
       )).filter((el) => el.offsetParent !== null || el === document.activeElement);
