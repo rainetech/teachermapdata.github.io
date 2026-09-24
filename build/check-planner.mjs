@@ -157,7 +157,8 @@ const menuNav2 = await page.evaluate(() => document.activeElement && document.ac
 check(menuNav.open && menuNav2 !== menuNav.first, "arrow keys move through the move menu");
 await page.keyboard.press("Tab");
 await page.waitForTimeout(100);
-check(await page.evaluate((k) => !document.querySelector(".seat-menu") && document.activeElement && document.activeElement.closest(".seat") && document.activeElement.closest(".seat").querySelector(`[data-profile-key="${k}"]`) !== null, chipKey), "Tab closes the move menu and returns to the seat");
+const afterTab = await page.evaluate((k) => ({ menu: !!document.querySelector(".seat-menu"), active: document.activeElement ? document.activeElement.tagName + "." + document.activeElement.className + "#" + document.activeElement.id : "none", onSeat: !!(document.activeElement && document.activeElement.closest(".seat") && document.activeElement.closest(".seat").querySelector(`[data-profile-key="${k}"]`)) }), chipKey);
+check(!afterTab.menu && afterTab.onSeat, "Tab closes the move menu and returns to the seat (" + JSON.stringify(afterTab) + ")");
 await page.click("#plannerAddMenu summary");
 await page.focus('[data-add-fixture="door"]');
 await page.keyboard.press("Escape");
