@@ -410,14 +410,14 @@ function buildHTML(data, pictures, baselineTitles) {
   <h3>Exports</h3>
   <ul>
     <li><strong>Summary TXT</strong> from Class Snapshot or the Class Summary Report - the narrative as plain text for notes or an email.</li>
-    <li><strong>CSV exports</strong> from Grouping, Priority, Celebration, Gap Closure, Growth Goals, Instructional Areas, What Would It Take and Table Groups. Exports always include every row, even when the table on screen shows a page of them.</li>
+    <li><strong>CSV exports</strong> from Grouping, Priority, Celebration, Gap Closure, Growth Goals, Instructional Areas, What Would It Take and Table Groups. Exports always include every row, even when the table on screen shows a page of them. The table groups export has one row per seat: table, seat, shape, the order the strategy placed each student and whether you moved them by hand, then the student's scores.</li>
     <li><strong>Copy</strong> buttons on the Summary, the Action Board, a student's spotlight and the quiz results put the text on your clipboard.</li>
   </ul>
   <h3>Printing</h3>
   <ul>
     <li><strong>Goal sheets</strong> - two pages per student from Growth Goals. Page one is the data: where they are now in each subject, their next step, and the instructional areas inside each subject. Page two is theirs to fill in: the same targets in one line each, the part of each subject to work on first, and ruled space for the goal they set, what they will do about it and how you will help, with a line for both signatures and the date.</li>
     <li><strong>The action plan</strong> - the Action Board as a printable list of moves with the students named.</li>
-    <li><strong>The seating layout</strong> - the room you arranged in the seating planner, on A4.</li>
+    <li><strong>The seating plan</strong> - two prints from the planner. The <em>teacher copy</em> draws the room as you arranged it, every seat with the student's band colour and score, then adds a roster page per table with band, percentile, growth and planning group, and the paragraph that says how the plan was built. The <em>wall plan</em> draws the same room with names only: no score, no colour, nothing a visitor can read as data. Both fit A4 or A3, landscape or portrait to match the room's shape; choose A3 for a wall plan or a room with more than six tables.</li>
     <li><strong>A student one-pager</strong> - open any student's name for their spotlight, then print it for a conference.</li>
     <li><strong>The page itself</strong> - the browser's print command prints the dashboard; the quiz and the seating tools are left out.</li>
   </ul>
