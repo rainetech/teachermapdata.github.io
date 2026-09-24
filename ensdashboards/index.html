@@ -1378,7 +1378,7 @@
     .room-fixture.kind-door { background: #f5d29c; color: #5b3412; border: 2px solid #9a6b38; border-radius: 6px; }
     .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 2px solid #93c5fd; border-radius: 3px; }
     .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 2px solid #8b5e34; border-radius: var(--radius-sm); }
-    .room-fixture.kind-carpet { background: repeating-linear-gradient(45deg, rgba(196, 181, 253, 0.28) 0 6px, rgba(221, 214, 254, 0.35) 6px 12px); color: #5b21b6; border: 2px dashed #a78bfa; border-radius: 10px; }
+    .room-fixture.kind-carpet { background: repeating-linear-gradient(45deg, #ede9fe 0 6px, #ddd6fe 6px 12px); color: #5b21b6; border: 2px dashed #a78bfa; border-radius: 10px; }
     .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 2px solid #9ca3af; border-radius: 4px; }
     .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 2px solid #7dd3fc; border-radius: 4px; }
     .room-fixture.kind-note { background: var(--veil); color: var(--muted-strong); border: 2px dashed var(--line-strong); border-radius: 6px; font-style: italic; font-weight: 700; box-shadow: none; }
@@ -1817,6 +1817,7 @@
       top: calc(100% + 6px);
       z-index: 30;
       min-width: 240px;
+      max-width: calc(100vw - 32px);
       display: grid;
       gap: 8px;
       padding: 10px;
@@ -2146,6 +2147,9 @@
 
       .seat.is-tray { width: 100%; }
       .inspector-field input { width: 120px; }
+      .classroom-board.is-preview .seat-name,
+      .classroom-board.is-preview .seat-score { display: none; }
+      .classroom-board.is-preview .seat-band { width: 100%; opacity: 0.55; }
 
       .section-header {
         display: grid;
@@ -3807,6 +3811,7 @@
     .planner-backdrop.is-open .planner { transform: none; }
 
     .planner-head {
+      position: relative;
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -3851,10 +3856,16 @@
 
     /* The room takes the whole stage; the inspector, the tray and the legend
        sit under it. Small screens get a room wide enough to read and scroll. */
-    body.planner-open .classroom-board { width: 100%; min-width: 720px; }
-    body.planner-open .table-groups { min-width: 720px; }
+    body.planner-open .classroom-board {
+      width: min(100%, max(860px, calc((100vh - 250px) * var(--room-ratio))));
+      min-width: 860px;
+      margin: 0 auto;
+    }
+    body.planner-open .table-groups { min-width: 860px; }
 
     @media (max-width: 720px) {
+      .room-menu { position: static; }
+      .room-menu-panel { left: 10px; right: 10px; top: auto; max-width: none; }
       .planner-launch { grid-template-columns: auto 1fr; }
       .planner-launch-cta { grid-column: 1 / -1; text-align: center; }
       .planner-backdrop { padding: 0; }
@@ -4169,11 +4180,6 @@
     .cohort-rest { font-size: 10.5px; color: var(--muted); }
     .cohort-metric.is-up .cohort-delta { color: var(--up-text); }
     .cohort-metric.is-down .cohort-delta { color: var(--down-text); }
-
-    .table-group-card.is-over-capacity {
-      border-color: var(--red);
-      box-shadow: 0 0 0 1px var(--red-line);
-    }
 
 
     .scatter-warning {
@@ -19831,6 +19837,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .seat-moved { position: absolute; right: calc(var(--unit) * 0.5); top: calc(var(--unit) * 0.2); font-style: normal; font-size: calc(var(--unit) * 1.1); color: #4a5568; }
   .seat-order { position: absolute; right: calc(var(--unit) * 0.5); top: calc(var(--unit) * 0.2); font-size: calc(var(--unit) * 0.95); color: #4a5568; font-weight: 800; }
   .sp-foot .seat-moved, .sp-roster .seat-moved { position: static; margin-left: 0.6mm; }
+  .drag-card.band-red { background: #fee2e2; color: #8d1a1a; } .drag-card.band-orange { background: #ffedd5; color: #9a3412; } .drag-card.band-yellow { background: #fef3c7; color: #854d0e; }
+  .drag-card.band-green { background: #dcfce7; color: #166534; } .drag-card.band-blue { background: #dbeafe; color: #1d4ed8; } .drag-card.band-missing { background: #eef2f7; color: #475569; }
   .band-red .seat-band { background: #a50f1a; } .band-orange .seat-band { background: #f77f00; } .band-yellow .seat-band { background: #e5c11a; }
   .band-green .seat-band { background: #0f7a45; } .band-blue .seat-band { background: #2563eb; } .band-missing .seat-band { background: #94a3b8; }
   i.band-red { background: #a50f1a; } i.band-orange { background: #f77f00; } i.band-yellow { background: #e5c11a; } i.band-green { background: #0f7a45; } i.band-blue { background: #2563eb; } i.band-missing { background: #94a3b8; }
