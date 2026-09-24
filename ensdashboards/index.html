@@ -5579,7 +5579,7 @@
                 <button type="button" data-add-fixture="sink">Sink</button>
                 <button type="button" data-add-fixture="note">Area label</button>
               </div>
-              <span class="hint">Walls, doors, windows and shelves stick to the nearest wall. Select anything in the room to turn or remove it.</span>
+              <span class="hint">Boards, screens, doors, windows, shelves and sinks stick to the nearest wall. Select anything in the room to turn or remove it.</span>
             </div>
           </details>
           <details class="room-menu" id="plannerRoomMenu">
@@ -5643,7 +5643,6 @@
       </header>
       <p class="planner-rotate">Turn your device sideways for more room to work in.</p>
       <div class="planner-slot" id="plannerControlSlot"></div>
-      <div class="planner-stage" id="plannerStage"></div>
       <div class="planner-stage" id="plannerStage"></div>
     </div>
   </div>
@@ -6495,6 +6494,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             if (back && document.contains(back)) back.focus();
             return;
           }
+          const openMenu = event.target.closest ? event.target.closest("details.room-menu[open]") : null;
+          if (openMenu) {
+            openMenu.open = false;
+            const summary = openMenu.querySelector("summary");
+            if (summary) summary.focus();
+            return;
+          }
           if (state.roomSelection) {
             const was = state.roomSelection;
             setRoomSelection(null);
@@ -6630,6 +6636,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       document.addEventListener("input", handleRoomInput);
       document.addEventListener("focusin", handleRoomFocusIn);
       document.addEventListener("keydown", handlePlannerShortcuts);
+      if (els.plannerBackdrop) els.plannerBackdrop.addEventListener("keydown", trapPlannerFocus);
 
       attachUsabilityEvents();
     }
@@ -17617,12 +17624,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       rerenderRoom();
       writeRoomLayout();
       updateUndoButton();
+      if (state.roomSelection) focusRoomSelection();
+      else if (els.plannerUndo && !els.plannerUndo.disabled) els.plannerUndo.focus();
+      else if (els.plannerOrderToggle) els.plannerOrderToggle.focus();
       announce("Last change undone.");
     }
 
     function updateUndoButton() {
       const empty = !state.roomHistory || !state.roomHistory.length;
-      if (els.plannerUndo) els.plannerUndo.disabled = empty;
+      if (!els.plannerUndo) return;
+      // A disabled button cannot keep focus, so hand it on first.
+      if (empty && document.activeElement === els.plannerUndo && els.plannerOrderToggle) els.plannerOrderToggle.focus();
+      els.plannerUndo.disabled = empty;
     }
 
     // ---- The planner surface --------------------------------------------
@@ -17729,7 +17742,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       initializeClassroomLayout(state.tableGroups.length, false);
       closeSeatMenu();
       els.tableGroups.innerHTML = `
-        <div class="classroom-board${state.roomShowOrder ? " show-order" : ""}" data-classroom-board style="${classroomBoardStyle()}">
+        <div class="classroom-board${state.roomShowOrder ? " show-order" : ""}" data-classroom-board tabindex="-1" role="application" aria-roledescription="seating plan" aria-label="The room. Tab moves between tables, furniture and students; the arrow keys move whatever is focused." style="${classroomBoardStyle()}">
           ${roomMarkup("screen", scoreMode, strategy)}
         </div>
         ${renderRoomInspector()}
@@ -17770,7 +17783,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const interactive = mode === "screen";
       const selected = interactive && state.roomSelection && state.roomSelection.kind === "fixture" && state.roomSelection.id === fixture.id;
       const attrs = interactive
-        ? ` data-layout-kind="fixture" data-layout-handle data-fixture-id="${escapeAttr(fixture.id)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ". Arrow keys move it, hold Shift for larger steps. R turns it, Delete removes it, Enter opens its settings.")}"`
+        ? ` data-layout-kind="fixture" data-layout-handle data-fixture-id="${escapeAttr(fixture.id)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ". Arrow keys move it, hold Shift for larger steps. " + (meta.wall ? "R moves it to the next wall" : "R turns it") + ", Delete removes it, Enter opens its settings.")}"`
         : "";
       return `<div class="room-fixture kind-${escapeAttr(fixture.kind)}${upright ? " is-upright" : ""}${meta.under ? " is-under" : ""}${selected ? " is-selected" : ""}"${attrs} style="${fixtureStyle(fixture)}"><span>${escapeHTML(label)}</span></div>`;
     }
@@ -17849,16 +17862,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         ? `%ile ${formatNumber(profile.avgEndPercentile, 0)}`
         : `CGP ${formatNumber(profile.avgConditionalGrowthPercentile, 0)} · %ile ${formatNumber(profile.avgEndPercentile, 0)}`;
       const moved = state.movedKeys && state.movedKeys.has(profile.key);
-      const order = state.dealOrder && state.dealOrder.get(profile.key);
-      const marks = (moved ? `<i class="seat-moved" title="Moved by hand" aria-label="moved by hand">✎</i>` : "") +
-        (order && !moved ? `<b class="seat-order" title="Placed ${formatInteger(order)}${ordinalSuffix(order)} by the strategy">${formatInteger(order)}</b>` : "");
+      // On screen the order mark is always drawn and the stylesheet shows it
+      // on request; on paper only what the teacher asked for is drawn.
+      const order = (mode === "screen" || state.roomShowOrder) && state.dealOrder ? state.dealOrder.get(profile.key) : null;
+      const marks = (moved ? `<i class="seat-moved" title="Moved by hand" aria-hidden="true">✎</i>` : "") +
+        (order && !moved ? `<b class="seat-order" title="Placed ${formatInteger(order)}${ordinalSuffix(order)} by the strategy" aria-hidden="true">${formatInteger(order)}</b>` : "");
       if (mode !== "screen") {
         return `<div class="drag-card ${band.className}"><span class="seat-band"></span><span class="seat-name">${escapeHTML(name)}</span><span class="seat-score">${escapeHTML(compact)}</span>${marks}</div>`;
       }
       const detail = `${profile.subjects} | ${isBaselineMode()
         ? `%ile ${formatNumber(profile.avgEndPercentile)} | vs norm ${formatSignedNumber(profile.avgUSNormDeltaRIT)}`
         : `End %ile ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)}`} | ${planningGroupForProfile(profile)}`;
-      const label = `${name}, seat ${formatInteger(seatIndex + 1)} at ${tableLabel(tableIndex)}, ${band.name} band. Left or right arrow moves to the next table, up or down swaps seats, a number key jumps to that table, Backspace sends to Unplaced, Enter opens the move menu.`;
+      const label = `${name}, seat ${formatInteger(seatIndex + 1)} at ${tableLabel(tableIndex)}, ${band.name} band` +
+        (moved ? ", moved by hand" : state.roomShowOrder && order ? `, placed ${formatInteger(order)}${ordinalSuffix(order)} by the strategy` : "") +
+        `. Left or right arrow moves to the next table, up or down swaps seats, a number key jumps to that table, Backspace sends to Unplaced, Enter opens the move menu.`;
       return `<div class="drag-card ${band.className}" draggable="true" tabindex="0" role="button" aria-label="${escapeAttr(label)}" title="${escapeAttr(detail)}" data-profile-key="${escapeAttr(profile.key)}" data-student="${escapeAttr(name)}">
           <span class="seat-band" aria-hidden="true"></span>
           <span class="seat-name">${escapeHTML(name)}</span>
@@ -17990,6 +18007,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function handleRoomFocusIn(event) {
+      // The move menu closes when focus leaves it for anywhere else.
+      if (state.seatMenuKey && !(event.target.closest && event.target.closest(".seat-menu"))) closeSeatMenu();
       const handle = event.target.closest ? event.target.closest("[data-classroom-board] [data-layout-kind]") : null;
       if (!handle || event.target.closest(".drag-card, .seat-more")) return;
       setRoomSelection(selectionFromHandle(handle));
@@ -18076,7 +18095,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function runRoomAction(action) {
       const selection = state.roomSelection;
       if (action === "deselect") {
+        const was = state.roomSelection;
         setRoomSelection(null);
+        focusRoomSelection(was);
         return;
       }
       if (action === "rotate") {
@@ -18144,9 +18165,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             : rot === 0 && !onTop ? { x: 0, y: 40 }
               : { x: 40, y: 0 };
         Object.assign(fixture, placeFixture({ ...fixture, rot: rot === 0 ? 90 : 0 }, next));
-      } else {
-        fixture.rot = normalizeRotation(fixture.rot + 90);
+        const wall = fixture.y <= 0.01 ? "front" : fixture.x <= 0.01 ? "left" : fixture.rot === 90 ? "right" : "back";
+        settleAndRender(fixtureLabel(fixture) + " moved to the " + wall + " wall.");
+        return;
       }
+      fixture.rot = normalizeRotation(fixture.rot + 90);
       settleAndRender(fixtureLabel(fixture) + " turned.");
     }
 
@@ -18163,7 +18186,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       writeRoomLayout();
       announce(fixtureLabel(fixture) + " removed.");
       const board = document.querySelector("[data-classroom-board]");
-      if (board) board.focus?.();
+      if (board) board.focus({ preventScroll: true });
     }
 
     function addFixture(kind) {
@@ -18201,7 +18224,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       menu.className = "seat-menu";
       menu.setAttribute("role", "menu");
       menu.setAttribute("aria-label", "Move " + profile.studentName + " to");
-      menu.innerHTML = `<span class="seat-menu-title">Move ${escapeHTML(profile.studentName)} to</span>${items}${pool}`;
+      menu.setAttribute("aria-labelledby", "seatMenuTitle");
+      menu.innerHTML = `<span class="seat-menu-title" id="seatMenuTitle" role="presentation">Move ${escapeHTML(profile.studentName)} to</span>${items}${pool}`;
       els.tableGroups.appendChild(menu);
       const stage = els.tableGroups.getBoundingClientRect();
       const rect = anchor.getBoundingClientRect();
@@ -18234,11 +18258,25 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // Keyboard equivalent for the pointer drag-and-drop. Without this the
     // planner is unusable for anyone who cannot drag with a mouse.
     function handleTableGroupKeydown(event) {
-      if (state.seatMenuKey && event.key === "Escape") {
+      if (state.seatMenuKey && (event.key === "Escape" || event.key === "Tab")) {
         event.preventDefault();
         const back = state.seatMenuReturn;
         closeSeatMenu();
         if (back && document.contains(back)) back.focus();
+        return;
+      }
+      if (state.seatMenuKey && event.target.closest && event.target.closest(".seat-menu")) {
+        const items = Array.from(event.target.closest(".seat-menu").querySelectorAll("button:not([disabled])"));
+        const at = items.indexOf(event.target);
+        let next = null;
+        if (event.key === "ArrowDown") next = items[(at + 1) % items.length];
+        else if (event.key === "ArrowUp") next = items[(at - 1 + items.length) % items.length];
+        else if (event.key === "Home") next = items[0];
+        else if (event.key === "End") next = items[items.length - 1];
+        if (next) {
+          event.preventDefault();
+          next.focus();
+        }
         return;
       }
       const card = event.target.closest ? event.target.closest(".drag-card[data-profile-key]") : null;
@@ -18651,7 +18689,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       host.innerHTML = `
         <ol class="how-steps">
           <li><strong>One profile per student.</strong> The records in view are averaged into one planning profile, or the filtered subject alone is used.</li>
-          <li><strong>Ranked by the score you choose.</strong> Now: <em>${escapeHTML(scoreModeSentence(scoreMode))}</em>. Students without that score wait in Unplaced rather than being seated by a number they do not have.</li>
+          <li><strong>Ranked by the score you choose.</strong> ${strategy === "priority"
+            ? `Highest-need first ranks by <em>need</em> (low achievement, missed growth and every flag) whatever the score; the score you choose only decides who has enough data to be seated.`
+            : `Now: <em>${escapeHTML(scoreModeSentence(scoreMode))}</em>.`} Students without a usable score wait in Unplaced rather than being seated by a number they do not have.</li>
           <li><strong>Dealt into tables by the strategy.</strong>
             <span class="how-strategies">${strategies.map((item) => `<span class="how-strategy${item.key === strategy ? " is-active" : ""}"><b>${escapeHTML(item.title)}</b><i>${escapeHTML(item.diagram)}</i><span>${escapeHTML(item.text)}</span></span>`).join("")}</span>
           </li>
@@ -18668,8 +18708,29 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const unseated = state.unseatedCount
         ? ` ${formatInteger(state.unseatedCount)} student${state.unseatedCount === 1 ? " was" : "s were"} moved to Unplaced because the plan is capped at 80 tables; increase the table size to seat everyone.`
         : "";
-      els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students seated at ${formatInteger(state.tableGroups.length)} ${tableWord} · ${strategyLabel(strategy)} by ${scoreModeLabel(scoreMode).toLowerCase()} · ${state.tableGroupPlanLabel}` +
+      const ranking = strategy === "priority" ? "highest-need first by need" : `${strategyLabel(strategy)} by ${scoreModeLabel(scoreMode).toLowerCase()}`;
+      els.tableGroupContext.textContent = `${formatInteger(assigned)} of ${formatInteger(totalProfiles)} students seated at ${formatInteger(state.tableGroups.length)} ${tableWord} · ${ranking} · ${state.tableGroupPlanLabel}` +
         (manual ? ` · ${formatInteger(manual)} unplaced` : "") + ` · ${subjectContext}.${unseated}`;
+    }
+
+    // The planner is a dialog: Tab from its last control returns to its first,
+    // and Shift+Tab from the first goes to the last, so the page underneath
+    // is never reached by keyboard while it is open.
+    function trapPlannerFocus(event) {
+      if (event.key !== "Tab" || !state.plannerOpen || !els.plannerBackdrop) return;
+      const focusable = Array.from(els.plannerBackdrop.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+      )).filter((el) => el.offsetParent !== null || el === document.activeElement);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !els.plannerBackdrop.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !els.plannerBackdrop.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     // Undo from the keyboard while the planner is open, unless the teacher is
@@ -19646,13 +19707,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function seatingPrintMetrics(paper, audience) {
       const size = PAPER_SIZES[paper] || PAPER_SIZES.A4;
       const ratio = roomRatio();
-      const landscape = ratio.width >= ratio.height;
-      const pageW = landscape ? size.height : size.width;
-      const pageH = landscape ? size.width : size.height;
-      const innerW = pageW - SEATING_PRINT_MARGIN * 2;
       const footer = audience === "wall" ? 9 : 14;
-      const innerH = pageH - SEATING_PRINT_MARGIN * 2 - SEATING_PRINT_HEAD - footer - 6;
-      const unit = Math.min(innerW / 100, innerH / roomHeightUnits(ratio));
+      // Whichever way round the sheet draws the room larger; a near-square
+      // room is bigger on a portrait page.
+      const fit = (landscape) => {
+        const pageW = landscape ? size.height : size.width;
+        const pageH = landscape ? size.width : size.height;
+        const innerW = pageW - SEATING_PRINT_MARGIN * 2;
+        const innerH = pageH - SEATING_PRINT_MARGIN * 2 - SEATING_PRINT_HEAD - footer - 6;
+        return { landscape, pageW, pageH, innerW, innerH, unit: Math.min(innerW / 100, innerH / roomHeightUnits(ratio)) };
+      };
+      const wide = fit(true);
+      const tall = fit(false);
+      const best = tall.unit > wide.unit + 0.001 ? tall : wide;
+      const { landscape, pageW, pageH, innerW, innerH, unit } = best;
       return {
         paper: paper === "A3" ? "A3" : "A4",
         orientation: landscape ? "landscape" : "portrait",
@@ -19862,7 +19930,9 @@ ${sheets.join("\n")}
             '<td>' + escapeHTML(profile.suggestedGroup || "") + (flags ? '<div class="sp-flags">' + escapeHTML(flags) + '</div>' : "") + '</td></tr>';
         }).join("");
         return '<article class="sp-roster-table"><header><div><h2>' + escapeHTML(tableLabel(index)) + '</h2><small>' +
-          escapeHTML(formatInteger(group.length) + (capacity ? " of " + formatInteger(capacity) : "") + " students · " + tableMetaText(group, null, scoreMode).replace(/^\S+\s·\s/, "")) +
+          escapeHTML(group.length
+            ? formatInteger(group.length) + (capacity ? " of " + formatInteger(capacity) : "") + " students · " + tableMetaText(group, null, scoreMode).replace(/^\S+\s·\s/, "")
+            : "No students seated" + (capacity ? " · " + formatInteger(capacity) + " seats" : "")) +
           '</small></div>' + bandMixStrip(group) + '</header>' +
           '<table><thead><tr><th>Seat</th><th>Student</th><th>Band</th><th>%ile</th><th>' + (baseline ? "vs norm" : "CGP") + '</th><th>Planning group</th></tr></thead><tbody>' + rows + '</tbody></table></article>';
       }).join("");
@@ -20880,12 +20950,12 @@ ${sheets.join("\n")}
     // six downloads apart.
     function exportFileName(base) {
       const filters = getFilters();
-      const parts = ["nwea", base.replace(/\.csv$|\.txt$/i, "")];
+      const parts = ["nwea", base.replace(/\.csv$|\.txt$|\.html$/i, "")];
       if (filters.className) parts.push(slugify(filters.className));
       if (filters.subject) parts.push(slugify(filters.subject));
       const stamp = new Date().toISOString().slice(0, 10);
       parts.push(stamp);
-      const extension = /\.txt$/i.test(base) ? ".txt" : ".csv";
+      const extension = /\.txt$/i.test(base) ? ".txt" : /\.html$/i.test(base) ? ".html" : ".csv";
       return parts.filter(Boolean).join("-").replace(/-+/g, "-") + extension;
     }
 
