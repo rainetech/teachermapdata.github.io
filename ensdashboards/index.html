@@ -3186,6 +3186,17 @@
     .student-link { border-radius: var(--radius-sm); padding: 2px 7px; text-align: left; }
     .name-more { font-size: 11.5px; color: var(--muted); align-self: center; }
 
+    /* The subject that put a student on an action card, under the name. */
+    .name-chip { text-align: left; }
+    .name-chip-subject {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1.15;
+      margin-top: 1px;
+    }
+
     /* =====================================================================
        Cross-subject
        ===================================================================== */
@@ -7641,6 +7652,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         record.metCertainty = Math.abs(record.observedGrowth - record.projectedGrowth) <= record.growthMargin
           ? "too-close"
           : "clear";
+        // A ratio of two small numbers reads as "exceeded strongly" when the
+        // student beat a four-point projection by two points; that is inside
+        // the error, so the label says so rather than crowning it.
+        if (record.metCertainty === "too-close" && typeof record.growthEfficiencyLabel === "string" && record.growthEfficiencyLabel !== "Missing") {
+          record.growthEfficiencyLabel = (record.observedGrowth >= record.projectedGrowth ? "Met" : "Nearly met") + " (too close to call)";
+        }
       }
       return record;
     }
@@ -8604,7 +8621,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (row.endQuadrant === "Avg-G/Lo-A") reasons.push("Typical growth from a low start - the gap will not close at this rate");
       if (row.hasMissingEndScore) reasons.push("Missing end score");
       if (isFiniteNumber(row.observedGrowth) && row.observedGrowth < 0) reasons.push("Negative observed growth");
-      if (isFiniteNumber(row.endPercentile) && row.endPercentile < 21) reasons.push("EndPercentile below 21");
+      if (isFiniteNumber(row.endPercentile) && row.endPercentile < 21) reasons.push("Finished below the 21st percentile");
       if (isFiniteNumber(row.startPercentile) && row.startPercentile >= 61 && isFiniteNumber(row.endPercentile) && row.endPercentile < row.startPercentile) reasons.push("Started secure but regressed");
       if (row.gapStatus === "Gap Widened") reasons.push("Widened the gap");
       return reasons;
@@ -9050,12 +9067,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         return "No student in this view started below the secure benchmark, so there is no gap closure to report.";
       }
       if (metrics.gapContributorCount < MIN_SHARE_N) {
-        return "Only " + formatInteger(metrics.gapContributorCount) + " student" +
+        return "Only " + formatInteger(metrics.gapContributorCount) + " result" +
           (metrics.gapContributorCount === 1 ? "" : "s") +
           " started below the secure benchmark, too few to report a pooled gap closure figure.";
       }
       return "The " + formatInteger(metrics.gapContributorCount) +
-        " students who began below the secure benchmark closed " + formatFractionPercent(metrics.avgGapClosurePct) +
+        " results (one per student and subject) that began below the secure benchmark closed " + formatFractionPercent(metrics.avgGapClosurePct) +
         " of the total distance to the 61st percentile.";
     }
 
@@ -9098,7 +9115,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               raw: isFiniteNumber(metrics.avgGapClosurePct) && metrics.gapContributorCount >= MIN_SHARE_N ? metrics.avgGapClosurePct * 100 : null,
               format: "percent",
               hint: metrics.gapContributorCount
-                ? "Pooled across " + formatInteger(metrics.gapContributorCount) + " students below the benchmark"
+                ? "Pooled across " + formatInteger(metrics.gapContributorCount) + " results below the benchmark"
                 : "No students below the benchmark"
             }),
             statCard("Priority", formatInteger(focusCount), { raw: focusCount, format: "integer", tone: focusCount ? "warn" : "good" }),
@@ -9254,7 +9271,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         miniMetric("Secure 61+", formatShare(metrics.shares.secure)) +
         "</div>" +
         (lowest.length
-          ? '<p class="card-story">Start here: ' + escapeHTML(lowest.map((row) => row.studentName + " (" + formatNumber(row.currentPercentile, 0) + ")").join(", ")) + ".</p>"
+          ? '<p class="card-story">Start here: ' + escapeHTML(lowest.map((row) => row.studentName + " (" + ordinal(row.currentPercentile) + " percentile)").join(", ")) + ".</p>"
           : "") +
         "</article>";
     }
@@ -10189,7 +10206,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           : "",
         statCard("Records with a target", formatInteger(rows.length), { raw: rows.length, format: "integer", hint: horizon ? "Horizon: " + horizon : "" }),
         statCard("Typical gain ahead", formatSignedNumber(avg(rows.map((row) => row.goals.typicalGain))), { raw: avg(rows.map((row) => row.goals.typicalGain)), format: "signed", hint: "Mean RIT gain a typical peer makes" }),
-        statCard("Already at grade level", formatInteger(onTrack.length), { raw: onTrack.length, format: "integer", tone: "good" }),
+        statCard("Already past the target", formatInteger(onTrack.length), { raw: onTrack.length, format: "integer", tone: "good", hint: horizon ? "At or above the grade-level RIT for " + horizon : "At or above the grade-level target" }),
         statCard("Need above-typical growth", formatInteger(needStretch.length), { raw: needStretch.length, format: "integer", tone: needStretch.length ? "warn" : "good" }),
         statCard("Largest stretch", formatSignedNumber(needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null), { raw: needStretch.length ? Math.max(...needStretch.map((row) => row.goals.acceleration)) : null, format: "signed", hint: "Extra RIT above typical for the furthest-behind record" })
       ].filter(Boolean).join("");
@@ -10220,19 +10237,23 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // ---------------------------------------------------------------------
     // Action Board
     // ---------------------------------------------------------------------
-    function actionCard(item, index) {
+    function actionCard(item, index, rank) {
       if (!item.students.length) return "";
       const expanded = state.expandedActions && state.expandedActions.has(index);
       const shown = expanded ? item.students : item.students.slice(0, 6);
       const extra = item.students.length - shown.length;
       return '<article class="action-card reveal tone-' + escapeAttr(item.tone) + '" style="--i:' + index + '">' +
-        '<div class="action-head"><span class="action-rank">' + (index + 1) + "</span>" +
+        '<div class="action-head"><span class="action-rank">' + (rank || index + 1) + "</span>" +
         "<h3>" + escapeHTML(item.title) + "</h3>" +
         '<span class="action-count"><b data-count="' + item.students.length + '" data-count-format="integer">' + formatInteger(item.students.length) +
         "</b><i>" + (item.students.length === 1 ? "student" : "students") + "</i></span></div>" +
         "<p>" + escapeHTML(item.why) + "</p>" +
-        '<div class="action-names">' + shown.map((name) =>
-          '<button class="name-chip" type="button" data-student="' + escapeAttr(name) + '">' + escapeHTML(name) + "</button>").join("") +
+        '<div class="action-names">' + shown.map((name) => {
+          const tag = actionSubjectTag(item.students, name);
+          return '<button class="name-chip" type="button" data-student="' + escapeAttr(name) + '"' +
+            (tag ? ' title="' + escapeAttr(name + ": " + tag) + '"' : "") + '>' + escapeHTML(name) +
+            (tag ? '<small class="name-chip-subject">' + escapeHTML(tag) + "</small>" : "") + "</button>";
+        }).join("") +
         (extra > 0
           ? '<button class="name-chip name-more" type="button" data-action-expand="' + index + '">+' + extra + " more</button>"
           : "") +
@@ -10246,18 +10267,32 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "</article>";
     }
 
+    // One name per student, with the subjects that put them on the card: the
+    // same child can be on "reteach first" for mathematics and "protect what
+    // is working" for reading, and the teacher needs to know which is which.
     function namesFor(rows, predicate, limit) {
       const matched = rows.filter(predicate);
       const byStudent = new Map();
       matched.forEach((row) => {
-        if (!byStudent.has(row.studentName)) byStudent.set(row.studentName, row);
+        if (!byStudent.has(row.studentName)) byStudent.set(row.studentName, []);
+        const subjects = byStudent.get(row.studentName);
+        if (row.subject && !subjects.includes(row.subject)) subjects.push(row.subject);
       });
       const all = [...byStudent.keys()];
       const cap = limit || 40;
       const kept = all.slice(0, cap);
       kept.total = all.length;
       kept.capped = all.length > cap;
+      kept.subjects = byStudent;
+      kept.records = matched.length;
+      // With one subject in view the tag would repeat the filter.
+      kept.tagSubjects = unique(rows.map((row) => row.subject)).length > 1;
       return kept;
+    }
+
+    function actionSubjectTag(students, name) {
+      const subjects = students.subjects && students.subjects.get(name);
+      return students.tagSubjects && subjects && subjects.length ? subjects.join(", ") : "";
     }
 
     function actionPlanText() {
@@ -10270,11 +10305,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         currentWindowName() + " | " + new Date().toLocaleDateString(),
         ""
       ];
-      items.forEach((item, index) => {
-        lines.push((index + 1) + ". " + item.title + " (" + formatInteger(item.students.length) +
+      let rank = 0;
+      items.forEach((item) => {
+        if (!item.students.length) return;
+        rank += 1;
+        lines.push(rank + ". " + item.title + " (" + formatInteger(item.students.length) +
           (item.students.length === 1 ? " student)" : " students)"));
         if (item.why) lines.push("   Why: " + item.why);
-        lines.push("   Students: " + (item.students.length ? item.students.join(", ") : "none") +
+        lines.push("   Students: " + item.students.map((name) => {
+          const tag = actionSubjectTag(item.students, name);
+          return tag ? name + " (" + tag + ")" : name;
+        }).join(", ") +
           (item.students.capped ? "  (first " + item.students.length + " of " + item.students.total + ")" : ""));
         if (item.move) lines.push("   Move: " + item.move);
         lines.push("");
@@ -10310,7 +10351,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
       const items = isBaselineMode() ? baselineActions(rows) : growthActions(rows);
       state.actionItems = items;
-      const rendered = items.map(actionCard).filter(Boolean).join("");
+      // Cards are numbered as they appear: an empty card is left out and
+      // must not leave a gap in the count.
+      let rank = 0;
+      const rendered = items.map((item, index) => (item.students.length ? actionCard(item, index, ++rank) : "")).filter(Boolean).join("");
       els.actionBoard.innerHTML = rendered || '<div class="empty-state">Nothing is flagged in the current view. Widen the filters to see more.</div>';
       applyStagger(els.actionBoard);
       setText("actionsNote", isBaselineMode()
@@ -10400,8 +10444,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           tone: "watch",
           title: "No prior window to compare",
           students: namesFor(rows, (row) => row.hasCurrentScore && !row.hasGrowthPair),
-          why: "These students only tested in " + currentWindowName() + ", so they are absent from every growth figure on this page. Usually they joined after the previous window.",
-          move: "Read them from the achievement and norm columns instead, and set a goal now so the next window has a baseline."
+          why: "These results have a " + currentWindowName() + " score but no earlier one in that subject, so they are absent from every growth figure on this page. The student may have joined after the previous window, or missed that one test.",
+          move: "Read these from the achievement and norm columns instead, and set a goal now so the next window has a baseline."
         }
       ];
     }
@@ -11446,6 +11490,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // Cross-subject profiles
     // ---------------------------------------------------------------------
     const UNEVEN_SPREAD = 30;
+    // A conditional growth percentile carries far more error than an
+    // achievement percentile, so two subjects 30 points apart is ordinary;
+    // at 40 the difference is worth planning around.
+    const UNEVEN_GROWTH_SPREAD = 40;
 
     function crossSubjectProfiles() {
       return filteredProfiles()
@@ -11457,11 +11505,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (!els.crossSubjectTable) return;
       const profiles = crossSubjectProfiles();
       const uneven = profiles.filter((profile) => isFiniteNumber(profile.subjectSpread) && profile.subjectSpread >= UNEVEN_SPREAD);
-      const unevenGrowth = profiles.filter((profile) => isFiniteNumber(profile.growthSpread) && profile.growthSpread >= UNEVEN_SPREAD);
+      const unevenGrowth = profiles.filter((profile) => isFiniteNumber(profile.growthSpread) && profile.growthSpread >= UNEVEN_GROWTH_SPREAD);
       els.crossSubjectCards.innerHTML = [
         statCard("Students with 2+ subjects", formatInteger(profiles.length), { raw: profiles.length, format: "integer" }),
         statCard("Uneven achievement", formatInteger(uneven.length), { raw: uneven.length, format: "integer", tone: uneven.length ? "warn" : "good", hint: UNEVEN_SPREAD + "+ percentile points between strongest and weakest" }),
-        statCard("Uneven growth", formatInteger(unevenGrowth.length), { raw: unevenGrowth.length, format: "integer", tone: unevenGrowth.length ? "warn" : "good", hint: hasGrowthContext() ? UNEVEN_SPREAD + "+ CGP points between subjects" : "Needs two test windows" }),
+        statCard("Uneven growth", formatInteger(unevenGrowth.length), { raw: unevenGrowth.length, format: "integer", tone: unevenGrowth.length ? "warn" : "good", hint: hasGrowthContext() ? UNEVEN_GROWTH_SPREAD + "+ CGP points between subjects" : "Needs two test windows" }),
         statCard("Widest spread", formatNumber(profiles.length ? profiles[0].subjectSpread : null, 0), { raw: profiles.length ? profiles[0].subjectSpread : null, hint: profiles.length ? profiles[0].studentName : "" }),
         statCard("Median spread", formatNumber(median(profiles.map((profile) => profile.subjectSpread)), 0), { raw: median(profiles.map((profile) => profile.subjectSpread)) })
       ].join("");
@@ -11485,7 +11533,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         const spread = profile.subjectSpread;
         const growthHigh = profile.growthBySubject && profile.growthBySubject[0];
         const growthLow = profile.growthBySubject && profile.growthBySubject[profile.growthBySubject.length - 1];
-        const unevenGrowth = growthMode && isFiniteNumber(profile.growthSpread) && profile.growthSpread >= UNEVEN_SPREAD;
+        const unevenGrowth = growthMode && isFiniteNumber(profile.growthSpread) && profile.growthSpread >= UNEVEN_GROWTH_SPREAD;
         const meaning = !isFiniteNumber(spread)
           ? "Not enough scored subjects to compare."
           : spread >= UNEVEN_SPREAD
@@ -12215,12 +12263,15 @@ ${METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
         ? subjectMetrics.slice().sort((a, b) => supportScore(a.metrics) - supportScore(b.metrics))[0]
         : null;
       const countsByGroup = countBy(rows, (row) => row.suggestedGroup);
+      // Groups with nobody in them are left out: a list of zeros is noise.
       const interventionGroups = ["Intensive Support", "Targeted Support", "Watch Group", "Secure but Regressing"]
-        .map((group) => `${group}: ${countsByGroup[group] || 0}`)
-        .join("; ");
+        .filter((group) => countsByGroup[group])
+        .map((group) => `${group}: ${countsByGroup[group]}`)
+        .join("; ") || "none";
       const enrichmentGroups = ["Enrichment", "Catch-Up Growth", "Secure / Maintain"]
-        .map((group) => `${group}: ${countsByGroup[group] || 0}`)
-        .join("; ");
+        .filter((group) => countsByGroup[group])
+        .map((group) => `${group}: ${countsByGroup[group]}`)
+        .join("; ") || "none";
       const lowCatchUp = rows.filter((row) => row.growthChallenge === "Strong Catch-Up Growth").length;
       const urgent = rows.filter((row) => row.growthChallenge === "Urgent Support").length;
       const highExtension = rows.filter((row) => row.growthChallenge === "Strong Extension").length;
@@ -12702,7 +12753,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     const QUIZ_PRIORITY_REASONS = [
       "Did not meet growth", "Dropped percentile band", "Low growth and low achievement at end",
       "Typical growth from a low start - the gap will not close at this rate", "Missing end score",
-      "Negative observed growth", "EndPercentile below 21", "Started secure but regressed", "Widened the gap"
+      "Negative observed growth", "Finished below the 21st percentile", "Started secure but regressed", "Widened the gap"
     ];
     const QUIZ_CELEBRATION_REASONS = [
       "Exceeded projected growth", "Moved up a band", "Closed the gap", "Reduced gap significantly",
@@ -13736,7 +13787,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             stem: row.studentName + " is on your " + listName + " for " + row.subject + ". Which of these is one of the reasons the dashboard gives?",
             options, correct,
             explanation: row.studentName + "'s " + row.subject + " record is listed for: " + entry.reasons.map((reason) => reason === "Did not meet growth" && row.metCertainty === "too-close" ? reason + " (too close to call)" : reason).join("; ") + ". The reason column in " + (ctx.baseline ? "the Start-of-Year Support List" : "Priority Students") + " shows exactly these beside the suggested action." +
-              (entry.reasons.includes("EndPercentile below 21") ? " “EndPercentile below 21” means the record finished at or below the 20th percentile." : "") +
+              (entry.reasons.includes("Finished below the 21st percentile") ? " “Finished below the 21st percentile” is the intensive tier: the lowest fifth of students nationally." : "") +
               (ctx.growth && isFiniteNumber(row.observedGrowth) && isFiniteNumber(row.projectedGrowth) ? " Growth was " + formatSignedNumber(row.observedGrowth) + " RIT against a projection of " + formatSignedNumber(row.projectedGrowth) + (row.metCertainty === "too-close" ? ", within measurement error of the projection, so that call could go either way." : ".") : "") +
               " The other options are not true for this record.",
             section: "sec-priority",
@@ -19194,7 +19245,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     const CELEBRATION_COLUMNS = [
       ["Student", "studentName", (row) => studentLink(row)],
       ["Subject", "subject", (row) => escapeHTML(row.subject)],
-      ["Celebration Reason", "celebrationReasons", (row) => escapeHTML(row.celebrationReasons.join("; ")), "wrap"],
+      ["Celebration Reason", "celebrationReasons", (row) => escapeHTML(row.celebrationReasons.map((reason) => reason === "Exceeded projected growth" && row.metCertainty === "too-close" ? reason + " (too close to call)" : reason).join("; ")), "wrap"],
       ["Next Extension", "extensionAction", (row) => escapeHTML(row.extensionAction), "wrap"],
       ["Growth Efficiency", "growthEfficiency", (row) => `${formatFractionPercent(row.growthEfficiency)}<br><span class="status-pill ${efficiencyClass(row.growthEfficiency)}">${escapeHTML(row.growthEfficiencyLabel)}</span>`],
       ["%ile Change", "percentileChange", (row) => formatSignedNumber(row.percentileChange)],
