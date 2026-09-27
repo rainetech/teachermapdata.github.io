@@ -5772,11 +5772,11 @@
                 <span class="hint">A3 suits a wall plan, or more than six tables.</span>
               </div>
               <div class="btn-row">
-                <button class="btn small ghost" type="button" data-room-action="save-room">Save room file</button>
-                <button class="btn small ghost" type="button" data-room-action="load-room">Load room file</button>
+                <button class="btn small ghost" type="button" data-room-action="save-room">Save plan file</button>
+                <button class="btn small ghost" type="button" data-room-action="load-room">Load plan file</button>
                 <button class="btn small ghost" type="button" data-room-action="reset-room">Reset room</button>
               </div>
-              <span class="hint">The room is remembered on this device: its size, the desks, the furniture and where everything stands, never a student.</span>
+              <span class="hint">The room is remembered on this device: its size, the desks, the furniture and where everything stands, never a student. To keep who sits where too, save a plan file to your computer and load it next time; it names students by their ID.</span>
               <input type="file" id="roomLayoutFile" accept="application/json,.json" hidden>
             </div>
           </details>
@@ -7801,6 +7801,22 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return (rows || []).filter((row) => row.forwardProjection);
     }
 
+    // Table groups show a growth score only when there is a real one: never
+    // once a projection file has been uploaded, whose only growth is NWEA's
+    // forecast, and never as a column of N/A when no record carries a
+    // conditional growth percentile (two Class Profile terms, for instance).
+    function seatingShowsCGP() {
+      if (isBaselineMode()) return false;
+      const rows = state.allRows || [];
+      if (projectionRowsOf(rows).length) return false;
+      return rows.some((row) => isFiniteNumber(row.conditionalGrowthPercentile));
+    }
+
+    // Uploaded rows carry NWEA's projection for the window ahead.
+    function seatingHasProjection() {
+      return projectionRowsOf(state.allRows || []).length > 0;
+    }
+
     function isProjectionView(rows) {
       return isBaselineMode() && projectionRowsOf(rows || state.filteredRows).length > 0;
     }
@@ -8682,15 +8698,43 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return cleanString(value).toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
     }
 
+    // Exports often set names in capitals ("MEERA ALKHOORI"). A word in all
+    // capitals or all lower case is put into proper case - Meera Alkhoori,
+    // Al-Nahyan, O'Brien, McDonald, and "bin" or "van" in the middle of a name
+    // stay lower case - while a word with its own mix of cases (DeShawn,
+    // MacKenzie) is left exactly as the school wrote it.
+    const NAME_LOWER_PARTICLES = new Set(["bin", "bint", "ibn", "van", "von", "der", "den", "de", "da", "di", "du", "del", "della", "la", "le", "dos", "das", "do", "y"]);
+
+    function properCaseName(value) {
+      const text = cleanString(value);
+      if (!text) return text;
+      let wordIndex = 0;
+      return text.split(/\s+/).map((word) => {
+        const index = wordIndex;
+        wordIndex += 1;
+        const letters = word.replace(/[^\p{L}]/gu, "");
+        if (!letters) return word;
+        const allUpper = letters === letters.toUpperCase();
+        const allLower = letters === letters.toLowerCase();
+        if (!allUpper && !allLower) return word;
+        const lowered = word.toLowerCase();
+        if (index > 0 && NAME_LOWER_PARTICLES.has(lowered)) return lowered;
+        return lowered
+          .replace(/(^|[-'’])(\p{L})/gu, (match, mark, letter) => mark + letter.toUpperCase())
+          .replace(/^Mc(\p{L})/u, (match, letter) => "Mc" + letter.toUpperCase());
+      }).join(" ");
+    }
+
     function formatStudentName(first, last, combined, studentID) {
+      // Cased as one name, so "bin" in "MOHAMMED" "BIN RASHID" is a particle.
       const parts = [cleanString(first), cleanString(last)].filter(Boolean);
-      if (parts.length) return parts.join(" ");
+      if (parts.length) return properCaseName(parts.join(" "));
       // Some exports carry one "StudentName" column, usually "Last, First".
       const whole = cleanString(combined);
       if (whole && !isBlankLike(whole)) {
-        const commaParts = whole.split(",").map((part) => part.trim()).filter(Boolean);
+        const commaParts = whole.split(",").map((part) => properCaseName(part)).filter(Boolean);
         if (commaParts.length === 2) return commaParts[1] + " " + commaParts[0];
-        return whole;
+        return properCaseName(whole);
       }
       // An export run with names hidden still carries NWEA's student ID, and
       // a single "Unnamed Student" merged every child into one on any list
@@ -9146,14 +9190,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         node.hidden = baseline;
       });
 
-      // Growth strength means nothing without a second window: in a
-      // single-window file it silently fell back to percentile.
+      // Growth strength means nothing without a real growth score: not in a
+      // single-window file, not once a projection is uploaded, and not when
+      // no record carries a conditional growth percentile.
       if (els.groupScoreSelect) {
         const growthOption = els.groupScoreSelect.querySelector('option[value="growth"]');
+        const noGrowthScore = !seatingShowsCGP();
         if (growthOption) {
-          growthOption.hidden = baseline;
-          growthOption.disabled = baseline;
-          if (baseline && els.groupScoreSelect.value === "growth") els.groupScoreSelect.value = "endPercentile";
+          growthOption.hidden = noGrowthScore;
+          growthOption.disabled = noGrowthScore;
+          if (noGrowthScore && els.groupScoreSelect.value === "growth") els.groupScoreSelect.value = "endPercentile";
         }
         const endOption = els.groupScoreSelect.querySelector('option[value="endPercentile"]');
         if (endOption) endOption.textContent = baseline ? "Percentile" : "End percentile";
@@ -12852,7 +12898,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-tables": {
         what: "Table groups built from the data by a chosen strategy, and a full-screen planner drawn to scale: your room's size in metres, single desks (70 x 49 cm unless you set another size) pushed together into groups, a chair behind each, and your own furniture at its real size. A group of five is two facing pairs with one desk at the head; you can also choose a desk at each end, a row facing the front, a horseshoe or a round table. The room is remembered on this device; the students never are.",
         read: "Each desk carries the student's band colour and the score that drove the grouping; the strip on each table's name plate shows its band mix, so a balanced table reads as a spread of colours and a skill group as one block. Names are always shown in full, sized to fit the desk. A warning above the room names any tables that overlap or stand on furniture. The paragraph under the room says exactly how the plan was made, and the placement-order toggle numbers the desks in the order the strategy dealt them. Students without a usable score wait in Unplaced rather than being seated by a number they do not have.",
-        act: "Set your room size and desk size under Room, add and size the board, door, windows and teacher desk, then build the groups for the week. Drag anyone the data placed badly to any desk (dropping on a taken desk swaps), and print the teacher copy for your planner and the wall plan, with names only, for the room."
+        act: "Set your room size and desk size under Room, add and size the board, door, windows and teacher desk, then build the groups for the week. Drag anyone the data placed badly to any desk (dropping on a taken desk swaps), save a plan file under Room to keep who sits where for next time, and print the teacher copy for your planner and the wall plan, with names only, for the room."
       },
       "sec-grouping": {
         what: "Every record in view in one sortable table: scores, bands, growth, gap status, the planning group the dashboard suggests and the teacher action that goes with it.",
@@ -15291,7 +15337,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (unseated.length) manualPool.push(...unseated);
       state.unseatedCount = unseated.length;
 
-      const tableCountChanged = state.tableGroups.length !== groups.length;
+      // Compared with the room's own tables, not the last plan's: a room
+      // remembered from yesterday, or loaded from a file before the data,
+      // keeps its table places when the class needs as many tables.
+      const tableCountChanged = state.classroomLayout.tables.length !== groups.length;
       state.tableGroups = groups;
       state.tableManualPool = manualPool;
       state.tableGroupPlanLabel = groupPlan.label;
@@ -17977,9 +18026,91 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     const writeRoomLayout = debounce(writeRoomLayoutNow, 300);
     window.addEventListener("pagehide", () => { if (state.classroomLayout) writeRoomLayoutNow(); });
 
+    // The plan file: the room, and - when a plan is showing - who sits where,
+    // by student ID, with the table names and the hand moves. It is a file
+    // the teacher saves on their own computer, like a CSV export; the browser
+    // itself still remembers the room alone.
+    function planFileContents() {
+      const file = storableRoomLayout();
+      if (!state.tableGroups.length) return file;
+      file.plan = {
+        pattern: cleanString(els.groupSizeInput.value),
+        strategy: els.groupStrategySelect.value || "mixed",
+        scoreMode: els.groupScoreSelect.value || "endPercentile",
+        tables: state.tableGroups.map((group, index) => ({
+          name: cleanString(state.tableLabels && state.tableLabels[index]) || "",
+          capacity: state.tableCapacities[index] || group.length || 1,
+          students: group.map((profile) => String(profile.key))
+        })),
+        unplaced: state.tableManualPool.map((profile) => String(profile.key)),
+        moved: Array.from(state.movedKeys || []).map(String).filter((key) => Boolean(findProfileByKey(key)))
+      };
+      return file;
+    }
+
     function exportRoomLayout() {
-      downloadText("classroom-room-layout.json", JSON.stringify(storableRoomLayout(), null, 2), "application/json");
-      toast("Room layout saved as a file. It holds the room only, no students.", "success");
+      const file = planFileContents();
+      downloadText(exportFileName(file.plan ? "seating-plan.json" : "classroom-room.json"), JSON.stringify(file, null, 2), "application/json");
+      toast(file.plan
+        ? "Plan saved: the room, the table names and who sits where, by student ID. Load it to bring the whole plan back."
+        : "Room saved as a file.", "success");
+    }
+
+    // Puts the students back where the file had them. Only students in the
+    // current view are seated; anyone the file does not mention waits in
+    // Unplaced, and a file for another class leaves the current groups alone.
+    function restoreSeatingFromFile(plan) {
+      if (!plan || typeof plan !== "object" || !Array.isArray(plan.tables)) return { restored: false, message: "Room loaded." };
+      const profiles = filteredProfiles();
+      if (!profiles.length) return { restored: false, message: "Room loaded. Upload the class's data, then load the file again to bring back who sits where." };
+      const byKey = new Map(profiles.map((profile) => [String(profile.key), profile]));
+      const used = new Set();
+      let missing = 0;
+      const take = (id) => {
+        if (typeof id !== "string" && typeof id !== "number") return null;
+        const key = String(id);
+        const profile = byKey.get(key);
+        if (!profile) { missing += 1; return null; }
+        if (used.has(key)) return null;
+        used.add(key);
+        return profile;
+      };
+      const tables = plan.tables.slice(0, 80).map((table) => ({
+        name: table && typeof table.name === "string" ? cleanString(table.name).slice(0, 24) : "",
+        capacity: clampInteger(Number(table && table.capacity), 1, 40),
+        group: (table && Array.isArray(table.students) ? table.students.slice(0, 40) : []).map(take).filter(Boolean)
+      }));
+      const seated = tables.reduce((sum, table) => sum + table.group.length, 0);
+      if (!seated || !tables.length) return { restored: false, message: "Room loaded. The seating in this file is for other students, so the current groups stay." };
+      const pool = (Array.isArray(plan.unplaced) ? plan.unplaced.slice(0, 1000) : []).map(take).filter(Boolean);
+      const newcomers = profiles.filter((profile) => !used.has(String(profile.key)));
+      // The settings the plan was made with, where this page still offers them.
+      const offered = (select, value) => select && typeof value === "string" &&
+        Array.from(select.options).some((option) => option.value === value && !option.disabled);
+      if (offered(els.groupStrategySelect, plan.strategy)) els.groupStrategySelect.value = plan.strategy;
+      if (offered(els.groupScoreSelect, plan.scoreMode)) els.groupScoreSelect.value = plan.scoreMode;
+      if (typeof plan.pattern === "string" && cleanString(plan.pattern)) els.groupSizeInput.value = cleanString(plan.pattern).slice(0, 80);
+      const strategy = els.groupStrategySelect.value || "mixed";
+      const scoreMode = els.groupScoreSelect.value || "endPercentile";
+      state.tableGroups = tables.map((table) => table.group);
+      state.tableCapacities = tables.map((table) => (Number.isFinite(table.capacity) ? table.capacity : Math.max(1, table.group.length)));
+      state.tableManualPool = pool.concat(newcomers);
+      state.tableLabels = {};
+      tables.forEach((table, index) => { if (table.name) state.tableLabels[index] = table.name; });
+      state.movedKeys = new Set((Array.isArray(plan.moved) ? plan.moved : []).map(String).filter((key) => used.has(key)));
+      const sizes = unique(state.tableCapacities);
+      state.tableGroupPlanLabel = sizes.length === 1 ? "up to " + formatInteger(sizes[0]) + " per table" : state.tableCapacities.join(", ");
+      state.unseatedCount = 0;
+      // Kept as the teacher's own arrangement until the pattern, strategy or
+      // score changes, or Rebuild is pressed.
+      state.manualArrangement = true;
+      state.groupSignature = groupSignature(profiles, strategy, scoreMode);
+      const subjectContext = getFilters().subject ? `${getFilters().subject} only` : "averaged across visible subjects";
+      updateTableGroupContext(profiles.length, subjectContext, strategy);
+      const notes = [];
+      if (newcomers.length) notes.push(formatInteger(newcomers.length) + " student" + (newcomers.length === 1 ? " is" : "s are") + " not in the saved plan and wait" + (newcomers.length === 1 ? "s" : "") + " in Unplaced");
+      if (missing) notes.push(formatInteger(missing) + " student" + (missing === 1 ? " in the file is" : "s in the file are") + " not in this view");
+      return { restored: true, message: "Plan loaded: the room and who sits where." + (notes.length ? " " + notes.join("; ") + "." : "") };
     }
 
     function importRoomLayoutFile(file) {
@@ -17988,26 +18119,30 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       reader.onload = () => {
         const previous = state.classroomLayout;
         const previousSelection = state.roomSelection;
+        const snapshot = roomSnapshot();
         try {
           const parsed = JSON.parse(String(reader.result || ""));
+          if (!parsed || typeof parsed !== "object") throw new Error("not a room");
           const layout = migrateClassroomLayout(parsed);
           pushRoomHistory();
           state.classroomLayout = layout;
           state.roomSelection = null;
+          const seating = restoreSeatingFromFile(parsed.plan);
           syncRoomControls();
           initializeClassroomLayout(state.tableGroups.length, false);
           rerenderRoom();
           writeRoomLayoutNow();
-          toast("Room layout loaded.", "success");
+          toast(seating.message, "success");
+          announce(seating.message);
         } catch (error) {
           // Nothing of a file that fails part-way is kept.
           state.classroomLayout = previous;
           state.roomSelection = previousSelection;
-          if (state.roomHistory && state.roomHistory.length) state.roomHistory.pop();
+          if (state.roomHistory && state.roomHistory.length && state.roomHistory[state.roomHistory.length - 1] !== snapshot) state.roomHistory.pop();
           syncRoomControls();
           try { initializeClassroomLayout(state.tableGroups.length, false); rerenderRoom(); } catch (again) { /* the previous room rendered before */ }
           updateUndoButton();
-          toast("That file is not a room layout.", "error");
+          toast("That file is not a seating plan or room file.", "error");
         }
       };
       reader.readAsText(file);
@@ -18234,7 +18369,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           fresh.push(index);
         }
       }
-      layout.tables = layout.tables.slice(0, Math.max(tableCount, 0));
+      // With no plan yet (no data), a room's tables are kept for the plan to come.
+      if (tableCount > 0) layout.tables = layout.tables.slice(0, tableCount);
       if (fresh.length) {
         const plan = defaultTablePlan(tableCount);
         fresh.forEach((index) => {
@@ -18734,6 +18870,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const groups = options.groups || state.tableGroups;
       const fixtures = layout.fixtures.map((fixture) => renderFixture(fixture, mode)).join("");
       roomNameCap = seatNameCap(groups, mode);
+      roomShowsCGP = seatingShowsCGP();
       const tables = groups.map((group, index) => renderRoomTable(group, index, mode, scoreMode, strategy)).join("");
       roomNameCap = 0;
       // The floor's 50 cm grid and a one-metre bar, so the room reads as a room.
@@ -18854,7 +18991,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const count = formatInteger(group.length) + (capacity ? "/" + formatInteger(capacity) : "");
       if (!group.length) return count;
       const avgEnd = avg(group.map((profile) => profile.avgEndPercentile));
-      if (isBaselineMode() || scoreMode !== "growth") return count + " · avg %ile " + formatNumber(avgEnd, 0);
+      if (!seatingShowsCGP() || scoreMode !== "growth") return count + " · avg %ile " + formatNumber(avgEnd, 0);
       return count + " · avg CGP " + formatNumber(avg(group.map((profile) => profile.avgConditionalGrowthPercentile)), 0);
     }
 
@@ -18929,6 +19066,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // names in the room reach, so a short name does not tower over a long
     // one on the next desk and the plan reads as one set of labels.
     let roomNameCap = 0;
+    // Set by roomMarkup too: whether a seat carries a growth score at all.
+    let roomShowsCGP = false;
 
     // The name above its score, both sized to the box; a corner is kept for
     // the marks when there are any. A side-on student's name runs back across
@@ -18975,10 +19114,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function renderSeatChip(profile, mode, tableIndex, seatIndex, boxes) {
       const name = profile.studentName;
       const wall = mode === "wall";
-      const compact = isBaselineMode()
-        ? `%ile ${formatNumber(profile.avgEndPercentile, 0)}`
-        : `CGP ${formatNumber(profile.avgConditionalGrowthPercentile, 0)} · %ile ${formatNumber(profile.avgEndPercentile, 0)}`;
-      const moved = !wall && state.movedKeys && state.movedKeys.has(profile.key);
+      const compact = roomShowsCGP
+        ? `CGP ${formatNumber(profile.avgConditionalGrowthPercentile, 0)} · %ile ${formatNumber(profile.avgEndPercentile, 0)}`
+        : `%ile ${formatNumber(profile.avgEndPercentile, 0)}`;
+      // Hand moves are marked on screen only: the printed plan is a plan.
+      const moved = mode === "screen" && state.movedKeys && state.movedKeys.has(profile.key);
       // On screen the order mark is always drawn and the stylesheet shows it
       // on request; on paper only what the teacher asked for is drawn.
       const order = !wall && (mode === "screen" || state.roomShowOrder) && state.dealOrder ? state.dealOrder.get(profile.key) : null;
@@ -18992,9 +19132,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (mode !== "screen") {
         return `<div class="drag-card ${band.className}" style="${boxStyle(box)}">${nameMarkup(fit)}${score}${marks}</div>`;
       }
-      const detail = `${name} | ${profile.subjects} | ${isBaselineMode()
-        ? `%ile ${formatNumber(profile.avgEndPercentile)} | vs norm ${formatSignedNumber(profile.avgUSNormDeltaRIT)}`
-        : `End %ile ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)}`} | ${planningGroupForProfile(profile)}`;
+      const detail = `${name} | ${profile.subjects} | ${roomShowsCGP
+        ? `End %ile ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)}`
+        : `%ile ${formatNumber(profile.avgEndPercentile)} | vs norm ${formatSignedNumber(profile.avgUSNormDeltaRIT)}` +
+          (isFiniteNumber(profile.avgProjectedGain) ? ` | NWEA projected gain ${formatSignedNumber(profile.avgProjectedGain)}` : "")} | ${planningGroupForProfile(profile)}`;
       const label = `${name}, seat ${formatInteger(seatIndex + 1)} at ${tableLabel(tableIndex)}, ${band.name} band` +
         (moved ? ", moved by hand" : state.roomShowOrder && order ? `, placed ${formatInteger(order)}${ordinalSuffix(order)} by the strategy` : "") +
         `. Left or right arrow moves to the next table, up or down swaps seats, a number key jumps to that table, Backspace sends to Unplaced, Enter opens the move menu.`;
@@ -20147,6 +20288,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           avgConditionalGrowthPercentile,
           avgCurrentRIT: avg(rowsForStudent.map((row) => row.currentRIT)),
           avgTypicalGain: avg(rowsForStudent.map((row) => (row.goals ? row.goals.typicalGain : null))),
+          avgProjectedGain: avg(rowsForStudent.map((row) => (row.forwardProjection ? row.forwardProjection.gain : null))),
+          avgProjectedRIT: avg(rowsForStudent.map((row) => (row.forwardProjection ? row.forwardProjection.targetRIT : null))),
           needsAcceleration: rowsForStudent.some((row) => row.goals && !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0),
           shortTest: rowsForStudent.some((row) => row.shortTest),
           subjectPercentiles,
@@ -20893,13 +21036,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // export drops them and carries the norm distance instead.
     // ---- Export and print ---------------------------------------------------
     function tableGroupExportColumns() {
-      if (!isBaselineMode()) return TABLE_GROUP_EXPORT_COLUMNS;
-      const dropped = new Set([
-        "Avg start percentile", "Avg RIT change", "Avg Conditional Growth Percentile", "Met growth rate"
-      ]);
-      return TABLE_GROUP_EXPORT_COLUMNS
+      const baseline = isBaselineMode();
+      const dropped = new Set(baseline ? ["Avg start percentile", "Avg RIT change"] : []);
+      // No growth score column unless there is a real one (see seatingShowsCGP).
+      if (!seatingShowsCGP()) ["Avg Conditional Growth Percentile", "Met growth rate"].forEach((label) => dropped.add(label));
+      const columns = TABLE_GROUP_EXPORT_COLUMNS
         .filter(([label]) => !dropped.has(label))
-        .map((column) => (column[0] === "Avg end percentile" ? ["Avg percentile", column[1]] : column));
+        .map((column) => (baseline && column[0] === "Avg end percentile" ? ["Avg percentile", column[1]] : column));
+      if (!seatingHasProjection()) return columns;
+      const tenth = (value) => (isFiniteNumber(value) ? Number(value.toFixed(1)) : "");
+      const at = columns.findIndex(([label]) => label === "Band");
+      columns.splice(at < 0 ? columns.length : at, 0,
+        ["NWEA projected RIT", (row) => tenth(row.avgProjectedRIT)],
+        ["NWEA projected gain", (row) => tenth(row.avgProjectedGain)]);
+      return columns;
     }
 
     function exportTableGroups() {
@@ -21129,8 +21279,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
   /* Roster page. */
   .sp-roster { padding: 4mm ${SEATING_PRINT_MARGIN}mm 0; }
-  .sp-roster-grid { columns: 2; column-gap: 6mm; }
-  .sp-roster-table { break-inside: avoid; margin-bottom: 4mm; border: 0.3mm solid #d9dee8; border-radius: 1.5mm; overflow: hidden; }
+  .sp-roster-cols { display: flex; gap: 6mm; align-items: flex-start; }
+  .sp-roster-col { flex: 1 1 0; min-width: 0; }
+  .sp-roster-table { break-inside: avoid; page-break-inside: avoid; margin-bottom: 4mm; border: 0.3mm solid #d9dee8; border-radius: 1.5mm; overflow: hidden; }
   .sp-roster-table header { display: flex; align-items: center; justify-content: space-between; gap: 3mm; padding: 1.8mm 3mm; background: #f1f5fb; border-bottom: 0.3mm solid #d9dee8; }
   .sp-roster-table h2 { margin: 0; font-size: 10.5pt; }
   .sp-roster-table header small { font-size: 7.5pt; color: #4a5568; }
@@ -21168,7 +21319,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         : state.tableGroups;
       const meta = wall
         ? [currentWindowName(), date]
-        : [[filters.teacher, currentWindowName()].filter(Boolean).join(" · "), strategyLabel(strategy) + " · " + scoreModeLabel(scoreMode), date];
+        : [[filters.teacher, currentWindowName()].filter(Boolean).join(" · "), date];
       // The room to scale: one centimetre of floor is metrics.unit mm.
       const roomStyle = `--cm:${metrics.unit.toFixed(5)}mm; width:${metrics.roomW.toFixed(1)}mm; height:${metrics.roomH.toFixed(1)}mm;`;
       const floor = roomSize();
@@ -21180,7 +21331,6 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         ? '<div class="sp-foot">' + (unplacedNames.length ? '<span class="sp-unplaced">Also in our class: ' + escapeHTML(unplacedNames.join(", ")) + '</span>' : "") + scaleNote + '</div>'
         : '<div class="sp-foot"><span class="legend-title">Seat colour = ' + (isBaselineMode() ? "percentile" : "end percentile") + ' band</span>' +
           BANDS.map((band) => '<span class="legend-band"><i class="' + band.className + '"></i>' + escapeHTML(band.name + " " + formatInteger(band.min) + "–" + formatInteger(band.max)) + '</span>').join("") +
-          '<span><i class="seat-moved">✎</i> moved by hand</span>' +
           (state.roomShowOrder ? '<span>numbers: order placed by the strategy</span>' : "") +
           '<span>Averages ignore N/A.</span>' + scaleNote + '</div>';
       const sheets = [
@@ -21188,7 +21338,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         seatingPrintHeader(wall ? "Our seating plan" : "Seating plan", title, meta) +
         '<div class="sp-body">' + room + '</div>' + footer + '</section>'
       ];
-      if (!wall) sheets.push(buildSeatingRosterSheet(title, meta, scoreMode));
+      if (!wall) sheets.push(...buildSeatingRosterSheets(title, meta, scoreMode, metrics));
       return `<!doctype html>
 <html lang="en">
 <head>
@@ -21205,19 +21355,30 @@ ${sheets.join("\n")}
 </html>`;
     }
 
-    // The page the teacher writes on: one block per table with every number
-    // the room is too small to carry, then the unplaced list and the plan.
-    function buildSeatingRosterSheet(title, meta, scoreMode) {
-      const baseline = isBaselineMode();
+    // What the printed plan says about how it was made.
+    const SEATING_PRINT_NOTE = "Students are grouped according to data and behaviour patterns.";
+
+    // The pages the teacher writes on: one block per table with every number
+    // the room is too small to carry, then the unplaced list. A table's block
+    // is never split across two pages: each block is measured, and the pages
+    // are laid out from those heights, a block that does not fit starting the
+    // next column or the next page.
+    function buildSeatingRosterSheets(title, meta, scoreMode, metrics) {
+      const showCGP = seatingShowsCGP();
+      const projected = !showCGP && state.tableGroups.some((group) => group.some((profile) => isFiniteNumber(profile.avgProjectedGain)));
+      const score = showCGP
+        ? { label: "CGP", value: (profile) => formatNumber(profile.avgConditionalGrowthPercentile, 0) }
+        : projected
+          ? { label: "Proj. gain", value: (profile) => formatSignedNumber(profile.avgProjectedGain) }
+          : { label: "vs norm", value: (profile) => formatSignedNumber(profile.avgUSNormDeltaRIT) };
       const blocks = state.tableGroups.map((group, index) => {
         const capacity = state.tableCapacities[index] || null;
         const rows = group.map((profile, seat) => {
           const flags = profile.priorityReasons && profile.priorityReasons.length ? profile.priorityReasons.slice(0, 2).join("; ") + (profile.priorityReasons.length > 2 ? " …" : "") : "";
-          return '<tr><td class="num">' + formatInteger(seat + 1) + '</td><td>' + escapeHTML(profile.studentName) +
-            (state.movedKeys && state.movedKeys.has(profile.key) ? ' <span class="seat-moved" title="Moved by hand">✎</span>' : "") +
-            '</td><td><span class="sp-chip ' + profile.endBand.className + '">' + escapeHTML(profile.endBand.name) + '</span></td>' +
+          return '<tr><td class="num">' + formatInteger(seat + 1) + '</td><td>' + escapeHTML(profile.studentName) + '</td>' +
+            '<td><span class="sp-chip ' + profile.endBand.className + '">' + escapeHTML(profile.endBand.name) + '</span></td>' +
             '<td class="num">' + escapeHTML(formatNumber(profile.avgEndPercentile, 0)) + '</td>' +
-            '<td class="num">' + escapeHTML(baseline ? formatSignedNumber(profile.avgUSNormDeltaRIT) : formatNumber(profile.avgConditionalGrowthPercentile, 0)) + '</td>' +
+            '<td class="num">' + escapeHTML(score.value(profile)) + '</td>' +
             '<td>' + escapeHTML(profile.suggestedGroup || "") + (flags ? '<div class="sp-flags">' + escapeHTML(flags) + '</div>' : "") + '</td></tr>';
         }).join("");
         return '<article class="sp-roster-table"><header><div><h2>' + escapeHTML(tableLabel(index)) + '</h2><small>' +
@@ -21225,15 +21386,86 @@ ${sheets.join("\n")}
             ? formatInteger(group.length) + (capacity ? " of " + formatInteger(capacity) : "") + " students · " + tableMetaText(group, null, scoreMode).replace(/^\S+\s·\s/, "")
             : "No students seated" + (capacity ? " · " + formatInteger(capacity) + " seats" : "")) +
           '</small></div>' + bandMixStrip(group) + '</header>' +
-          '<table><thead><tr><th>Seat</th><th>Student</th><th>Band</th><th>%ile</th><th>' + (baseline ? "vs norm" : "CGP") + '</th><th>Planning group</th></tr></thead><tbody>' + rows + '</tbody></table></article>';
-      }).join("");
-      const unplaced = state.tableManualPool.length
-        ? '<article class="sp-roster-table"><header><div><h2>Unplaced</h2><small>' + escapeHTML(formatInteger(state.tableManualPool.length) + " to seat by hand") + '</small></div></header><table><tbody>' +
+          '<table><thead><tr><th>Seat</th><th>Student</th><th>Band</th><th>%ile</th><th>' + escapeHTML(score.label) + '</th><th>Planning group</th></tr></thead><tbody>' + rows + '</tbody></table></article>';
+      });
+      if (state.tableManualPool.length) {
+        blocks.push('<article class="sp-roster-table"><header><div><h2>Unplaced</h2><small>' + escapeHTML(formatInteger(state.tableManualPool.length) + " to seat by hand") + '</small></div></header><table><tbody>' +
           state.tableManualPool.map((profile) => '<tr><td>' + escapeHTML(profile.studentName) + '</td><td class="sp-flags">' + escapeHTML((profile.missingDataReasons || []).join("; ") || "No usable score") + '</td></tr>').join("") +
-          '</tbody></table></article>'
-        : "";
-      return '<section class="sp-sheet">' + seatingPrintHeader("Seating plan · roster", title, meta) +
-        '<div class="sp-roster"><p class="sp-note">' + planSentenceHTML() + '</p><div class="sp-roster-grid">' + blocks + unplaced + '</div></div></section>';
+          '</tbody></table></article>');
+      }
+      const note = '<p class="sp-note">' + escapeHTML(SEATING_PRINT_NOTE) + '</p>';
+      const innerW = metrics.pageW - SEATING_PRINT_MARGIN * 2;
+      const columns = innerW >= 380 ? 3 : innerW >= 250 ? 2 : 1;
+      const gap = 6;
+      const columnW = (innerW - gap * (columns - 1)) / columns;
+      const heights = measureSeatingBlocks(blocks, columnW);
+      const noteHeight = measureSeatingBlocks([note], innerW)[0];
+      // The sheet below its masthead: the roster's top padding, the bottom
+      // margin, and a little to spare for rounding in the printer's layout.
+      const pageRoom = metrics.pageH - SEATING_PRINT_HEAD - 4 - SEATING_PRINT_MARGIN - 4;
+      const pages = [];
+      let page = null;
+      let column = 0;
+      let used = 0;
+      const newPage = () => {
+        page = { columns: Array.from({ length: columns }, () => []), first: !pages.length };
+        pages.push(page);
+        column = 0;
+        used = page.first ? noteHeight : 0;
+      };
+      newPage();
+      blocks.forEach((block, index) => {
+        const height = heights[index];
+        const room = pageRoom - used;
+        if (height > room && page.columns[column].length) {
+          if (column < columns - 1) {
+            column += 1;
+            used = page.first ? noteHeight : 0;
+          } else {
+            newPage();
+          }
+        }
+        page.columns[column].push(block);
+        used += height;
+      });
+      return pages.map((sheet, index) => {
+        const pageMeta = pages.length > 1 ? meta.concat(["Roster page " + formatInteger(index + 1) + " of " + formatInteger(pages.length)]) : meta;
+        return '<section class="sp-sheet">' + seatingPrintHeader("Seating plan · roster", title, pageMeta) +
+          '<div class="sp-roster">' + (sheet.first ? note : "") +
+          '<div class="sp-roster-cols">' + sheet.columns.map((items) => '<div class="sp-roster-col">' + items.join("") + '</div>').join("") + '</div></div></section>';
+      });
+    }
+
+    // Heights in millimetres of blocks of the printed plan at a given width,
+    // measured in a hidden frame with the print stylesheet, so the pages can
+    // be cut between blocks rather than through them.
+    function measureSeatingBlocks(htmlList, widthMm) {
+      const pxPerMm = 96 / 25.4;
+      const guess = (html) => 22 + 7.5 * ((html.match(/<tr>/g) || []).length);
+      let frame = null;
+      try {
+        frame = document.createElement("iframe");
+        frame.setAttribute("aria-hidden", "true");
+        frame.tabIndex = -1;
+        frame.style.cssText = "position:fixed; left:-12000px; top:0; width:" + Math.ceil(widthMm * pxPerMm + 40) + "px; height:1200px; border:0; visibility:hidden;";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write('<!doctype html><html><head><meta charset="utf-8"><style>' + SEATING_PRINT_CSS + '</style></head><body>' +
+          '<div class="sp-roster" style="padding:0; width:' + widthMm.toFixed(2) + 'mm">' +
+          htmlList.map((html, index) => '<div data-block="' + index + '" style="display:flow-root">' + html + '</div>').join("") +
+          '</div></body></html>');
+        doc.close();
+        return htmlList.map((html, index) => {
+          const node = doc.querySelector('[data-block="' + index + '"]');
+          const height = node ? node.getBoundingClientRect().height / pxPerMm : NaN;
+          return Number.isFinite(height) && height > 0 ? height : guess(html);
+        });
+      } catch (error) {
+        return htmlList.map(guess);
+      } finally {
+        if (frame) frame.remove();
+      }
     }
 
     function exportSummary() {
