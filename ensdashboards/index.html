@@ -1311,34 +1311,70 @@
       position: relative;
     }
 
-    /* The room. One unit is 1% of its width, scaled by --room-scale so that
-       eight tables of six shrink to fit instead of overlapping. Positions are
-       percentages; every size is a multiple of the unit, on screen and in
-       print alike. */
+    /* The room, drawn to scale. --cm is one centimetre of the room: the
+       board's width over the room's width in centimetres. Every position and
+       size inside is a multiple of it, on screen and in print alike, so a
+       desk is the same shape everywhere. The board cannot measure itself, so
+       the floor grid lives on a child that can. */
     .classroom-board {
-      --room-ratio: 4 / 3;
-      --room-grid-size: 44px;
-      --room-scale: 1;
-      --unit: calc(1cqw * var(--room-scale));
+      --room-ratio: 9 / 8;
+      --room-w: 900;
+      --room-zoom: 1;
+      --cm: calc(100cqw / var(--room-w));
+      --room-grid: rgba(203, 213, 225, 0.45);
+      --room-grid-strong: rgba(148, 163, 184, 0.4);
       container-type: inline-size;
       position: relative;
       width: 100%;
       aspect-ratio: var(--room-ratio);
-      border: 2px solid var(--line-strong);
-      border-radius: var(--radius);
-      background:
-        linear-gradient(90deg, rgba(219, 226, 238, 0.55) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(219, 226, 238, 0.55) 1px, transparent 1px),
-        var(--panel-2);
-      background-size: var(--room-grid-size) var(--room-grid-size);
+      border: 3px solid var(--line-strong);
+      border-radius: 6px;
+      background: var(--panel-2);
       overflow: hidden;
     }
 
     :root[data-theme="dark"] .classroom-board {
+      --room-grid: rgba(122, 140, 170, 0.14);
+      --room-grid-strong: rgba(122, 140, 170, 0.3);
+    }
+
+    .room-floor {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
       background:
-        linear-gradient(90deg, rgba(122, 140, 170, 0.18) 1px, transparent 1px),
-        linear-gradient(0deg, rgba(122, 140, 170, 0.18) 1px, transparent 1px),
-        var(--panel-2);
+        linear-gradient(90deg, var(--room-grid-strong) 1px, transparent 1px),
+        linear-gradient(0deg, var(--room-grid-strong) 1px, transparent 1px),
+        linear-gradient(90deg, var(--room-grid) 1px, transparent 1px),
+        linear-gradient(0deg, var(--room-grid) 1px, transparent 1px);
+      background-size:
+        calc(var(--cm) * 100) calc(var(--cm) * 100),
+        calc(var(--cm) * 100) calc(var(--cm) * 100),
+        calc(var(--cm) * 50) calc(var(--cm) * 50),
+        calc(var(--cm) * 50) calc(var(--cm) * 50);
+    }
+
+    /* A one-metre bar in the corner, so the room reads as a room. */
+    .room-scale {
+      position: absolute;
+      right: calc(var(--cm) * 14);
+      bottom: calc(var(--cm) * 10);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: calc(var(--cm) * 4);
+      color: var(--muted);
+      font-size: max(9px, calc(var(--cm) * 9));
+      font-weight: 800;
+      pointer-events: none;
+    }
+    .room-scale-bar {
+      display: block;
+      width: calc(var(--cm) * 100);
+      height: max(4px, calc(var(--cm) * 3));
+      border: 2px solid currentColor;
+      border-top: 0;
     }
 
     .classroom-board.is-preview {
@@ -1351,44 +1387,96 @@
     .room-table,
     .room-fixture { touch-action: none; }
 
-    /* Furniture. */
+    /* Furniture, at its real size. */
     .room-fixture {
       position: absolute;
       z-index: 3;
       display: grid;
       place-items: center;
       text-align: center;
-      font-weight: 850;
       cursor: grab;
       user-select: none;
-      overflow: hidden;
-      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12);
     }
-
-    .room-fixture span {
-      font-size: max(9px, calc(var(--unit) * 1.3));
-      line-height: 1.05;
-      padding: 0 2px;
-    }
-
-    .room-fixture.is-upright span { writing-mode: vertical-rl; }
     .room-fixture.is-under { z-index: 1; box-shadow: none; }
-    .room-fixture.kind-board { background: #2f4f3a; color: #fff; border: 2px solid #1f3327; border-radius: var(--radius-sm); text-transform: uppercase; letter-spacing: 0.06em; }
-    .room-fixture.kind-screen { background: #1f2937; color: #fff; border: 2px solid #0f172a; border-radius: var(--radius-sm); text-transform: uppercase; letter-spacing: 0.06em; }
-    .room-fixture.kind-door { background: #f5d29c; color: #5b3412; border: 2px solid #9a6b38; border-radius: 6px; }
-    .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 2px solid #93c5fd; border-radius: 3px; }
-    .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 2px solid #8b5e34; border-radius: var(--radius-sm); }
+    .fixture-label {
+      font-weight: 850;
+      line-height: 1.05;
+      white-space: nowrap;
+      padding: 0 calc(var(--cm) * 3);
+      border-radius: 999px;
+      pointer-events: none;
+      overflow: hidden;
+      max-width: 100%;
+      text-overflow: ellipsis;
+    }
+    .room-fixture.is-upright .fixture-label { writing-mode: vertical-rl; padding: calc(var(--cm) * 3) 0; max-width: none; max-height: 100%; }
+    /* A thin wall piece wears its name on a tab that stands proud of the wall. */
+    .room-fixture.on-wall .fixture-label { background: inherit; border: inherit; max-width: none; max-height: none; overflow: visible; }
+    /* A tab bigger than its strip spills into the room, never through the wall. */
+    .room-fixture.wall-back { align-content: end; }
+    .room-fixture.wall-right { justify-content: end; }
+    .room-fixture.kind-board { background: #2f4f3a; color: #fff; border: 2px solid #1f3327; border-radius: 3px; }
+    .room-fixture.kind-whiteboard { background: #ffffff; color: #334155; border: 2px solid #94a3b8; border-radius: 3px; }
+    .room-fixture.kind-display { background: #e9d3a8; color: #5b3a12; border: 2px solid #b08a52; border-radius: 3px; }
+    .room-fixture.kind-screen { background: #1f2937; color: #fff; border: 2px solid #0f172a; border-radius: 3px; }
+    .room-fixture.kind-door { background: #f5d29c; color: #5b3412; border: 2px solid #9a6b38; border-radius: 3px; }
+    .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 2px double #60a5fa; border-radius: 2px; }
+    .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 2px solid #8b5e34; border-radius: 5px; }
+    .room-fixture.kind-table { background: #f1e6d3; color: #5b3a12; border: 2px solid #a07a4f; border-radius: 5px; }
     .room-fixture.kind-carpet { background: repeating-linear-gradient(45deg, #ede9fe 0 6px, #ddd6fe 6px 12px); color: #5b21b6; border: 2px dashed #a78bfa; border-radius: 10px; }
-    .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 2px solid #9ca3af; border-radius: 4px; }
-    .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 2px solid #7dd3fc; border-radius: 4px; }
-    .room-fixture.kind-note { background: var(--veil); color: var(--muted-strong); border: 2px dashed var(--line-strong); border-radius: 6px; font-style: italic; font-weight: 700; box-shadow: none; }
+    .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 2px solid #9ca3af; border-radius: 3px; }
+    .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 2px solid #7dd3fc; border-radius: 3px; }
+    .room-fixture.kind-note { background: var(--veil); color: var(--muted-strong); border: 2px dashed var(--line-strong); border-radius: 6px; font-style: italic; box-shadow: none; }
 
-    /* Tables: a top and a seat for every place. */
+    /* A door's swing: a quarter circle into the room from its hinge, kept
+       clear of desks. The turn says which wall it is on. */
+    .room-fixture.kind-door { overflow: visible; }
+    .door-swing {
+      position: absolute;
+      width: var(--swing);
+      height: var(--swing);
+      border: 0 dashed #9a6b38;
+      pointer-events: none;
+    }
+    .wall-front .door-swing { top: 100%; left: 0; border-left: 2px solid #9a6b38; border-right-width: 1.5px; border-bottom-width: 1.5px; border-bottom-right-radius: 100%; }
+    .wall-front.is-flipped .door-swing { left: auto; right: 0; border-left: 0; border-right: 2px solid #9a6b38; border-left-width: 1.5px; border-left-style: dashed; border-bottom-right-radius: 0; border-bottom-left-radius: 100%; }
+    .wall-back .door-swing { bottom: 100%; left: 0; border-left: 2px solid #9a6b38; border-right-width: 1.5px; border-top-width: 1.5px; border-top-right-radius: 100%; }
+    .wall-back.is-flipped .door-swing { left: auto; right: 0; border-left: 1.5px dashed #9a6b38; border-right: 2px solid #9a6b38; border-top-right-radius: 0; border-top-left-radius: 100%; }
+    .wall-left .door-swing { left: 100%; top: 0; border-top: 2px solid #9a6b38; border-right-width: 1.5px; border-bottom-width: 1.5px; border-bottom-right-radius: 100%; }
+    .wall-left.is-flipped .door-swing { top: auto; bottom: 0; border-top: 1.5px dashed #9a6b38; border-bottom: 2px solid #9a6b38; border-bottom-right-radius: 0; border-top-right-radius: 100%; }
+    .wall-right .door-swing { right: 100%; top: 0; border-top: 2px solid #9a6b38; border-left-width: 1.5px; border-bottom-width: 1.5px; border-bottom-left-radius: 100%; }
+    .wall-right.is-flipped .door-swing { top: auto; bottom: 0; border-top: 1.5px dashed #9a6b38; border-bottom: 2px solid #9a6b38; border-bottom-left-radius: 0; border-top-left-radius: 100%; }
+
+    /* The resize grip on selected furniture: a corner for free-standing
+       pieces, the far end for wall pieces, which only grow along the wall. */
+    .fixture-resize {
+      position: absolute;
+      right: -7px;
+      bottom: -7px;
+      z-index: 2;
+      width: 14px;
+      height: 14px;
+      background: var(--brand);
+      border: 2px solid var(--panel);
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35);
+      cursor: nwse-resize;
+      touch-action: none;
+    }
+    .fixture-resize.is-length { bottom: auto; top: 50%; transform: translateY(-50%); cursor: ew-resize; }
+    .room-fixture.is-upright .fixture-resize.is-length { top: auto; right: auto; left: 50%; bottom: -7px; transform: translateX(-50%); cursor: ns-resize; }
+    @media (pointer: coarse) {
+      .fixture-resize { width: 22px; height: 22px; right: -11px; bottom: -11px; }
+      .room-fixture.is-upright .fixture-resize.is-length { bottom: -11px; }
+    }
+
+    /* Tables: single desks pushed together, a chair behind each. */
     .room-table {
       position: absolute;
       z-index: 5;
       cursor: grab;
-      border-radius: calc(var(--unit) * 1.2);
+      border-radius: calc(var(--cm) * 6);
     }
 
     .room-table:focus-visible,
@@ -1400,69 +1488,64 @@
     .room-table.is-selected { box-shadow: 0 0 0 2px var(--brand), 0 0 0 6px var(--brand-soft); }
     .room-fixture.is-selected { box-shadow: 0 0 0 2px var(--brand), 0 0 0 6px var(--brand-soft); }
 
+    /* The name plate above a table's desks, or the top of a round table. */
     .room-top {
       position: absolute;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: calc(var(--unit) * 0.35);
-      background: var(--panel);
-      border: 2px solid var(--line-strong);
-      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+      gap: calc(var(--cm) * 4);
+      padding: 0 calc(var(--cm) * 4);
+      background: var(--brand-soft);
+      color: var(--brand-ink);
+      border: 1px solid var(--line-accent);
+      border-radius: calc(var(--cm) * 6);
       overflow: hidden;
       text-align: center;
       user-select: none;
       transition: background var(--dur-fast) linear, border-color var(--dur-fast) linear;
     }
-
-    .room-top.kind-rect { border-radius: calc(var(--unit) * 1); }
-    .room-top.kind-strip { border-radius: calc(var(--unit) * 0.6); }
-    .room-top.kind-round { border-radius: 50%; }
-    .room-top.kind-u-down, .room-top.kind-u-up, .room-top.kind-u-left, .room-top.kind-u-right { background: transparent; border: 0; box-shadow: none; overflow: visible; }
-    .room-top.kind-u-down::before, .room-top.kind-u-up::before, .room-top.kind-u-left::before, .room-top.kind-u-right::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      border: calc(var(--unit) * 6) solid var(--panel);
-      box-shadow: inset 0 0 0 2px var(--line-strong), 0 0 0 2px var(--line-strong);
-      pointer-events: none;
+    .room-top.kind-round {
+      flex-direction: column;
+      gap: calc(var(--cm) * 3);
+      border-radius: 50%;
+      background: var(--panel);
+      color: var(--text);
+      border: 2px solid var(--line-strong);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
     }
-    .room-top.kind-u-down::before { border-bottom: 0; border-radius: calc(var(--unit) * 3) calc(var(--unit) * 3) 0 0; }
-    .room-top.kind-u-up::before { border-top: 0; border-radius: 0 0 calc(var(--unit) * 3) calc(var(--unit) * 3); }
-    .room-top.kind-u-right::before { border-right: 0; border-radius: calc(var(--unit) * 3) 0 0 calc(var(--unit) * 3); }
-    .room-top.kind-u-left::before { border-left: 0; border-radius: 0 calc(var(--unit) * 3) calc(var(--unit) * 3) 0; }
-    .room-top > * { position: relative; }
-    .room-top.drop-active { background: var(--brand-soft); border-color: var(--line-accent); }
-    .room-top.kind-u-down.drop-active::before, .room-top.kind-u-up.drop-active::before, .room-top.kind-u-left.drop-active::before, .room-top.kind-u-right.drop-active::before { border-color: var(--brand-soft); }
+    .room-top.drop-active { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
 
     .room-table-label {
-      font-size: max(10px, calc(var(--unit) * 1.6));
-      font-weight: 900;
-      line-height: 1.05;
+      font-weight: 850;
+      line-height: 1.12;
       letter-spacing: -0.01em;
       max-width: 100%;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      flex: 0 1 auto;
     }
 
     .room-table-meta {
-      font-size: max(8px, calc(var(--unit) * 1.05));
-      color: var(--muted);
+      color: var(--muted-strong);
+      font-weight: 700;
       font-variant-numeric: tabular-nums;
-      line-height: 1.05;
+      line-height: 1.12;
       white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     .room-mix {
       display: inline-flex;
-      width: 70%;
-      height: max(4px, calc(var(--unit) * 0.9));
+      flex: 0 0 auto;
+      width: calc(var(--cm) * 26);
+      height: max(4px, calc(var(--cm) * 5));
       border-radius: 999px;
       overflow: hidden;
       background: var(--slate-soft);
     }
+    .room-top.kind-round .room-mix { width: 45%; }
 
     .room-mix i { display: block; height: 100%; }
     i.band-red { background: var(--red); }
@@ -1472,71 +1555,92 @@
     i.band-blue { background: var(--blue); }
     i.band-missing { background: var(--muted); }
 
-    .room-top.kind-strip .room-table-meta, .room-top.kind-strip .room-mix { display: none; }
-    .room-top.kind-strip .room-table-label { font-size: max(9px, calc(var(--unit) * 1.3)); }
-    .room-top.kind-round .room-table-meta { display: none; }
-    .room-top.kind-round .room-table-label { font-size: max(9px, calc(var(--unit) * 1.35)); }
-    .room-top.kind-u-down .room-table-meta, .room-top.kind-u-up .room-table-meta { display: none; }
-    .room-top.kind-u-left .room-mix, .room-top.kind-u-right .room-mix, .room-top.kind-u-left .room-table-meta, .room-top.kind-u-right .room-table-meta { display: none; }
-    .room-top.kind-u-left .room-table-label, .room-top.kind-u-right .room-table-label { writing-mode: vertical-rl; max-height: 100%; }
-    .room-top.kind-u-down .room-table-label, .room-top.kind-u-up .room-table-label { position: absolute; left: 50%; transform: translateX(-50%); max-width: 80%; }
-    .room-top.kind-u-down .room-table-label { top: calc(var(--unit) * 1.4); }
-    .room-top.kind-u-up .room-table-label { bottom: calc(var(--unit) * 1.4); }
-    .room-top.kind-u-down .room-mix, .room-top.kind-u-up .room-mix { position: absolute; left: 50%; transform: translateX(-50%); width: 40%; }
-    .room-top.kind-u-down .room-mix { top: calc(var(--unit) * 3.6); }
-    .room-top.kind-u-up .room-mix { bottom: calc(var(--unit) * 3.6); }
+    .room-table.is-over-capacity .room-top { border-color: var(--red); box-shadow: 0 0 0 2px var(--red); }
 
-    .room-table.is-over-capacity .room-top { border-color: var(--red); }
+    /* A student's place: the desk, the chair behind it, and the name. */
+    .seat.is-desk { position: absolute; }
 
-    .seat {
+    .seat-desk {
       position: absolute;
-      width: calc(var(--unit) * 13);
-      height: calc(var(--unit) * 5.6);
-      border-radius: calc(var(--unit) * 0.8);
-    }
-
-    .seat.is-empty {
-      border: 2px dashed var(--line-strong);
-      color: var(--muted);
-      font-size: max(8px, calc(var(--unit) * 1));
-      display: grid;
-      place-items: center;
-      user-select: none;
+      background: var(--panel);
+      border: 1.5px solid var(--line-strong);
+      border-radius: calc(var(--cm) * 2.5);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+      pointer-events: none;
       transition: background var(--dur-fast) linear, border-color var(--dur-fast) linear;
     }
+    /* The coloured edge is the side of the desk the student faces. */
+    .seat-desk::after { content: ""; position: absolute; border-radius: inherit; }
+    .face-up .seat-desk::after { left: 0; right: 0; top: 0; height: calc(var(--cm) * 5); }
+    .face-down .seat-desk::after { left: 0; right: 0; bottom: 0; height: calc(var(--cm) * 5); }
+    .face-left .seat-desk::after, .face-none .seat-desk::after { top: 0; bottom: 0; left: 0; width: calc(var(--cm) * 5); }
+    .face-right .seat-desk::after { top: 0; bottom: 0; right: 0; width: calc(var(--cm) * 5); }
+    .seat-desk.band-red { background: color-mix(in srgb, var(--red) 13%, var(--panel)); border-color: color-mix(in srgb, var(--red) 45%, var(--line-strong)); }
+    .seat-desk.band-orange { background: color-mix(in srgb, var(--orange) 14%, var(--panel)); border-color: color-mix(in srgb, var(--orange) 45%, var(--line-strong)); }
+    .seat-desk.band-yellow { background: color-mix(in srgb, var(--yellow) 18%, var(--panel)); border-color: color-mix(in srgb, var(--yellow) 55%, var(--line-strong)); }
+    .seat-desk.band-green { background: color-mix(in srgb, var(--green) 13%, var(--panel)); border-color: color-mix(in srgb, var(--green) 45%, var(--line-strong)); }
+    .seat-desk.band-blue { background: color-mix(in srgb, var(--blue) 13%, var(--panel)); border-color: color-mix(in srgb, var(--blue) 45%, var(--line-strong)); }
+    .seat-desk.band-missing { background: var(--panel-2); }
+    .seat-desk.band-red::after { background: var(--red); }
+    .seat-desk.band-orange::after { background: var(--orange); }
+    .seat-desk.band-yellow::after { background: var(--yellow); }
+    .seat-desk.band-green::after { background: var(--green); }
+    .seat-desk.band-blue::after { background: var(--blue); }
+    .seat-desk.band-missing::after { background: var(--muted); }
 
-    .seat.is-empty.drop-active,
-    .seat.is-filled.drop-active .drag-card,
-    .room-tray-chips.drop-active {
-      background: var(--brand-soft);
-      border-color: var(--line-accent);
+    /* The chair: a light seat and a backrest on the far side from the
+       desk, with no outline for a name to run across. */
+    .seat-chair {
+      position: absolute;
+      background: color-mix(in srgb, var(--line-strong) 30%, transparent);
+      border: 0 solid var(--muted);
+      border-radius: calc(var(--cm) * 5);
+      pointer-events: none;
     }
+    .face-up .seat-chair { border-bottom-width: max(2px, calc(var(--cm) * 5)); }
+    .face-down .seat-chair { border-top-width: max(2px, calc(var(--cm) * 5)); }
+    .face-left .seat-chair { border-right-width: max(2px, calc(var(--cm) * 5)); }
+    .face-right .seat-chair { border-left-width: max(2px, calc(var(--cm) * 5)); }
 
-    .seat.is-extra .drag-card { border-color: var(--red); }
+    .seat.is-empty .seat-desk { background: transparent; border-style: dashed; box-shadow: none; }
+    .seat.is-empty .seat-chair { background: transparent; border-color: var(--line-strong); }
+    .seat-empty {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-size: max(8px, calc(var(--cm) * 8));
+      font-weight: 700;
+      pointer-events: none;
+    }
+    .seat.drop-active .seat-desk { background: var(--brand-soft); border-color: var(--line-accent); border-style: solid; }
+    .room-tray-chips.drop-active { background: var(--brand-soft); border-color: var(--line-accent); }
+    .seat.is-extra .seat-desk { border-color: var(--red); border-width: 2px; }
 
-    /* A student in a seat. */
-    .drag-card {
-      position: relative;
-      height: 100%;
+    /* The student: a name sized to fit the desk whole, and the score that
+       placed them. Sizes are set per desk from the name's measured width. */
+    .drag-card { cursor: grab; }
+    .drag-card:active { cursor: grabbing; }
+    .drag-card.dragging { opacity: 0.5; }
+    .classroom-board .drag-card {
+      position: absolute;
       display: flex;
       flex-direction: column;
+      align-items: center;
       justify-content: center;
-      gap: calc(var(--unit) * 0.15);
-      padding: 0 calc(var(--unit) * 1) 0 calc(var(--unit) * 1.5);
-      background: var(--panel);
-      border: 1px solid var(--line-strong);
-      border-radius: calc(var(--unit) * 0.8);
-      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1);
-      cursor: grab;
+      gap: calc(var(--cm) * 1);
+      text-align: center;
+      color: var(--text);
+      background: transparent;
+      border-radius: calc(var(--cm) * 3);
       overflow: hidden;
       min-width: 0;
     }
+    .classroom-board .drag-card:focus-visible { outline: none; box-shadow: var(--focus); }
+    .seat-name { font-weight: 800; line-height: 1.12; letter-spacing: 0; white-space: nowrap; }
+    .seat-score { font-weight: 700; line-height: 1.12; white-space: nowrap; color: var(--muted-strong); font-variant-numeric: tabular-nums; }
 
-    .drag-card:active { cursor: grabbing; }
-    .drag-card.dragging { opacity: 0.5; }
-    .drag-card:focus-visible { outline: none; box-shadow: var(--focus); }
-
-    .seat-band { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--unit) * 0.9); }
+    .seat-band { position: absolute; left: 0; top: 0; bottom: 0; width: 8px; }
     .band-red .seat-band { background: var(--red); }
     .band-orange .seat-band { background: var(--orange); }
     .band-yellow .seat-band { background: var(--yellow); }
@@ -1544,62 +1648,41 @@
     .band-blue .seat-band { background: var(--blue); }
     .band-missing .seat-band { background: var(--muted); }
 
-    .seat-name {
-      font-weight: 850;
-      font-size: max(10px, calc(var(--unit) * 1.3));
-      line-height: 1.08;
-      overflow: hidden;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow-wrap: anywhere;
-    }
-
-    .seat-score {
-      font-size: max(8px, calc(var(--unit) * 1));
-      color: var(--muted);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      font-variant-numeric: tabular-nums;
-    }
-
     .seat-moved,
     .seat-order {
-      position: absolute;
-      right: calc(var(--unit) * 0.5);
       font-style: normal;
-      font-size: max(8px, calc(var(--unit) * 1));
       color: var(--muted-strong);
       font-weight: 900;
       line-height: 1;
     }
-
-    .seat-moved { top: calc(var(--unit) * 0.3); }
-    .seat-order { top: calc(var(--unit) * 0.3); display: none; }
+    .classroom-board .seat-moved,
+    .classroom-board .seat-order {
+      position: absolute;
+      top: calc(var(--cm) * 1.5);
+      right: calc(var(--cm) * 2);
+      font-size: max(8px, calc(var(--cm) * 7));
+    }
+    .classroom-board .seat-order { display: none; }
     .classroom-board.show-order .seat-order { display: block; }
 
     /* The move menu button appears on hover and focus; on touch screens,
        where there is no hover, it is always there. */
     .seat-more {
       position: absolute;
-      right: calc(var(--unit) * 0.25);
-      top: 50%;
-      transform: translateY(-50%);
-      width: calc(var(--unit) * 1.9);
-      height: calc(var(--unit) * 3);
-      min-width: 14px;
-      min-height: 22px;
+      z-index: 2;
+      width: max(16px, calc(var(--cm) * 9));
+      height: max(18px, calc(var(--cm) * 10));
       padding: 0;
       border: 0;
       border-radius: 4px;
-      background: transparent;
-      color: var(--muted);
-      font-size: max(11px, calc(var(--unit) * 1.4));
+      background: color-mix(in srgb, var(--panel) 85%, transparent);
+      color: var(--muted-strong);
+      font-size: max(11px, calc(var(--cm) * 8));
       font-weight: 900;
       line-height: 1;
       cursor: pointer;
       opacity: 0;
+      transform: translate(-100%, 0);
       transition: opacity var(--dur-fast) linear;
     }
 
@@ -1610,7 +1693,6 @@
 
     @media (pointer: coarse), (hover: none) {
       .seat-more { opacity: 1; }
-      .drag-card { padding-right: calc(var(--unit) * 2.2); }
     }
 
     .seat-menu {
@@ -1669,6 +1751,8 @@
     .inspector-field { display: inline-flex; align-items: center; gap: 6px; font-size: 0.76rem; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
     .inspector-field input, .inspector-field select { font: inherit; font-size: 0.84rem; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); padding: 5px 8px; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--panel); }
     .inspector-field input { width: 150px; }
+    .inspector-field input[type="number"] { width: 84px; }
+    .inspector-unit { text-transform: none; letter-spacing: 0; margin-left: -2px; }
 
     /* Unplaced students wait in a tray under the room. */
     .room-tray {
@@ -1686,7 +1770,6 @@
     .room-tray.is-empty .room-tray-chips { display: none; }
 
     .room-tray-chips {
-      --unit: 10px;
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -1696,7 +1779,45 @@
       border-radius: var(--radius-sm);
     }
 
-    .seat.is-tray { position: relative; width: 190px; height: 52px; }
+    .seat.is-tray { position: relative; width: 210px; min-height: 52px; }
+    .room-tray .drag-card {
+      position: relative;
+      min-height: 52px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 2px;
+      padding: 6px 30px 6px 16px;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.1);
+      overflow: hidden;
+      min-width: 0;
+    }
+    .room-tray .drag-card:focus-visible { outline: none; box-shadow: var(--focus); }
+    .room-tray .seat-name { font-size: 13px; white-space: normal; overflow-wrap: anywhere; }
+    .room-tray .seat-score { font-size: 11px; white-space: normal; }
+    .room-tray .seat-more { right: 4px; top: 50%; transform: translateY(-50%); width: 22px; height: 28px; font-size: 14px; }
+
+    /* Said above the room when tables overlap or stand on furniture. */
+    .room-warning {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+      margin: 0;
+      padding: 8px 12px;
+      border: 1px solid color-mix(in srgb, var(--orange) 55%, var(--line));
+      border-radius: var(--radius-sm);
+      background: color-mix(in srgb, var(--orange) 10%, var(--panel));
+      color: var(--text);
+      font-size: 0.84rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+    .room-warning span { flex: 1 1 320px; }
 
     .room-legend {
       display: flex;
@@ -2148,8 +2269,8 @@
       .seat.is-tray { width: 100%; }
       .inspector-field input { width: 120px; }
       .classroom-board.is-preview .seat-name,
-      .classroom-board.is-preview .seat-score { display: none; }
-      .classroom-board.is-preview .seat-band { width: 100%; opacity: 0.55; }
+      .classroom-board.is-preview .seat-score,
+      .classroom-board.is-preview .room-table-meta { display: none; }
 
       .section-header {
         display: grid;
@@ -3868,10 +3989,14 @@
     /* The room takes the whole stage; the inspector, the tray and the legend
        sit under it. Small screens get a room wide enough to read and scroll. */
     body.planner-open .classroom-board {
-      width: min(100%, max(860px, calc((100vh - 250px) * var(--room-ratio))));
-      min-width: 860px;
+      width: calc(min(100%, max(860px, calc((100vh - 250px) * var(--room-ratio)))) * var(--room-zoom, 1));
+      min-width: calc(860px * var(--room-zoom, 1));
       margin: 0 auto;
     }
+
+    .zoom-control { display: inline-flex; align-items: center; gap: 2px; }
+    .zoom-control .btn { min-width: 34px; justify-content: center; }
+    .zoom-control .zoom-value { min-width: 58px; font-variant-numeric: tabular-nums; }
     body.planner-open .table-groups { min-width: 860px; }
 
     @media (max-width: 720px) {
@@ -5374,7 +5499,7 @@
         <div class="section-header">
           <div>
             <h2 id="tableGroupsTitle">Table Groups and Seating Plan</h2>
-            <p id="tableGroupContext">Choose a table size and a strategy to build the groups, then arrange them in a room shaped like yours.</p>
+            <p id="tableGroupContext">Choose a table size and a strategy to build the groups, then arrange them in a to-scale copy of your room.</p>
           </div>
           <div class="btn-row">
             <button class="btn small" id="printA4LayoutBtn" type="button" title="The room with names, bands and scores, plus a roster page">Print teacher copy</button>
@@ -5386,7 +5511,7 @@
           <span class="planner-launch-icon" aria-hidden="true">&#9638;</span>
           <span class="planner-launch-text">
             <strong>Open the seating planner</strong>
-            <small id="plannerLaunchHint">A full-screen room where students sit in seats at shaped tables you can move, turn and arrange around your furniture.</small>
+            <small id="plannerLaunchHint">A full-screen, to-scale room where students sit at single desks pushed into groups you can move, turn and arrange around your furniture.</small>
           </span>
           <span class="planner-launch-cta">Open <span aria-hidden="true">&#10530;</span></span>
         </button>
@@ -5580,57 +5705,62 @@
         <div class="btn-row">
           <button class="btn small ghost" id="plannerUndo" type="button" data-room-action="undo" disabled title="Undo the last move (Ctrl+Z)">Undo</button>
           <button class="btn small ghost" id="plannerOrderToggle" type="button" data-room-action="toggle-order" aria-pressed="false" title="Number each seat in the order the strategy placed the student">Show placement order</button>
+          <div class="zoom-control" role="group" aria-label="Zoom the room">
+            <button class="btn small ghost" id="plannerZoomOut" type="button" data-room-action="zoom-out" aria-label="Zoom out" title="Zoom out" disabled>−</button>
+            <button class="btn small ghost zoom-value" id="plannerZoomValue" type="button" data-room-action="zoom-fit" title="Fit the whole room in the window">Fit</button>
+            <button class="btn small ghost" id="plannerZoomIn" type="button" data-room-action="zoom-in" aria-label="Zoom in" title="Zoom in to read small desks">+</button>
+          </div>
           <details class="room-menu" id="plannerAddMenu">
             <summary>Add to room</summary>
             <div class="room-menu-panel">
               <span class="room-menu-title">Furniture</span>
               <div class="room-menu-grid">
+                <button type="button" data-add-fixture="board">Board</button>
+                <button type="button" data-add-fixture="whiteboard">Whiteboard</button>
+                <button type="button" data-add-fixture="display">Display board</button>
+                <button type="button" data-add-fixture="screen">Screen</button>
                 <button type="button" data-add-fixture="door">Door</button>
                 <button type="button" data-add-fixture="window">Window</button>
-                <button type="button" data-add-fixture="board">Board</button>
-                <button type="button" data-add-fixture="screen">Screen</button>
                 <button type="button" data-add-fixture="teacherDesk">Teacher desk</button>
+                <button type="button" data-add-fixture="table">Side table</button>
                 <button type="button" data-add-fixture="carpet">Carpet</button>
                 <button type="button" data-add-fixture="shelf">Shelves</button>
                 <button type="button" data-add-fixture="cupboard">Cupboard</button>
                 <button type="button" data-add-fixture="sink">Sink</button>
                 <button type="button" data-add-fixture="note">Area label</button>
               </div>
-              <span class="hint">Boards, screens, doors, windows, shelves and sinks stick to the nearest wall. Select anything in the room to turn or remove it.</span>
+              <span class="hint">Boards, screens, doors, windows, shelves and sinks stick to the nearest wall. Each piece arrives at a typical size: select it to type its real length and depth, or drag the grip on its corner.</span>
             </div>
           </details>
           <details class="room-menu" id="plannerRoomMenu">
             <summary>Room</summary>
             <div class="room-menu-panel" id="roomControls">
               <div class="field">
-                <label for="roomRatioInput">Room shape (width:height)</label>
-                <input id="roomRatioInput" type="text" value="4:3" placeholder="4:3, 16:10, 3:2" list="roomRatioPresets">
-                <datalist id="roomRatioPresets">
-                  <option value="4:3">Wide</option>
-                  <option value="3:2">Long</option>
-                  <option value="16:10">Longer</option>
-                  <option value="1:1">Square</option>
-                  <option value="3:4">Tall</option>
+                <label for="roomSizeInput">Room size in metres</label>
+                <input id="roomSizeInput" type="text" value="9 x 8" placeholder="9 x 8" list="roomSizePresets" autocomplete="off" spellcheck="false">
+                <datalist id="roomSizePresets">
+                  <option value="7 x 7"></option>
+                  <option value="8 x 7"></option>
+                  <option value="9 x 7"></option>
+                  <option value="9 x 8"></option>
+                  <option value="10 x 8"></option>
+                  <option value="12 x 9"></option>
                 </datalist>
-                <span class="hint">A bigger second number makes the room taller.</span>
+                <span class="hint">Width along the front wall, then front to back. Press Enter to apply.</span>
+              </div>
+              <div class="field">
+                <label for="roomDeskInput">Single desk in centimetres</label>
+                <input id="roomDeskInput" type="text" value="70 x 49" placeholder="70 x 49" autocomplete="off" spellcheck="false">
+                <span class="hint">Width, then depth. Most single desks are about 5 : 3.5, such as 70 x 49 or 60 x 42.</span>
               </div>
               <div class="field">
                 <label for="layoutSnapSelect">Drag snap</label>
                 <select id="layoutSnapSelect">
                   <option value="0">Free drag</option>
-                  <option value="1">Fine (1%)</option>
-                  <option value="2" selected>Medium (2%)</option>
-                  <option value="5">Strong (5%)</option>
-                  <option value="10">Very strong (10%)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="roomScaleSelect">Table size</label>
-                <select id="roomScaleSelect">
-                  <option value="0" selected>Fit the room</option>
-                  <option value="1">Large</option>
-                  <option value="0.8">Medium</option>
-                  <option value="0.6">Small</option>
+                  <option value="5">5 cm</option>
+                  <option value="10" selected>10 cm</option>
+                  <option value="25">25 cm</option>
+                  <option value="50">50 cm</option>
                 </select>
               </div>
               <div class="field">
@@ -5646,7 +5776,7 @@
                 <button class="btn small ghost" type="button" data-room-action="load-room">Load room file</button>
                 <button class="btn small ghost" type="button" data-room-action="reset-room">Reset room</button>
               </div>
-              <span class="hint">The room is remembered on this device: shapes, positions and furniture, never a student.</span>
+              <span class="hint">The room is remembered on this device: its size, the desks, the furniture and where everything stands, never a student.</span>
               <input type="file" id="roomLayoutFile" accept="application/json,.json" hidden>
             </div>
           </details>
@@ -6310,12 +6440,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "briefing", "briefingStage", "briefingSteps", "briefingProgress", "briefingPlay", "briefingStop", "briefingPrev",
         "briefingNext", "briefingVoice", "briefingRate", "briefingNote", "briefingTranscript",
         "summaryReport", "summaryEditNote", "regenerateSummaryBtn", "tableGroupContext", "groupSizeInput", "groupStrategySelect",
-        "groupScoreSelect", "roomRatioInput", "layoutSnapSelect", "refreshGroupsBtn", "tableGroups", "groupingCount", "groupingTable",
+        "groupScoreSelect", "roomSizeInput", "roomDeskInput", "layoutSnapSelect", "refreshGroupsBtn", "tableGroups", "groupingCount", "groupingTable",
         "priorityCount", "priorityTable", "celebrationCount", "celebrationTable",
         "exportGroupingBtn", "exportPriorityBtn", "exportCelebrationBtn", "exportGapBtn",
         "exportSummaryBtn", "exportSummaryBtn2", "copySummaryBtn", "exportTableGroupsBtn",
         "printA4LayoutBtn", "printWallPlanBtn", "planSentence", "plannerUndo", "plannerOrderToggle",
-        "plannerPrintWall", "roomScaleSelect", "roomPaperSelect", "roomLayoutFile", "roomControls",
+        "plannerPrintWall", "plannerZoomIn", "plannerZoomOut", "plannerZoomValue", "roomPaperSelect", "roomLayoutFile", "roomControls",
         "dropZone", "helpBtn", "helpPanel", "onboarding", "onboardingClose",
         "onboardSampleBtn", "onboardUploadBtn", "sectionNav", "backToTop"
       ].forEach((id) => {
@@ -6339,7 +6469,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         clearRoomHistory();
         renderTableGroups();
       }));
-      [els.roomRatioInput, els.layoutSnapSelect, els.roomScaleSelect].filter(Boolean).forEach((control) => control.addEventListener("input", refreshLayoutControlsOnly));
+      // Sizes apply when committed (Enter or leaving the field): "1" on the
+      // way to "10 x 8" is not a room.
+      [els.roomSizeInput, els.roomDeskInput].filter(Boolean).forEach((control) => control.addEventListener("change", refreshLayoutControlsOnly));
+      if (els.layoutSnapSelect) els.layoutSnapSelect.addEventListener("input", refreshLayoutControlsOnly);
       els.refreshGroupsBtn.addEventListener("click", () => {
         pushRoomHistory();
         state.manualArrangement = false;
@@ -6651,6 +6784,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       document.addEventListener("pointercancel", handleLayoutPointerUp);
       document.addEventListener("click", handleRoomClick);
       document.addEventListener("input", handleRoomInput);
+      document.addEventListener("change", handleRoomChange);
       document.addEventListener("focusin", handleRoomFocusIn);
       document.addEventListener("keydown", handlePlannerShortcuts);
       if (els.plannerBackdrop) els.plannerBackdrop.addEventListener("keydown", trapPlannerFocus);
@@ -12716,9 +12850,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         act: "Tick the posters you want, choose A3 or A4, add the class name the students know, and print with background graphics on and fit-to-page."
       },
       "sec-tables": {
-        what: "Table groups built from the data by a chosen strategy, and a full-screen planner where every student has a seat at a shaped table you can move, turn and rename, in a room with your own furniture. The room is remembered on this device; the students never are.",
-        read: "Each seat carries the student's band colour and the score that drove the grouping; the strip on each table shows its band mix, so a balanced table reads as a spread of colours and a skill group as one block. The paragraph under the room says exactly how the plan was made, and the placement-order toggle numbers the seats in the order the strategy dealt them. Students without a usable score wait in Unplaced rather than being seated by a number they do not have.",
-        act: "Build the groups for the week, drag anyone the data placed badly to any seat (dropping on a taken seat swaps), then print the teacher copy for your planner and the wall plan, with names only, for the room."
+        what: "Table groups built from the data by a chosen strategy, and a full-screen planner drawn to scale: your room's size in metres, single desks (70 x 49 cm unless you set another size) pushed together into groups, a chair behind each, and your own furniture at its real size. A group of five is two facing pairs with one desk at the head; you can also choose a desk at each end, a row facing the front, a horseshoe or a round table. The room is remembered on this device; the students never are.",
+        read: "Each desk carries the student's band colour and the score that drove the grouping; the strip on each table's name plate shows its band mix, so a balanced table reads as a spread of colours and a skill group as one block. Names are always shown in full, sized to fit the desk. A warning above the room names any tables that overlap or stand on furniture. The paragraph under the room says exactly how the plan was made, and the placement-order toggle numbers the desks in the order the strategy dealt them. Students without a usable score wait in Unplaced rather than being seated by a number they do not have.",
+        act: "Set your room size and desk size under Room, add and size the board, door, windows and teacher desk, then build the groups for the week. Drag anyone the data placed badly to any desk (dropping on a taken desk swaps), and print the teacher copy for your planner and the wall plan, with names only, for the room."
       },
       "sec-grouping": {
         what: "Every record in view in one sortable table: scores, bands, growth, gap status, the planning group the dashboard suggests and the teacher action that goes with it.",
@@ -17370,47 +17504,67 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // same DOM nodes (the controls and the room) so the drag, keyboard and
     // print handlers are untouched, and gives them back on close.
     //
-    // Geometry is in room units: one unit is 1% of the room's width on both
-    // axes, so a round table is round on a 16:10 room and a seat is the same
-    // shape on screen, in the section preview and on paper. Positions stay as
-    // percentages of the room's width (x) and height (y), which every handler
-    // already speaks; the one place the two scales meet is the y clamp.
+    // Everything in the room is measured in centimetres, as a real room is.
+    // A table is a group of single desks pushed together (70 x 49 cm, about
+    // 5 : 3.5, unless the teacher says otherwise), each with a chair behind
+    // it, so a group of five is two facing pairs and a desk at the head. The
+    // room is the size the teacher types. On screen one centimetre is --cm
+    // (the board's width over the room's width); on paper it is whatever
+    // fits the sheet, so a desk is the same shape everywhere.
     //
-    // What is remembered between visits is the room alone: ratio, snap,
-    // fixture kinds and positions, table shapes and positions. Never a name,
-    // a label a teacher typed, a score, a class or a file.
+    // Positions are the top-left corner of each footprint in centimetres
+    // from the front-left corner of the room: resizing a board or a room
+    // never stretches anything else.
+    //
+    // What is remembered between visits is the room alone: its size, the
+    // desk size, the snap, each piece of furniture with its size, and each
+    // table's shape, turn and place. Never a name, a label a teacher typed,
+    // a score, a class or a file.
     const ROOM_LAYOUT_KEY = "asg-room-layout";
-    const ROOM_LAYOUT_VERSION = 2;
-    const SEAT_W = 13;
-    const SEAT_H = 5.6;
-    const SEAT_GAP = 1;
-    const ROOM_PAD = 1;
-    const ROOM_TOP_RESERVE = 14;
+    const ROOM_LAYOUT_VERSION = 3;
+    const ROOM_DEFAULT_SIZE = Object.freeze({ width: 900, depth: 800 });
+    const ROOM_MIN_CM = 300;
+    const ROOM_MAX_CM = 3000;
+    const DESK_DEFAULT = Object.freeze({ width: 70, depth: 49 });
+    // Behind every desk: the chair and the student sitting on it.
+    const CHAIR_ZONE = 35;
+    // The table's name plate, drawn above its desks.
+    const TAB_HEIGHT = 22;
+    const TAB_GAP = 4;
+    // The coloured edge on a desk: the side the student faces.
+    const DESK_STRIPE = 5;
     const ROOM_HISTORY_MAX = 40;
+    const ROOM_SNAP_STEPS = [0, 5, 10, 25, 50];
+    const SEATING_PRINT_FONT = '"Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif';
     // Null-prototype maps: a kind or shape read from a file is looked up by
     // name, and "constructor" must not be one.
     const TABLE_SHAPES = Object.assign(Object.create(null), {
-      rect: { label: "Rectangle" },
-      round: { label: "Round" },
-      horseshoe: { label: "Horseshoe" },
-      row: { label: "Row of desks" }
+      pod: { label: "Facing pairs, odd desk at the head", short: "facing pairs" },
+      "pod-ends": { label: "Facing pairs, a desk at each end", short: "facing pairs with ends" },
+      row: { label: "Row facing the front", short: "row" },
+      horseshoe: { label: "Horseshoe (U)", short: "horseshoe" },
+      round: { label: "Round table", short: "round table" }
     });
-    const TABLE_SHAPE_ORDER = ["rect", "round", "horseshoe", "row"];
-    // Fixture sizes are the footprint in room units at rotation 0. Wall
-    // fixtures lie along a wall and turn to follow it.
+    const TABLE_SHAPE_ORDER = ["pod", "pod-ends", "row", "horseshoe", "round"];
+    // Sizes in centimetres: w runs along the wall (or across, at no turn), d
+    // is the depth. Wall pieces sit on the nearest wall and turn to follow
+    // it; their turn names the wall (0 front, 90 right, 180 back, 270 left).
     const FIXTURE_KINDS = Object.assign(Object.create(null), {
-      board: { label: "Board", w: 52, h: 6, wall: true },
-      door: { label: "Door", w: 10, h: 4, wall: true },
-      window: { label: "Window", w: 26, h: 3, wall: true },
-      teacherDesk: { label: "Teacher desk", w: 20, h: 9, wall: false },
-      carpet: { label: "Carpet", w: 30, h: 22, wall: false, under: true },
-      shelf: { label: "Shelves", w: 16, h: 5, wall: true },
-      cupboard: { label: "Cupboard", w: 14, h: 6, wall: false },
-      sink: { label: "Sink", w: 10, h: 5, wall: true },
-      screen: { label: "Screen", w: 24, h: 3, wall: true },
-      note: { label: "Area label", w: 18, h: 5, wall: false, preset: true }
+      board: { label: "Board", w: 240, d: 14, wall: true },
+      whiteboard: { label: "Whiteboard", w: 180, d: 12, wall: true },
+      display: { label: "Display board", w: 150, d: 10, wall: true },
+      screen: { label: "Screen", w: 200, d: 12, wall: true },
+      door: { label: "Door", w: 90, d: 12, wall: true, swing: true },
+      window: { label: "Window", w: 180, d: 12, wall: true },
+      teacherDesk: { label: "Teacher desk", w: 140, d: 70, wall: false },
+      table: { label: "Side table", w: 120, d: 60, wall: false },
+      carpet: { label: "Carpet", w: 250, d: 200, wall: false, under: true },
+      shelf: { label: "Shelves", w: 120, d: 35, wall: true },
+      cupboard: { label: "Cupboard", w: 100, d: 50, wall: false },
+      sink: { label: "Sink", w: 80, d: 55, wall: true },
+      note: { label: "Area label", w: 150, d: 40, wall: false, preset: true }
     });
-    const FIXTURE_ORDER = ["board", "door", "window", "teacherDesk", "carpet", "shelf", "cupboard", "sink", "screen", "note"];
+    const WALL_NAMES = { 0: "front", 90: "right", 180: "back", 270: "left" };
     // An area label is chosen from this list rather than typed, so the room
     // that is remembered can never hold a student's name.
     const NOTE_PRESETS = ["Reading corner", "Bags and coats", "Computers", "Quiet area", "Resources", "Group work area", "Display", "Trays", "Bin", "Entrance"];
@@ -17420,175 +17574,268 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return ((n % 360) + 360) % 360;
     }
 
+    // The last version's shared rectangular table is a group of desks now.
     function normalizeShape(value) {
-      return typeof value === "string" && TABLE_SHAPES[value] ? value : "rect";
+      if (value === "rect") return "pod";
+      return typeof value === "string" && TABLE_SHAPES[value] ? value : "pod";
     }
 
-    // A run of seats laid horizontally (a row) or vertically (a column).
-    function chipRun(count, startX, startY, vertical) {
-      const chips = [];
-      for (let i = 0; i < count; i += 1) {
-        chips.push(vertical
-          ? { x: startX, y: startY + i * (SEAT_H + SEAT_GAP) }
-          : { x: startX + i * (SEAT_W + SEAT_GAP), y: startY });
+    function normalizeRoomSize(widthValue, depthValue, fallback = ROOM_DEFAULT_SIZE) {
+      const width = finiteLayoutNumber(widthValue, NaN);
+      const depth = finiteLayoutNumber(depthValue, NaN);
+      if (!(width > 0) || !(depth > 0)) return { width: fallback.width, depth: fallback.depth };
+      let w = clampBetween(width, ROOM_MIN_CM, ROOM_MAX_CM);
+      let d = clampBetween(depth, ROOM_MIN_CM, ROOM_MAX_CM);
+      // No classroom is a corridor: the shape stays within 2.5 : 1 either way.
+      if (w / d > 2.5) d = w / 2.5;
+      if (d / w > 2.5) w = d / 2.5;
+      return { width: Math.round(w), depth: Math.round(d) };
+    }
+
+    function normalizeDeskSize(widthValue, depthValue) {
+      const width = finiteLayoutNumber(widthValue, NaN);
+      const depth = finiteLayoutNumber(depthValue, NaN);
+      if (!(width > 0) || !(depth > 0)) return { width: DESK_DEFAULT.width, depth: DESK_DEFAULT.depth };
+      return { width: Math.round(clampBetween(width, 40, 160)), depth: Math.round(clampBetween(depth, 28, 110)) };
+    }
+
+    function clampFixtureLength(value, fallback) {
+      return Math.round(clampBetween(finiteLayoutNumber(value, fallback), 10, ROOM_MAX_CM));
+    }
+
+    function clampFixtureDepth(value, fallback) {
+      return Math.round(clampBetween(finiteLayoutNumber(value, fallback), 2, 600));
+    }
+
+    // The nearest step on offer, so a hand-edited file cannot ask for 7 cm.
+    function parseSnapCm(value) {
+      const n = finiteLayoutNumber(value, 10);
+      return ROOM_SNAP_STEPS.reduce((best, step) => (Math.abs(step - n) < Math.abs(best - n) ? step : best), 10);
+    }
+
+    function getLayoutSnapCm() {
+      return parseSnapCm(state.classroomLayout.snap);
+    }
+
+    function roomSize() {
+      const layout = state.classroomLayout;
+      return normalizeRoomSize(layout?.room?.width, layout?.room?.depth);
+    }
+
+    function deskSize() {
+      const layout = state.classroomLayout;
+      return normalizeDeskSize(layout?.desk?.width, layout?.desk?.depth);
+    }
+
+    // The room's proportions, for the board's aspect ratio and the print.
+    function roomRatio() {
+      const size = roomSize();
+      return { width: size.width, height: size.depth };
+    }
+
+    function formatMetres(cm) {
+      return String(Number((finiteLayoutNumber(cm) / 100).toFixed(2)));
+    }
+
+    function roomSizeText(size = roomSize()) {
+      return formatMetres(size.width) + " x " + formatMetres(size.depth);
+    }
+
+    function deskSizeText(desk = deskSize()) {
+      return formatInteger(desk.width) + " x " + formatInteger(desk.depth);
+    }
+
+    // "9 x 8", "9.5 by 7.2", "900 x 800 cm", "9m x 8m". Returns centimetres,
+    // or null when the text is not two sizes yet (the teacher is typing).
+    function parseSizePair(value, bareUnit) {
+      const text = cleanString(value).toLowerCase().replace(/(\d),(\d)/g, "$1.$2");
+      const match = text.match(/^(\d+(?:\.\d+)?)\s*(cm|m)?\s*(?:x|×|by|\*|:|\/)\s*(\d+(?:\.\d+)?)\s*(cm|m)?$/);
+      if (!match) return null;
+      const toCm = (number, unit) => {
+        const n = Number(number);
+        if (unit === "cm") return n;
+        if (unit === "m") return n * 100;
+        return bareUnit(n);
+      };
+      return { width: toCm(match[1], match[2] || match[4]), depth: toCm(match[3], match[4] || match[2]) };
+    }
+
+    function parseRoomSize(value, fallback) {
+      // A bare number is metres unless it can only be centimetres.
+      const pair = parseSizePair(value, (n) => (n > 40 ? n : n * 100));
+      return pair ? normalizeRoomSize(pair.width, pair.depth) : { ...fallback };
+    }
+
+    function parseDeskSize(value, fallback) {
+      // A bare number is centimetres unless it can only be metres.
+      const pair = parseSizePair(value, (n) => (n < 3 ? n * 100 : n));
+      return pair ? normalizeDeskSize(pair.width, pair.depth) : { ...fallback };
+    }
+
+    // ---- Tables: desks pushed together -------------------------------------
+    // Each shape is laid out unturned, as a list of desks in the order the
+    // group fills them, then turned a quarter at a time. face is the way the
+    // student looks across their desk; the chair is on the other side.
+    const FACE_TURN = { up: "right", right: "down", down: "left", left: "up", none: "none" };
+
+    // Two columns of desks facing each other across the middle. An odd desk
+    // goes at the head; "ends" puts one at each end of an even group
+    // instead. Seats fill across the pairs from the top, then the head, then
+    // the foot, so an unfilled seat is the odd one out.
+    function podDesks(n, withEnds, desk) {
+      const W = desk.width;
+      const D = desk.depth;
+      if (n <= 1) return [{ x: 0, y: 0, w: W, h: D, face: "up" }];
+      const ends = withEnds ? (n % 2 === 0 ? (n >= 4 ? 2 : 0) : 1) : n % 2;
+      const perSide = (n - ends) / 2;
+      const top = ends ? D : 0;
+      const desks = [];
+      for (let i = 0; i < perSide; i += 1) {
+        desks.push({ x: 0, y: top + i * W, w: D, h: W, face: "right" });
+        desks.push({ x: D, y: top + i * W, w: D, h: W, face: "left" });
       }
-      return chips;
+      if (ends >= 1) desks.push({ x: D - W / 2, y: 0, w: W, h: D, face: "down" });
+      if (ends >= 2) desks.push({ x: D - W / 2, y: top + perSide * W, w: W, h: D, face: "up" });
+      return desks;
     }
 
-    function runLength(count, vertical) {
-      if (count <= 0) return 0;
-      return vertical ? count * SEAT_H + (count - 1) * SEAT_GAP : count * SEAT_W + (count - 1) * SEAT_GAP;
+    // Side by side, every student facing the front of the room.
+    function rowDesks(n, desk) {
+      return Array.from({ length: n }, (_, i) => ({ x: i * desk.width, y: 0, w: desk.width, h: desk.depth, face: "up" }));
     }
 
-    // Returns { width, height, seats: [{x, y}], top: {x, y, width, height, kind} }
-    // in room units, with (0,0) the top-left of the table's footprint. Seat k
-    // is where group[k] sits, so the order of the seats is the order of the
-    // group: a rectangle fills its top row first, then its bottom row.
-    function tableGeometry(shape, seatCount, rotation) {
-      const n = Math.max(1, Math.round(seatCount) || 1);
-      const rot = normalizeRotation(rotation);
-      const vertical = rot === 90 || rot === 270;
-      if (shape === "round") return roundGeometry(n);
-      if (shape === "row") return rowGeometry(n, vertical, rot);
-      if (shape === "horseshoe") return horseshoeGeometry(n, rot);
-      return rectGeometry(n, vertical);
+    // A U open towards the front: a row across the back and an arm up each
+    // side, every student on the outside facing in. Seats run round the U.
+    function horseshoeDesks(n, desk) {
+      const W = desk.width;
+      const D = desk.depth;
+      if (n <= 2) return rowDesks(n, desk);
+      let arm = Math.max(1, Math.round(n / 4));
+      if (n - arm * 2 < 1) arm = Math.floor((n - 1) / 2);
+      const base = n - arm * 2;
+      const armHeight = arm * W;
+      const height = Math.max(armHeight, D);
+      const desks = [];
+      for (let i = 0; i < arm; i += 1) desks.push({ x: 0, y: height - armHeight + i * W, w: D, h: W, face: "right" });
+      for (let i = 0; i < base; i += 1) desks.push({ x: D + i * W, y: height - D, w: W, h: D, face: "up" });
+      for (let i = arm - 1; i >= 0; i -= 1) desks.push({ x: D + base * W, y: height - armHeight + i * W, w: D, h: W, face: "left" });
+      return desks;
     }
 
-    function rectGeometry(n, vertical) {
-      const first = Math.ceil(n / 2);
-      const second = n - first;
-      const TOP = 7;
-      if (!vertical) {
-        const width = runLength(first, false) + ROOM_PAD * 2;
-        const height = SEAT_H + SEAT_GAP + TOP + SEAT_GAP + SEAT_H + ROOM_PAD * 2;
-        const seats = chipRun(first, ROOM_PAD, ROOM_PAD, false)
-          .concat(chipRun(second, ROOM_PAD, ROOM_PAD + SEAT_H + SEAT_GAP + TOP + SEAT_GAP, false));
-        return { width, height, seats, top: { x: ROOM_PAD, y: ROOM_PAD + SEAT_H + SEAT_GAP, width: width - ROOM_PAD * 2, height: TOP, kind: "rect" } };
-      }
-      const width = SEAT_W + SEAT_GAP + TOP + SEAT_GAP + SEAT_W + ROOM_PAD * 2;
-      const height = runLength(first, true) + ROOM_PAD * 2;
-      const seats = chipRun(first, ROOM_PAD, ROOM_PAD, true)
-        .concat(chipRun(second, ROOM_PAD + SEAT_W + SEAT_GAP + TOP + SEAT_GAP, ROOM_PAD, true));
-      return { width, height, seats, top: { x: ROOM_PAD + SEAT_W + SEAT_GAP, y: ROOM_PAD, width: TOP, height: height - ROOM_PAD * 2, kind: "rect" } };
-    }
-
-    function rowGeometry(n, vertical, rot) {
-      const STRIP = 4;
-      if (!vertical) {
-        const width = runLength(n, false) + ROOM_PAD * 2;
-        const height = SEAT_H + SEAT_GAP + STRIP + ROOM_PAD * 2;
-        // Desks face the board at the top of the room; turned round, the desk
-        // strip sits above the seats instead.
-        const seatY = rot === 180 ? ROOM_PAD + STRIP + SEAT_GAP : ROOM_PAD;
-        const stripY = rot === 180 ? ROOM_PAD : ROOM_PAD + SEAT_H + SEAT_GAP;
-        return { width, height, seats: chipRun(n, ROOM_PAD, seatY, false), top: { x: ROOM_PAD, y: stripY, width: width - ROOM_PAD * 2, height: STRIP, kind: "strip" } };
-      }
-      const width = SEAT_W + SEAT_GAP + STRIP + ROOM_PAD * 2;
-      const height = runLength(n, true) + ROOM_PAD * 2;
-      const seatX = rot === 270 ? ROOM_PAD + STRIP + SEAT_GAP : ROOM_PAD;
-      const stripX = rot === 270 ? ROOM_PAD : ROOM_PAD + SEAT_W + SEAT_GAP;
-      return { width, height, seats: chipRun(n, seatX, ROOM_PAD, true), top: { x: stripX, y: ROOM_PAD, width: STRIP, height: height - ROOM_PAD * 2, kind: "strip" } };
-    }
-
-    function roundGeometry(n) {
-      const extra = Math.max(0, n - 6);
-      const rx = 15.5 + extra * 2.8;
-      const ry = 11 + extra * 1.7;
-      const width = rx * 2 + SEAT_W + ROOM_PAD * 2;
-      const height = ry * 2 + SEAT_H + ROOM_PAD * 2;
-      const cx = width / 2;
-      const cy = height / 2;
-      const seats = [];
+    // One shared round table with a place card for each student round it,
+    // clockwise from the top.
+    function roundDesks(n, desk) {
+      const diameter = n <= 4 ? 100 : n <= 6 ? 120 : n <= 8 ? 150 : 150 + (n - 8) * 18;
+      const r = diameter / 2;
+      const tagW = Math.round(desk.width * 0.86);
+      const tagH = Math.round(desk.depth * 0.86);
+      const desks = [];
       for (let i = 0; i < n; i += 1) {
         const angle = (-90 + i * 360 / n) * Math.PI / 180;
-        seats.push({ x: cx + rx * Math.cos(angle) - SEAT_W / 2, y: cy + ry * Math.sin(angle) - SEAT_H / 2 });
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        const reach = r + Math.abs(cos) * tagW / 2 + Math.abs(sin) * tagH / 2 + 4;
+        desks.push({ x: reach * cos - tagW / 2, y: reach * sin - tagH / 2, w: tagW, h: tagH, face: "none" });
       }
-      const d = 12;
-      return { width, height, seats, top: { x: cx - d / 2, y: cy - d / 2, width: d, height: d, kind: "round" } };
+      return { desks, round: { cx: 0, cy: 0, r } };
     }
 
-    // A U of seats: a long side and two short arms, open on the fourth side.
-    // Rotation 0 opens down (the long side faces the board), 180 opens up,
-    // 90 opens right and 270 opens left.
-    function horseshoeGeometry(n, rot) {
-      const armSeats = n <= 2 ? 0 : n <= 6 ? 1 : 2;
-      const long = n - armSeats * 2;
-      const ARM_END = 4;
-      const U = 6;
-      const horizontal = rot === 0 || rot === 180;
-      if (horizontal) {
-        const longRun = runLength(long, false);
-        // Left arm seat, gap, arm, the long side, arm, gap, right arm seat.
-        const width = ROOM_PAD + SEAT_W + SEAT_GAP + U + longRun + U + SEAT_GAP + SEAT_W + ROOM_PAD;
-        const armRun = runLength(armSeats, true);
-        const height = SEAT_H + SEAT_GAP + U + armRun + ARM_END + ROOM_PAD * 2;
-        const opensDown = rot === 0;
-        const longY = opensDown ? ROOM_PAD : height - ROOM_PAD - SEAT_H;
-        const armY = opensDown ? ROOM_PAD + SEAT_H + SEAT_GAP + U : ROOM_PAD + ARM_END;
-        const seats = chipRun(long, ROOM_PAD + SEAT_W + SEAT_GAP + U, longY, false)
-          .concat(chipRun(armSeats, ROOM_PAD, armY, true))
-          .concat(chipRun(armSeats, width - ROOM_PAD - SEAT_W, armY, true));
-        const topY = opensDown ? ROOM_PAD + SEAT_H + SEAT_GAP : ROOM_PAD;
-        return {
-          width, height, seats,
-          top: { x: ROOM_PAD + SEAT_W + SEAT_GAP, y: topY, width: longRun + U * 2, height: height - ROOM_PAD * 2 - SEAT_H - SEAT_GAP, kind: opensDown ? "u-down" : "u-up" }
-        };
+    // A desk and the chair zone behind it: the student's place.
+    function makePlace(desk) {
+      const place = { x: desk.x, y: desk.y, w: desk.w, h: desk.h, face: desk.face };
+      if (desk.face === "up") place.h += CHAIR_ZONE;
+      else if (desk.face === "down") { place.y -= CHAIR_ZONE; place.h += CHAIR_ZONE; }
+      else if (desk.face === "left") place.w += CHAIR_ZONE;
+      else if (desk.face === "right") { place.x -= CHAIR_ZONE; place.w += CHAIR_ZONE; }
+      place.desk = { x: desk.x - place.x, y: desk.y - place.y, w: desk.w, h: desk.h };
+      return place;
+    }
+
+    // Returns { width, height, seats, tab, round } in centimetres, with (0,0)
+    // the top-left of the footprint. seats[k] is where group[k] sits: its
+    // place box, face, and desk box inside the place. tab is the name plate
+    // above the desks; a round table carries its name on the table instead.
+    function tableGeometry(shape, seatCount, rotation, desk = deskSize()) {
+      const n = Math.max(1, Math.round(seatCount) || 1);
+      const turns = normalizeRotation(rotation) / 90;
+      let desks;
+      let round = null;
+      if (shape === "round") ({ desks, round } = roundDesks(n, desk));
+      else if (shape === "row") desks = rowDesks(n, desk);
+      else if (shape === "horseshoe") desks = horseshoeDesks(n, desk);
+      else desks = podDesks(n, shape === "pod-ends", desk);
+      for (let t = 0; t < turns; t += 1) {
+        desks = desks.map((d) => ({ x: -(d.y + d.h), y: d.x, w: d.h, h: d.w, face: FACE_TURN[d.face] || "none" }));
+        if (round) round = { cx: -round.cy, cy: round.cx, r: round.r };
       }
-      const longRun = runLength(long, true);
-      const height = ROOM_PAD + SEAT_H + SEAT_GAP + U + longRun + U + SEAT_GAP + SEAT_H + ROOM_PAD;
-      const armRun = runLength(armSeats, false);
-      const width = SEAT_W + SEAT_GAP + U + armRun + ARM_END + ROOM_PAD * 2;
-      const opensRight = rot === 90;
-      const longX = opensRight ? ROOM_PAD : width - ROOM_PAD - SEAT_W;
-      const armX = opensRight ? ROOM_PAD + SEAT_W + SEAT_GAP + U : ROOM_PAD + ARM_END;
-      const seats = chipRun(long, longX, ROOM_PAD + SEAT_H + SEAT_GAP + U, true)
-        .concat(chipRun(armSeats, armX, ROOM_PAD, false))
-        .concat(chipRun(armSeats, armX, height - ROOM_PAD - SEAT_H, false));
-      const topX = opensRight ? ROOM_PAD + SEAT_W + SEAT_GAP : ROOM_PAD;
-      return {
-        width, height, seats,
-        top: { x: topX, y: ROOM_PAD + SEAT_H + SEAT_GAP, width: width - ROOM_PAD * 2 - SEAT_W - SEAT_GAP, height: longRun + U * 2, kind: opensRight ? "u-right" : "u-left" }
-      };
+      const places = desks.map((d) => (d.face === "none"
+        ? { x: d.x, y: d.y, w: d.w, h: d.h, face: "none", desk: { x: 0, y: 0, w: d.w, h: d.h } }
+        : makePlace(d)));
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      places.forEach((p) => {
+        minX = Math.min(minX, p.x);
+        minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x + p.w);
+        maxY = Math.max(maxY, p.y + p.h);
+      });
+      if (round) {
+        minX = Math.min(minX, round.cx - round.r);
+        minY = Math.min(minY, round.cy - round.r);
+        maxX = Math.max(maxX, round.cx + round.r);
+        maxY = Math.max(maxY, round.cy + round.r);
+      }
+      let width = maxX - minX;
+      let height = maxY - minY;
+      let offsetX = -minX;
+      let offsetY = -minY;
+      let tab = null;
+      if (!round) {
+        // The plate is never narrower than a short name needs.
+        const tabWidth = Math.max(width, 96);
+        offsetX += (tabWidth - width) / 2;
+        width = tabWidth;
+        tab = { x: 0, y: 0, w: width, h: TAB_HEIGHT };
+        offsetY += TAB_HEIGHT + TAB_GAP;
+        height += TAB_HEIGHT + TAB_GAP;
+      }
+      const seats = places.map((p) => ({ ...p, x: p.x + offsetX, y: p.y + offsetY }));
+      const top = round ? { x: round.cx - round.r + offsetX, y: round.cy - round.r + offsetY, w: round.r * 2, h: round.r * 2 } : null;
+      return { width, height, seats, tab, round: top };
+    }
+
+    function fixtureSize(fixture) {
+      const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+      return { w: clampFixtureLength(fixture.w, meta.w), d: clampFixtureDepth(fixture.d, meta.d) };
     }
 
     function fixtureFootprint(fixture) {
-      const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+      const size = fixtureSize(fixture);
       const rot = normalizeRotation(fixture.rot);
-      return rot === 90 || rot === 270 ? { width: meta.h, height: meta.w } : { width: meta.w, height: meta.h };
-    }
-
-    function roomRatio() {
-      return normalizeRoomRatio(state.classroomLayout.roomRatio?.width, state.classroomLayout.roomRatio?.height);
-    }
-
-    // The room's height in units, so y percentages convert through it.
-    function roomHeightUnits(ratio = roomRatio()) {
-      return 100 * ratio.height / ratio.width;
-    }
-
-    function unitsToYPercent(units, ratio = roomRatio()) {
-      return units / roomHeightUnits(ratio) * 100;
-    }
-
-    function yPercentToUnits(percent, ratio = roomRatio()) {
-      return percent / 100 * roomHeightUnits(ratio);
+      return rot === 90 || rot === 270 ? { width: size.d, height: size.w } : { width: size.w, height: size.d };
     }
 
     // ---- Room model, migration and memory ---------------------------------
-    function defaultRoomFixtures() {
+    function defaultRoomFixtures(room = ROOM_DEFAULT_SIZE) {
+      const board = FIXTURE_KINDS.board;
+      const door = FIXTURE_KINDS.door;
+      const desk = FIXTURE_KINDS.teacherDesk;
       return [
-        { id: "f-board", kind: "board", x: 24, y: 1, rot: 0 },
-        { id: "f-door", kind: "door", x: 0, y: 70, rot: 90 },
-        { id: "f-desk", kind: "teacherDesk", x: 2, y: 0, rot: 0 }
+        { id: "f-board", kind: "board", x: Math.round((room.width - board.w) / 2), y: 0, rot: 0, w: board.w, d: board.d },
+        { id: "f-door", kind: "door", x: 0, y: Math.round(room.depth * 0.72), rot: 270, w: door.w, d: door.d, flip: false },
+        { id: "f-desk", kind: "teacherDesk", x: 40, y: 40, rot: 0, w: desk.w, d: desk.d }
       ];
     }
 
     function defaultRoomLayout() {
       return {
         version: ROOM_LAYOUT_VERSION,
-        roomRatio: { width: 4, height: 3 },
-        snapPercent: 2,
-        scale: 0,
+        room: { ...ROOM_DEFAULT_SIZE },
+        desk: { ...DESK_DEFAULT },
+        snap: 10,
+        arranged: false,
         tables: [],
         fixtures: defaultRoomFixtures()
       };
@@ -17599,54 +17846,76 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return "f" + Date.now().toString(36) + state.fixtureSerial;
     }
 
-    // Pure and total: whatever it is given - nothing, the old in-memory shape
-    // with door/teacherDesk/frontBoard, a hand-edited file - comes out as a
-    // well-formed room. Unknown kinds and shapes fall back to defaults and
-    // every number passes through finiteLayoutNumber.
-    function migrateClassroomLayout(raw) {
+    // Pure and total: whatever it is given - nothing, the last version's room
+    // of percentages, a hand-edited file - comes out as a well-formed room.
+    // Unknown kinds and shapes fall back to defaults and every number passes
+    // through finiteLayoutNumber. keepIds is for undo, which restores a room
+    // this session made; a file's ids are the one free-text field it has, so
+    // they are never kept from a file.
+    function migrateClassroomLayout(raw, options = {}) {
       const base = defaultRoomLayout();
       if (!raw || typeof raw !== "object") return base;
-      const ratio = raw.roomRatio && typeof raw.roomRatio === "object"
-        ? normalizeRoomRatio(raw.roomRatio.width, raw.roomRatio.height)
-        : base.roomRatio;
+      const current = Number(raw.version) >= 3;
+      let room = base.room;
+      if (current && raw.room && typeof raw.room === "object") {
+        room = normalizeRoomSize(raw.room.width, raw.room.depth);
+      } else if (raw.roomRatio && typeof raw.roomRatio === "object") {
+        // The last version kept the room's shape, not its size: it becomes a
+        // room of that shape at the default width.
+        const rw = finiteLayoutNumber(raw.roomRatio.width, NaN);
+        const rh = finiteLayoutNumber(raw.roomRatio.height, NaN);
+        if (rw > 0 && rh > 0) room = normalizeRoomSize(ROOM_DEFAULT_SIZE.width, ROOM_DEFAULT_SIZE.width * rh / rw);
+      }
       const layout = {
         version: ROOM_LAYOUT_VERSION,
-        roomRatio: ratio,
-        snapPercent: parseSnapPercent(raw.snapPercent === undefined ? 2 : raw.snapPercent),
-        scale: [0, 0.6, 0.8, 1].includes(Number(raw.scale)) ? Number(raw.scale) : 0,
+        room,
+        desk: current && raw.desk && typeof raw.desk === "object" ? normalizeDeskSize(raw.desk.width, raw.desk.depth) : { ...DESK_DEFAULT },
+        snap: current ? parseSnapCm(raw.snap) : parseSnapCm(finiteLayoutNumber(raw.snapPercent, 2) * 5),
+        arranged: current && raw.arranged === true,
         tables: [],
         fixtures: []
       };
+      // The last version placed everything by percent of the room.
+      const toX = (value) => {
+        const n = finiteLayoutNumber(value, NaN);
+        if (!Number.isFinite(n)) return 40;
+        return clampBetween(current ? n : n / 100 * room.width, 0, room.width);
+      };
+      const toY = (value) => {
+        const n = finiteLayoutNumber(value, NaN);
+        if (!Number.isFinite(n)) return 150;
+        return clampBetween(current ? n : n / 100 * room.depth, 0, room.depth);
+      };
       const tables = Array.isArray(raw.tables) ? raw.tables : [];
+      // A table from the last version was a different size, so its place
+      // means nothing now: it keeps its shape and turn and is laid out afresh.
       layout.tables = tables.slice(0, 80).map((table) => ({
-        x: clampBetween(finiteLayoutNumber(table?.x, 3), 0, 99),
-        y: clampBetween(finiteLayoutNumber(table?.y, 20), 0, 99),
+        x: current ? toX(table?.x) : NaN,
+        y: current ? toY(table?.y) : NaN,
         shape: normalizeShape(table?.shape),
         rot: normalizeRotation(table?.rot)
       }));
       if (Array.isArray(raw.fixtures)) {
-        layout.fixtures = raw.fixtures.slice(0, 40)
+        layout.fixtures = raw.fixtures.slice(0, 60)
           .filter((fixture) => fixture && typeof fixture.kind === "string" && FIXTURE_KINDS[fixture.kind])
-          // Ids only ever tell two fixtures apart within a session, so a file's
-          // own ids are not kept: they are the one free-text field a file has.
-          .map((fixture, index) => ({
-            id: "f" + index,
-            kind: fixture.kind,
-            x: clampBetween(finiteLayoutNumber(fixture.x, 40), 0, 99),
-            y: clampBetween(finiteLayoutNumber(fixture.y, 40), 0, 99),
-            rot: normalizeRotation(fixture.rot),
-            preset: fixture.kind === "note" ? clampInteger(Number(fixture.preset), 0, NOTE_PRESETS.length - 1) || 0 : undefined
-          }));
+          .map((fixture, index) => {
+            const meta = FIXTURE_KINDS[fixture.kind];
+            const keepId = options.keepIds && typeof fixture.id === "string" && /^f[\w-]{0,40}$/.test(fixture.id);
+            return {
+              id: keepId ? fixture.id : "f" + index,
+              kind: fixture.kind,
+              x: toX(fixture.x),
+              y: toY(fixture.y),
+              rot: normalizeRotation(fixture.rot),
+              w: current ? clampFixtureLength(fixture.w, meta.w) : meta.w,
+              d: current ? clampFixtureDepth(fixture.d, meta.d) : meta.d,
+              flip: meta.swing ? fixture.flip === true : undefined,
+              preset: meta.preset ? clampInteger(Number(fixture.preset), 0, NOTE_PRESETS.length - 1) || 0 : undefined
+            };
+          });
       } else {
-        // The old shape had three fixed pieces of furniture.
-        const board = raw.frontBoard && typeof raw.frontBoard === "object" ? raw.frontBoard : { x: 24, y: 1 };
-        const door = raw.door && typeof raw.door === "object" ? raw.door : { x: 0, y: 70 };
-        const desk = raw.teacherDesk && typeof raw.teacherDesk === "object" ? raw.teacherDesk : { x: 4, y: 11 };
-        layout.fixtures = [
-          { id: "f-board", kind: "board", x: finiteLayoutNumber(board.x, 24), y: finiteLayoutNumber(board.y, 1), rot: 0 },
-          { id: "f-door", kind: "door", x: finiteLayoutNumber(door.x, 0), y: finiteLayoutNumber(door.y, 70), rot: 0 },
-          { id: "f-desk", kind: "teacherDesk", x: finiteLayoutNumber(desk.x, 4), y: finiteLayoutNumber(desk.y, 11), rot: 0 }
-        ];
+        // The first version had three fixed pieces of furniture.
+        layout.fixtures = defaultRoomFixtures(room);
       }
       // Two fixtures cannot share an id, or a click on one would move both.
       const seen = new Set();
@@ -17661,13 +17930,29 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // Only the room is stored: no labels, no names, no class, no file.
     function storableRoomLayout() {
       const layout = state.classroomLayout;
+      const tenth = (value) => Math.round(finiteLayoutNumber(value) * 10) / 10;
       return {
         version: ROOM_LAYOUT_VERSION,
-        roomRatio: roomRatio(),
-        snapPercent: getLayoutSnapPercent(),
-        scale: layout.scale || 0,
-        tables: layout.tables.map((table) => ({ x: table.x, y: table.y, shape: table.shape, rot: table.rot })),
-        fixtures: layout.fixtures.map((fixture) => ({ id: fixture.id, kind: fixture.kind, x: fixture.x, y: fixture.y, rot: fixture.rot, preset: fixture.preset }))
+        room: roomSize(),
+        desk: deskSize(),
+        snap: getLayoutSnapCm(),
+        arranged: Boolean(layout.arranged),
+        tables: layout.tables.map((table) => ({ x: tenth(table.x), y: tenth(table.y), shape: table.shape, rot: table.rot })),
+        fixtures: layout.fixtures.map((fixture) => {
+          const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+          const size = fixtureSize(fixture);
+          return {
+            id: fixture.id,
+            kind: fixture.kind,
+            x: tenth(fixture.x),
+            y: tenth(fixture.y),
+            rot: fixture.rot,
+            w: size.w,
+            d: size.d,
+            flip: meta.swing ? Boolean(fixture.flip) : undefined,
+            preset: meta.preset ? fixture.preset || 0 : undefined
+          };
+        })
       };
     }
 
@@ -17730,10 +18015,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function resetRoomLayout() {
       pushRoomHistory();
-      const ratio = roomRatio();
+      const room = roomSize();
+      const desk = deskSize();
+      const snap = getLayoutSnapCm();
       state.classroomLayout = defaultRoomLayout();
-      state.classroomLayout.roomRatio = ratio;
-      state.classroomLayout.snapPercent = getLayoutSnapPercent();
+      Object.assign(state.classroomLayout, { room, desk, snap, fixtures: defaultRoomFixtures(room) });
       state.roomSelection = null;
       syncRoomControls();
       initializeClassroomLayout(state.tableGroups.length, true);
@@ -17743,33 +18029,75 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     // The room controls live in the planner; their values are the layout's.
+    // A size still being typed is not a size yet and changes nothing.
     function applyLayoutControlSettings() {
-      state.classroomLayout.roomRatio = parseRoomRatio(els.roomRatioInput?.value);
-      state.classroomLayout.snapPercent = parseSnapPercent(els.layoutSnapSelect?.value);
-      if (els.roomScaleSelect) state.classroomLayout.scale = Number(els.roomScaleSelect.value) || 0;
+      const layout = state.classroomLayout;
+      if (els.roomSizeInput) layout.room = parseRoomSize(els.roomSizeInput.value, roomSize());
+      if (els.roomDeskInput) layout.desk = parseDeskSize(els.roomDeskInput.value, deskSize());
+      if (els.layoutSnapSelect) layout.snap = parseSnapCm(els.layoutSnapSelect.value);
     }
 
     function syncRoomControls() {
-      if (els.roomRatioInput) els.roomRatioInput.value = roomRatioText(state.classroomLayout.roomRatio);
-      if (els.layoutSnapSelect) els.layoutSnapSelect.value = String(getLayoutSnapPercent());
-      if (els.roomScaleSelect) els.roomScaleSelect.value = String(state.classroomLayout.scale || 0);
+      if (els.roomSizeInput) els.roomSizeInput.value = roomSizeText(roomSize());
+      if (els.roomDeskInput) els.roomDeskInput.value = deskSizeText(deskSize());
+      if (els.layoutSnapSelect) els.layoutSnapSelect.value = String(getLayoutSnapCm());
     }
 
+    // A new room or desk size. Tables the teacher has placed keep their
+    // places relative to the room; a room nobody has arranged is laid out
+    // afresh. Furniture keeps its size and its place along its wall.
     function refreshLayoutControlsOnly() {
+      const snapshot = roomSnapshot();
+      const before = { room: roomSize(), desk: deskSize() };
       applyLayoutControlSettings();
+      const room = roomSize();
+      const desk = deskSize();
+      const roomChanged = room.width !== before.room.width || room.depth !== before.room.depth;
+      const deskChanged = desk.width !== before.desk.width || desk.depth !== before.desk.depth;
+      syncRoomControls();
       if (!state.tableGroups.length && !state.tableManualPool.length) {
         renderTableGroups();
+        writeRoomLayout();
         return;
       }
-      initializeClassroomLayout(state.tableGroups.length, false);
+      if (roomChanged || deskChanged) {
+        if (!state.roomHistory) state.roomHistory = [];
+        state.roomHistory.push(snapshot);
+        if (state.roomHistory.length > ROOM_HISTORY_MAX) state.roomHistory.shift();
+        updateUndoButton();
+      }
+      if (roomChanged) rescaleRoomContents(before.room, room);
+      initializeClassroomLayout(state.tableGroups.length, (roomChanged || deskChanged) && !state.classroomLayout.arranged);
       rerenderRoom();
       writeRoomLayout();
+      if (roomChanged) announce("The room is now " + formatMetres(room.width) + " by " + formatMetres(room.depth) + " metres.");
+      else if (deskChanged) announce("Desks are now " + formatInteger(desk.width) + " by " + formatInteger(desk.depth) + " centimetres.");
+    }
+
+    // Everything keeps its centre's place relative to the room: a table a
+    // third of the way across a 9 m room is a third of the way across a 12 m
+    // one. Sizes do not change, and wall pieces stay on their walls.
+    function rescaleRoomContents(from, to) {
+      const layout = state.classroomLayout;
+      const fx = to.width / Math.max(1, from.width);
+      const fy = to.depth / Math.max(1, from.depth);
+      layout.tables.forEach((table, index) => {
+        if (index >= state.tableGroups.length) return;
+        const geo = tableGeometryFor(index);
+        table.x = (table.x + geo.width / 2) * fx - geo.width / 2;
+        table.y = (table.y + geo.height / 2) * fy - geo.height / 2;
+      });
+      layout.fixtures.forEach((fixture) => {
+        const foot = fixtureFootprint(fixture);
+        fixture.x = (fixture.x + foot.width / 2) * fx - foot.width / 2;
+        fixture.y = (fixture.y + foot.height / 2) * fy - foot.height / 2;
+      });
     }
 
     function roomTable(index) {
       const layout = state.classroomLayout;
       if (!layout.tables[index]) {
-        layout.tables[index] = { ...defaultTablePosition(index, Math.max(state.tableGroups.length, index + 1)), shape: "rect", rot: 0 };
+        layout.tables[index] = { ...defaultTablePosition(index, Math.max(state.tableGroups.length, index + 1)), shape: "pod", rot: 0 };
       }
       const table = layout.tables[index];
       table.shape = normalizeShape(table.shape);
@@ -17793,212 +18121,263 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return tableGeometry(table.shape, tableSeatCount(index), table.rot);
     }
 
-    // Everything in the room is drawn at this fraction of a unit. Auto picks
-    // the largest size at which the default grid still fits the room, so
-    // eight tables of six shrink instead of overlapping.
-    function roomScale() {
-      const explicit = Number(state.classroomLayout.scale) || 0;
-      if (explicit > 0) return explicit;
-      const count = Math.max(1, state.tableGroups.length);
-      const steps = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
-      for (const step of steps) {
-        if (defaultTableGrid(count, step).fits) return step;
-      }
-      return 0.5;
-    }
-
-    function tableCell(count, scale) {
-      let width = 0;
-      let height = 0;
-      for (let index = 0; index < count; index += 1) {
-        // Read the layout directly: roomTable() would create a missing entry
-        // from the default grid, which is what this cell size is for.
-        const table = state.classroomLayout.tables[index];
-        const geo = tableGeometry(table ? normalizeShape(table.shape) : "rect", tableSeatCount(index), table ? table.rot : 0);
-        width = Math.max(width, geo.width * scale);
-        height = Math.max(height, geo.height * scale);
-      }
-      return { width, height };
-    }
-
-    // The first row of tables starts below whatever furniture stands along
-    // the front of the room: the board, the teacher's desk, a screen.
-    function roomTopReserveUnits(scale) {
-      let reserve = ROOM_TOP_RESERVE;
-      const height = roomHeightUnits();
+    // The first row of tables starts clear of whatever stands along the front
+    // of the room: the board, the teacher's desk, a screen.
+    function roomTopReserveCm(tight = false) {
+      const room = roomSize();
+      let bottom = 0;
       (state.classroomLayout.fixtures || []).forEach((fixture) => {
         const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
         if (meta.under) return;
-        // A window or a shelf standing along a side wall is not in the way.
+        // A window or a shelf along a side wall is not in the way.
         const rot = normalizeRotation(fixture.rot);
         if (meta.wall && (rot === 90 || rot === 270)) return;
-        const top = yPercentToUnits(finiteLayoutNumber(fixture.y));
-        if (top > height * 0.35) return;
-        const bottom = top + fixtureFootprint(fixture).height * scale;
-        reserve = Math.max(reserve, bottom + 2);
+        const top = finiteLayoutNumber(fixture.y);
+        if (top > room.depth * 0.35) return;
+        bottom = Math.max(bottom, top + fixtureFootprint(fixture).height);
       });
-      return Math.min(reserve, height * 0.5);
+      const reserve = tight ? Math.max(60, bottom + 20) : Math.max(130, bottom + 45);
+      return Math.min(reserve, room.depth * 0.45);
     }
 
-    function defaultTableGrid(count, scale = roomScale()) {
-      const cell = tableCell(count, scale);
-      const gap = 2;
-      const left = 2;
-      const spanX = 98 - left;
-      const top = roomTopReserveUnits(scale);
-      const spanY = roomHeightUnits() - top - 2;
-      const columns = Math.max(1, Math.min(count, Math.floor((spanX + gap) / (cell.width + gap))));
-      const rows = Math.ceil(count / columns);
-      const fits = columns * (cell.width + gap) - gap <= spanX + 0.01 && rows * (cell.height + gap) - gap <= spanY + 0.01;
-      // Spread the columns and rows over the room, up to a comfortable gap,
-      // so a five-table room is not five tables jammed against the board.
-      const stepX = columns > 1 ? Math.min(cell.width * 1.35, (spanX - cell.width) / (columns - 1)) : 0;
-      const stepY = rows > 1 ? Math.min(cell.height * 1.5, (spanY - cell.height) / (rows - 1)) : 0;
-      return { columns, rows, stepX: Math.max(stepX, cell.width + gap), stepY: Math.max(stepY, cell.height + gap), left, top, fits };
+    // Each table's footprint, read from the layout directly: roomTable()
+    // would create a missing entry from the plan this is sizing.
+    function tableFootprints(count) {
+      const sizes = [];
+      for (let index = 0; index < count; index += 1) {
+        const table = state.classroomLayout.tables[index];
+        const geo = tableGeometry(table ? normalizeShape(table.shape) : "pod", tableSeatCount(index), table ? table.rot : 0);
+        sizes.push({ w: geo.width, h: geo.height });
+      }
+      return sizes;
+    }
+
+    // Tables in rows across the room, each row as wide as its own tables
+    // need, with walkways between them: as few per row as the number of rows
+    // allows, so four tables are two and two rather than three and one, and a
+    // short row sits in the middle. Rows keep one spacing so the columns line
+    // up. If the room is too small at a comfortable spacing the walkways
+    // narrow; if it is still too small, fits is false and the planner says so.
+    function defaultTablePlan(count) {
+      if (count <= 0) return { positions: [], fits: true };
+      const room = roomSize();
+      const sizes = tableFootprints(count);
+      const attempt = (margin, gapMin, top) => {
+        const spanX = room.width - margin * 2;
+        const spanY = room.depth - top - margin;
+        const rowsOf = (cap) => {
+          const rows = [];
+          let row = [];
+          let width = 0;
+          sizes.forEach((size, index) => {
+            const next = row.length ? width + gapMin + size.w : size.w;
+            if (row.length && (next > spanX + 0.5 || row.length >= cap)) {
+              rows.push(row);
+              row = [];
+            }
+            width = row.length ? width + gapMin + size.w : size.w;
+            row.push(index);
+          });
+          if (row.length) rows.push(row);
+          return rows;
+        };
+        let rows = rowsOf(Infinity);
+        const balanced = rowsOf(Math.ceil(count / rows.length));
+        if (balanced.length === rows.length) rows = balanced;
+        const widths = rows.map((row) => row.reduce((sum, index) => sum + sizes[index].w, 0));
+        const heights = rows.map((row) => Math.max(...row.map((index) => sizes[index].h)));
+        const gaps = rows.map((row, r) => (row.length > 1 ? clampBetween((spanX - widths[r]) / (row.length - 1), gapMin, 160) : Infinity));
+        const gapX = Math.min(...gaps);
+        const totalH = heights.reduce((sum, h) => sum + h, 0);
+        let fits = totalH + (rows.length - 1) * gapMin <= spanY + 0.5;
+        // A room too short for the rows shares the squeeze evenly between
+        // them, rather than piling the last row against the back wall.
+        const gapY = rows.length > 1
+          ? Math.min(140, fits ? Math.max(gapMin, (spanY - totalH) / (rows.length - 1)) : (spanY - totalH) / (rows.length - 1))
+          : 0;
+        const positions = [];
+        let y = top;
+        rows.forEach((row, r) => {
+          const gap = Number.isFinite(gapX) ? gapX : 0;
+          const used = widths[r] + (row.length - 1) * gap;
+          if (widths[r] + (row.length - 1) * gapMin > spanX + 0.5) fits = false;
+          let x = margin + Math.max(0, (spanX - used) / 2);
+          row.forEach((index) => {
+            positions[index] = { x, y };
+            x += sizes[index].w + gap;
+          });
+          y += heights[r] + gapY;
+        });
+        return { positions, fits };
+      };
+      const roomy = attempt(45, 60, roomTopReserveCm(false));
+      return roomy.fits ? roomy : attempt(20, 30, roomTopReserveCm(true));
     }
 
     function defaultTablePosition(index, tableCount) {
-      const grid = defaultTableGrid(Math.max(1, tableCount));
-      const col = index % grid.columns;
-      const row = Math.floor(index / grid.columns);
-      return {
-        x: grid.left + col * grid.stepX,
-        y: unitsToYPercent(grid.top + row * grid.stepY)
-      };
+      return defaultTablePlan(Math.max(1, tableCount)).positions[index] || { x: 40, y: 150 };
     }
 
     function initializeClassroomLayout(tableCount, reset = false) {
       const layout = state.classroomLayout;
       if (!Array.isArray(layout.tables)) layout.tables = [];
-      if (!Array.isArray(layout.fixtures)) layout.fixtures = defaultRoomFixtures();
+      if (!Array.isArray(layout.fixtures)) layout.fixtures = defaultRoomFixtures(roomSize());
+      // Furniture first: the grid keeps clear of it.
+      layout.fixtures.forEach((fixture) => Object.assign(fixture, placeFixture(fixture, fixture)));
       // Positions come from the grid when the table count changes; shapes and
       // turns survive, as does every fixture.
+      const fresh = [];
       for (let index = 0; index < tableCount; index += 1) {
         const existing = layout.tables[index];
-        if (!existing || reset) {
-          const position = defaultTablePosition(index, tableCount);
-          layout.tables[index] = { x: position.x, y: position.y, shape: existing?.shape || "rect", rot: existing?.rot || 0 };
+        if (!existing || reset || !Number.isFinite(existing.x) || !Number.isFinite(existing.y)) {
+          layout.tables[index] = { x: 0, y: 0, shape: normalizeShape(existing?.shape), rot: normalizeRotation(existing?.rot) };
+          fresh.push(index);
         }
       }
       layout.tables = layout.tables.slice(0, Math.max(tableCount, 0));
+      if (fresh.length) {
+        const plan = defaultTablePlan(tableCount);
+        fresh.forEach((index) => {
+          const position = plan.positions[index] || { x: 40, y: 150 };
+          layout.tables[index].x = position.x;
+          layout.tables[index].y = position.y;
+        });
+        if (reset) layout.arranged = false;
+      }
       layout.tables.forEach((table, index) => {
-        const geo = tableGeometryFor(index);
-        Object.assign(table, clampRoomBox(table, geo));
+        Object.assign(table, clampRoomBox(table, tableGeometryFor(index)));
       });
-      layout.fixtures.forEach((fixture) => Object.assign(fixture, placeFixture(fixture, fixture)));
+    }
+
+    // Tables that share floor with another table or stand on furniture,
+    // measured on the desks and chairs themselves, not their bounding boxes,
+    // so a small group inside a big U is not a clash.
+    function roomClashes() {
+      const count = state.tableGroups.length;
+      const boxes = [];
+      for (let index = 0; index < count; index += 1) {
+        const table = roomTable(index);
+        const geo = tableGeometryFor(index);
+        const parts = geo.seats.map((seat) => ({ x: table.x + seat.x, y: table.y + seat.y, w: seat.w, h: seat.h }));
+        // The name plate counts: a table drawn over another's plate hides it.
+        if (geo.tab) parts.push({ x: table.x + geo.tab.x, y: table.y + geo.tab.y, w: geo.tab.w, h: geo.tab.h });
+        if (geo.round) parts.push({ x: table.x + geo.round.x, y: table.y + geo.round.y, w: geo.round.w, h: geo.round.h });
+        boxes.push({ index, x: table.x, y: table.y, w: geo.width, h: geo.height, parts });
+      }
+      const hit = (a, b) => a.x < b.x + b.w - 1 && a.x + a.w > b.x + 1 && a.y < b.y + b.h - 1 && a.y + a.h > b.y + 1;
+      const tables = new Set();
+      const pairs = [];
+      for (let i = 0; i < boxes.length; i += 1) {
+        for (let j = i + 1; j < boxes.length; j += 1) {
+          if (!hit(boxes[i], boxes[j])) continue;
+          if (boxes[i].parts.some((a) => boxes[j].parts.some((b) => hit(a, b)))) {
+            pairs.push([i, j]);
+            tables.add(i);
+            tables.add(j);
+          }
+        }
+      }
+      const furniture = [];
+      (state.classroomLayout.fixtures || []).forEach((fixture) => {
+        const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+        if (meta.under || meta.preset) return;
+        const foot = fixtureFootprint(fixture);
+        const rect = { x: fixture.x, y: fixture.y, w: foot.width, h: foot.height };
+        boxes.forEach((box) => {
+          if (hit(box, rect) && box.parts.some((part) => hit(part, rect))) furniture.push({ table: box.index, fixture });
+        });
+      });
+      return { pairs, tables, furniture };
+    }
+
+    // Said above the room whenever tables overlap or stand on furniture,
+    // with the one fix that always helps when the room is big enough.
+    function roomWarningHTML() {
+      if (!state.tableGroups.length) return "";
+      const clashes = roomClashes();
+      if (!clashes.tables.size && !clashes.furniture.length) return "";
+      const room = roomSize();
+      const parts = [];
+      if (clashes.tables.size) {
+        const names = Array.from(clashes.tables).sort((a, b) => a - b).map((index) => tableLabel(index));
+        parts.push(clashes.pairs.length === 1 ? names.join(" and ") + " overlap." : formatInteger(clashes.tables.size) + " tables overlap: " + names.join(", ") + ".");
+      }
+      if (clashes.furniture.length) {
+        const first = clashes.furniture[0];
+        const more = clashes.furniture.length - 1;
+        parts.push(tableLabel(first.table) + " stands on the " + fixtureLabel(first.fixture).toLowerCase() + (more ? ", and " + formatInteger(more) + " more table" + (more === 1 ? " stands" : "s stand") + " on furniture" : "") + ".");
+      }
+      const fits = defaultTablePlan(state.tableGroups.length).fits;
+      const advice = fits
+        ? "Drag them apart, or lay the tables out again on an even grid."
+        : "At their real size these desks do not all fit a " + formatMetres(room.width) + " by " + formatMetres(room.depth) + " m room. Check the room size under Room, move tables by hand, or try fewer, larger groups.";
+      return `<p class="room-warning" role="status"><span>${escapeHTML(parts.join(" ") + " " + advice)}</span>${fits ? '<button class="btn small ghost" type="button" data-room-action="relayout">Lay the tables out again</button>' : ""}</p>`;
     }
 
     function classroomBoardStyle() {
-      const ratio = roomRatio();
-      const snap = getLayoutSnapPercent();
-      const gridSize = 26 + snap * 5;
-      return `--room-ratio:${ratio.width} / ${ratio.height}; --room-grid-size:${gridSize}px; --room-scale:${roomScale()};`;
+      const room = roomSize();
+      return `--room-w:${room.width}; --room-ratio:${room.width} / ${room.depth}; --room-zoom:${state.roomZoom || 1};`;
     }
 
-    function roomRatioText(ratio) {
-      if (!ratio) return "4:3";
-      return `${formatRatioNumber(ratio.width)}:${formatRatioNumber(ratio.height)}`;
-    }
-
-    function formatRatioNumber(value) {
-      const number = finiteLayoutNumber(value, 0);
-      if (Number.isInteger(number)) return String(number);
-      return String(Number(number.toFixed(2)));
-    }
-
-    function parseRoomRatio(value) {
-      const fallback = { width: 4, height: 3 };
-      const text = cleanString(value).replace(/\s+/g, "");
-      if (!text) return fallback;
-      const fraction = text.match(/^(\d+(?:\.\d+)?)[\:\/xX](\d+(?:\.\d+)?)$/);
-      if (fraction) return normalizeRoomRatio(fraction[1], fraction[2], fallback);
-      const decimal = Number(text);
-      if (Number.isFinite(decimal) && decimal > 0) return normalizeRoomRatio(decimal, 1, fallback);
-      return fallback;
-    }
-
-    function normalizeRoomRatio(widthValue, heightValue, fallback = { width: 4, height: 3 }) {
-      const width = finiteLayoutNumber(widthValue, fallback.width);
-      const height = finiteLayoutNumber(heightValue, fallback.height);
-      if (width <= 0 || height <= 0) return fallback;
-      let w = clampBetween(width, 1, 30);
-      let h = clampBetween(height, 1, 30);
-      // No classroom is a corridor: the shape stays within 2.5:1 either way.
-      if (w / h > 2.5) h = w / 2.5;
-      if (h / w > 2.5) w = h / 2.5;
-      return { width: Number(w.toFixed(3)), height: Number(h.toFixed(3)) };
-    }
-
-    function parseSnapPercent(value) {
-      const numeric = finiteLayoutNumber(value, 2);
-      return Math.round(clampBetween(numeric, 0, 20));
-    }
-
-    function getLayoutSnapPercent() {
-      return parseSnapPercent(state.classroomLayout.snapPercent);
+    function cmNumber(value) {
+      return String(Math.round(finiteLayoutNumber(value) * 10) / 10);
     }
 
     function layoutStyle(position) {
-      return `left:${clampLayout(position.x)}%; top:${clampLayout(position.y)}%;`;
+      return `left:calc(var(--cm) * ${cmNumber(position.x)}); top:calc(var(--cm) * ${cmNumber(position.y)});`;
     }
 
-    function clampLayout(value) {
-      return Math.max(0, Math.min(100, Number(value) || 0));
+    function boxStyle(box) {
+      return `left:calc(var(--cm) * ${cmNumber(box.x)}); top:calc(var(--cm) * ${cmNumber(box.y)}); width:calc(var(--cm) * ${cmNumber(box.w)}); height:calc(var(--cm) * ${cmNumber(box.h)});`;
     }
 
-    // Keeps a box of the given footprint (room units, already scaled) inside
-    // the room, snapped to the grid.
-    function clampRoomBox(position, footprint, scale = roomScale()) {
-      const width = footprint.width * scale;
-      const height = footprint.height * scale;
-      const step = getLayoutSnapPercent();
-      const maxX = Math.max(0, 100 - width);
-      const maxY = Math.max(0, 100 - unitsToYPercent(height));
+    // Keeps a footprint (centimetres) inside the room, snapped to the grid.
+    function clampRoomBox(position, footprint) {
+      const room = roomSize();
+      const step = getLayoutSnapCm();
       return {
-        x: snapLayoutValue(finiteLayoutNumber(position?.x), 0, maxX, step),
-        y: snapLayoutValue(finiteLayoutNumber(position?.y), 0, maxY, step)
+        x: snapLayoutValue(finiteLayoutNumber(position?.x), 0, Math.max(0, room.width - footprint.width), step),
+        y: snapLayoutValue(finiteLayoutNumber(position?.y), 0, Math.max(0, room.depth - footprint.height), step)
       };
     }
 
-    // Wall fixtures slide along the nearest wall and turn to lie against it;
-    // everything else is simply kept inside the room.
+    // Wall pieces slide along the nearest wall and turn to lie against it;
+    // everything else is simply kept inside the room. Nothing is longer than
+    // the wall it stands on, and nothing stands out more than half the room.
     function placeFixture(fixture, position) {
       const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
-      const scale = roomScale();
-      if (!meta.wall) {
-        return { ...clampRoomBox(position, fixtureFootprint(fixture), scale), rot: normalizeRotation(fixture.rot) };
-      }
-      const flatW = meta.w * scale;
-      const flatH = unitsToYPercent(meta.h * scale);
-      const tallW = meta.h * scale;
-      const tallH = unitsToYPercent(meta.w * scale);
+      const room = roomSize();
+      const size = fixtureSize(fixture);
       const rot = normalizeRotation(fixture.rot);
       const upright = rot === 90 || rot === 270;
-      const width = upright ? tallW : flatW;
-      const height = upright ? tallH : flatH;
-      const x = clampBetween(finiteLayoutNumber(position?.x), 0, Math.max(0, 100 - width));
-      const y = clampBetween(finiteLayoutNumber(position?.y), 0, Math.max(0, 100 - height));
-      const cx = x + width / 2;
-      const cy = y + height / 2;
-      // Distances in room units: a percent of height is a different length
-      // from a percent of width on any room that is not square.
-      const walls = [
-        { name: "top", distance: yPercentToUnits(cy), rot: 0 },
-        { name: "bottom", distance: yPercentToUnits(100 - cy), rot: 0 },
-        { name: "left", distance: cx, rot: 90 },
-        { name: "right", distance: 100 - cx, rot: 90 }
-      ].sort((a, b) => a.distance - b.distance);
-      const wall = walls[0];
-      const w = wall.rot === 90 ? tallW : flatW;
-      const h = wall.rot === 90 ? tallH : flatH;
-      const step = getLayoutSnapPercent();
-      const along = wall.rot === 90
-        ? snapLayoutValue(cy - h / 2, 0, Math.max(0, 100 - h), step)
-        : snapLayoutValue(cx - w / 2, 0, Math.max(0, 100 - w), step);
-      if (wall.name === "top") return { x: along, y: 0, rot: 0 };
-      if (wall.name === "bottom") return { x: along, y: Math.max(0, 100 - h), rot: 0 };
-      if (wall.name === "left") return { x: 0, y: along, rot: 90 };
-      return { x: Math.max(0, 100 - w), y: along, rot: 90 };
+      if (!meta.wall) {
+        const w = Math.min(size.w, upright ? room.depth : room.width);
+        const d = Math.min(size.d, upright ? room.width : room.depth);
+        const footprint = upright ? { width: d, height: w } : { width: w, height: d };
+        return { ...clampRoomBox(position, footprint), rot, w, d };
+      }
+      const step = getLayoutSnapCm();
+      const footW = upright ? size.d : size.w;
+      const footH = upright ? size.w : size.d;
+      const x = clampBetween(finiteLayoutNumber(position?.x), 0, Math.max(0, room.width - footW));
+      const y = clampBetween(finiteLayoutNumber(position?.y), 0, Math.max(0, room.depth - footH));
+      const cx = x + footW / 2;
+      const cy = y + footH / 2;
+      const wall = [
+        { rot: 0, distance: cy },
+        { rot: 180, distance: room.depth - cy },
+        { rot: 270, distance: cx },
+        { rot: 90, distance: room.width - cx }
+      ].sort((a, b) => a.distance - b.distance)[0].rot;
+      const across = wall === 0 || wall === 180;
+      const length = Math.min(size.w, across ? room.width : room.depth);
+      const depth = Math.min(size.d, across ? room.depth / 2 : room.width / 2);
+      if (across) {
+        const left = snapLayoutValue(cx - length / 2, 0, Math.max(0, room.width - length), step);
+        return { x: left, y: wall === 0 ? 0 : room.depth - depth, rot: wall, w: length, d: depth };
+      }
+      const top = snapLayoutValue(cy - length / 2, 0, Math.max(0, room.depth - length), step);
+      return { x: wall === 270 ? 0 : room.width - depth, y: top, rot: wall, w: length, d: depth };
     }
 
     function snapLayoutValue(value, min, max, step) {
@@ -18014,6 +18393,143 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function clampBetween(value, min, max) {
       return Math.max(min, Math.min(max, value));
+    }
+
+    // ---- Fitting names ------------------------------------------------------
+    // A name is always shown whole: it is broken over up to three lines at
+    // spaces and hyphens and set at the largest size at which every line fits
+    // its desk, and only a single very long word is ever split, once, with a
+    // hyphen. Sizes are in centimetres of room, so the same fit holds at any
+    // zoom and on any paper. Widths come from a canvas using the same font
+    // the text is drawn in.
+    const roomMeasure = { ctx: null, cache: new Map(), screenFont: "" };
+
+    function roomScreenFont() {
+      if (!roomMeasure.screenFont) {
+        try { roomMeasure.screenFont = window.getComputedStyle(document.body).fontFamily || "sans-serif"; } catch (error) { roomMeasure.screenFont = "sans-serif"; }
+      }
+      return roomMeasure.screenFont;
+    }
+
+    function measureEm(text, family, weight = 800) {
+      const key = weight + "|" + family + "|" + text;
+      const cached = roomMeasure.cache.get(key);
+      if (cached !== undefined) return cached;
+      if (!roomMeasure.ctx) {
+        try { roomMeasure.ctx = document.createElement("canvas").getContext("2d"); } catch (error) { roomMeasure.ctx = null; }
+      }
+      let em = NaN;
+      const ctx = roomMeasure.ctx;
+      if (ctx) {
+        ctx.font = weight + " 100px " + family;
+        // A family the canvas cannot parse leaves the old font in place.
+        if (!/100px/.test(ctx.font)) ctx.font = weight + " 100px sans-serif";
+        em = ctx.measureText(text).width / 100;
+      }
+      // Without a canvas, a generous guess: wide letters are about 0.62 em.
+      if (!Number.isFinite(em) || em <= 0) em = Math.max(1, text.length) * 0.62;
+      if (roomMeasure.cache.size > 5000) roomMeasure.cache.clear();
+      roomMeasure.cache.set(key, em);
+      return em;
+    }
+
+    // Particles that belong to the word after them: "Al Zaabi" and "van
+    // Dijk" are never broken apart, so no line is ever just "Al".
+    const NAME_PARTICLES = new Set(["al", "el", "bin", "bint", "ibn", "abu", "bu", "ben", "bat", "de", "da", "di", "do", "dos", "das", "del", "della", "der", "den", "du", "la", "le", "van", "von", "ter", "st", "st.", "mc", "o'"]);
+
+    // Break points: after a space, and after a hyphen inside a word.
+    function nameTokens(name) {
+      const tokens = [];
+      const words = [];
+      cleanString(name).split(/\s+/).filter(Boolean).forEach((word) => {
+        const last = words[words.length - 1];
+        if (last && NAME_PARTICLES.has(last.split(/\s+/).pop().toLowerCase())) words[words.length - 1] = last + " " + word;
+        else words.push(word);
+      });
+      words.forEach((word, wordIndex) => {
+        const parts = [];
+        // "Al-Mansoori" breaks, if at all, after the particle's word too.
+        word.replace(/-(?=.)/g, "-\u0000").split("\u0000").forEach((part) => {
+          const last = parts[parts.length - 1];
+          if (last && NAME_PARTICLES.has(last.slice(0, -1).split(/\s+/).pop().toLowerCase())) parts[parts.length - 1] = last + part;
+          else parts.push(part);
+        });
+        parts.forEach((part, partIndex) => {
+          const last = partIndex === parts.length - 1;
+          tokens.push({ text: part, join: last && wordIndex < words.length - 1 ? " " : "", soft: false });
+        });
+      });
+      return tokens;
+    }
+
+    function tokenLine(tokens) {
+      return tokens.map((token, i) => {
+        const end = i === tokens.length - 1;
+        if (token.soft && !end) return token.text.slice(0, -1) + token.join;
+        return token.text + (end ? "" : token.join);
+      }).join("");
+    }
+
+    function bestLineSplit(tokens, boxW, boxH, family, weight, maxSize, lineHeight) {
+      const count = tokens.length;
+      const candidates = [[count]];
+      for (let a = 1; a < count; a += 1) {
+        candidates.push([a, count]);
+        for (let b = a + 1; b < count; b += 1) candidates.push([a, b, count]);
+      }
+      let best = null;
+      candidates.forEach((ends) => {
+        const lines = [];
+        let start = 0;
+        ends.forEach((end) => {
+          lines.push(tokenLine(tokens.slice(start, end)));
+          start = end;
+        });
+        // A soft break is only taken where the line actually breaks.
+        if (tokens.some((token, i) => token.soft && !ends.includes(i + 1))) return;
+        const widest = Math.max(...lines.map((line) => measureEm(line, family, weight)));
+        const size = Math.min(maxSize, boxW / widest, boxH / (lines.length * lineHeight));
+        // Each extra line has to earn its place: a name reads best in as few
+        // pieces as will let it be large, so "Al Zaabi" stays together unless
+        // splitting it makes the name clearly bigger.
+        const score = size * (1 - 0.08 * (lines.length - 1));
+        if (!best || score > best.score + 0.001) best = { lines, size, score };
+      });
+      return best ? { lines: best.lines, size: best.size } : { lines: [tokenLine(tokens)], size: Math.min(maxSize, boxH / lineHeight) };
+    }
+
+    function fitNameLines(name, boxW, boxH, { family, weight = 800, maxSize = 13, lineHeight = 1.12 } = {}) {
+      let tokens = nameTokens(name);
+      if (!tokens.length || boxW <= 0 || boxH <= 0) return { lines: [cleanString(name)], size: Math.max(1, Math.min(maxSize, boxH / lineHeight)) };
+      // A name of many parts keeps its tail together on the last line.
+      if (tokens.length > 8) tokens = tokens.slice(0, 7).concat([{ text: tokenLine(tokens.slice(7)), join: "", soft: false }]);
+      // A little slack: a canvas and a page do not always agree to the pixel.
+      const width = boxW * 0.93;
+      const best = bestLineSplit(tokens, width, boxH, family, weight, maxSize, lineHeight);
+      if (best.size >= maxSize * 0.62) return best;
+      // One very long word may be split once, in the middle, with a hyphen.
+      let longest = -1;
+      tokens.forEach((token, i) => {
+        if (/^[\p{L}\p{M}']{10,}$/u.test(token.text) && (longest < 0 || token.text.length > tokens[longest].text.length)) longest = i;
+      });
+      if (longest < 0) return best;
+      const word = tokens[longest].text;
+      const cut = Math.round(word.length / 2);
+      const split = tokens.slice(0, longest).concat(
+        [{ text: word.slice(0, cut) + "-", join: "", soft: true }, { text: word.slice(cut), join: tokens[longest].join, soft: false }],
+        tokens.slice(longest + 1)
+      );
+      const hyphenated = bestLineSplit(split, width, boxH, family, weight, maxSize, lineHeight);
+      return hyphenated.size > best.size * 1.25 ? hyphenated : best;
+    }
+
+    function fitOneLine(text, boxW, boxH, family, weight, maxSize) {
+      const em = measureEm(text, family, weight);
+      return Math.max(0.5, Math.min(maxSize, boxW * 0.93 / em, boxH / 1.12));
+    }
+
+    function nameMarkup(fit, className = "seat-name") {
+      return `<span class="${className}" style="font-size:calc(var(--cm) * ${fit.size.toFixed(2)})">${fit.lines.map((line) => escapeHTML(line)).join("<br>")}</span>`;
     }
 
     // ---- History -----------------------------------------------------------
@@ -18069,7 +18585,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.tableManualPool = snapshot.pool.map((key) => byKey.get(key)).filter(Boolean);
       state.tableCapacities = snapshot.capacities;
       state.tableGroupPlanLabel = snapshot.planLabel;
-      state.classroomLayout = migrateClassroomLayout(snapshot.layout);
+      state.classroomLayout = migrateClassroomLayout(snapshot.layout, { keepIds: true });
       state.tableLabels = snapshot.labels;
       state.movedKeys = new Set(snapshot.moved);
       state.dealOrder = new Map(snapshot.dealOrder || []);
@@ -18158,8 +18674,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         els.plannerLaunchHint.textContent = tables
           ? formatInteger(seated) + " students across " + formatInteger(tables) + " table" + (tables === 1 ? "" : "s") +
             (pool ? ", " + formatInteger(pool) + " waiting to be placed by hand" : "") +
-            ". Move students between seats, shape and place the tables, add the furniture, then print the plan."
-          : "A full-screen room where students sit in seats at shaped tables you can move, turn and arrange around your furniture. Load data to build a plan.";
+            ". Move students between desks, arrange and place the groups, add and size the furniture, then print the plan."
+          : "A full-screen, to-scale room where students sit at single desks pushed into groups you can move, turn and arrange around your furniture. Load data to build a plan.";
       }
       if (els.plannerContext) {
         els.plannerContext.textContent = tables
@@ -18198,6 +18714,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       initializeClassroomLayout(state.tableGroups.length, false);
       closeSeatMenu();
       els.tableGroups.innerHTML = `
+        ${roomWarningHTML()}
         <div class="classroom-board${state.roomShowOrder ? " show-order" : ""}" data-classroom-board tabindex="-1" role="application" aria-roledescription="seating plan" aria-label="The room. Tab moves between tables, furniture and students; the arrow keys move whatever is focused." style="${classroomBoardStyle()}">
           ${roomMarkup("screen", scoreMode, strategy)}
         </div>
@@ -18216,8 +18733,18 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const layout = state.classroomLayout;
       const groups = options.groups || state.tableGroups;
       const fixtures = layout.fixtures.map((fixture) => renderFixture(fixture, mode)).join("");
+      roomNameCap = seatNameCap(groups, mode);
       const tables = groups.map((group, index) => renderRoomTable(group, index, mode, scoreMode, strategy)).join("");
-      return fixtures + tables;
+      roomNameCap = 0;
+      // The floor's 50 cm grid and a one-metre bar, so the room reads as a room.
+      const scale = mode === "preview" ? "" : '<div class="room-scale" aria-hidden="true"><span class="room-scale-bar"></span><span>1 m</span></div>';
+      return '<div class="room-floor" aria-hidden="true"></div>' + scale + fixtures + tables;
+    }
+
+    // The font the room is drawn in: the page's own on screen, the print
+    // stylesheet's on paper. Names are measured in the one they will wear.
+    function roomFontFor(mode) {
+      return mode === "screen" || mode === "preview" ? roomScreenFont() : SEATING_PRINT_FONT;
     }
 
     function fixtureLabel(fixture) {
@@ -18228,20 +18755,46 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function fixtureStyle(fixture) {
       const footprint = fixtureFootprint(fixture);
-      return `${layoutStyle(fixture)} width:calc(var(--unit) * ${footprint.width}); height:calc(var(--unit) * ${footprint.height});`;
+      return boxStyle({ x: fixture.x, y: fixture.y, w: footprint.width, h: footprint.height });
+    }
+
+    function fixtureDimensionsText(fixture) {
+      const size = fixtureSize(fixture);
+      return formatInteger(size.w) + " by " + formatInteger(size.d) + " cm";
     }
 
     function renderFixture(fixture, mode) {
       const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
       const rot = normalizeRotation(fixture.rot);
-      const upright = rot === 90 || rot === 270;
+      const footprint = fixtureFootprint(fixture);
+      const upright = footprint.height > footprint.width;
       const label = fixtureLabel(fixture);
       const interactive = mode === "screen";
       const selected = interactive && state.roomSelection && state.roomSelection.kind === "fixture" && state.roomSelection.id === fixture.id;
+      const size = fixtureSize(fixture);
       const attrs = interactive
-        ? ` data-layout-kind="fixture" data-layout-handle data-fixture-id="${escapeAttr(fixture.id)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ". Arrow keys move it, hold Shift for larger steps. " + (meta.wall ? "R moves it to the next wall" : "R turns it") + ", Delete removes it, Enter opens its settings.")}"`
+        ? ` data-layout-kind="fixture" data-layout-handle data-fixture-id="${escapeAttr(fixture.id)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ", " + fixtureDimensionsText(fixture) + ". Arrow keys move it, hold Shift for larger steps. " + (meta.wall ? "R moves it to the next wall" : "R turns it") + ", plus and minus change its length, Delete removes it, Enter opens its settings.")}"`
         : "";
-      return `<div class="room-fixture kind-${escapeAttr(fixture.kind)}${upright ? " is-upright" : ""}${meta.under ? " is-under" : ""}${selected ? " is-selected" : ""}"${attrs} style="${fixtureStyle(fixture)}"><span>${escapeHTML(label)}</span></div>`;
+      const long = Math.max(footprint.width, footprint.height);
+      const short = Math.min(footprint.width, footprint.height);
+      // Thin wall pieces carry their name on a tab that may stand proud of
+      // the wall; anything with floor to it carries it inside.
+      const labelSize = Math.min(13, long * 0.9 / measureEm(label, roomFontFor(mode), 800), meta.wall ? 13 : Math.max(7, short * 0.7));
+      const classes = "room-fixture kind-" + fixture.kind +
+        (meta.wall ? " on-wall wall-" + (WALL_NAMES[rot] || "front") : "") +
+        (upright ? " is-upright" : "") +
+        (meta.under ? " is-under" : "") +
+        (meta.swing && fixture.flip ? " is-flipped" : "") +
+        (selected ? " is-selected" : "");
+      const swing = meta.swing ? `<i class="door-swing" aria-hidden="true" style="--swing:calc(var(--cm) * ${cmNumber(size.w)})"></i>` : "";
+      const handle = selected ? fixtureGripMarkup(fixture) : "";
+      return `<div class="${classes}"${attrs} style="${fixtureStyle(fixture)}"><span class="fixture-label" style="font-size:calc(var(--cm) * ${labelSize.toFixed(2)})">${escapeHTML(label)}</span>${swing}${handle}</div>`;
+    }
+
+    // Wall pieces grow along their wall; free-standing ones from a corner.
+    function fixtureGripMarkup(fixture) {
+      const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+      return `<i class="fixture-resize${meta.wall ? " is-length" : ""}" data-fixture-resize aria-hidden="true" title="${meta.wall ? "Drag to change its length" : "Drag to resize"}"></i>`;
     }
 
     function renderRoomTable(group, index, mode, scoreMode, strategy) {
@@ -18256,34 +18809,45 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const label = tableLabel(index);
       const seatCount = geo.seats.length;
       const attrs = interactive
-        ? ` data-layout-kind="table" data-layout-handle data-table-index="${escapeAttr(index)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ", " + TABLE_SHAPES[table.shape].label.toLowerCase() + ", " + formatInteger(seatCount) + " seats, " + formatInteger(group.length) + " seated. Arrow keys move it, hold Shift for larger steps. R turns it, S changes its shape, Enter opens its settings.")}"`
+        ? ` data-layout-kind="table" data-layout-handle data-table-index="${escapeAttr(index)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ", " + TABLE_SHAPES[table.shape].short + ", " + formatInteger(seatCount) + " desks, " + formatInteger(group.length) + " seated. Arrow keys move it, hold Shift for larger steps. R turns it, S changes how the desks are arranged, Enter opens its settings.")}"`
         : "";
-      const seats = geo.seats.map((seat, seatIndex) => {
-        const profile = group[seatIndex];
-        const style = `left:calc(var(--unit) * ${seat.x.toFixed(2)}); top:calc(var(--unit) * ${seat.y.toFixed(2)});`;
-        if (!profile) {
-          const drop = interactive ? ` data-drop-zone="seat" data-table-index="${escapeAttr(index)}" data-seat-index="${escapeAttr(seatIndex)}"` : "";
-          return `<div class="seat is-empty"${drop} style="${style}"><span>${mode === "wall" ? "" : "empty"}</span></div>`;
-        }
-        const drop = interactive ? ` data-drop-zone="seat" data-table-index="${escapeAttr(index)}" data-seat-index="${escapeAttr(seatIndex)}"` : "";
-        return `<div class="seat is-filled${mode !== "wall" && seatIndex >= (capacity || Infinity) ? " is-extra" : ""}"${drop} style="${style}">${renderSeatChip(profile, mode, index, seatIndex)}</div>`;
-      }).join("");
-      const dropTop = interactive ? ` data-drop-zone="table" data-table-index="${escapeAttr(index)}"` : "";
-      const topStyle = `left:calc(var(--unit) * ${geo.top.x.toFixed(2)}); top:calc(var(--unit) * ${geo.top.y.toFixed(2)}); width:calc(var(--unit) * ${geo.top.width.toFixed(2)}); height:calc(var(--unit) * ${geo.top.height.toFixed(2)});`;
-      const meta = mode === "wall"
-        ? ""
-        : `<span class="room-table-meta">${escapeHTML(tableMetaText(group, capacity, scoreMode))}</span>`;
-      const mix = mode === "wall" ? "" : bandMixStrip(group);
-      return `
-        <article class="room-table shape-${escapeAttr(table.shape)} rot-${table.rot}${overCapacity ? " is-over-capacity" : ""}${selected ? " is-selected" : ""}"${attrs} style="${layoutStyle(table)} width:calc(var(--unit) * ${geo.width.toFixed(2)}); height:calc(var(--unit) * ${geo.height.toFixed(2)});">
-          <div class="room-top kind-${escapeAttr(geo.top.kind)}"${dropTop} style="${topStyle}"${overCapacity ? ` title="More students than this table was planned for."` : ""}>
-            <span class="room-table-label">${escapeHTML(label)}</span>
-            ${mix}
-            ${meta}
-          </div>
-          ${seats}
-        </article>
-      `;
+      const seats = geo.seats.map((seat, seatIndex) => renderPlace(seat, group[seatIndex], { mode, index, seatIndex, capacity, interactive })).join("");
+      const plate = renderTablePlate(geo, group, index, mode, scoreMode, capacity, interactive, overCapacity);
+      return `<article class="room-table shape-${escapeAttr(table.shape)} rot-${table.rot}${overCapacity ? " is-over-capacity" : ""}${selected ? " is-selected" : ""}"${attrs} style="${layoutStyle(table)} width:calc(var(--cm) * ${cmNumber(geo.width)}); height:calc(var(--cm) * ${cmNumber(geo.height)});">${plate}${seats}</article>`;
+    }
+
+    // The table's name plate above its desks, or its name on a round table:
+    // the name always; the band mix and the counts when they fit. It is also
+    // where a student is dropped to join the table at its next free desk.
+    function renderTablePlate(geo, group, index, mode, scoreMode, capacity, interactive, overCapacity) {
+      const round = Boolean(geo.round);
+      const box = round ? geo.round : geo.tab;
+      const family = roomFontFor(mode);
+      const label = tableLabel(index);
+      const wall = mode === "wall";
+      const inner = round ? box.w * 0.7 : box.w - 8;
+      const labelEm = measureEm(label, family, 800);
+      const labelSize = Math.min(round ? 15 : wall ? 14 : 12.5, (round ? box.h * 0.2 : box.h - 5) / 1.12, inner * 0.93 / labelEm);
+      const meta = wall ? "" : tableMetaText(group, capacity, scoreMode);
+      const metaSize = 8.5;
+      const metaWidth = meta ? measureEm(meta, family, 700) * metaSize : 0;
+      const mixWidth = 26;
+      let showMix = !wall && group.length > 0;
+      let showMeta = Boolean(meta);
+      if (round) {
+        showMeta = showMeta && metaWidth <= inner * 0.93;
+      } else {
+        const need = (withMix, withMeta) => labelEm * labelSize + (withMix ? mixWidth + 5 : 0) + (withMeta ? metaWidth + 5 : 0);
+        if (need(showMix, showMeta) > inner) showMeta = false;
+        if (need(showMix, false) > inner) showMix = false;
+      }
+      const drop = interactive ? ` data-drop-zone="table" data-table-index="${escapeAttr(index)}"` : "";
+      const title = interactive && meta ? ` title="${escapeAttr(label + ": " + meta + (overCapacity ? ". More students than this table was planned for." : ""))}"` : "";
+      return `<div class="room-top kind-${round ? "round" : "tab"}"${drop}${title} style="${boxStyle(box)}">` +
+        `<span class="room-table-label" style="font-size:calc(var(--cm) * ${labelSize.toFixed(2)})">${escapeHTML(label)}</span>` +
+        (showMix ? bandMixStrip(group) : "") +
+        (showMeta ? `<span class="room-table-meta" style="font-size:calc(var(--cm) * ${metaSize})">${escapeHTML(meta)}</span>` : "") +
+        "</div>";
     }
 
     function tableMetaText(group, capacity, scoreMode) {
@@ -18306,39 +18870,137 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return `<span class="room-mix" role="img" aria-label="${escapeAttr("Band mix: " + summary)}">${parts.join("")}</span>`;
     }
 
+    // The chair behind a desk, relative to the student's place.
+    function chairBox(seat) {
+      const desk = seat.desk;
+      const gap = 4;
+      const depth = CHAIR_ZONE - gap - 3;
+      if (seat.face === "up" || seat.face === "down") {
+        const w = Math.min(desk.w * 0.6, 46);
+        return { x: desk.x + (desk.w - w) / 2, y: seat.face === "up" ? desk.y + desk.h + gap : desk.y - gap - depth, w, h: depth };
+      }
+      if (seat.face === "left" || seat.face === "right") {
+        const h = Math.min(desk.h * 0.6, 46);
+        return { x: seat.face === "left" ? desk.x + desk.w + gap : desk.x - gap - depth, y: desk.y + (desk.h - h) / 2, w: depth, h };
+      }
+      return null;
+    }
+
+    // Where the name goes, relative to the place: the desk, less the
+    // coloured edge on its far side. A student sitting side-on has a narrow
+    // desk, so their name may also run back across the chair when that makes
+    // it clearly larger; short names stay on the desk.
+    function nameBoxes(seat, stripe) {
+      const s = stripe ? DESK_STRIPE : 0;
+      const d = seat.desk;
+      if (seat.face === "up") return [{ x: d.x, y: d.y + s, w: d.w, h: d.h - s }];
+      if (seat.face === "down") return [{ x: d.x, y: d.y, w: d.w, h: d.h - s }];
+      // The backrest at the outer edge is kept clear.
+      if (seat.face === "left") return [{ x: d.x + s, y: d.y, w: d.w - s, h: d.h }, { x: s, y: 0, w: seat.w - s - 8, h: seat.h }];
+      if (seat.face === "right") return [{ x: d.x, y: d.y, w: d.w - s, h: d.h }, { x: 8, y: 0, w: seat.w - s - 8, h: seat.h }];
+      return [{ x: d.x + s, y: d.y, w: d.w - s, h: d.h }];
+    }
+
+    function renderPlace(seat, profile, { mode, index, seatIndex, capacity, interactive }) {
+      const drop = interactive ? ` data-drop-zone="seat" data-table-index="${escapeAttr(index)}" data-seat-index="${escapeAttr(seatIndex)}"` : "";
+      const chair = chairBox(seat);
+      const chairMarkup = chair ? `<i class="seat-chair" aria-hidden="true" style="${boxStyle(chair)}"></i>` : "";
+      const place = { x: seat.x, y: seat.y, w: seat.w, h: seat.h };
+      if (!profile) {
+        const empty = mode === "wall" ? "" : `<span class="seat-empty" style="${boxStyle(seat.desk)}">empty</span>`;
+        return `<div class="seat is-desk face-${seat.face} is-empty"${drop} style="${boxStyle(place)}"><i class="seat-desk" aria-hidden="true" style="${boxStyle(seat.desk)}"></i>${chairMarkup}${empty}</div>`;
+      }
+      const wall = mode === "wall";
+      const band = wall ? null : (profile.endBand || MISSING_BAND);
+      const extra = !wall && seatIndex >= (capacity || Infinity);
+      const boxes = nameBoxes(seat, !wall);
+      return `<div class="seat is-desk face-${seat.face} is-filled${extra ? " is-extra" : ""}"${drop} style="${boxStyle(place)}">` +
+        `<i class="seat-desk${band ? " " + band.className : ""}" aria-hidden="true" style="${boxStyle(seat.desk)}"></i>${chairMarkup}` +
+        renderSeatChip(profile, mode, index, seatIndex, boxes) + "</div>";
+    }
+
+    // The largest a name may be: bigger on the wall copy, which has no
+    // score line under it.
+    function seatNameMax(mode) {
+      return mode === "wall" ? 16 : 12.5;
+    }
+
+    // Set by roomMarkup while it draws: no name is larger than the size most
+    // names in the room reach, so a short name does not tower over a long
+    // one on the next desk and the plan reads as one set of labels.
+    let roomNameCap = 0;
+
+    // The name above its score, both sized to the box; a corner is kept for
+    // the marks when there are any. A side-on student's name runs back across
+    // the chair only when that makes it clearly larger.
+    function seatNameLayout(name, compact, marked, boxes, mode, maxSize) {
+      const family = roomFontFor(mode);
+      const wall = mode === "wall";
+      const layoutIn = (box) => {
+        const pad = Math.max(2, Math.min(box.w, box.h) * 0.06);
+        const innerW = box.w - pad * 2;
+        const innerH = box.h - pad * 2;
+        if (wall) return { box, scoreSize: 0, fit: fitNameLines(name, innerW, innerH, { family, maxSize }) };
+        const scoreSize = fitOneLine(compact, innerW, innerH * 0.24, family, 700, 7);
+        return { box, scoreSize, fit: fitNameLines(name, innerW - (marked ? 7 : 0), innerH - scoreSize * 1.2 - 1, { family, maxSize }) };
+      };
+      let layout = layoutIn(boxes[0]);
+      if (boxes[1]) {
+        const wider = layoutIn(boxes[1]);
+        if (wider.fit.size > layout.fit.size * 1.15) layout = wider;
+      }
+      return layout;
+    }
+
+    function seatNameCap(groups, mode) {
+      const max = seatNameMax(mode);
+      const sizes = [];
+      groups.forEach((group, index) => {
+        if (!group.length) return;
+        const geo = tableGeometryFor(index);
+        group.forEach((profile, seatIndex) => {
+          const seat = geo.seats[seatIndex];
+          if (!seat) return;
+          sizes.push(seatNameLayout(profile.studentName, "%ile 00", false, nameBoxes(seat, mode !== "wall"), mode, max).fit.size);
+        });
+      });
+      if (!sizes.length) return max;
+      sizes.sort((a, b) => a - b);
+      const median = sizes[Math.floor((sizes.length - 1) / 2)];
+      return Math.min(max, Math.max(median, max * 0.7));
+    }
+
     // A seat's occupant. In the room only the number that drove the grouping
     // is shown; the rest lives in the tooltip and on the roster page.
-    function renderSeatChip(profile, mode, tableIndex, seatIndex) {
+    function renderSeatChip(profile, mode, tableIndex, seatIndex, boxes) {
       const name = profile.studentName;
-      if (mode === "wall") {
-        return `<div class="drag-card is-wall"><span class="seat-name">${escapeHTML(name)}</span></div>`;
-      }
-      const band = profile.endBand || MISSING_BAND;
+      const wall = mode === "wall";
       const compact = isBaselineMode()
         ? `%ile ${formatNumber(profile.avgEndPercentile, 0)}`
         : `CGP ${formatNumber(profile.avgConditionalGrowthPercentile, 0)} · %ile ${formatNumber(profile.avgEndPercentile, 0)}`;
-      const moved = state.movedKeys && state.movedKeys.has(profile.key);
+      const moved = !wall && state.movedKeys && state.movedKeys.has(profile.key);
       // On screen the order mark is always drawn and the stylesheet shows it
       // on request; on paper only what the teacher asked for is drawn.
-      const order = (mode === "screen" || state.roomShowOrder) && state.dealOrder ? state.dealOrder.get(profile.key) : null;
+      const order = !wall && (mode === "screen" || state.roomShowOrder) && state.dealOrder ? state.dealOrder.get(profile.key) : null;
       const marks = (moved ? `<i class="seat-moved" title="Moved by hand" aria-hidden="true">✎</i>` : "") +
         (order && !moved ? `<b class="seat-order" title="Placed ${formatInteger(order)}${ordinalSuffix(order)} by the strategy" aria-hidden="true">${formatInteger(order)}</b>` : "");
+      // The wall copy is the name alone; the others carry the score under it.
+      const { box, fit, scoreSize } = seatNameLayout(name, compact, Boolean(marks), boxes, mode, roomNameCap || seatNameMax(mode));
+      if (wall) return `<div class="drag-card is-wall" style="${boxStyle(box)}">${nameMarkup(fit)}</div>`;
+      const band = profile.endBand || MISSING_BAND;
+      const score = `<span class="seat-score" style="font-size:calc(var(--cm) * ${scoreSize.toFixed(2)})">${escapeHTML(compact)}</span>`;
       if (mode !== "screen") {
-        return `<div class="drag-card ${band.className}"><span class="seat-band"></span><span class="seat-name">${escapeHTML(name)}</span><span class="seat-score">${escapeHTML(compact)}</span>${marks}</div>`;
+        return `<div class="drag-card ${band.className}" style="${boxStyle(box)}">${nameMarkup(fit)}${score}${marks}</div>`;
       }
-      const detail = `${profile.subjects} | ${isBaselineMode()
+      const detail = `${name} | ${profile.subjects} | ${isBaselineMode()
         ? `%ile ${formatNumber(profile.avgEndPercentile)} | vs norm ${formatSignedNumber(profile.avgUSNormDeltaRIT)}`
         : `End %ile ${formatNumber(profile.avgEndPercentile)} | CGP ${formatNumber(profile.avgConditionalGrowthPercentile)}`} | ${planningGroupForProfile(profile)}`;
       const label = `${name}, seat ${formatInteger(seatIndex + 1)} at ${tableLabel(tableIndex)}, ${band.name} band` +
         (moved ? ", moved by hand" : state.roomShowOrder && order ? `, placed ${formatInteger(order)}${ordinalSuffix(order)} by the strategy` : "") +
         `. Left or right arrow moves to the next table, up or down swaps seats, a number key jumps to that table, Backspace sends to Unplaced, Enter opens the move menu.`;
-      return `<div class="drag-card ${band.className}" draggable="true" tabindex="0" role="button" aria-label="${escapeAttr(label)}" title="${escapeAttr(detail)}" data-profile-key="${escapeAttr(profile.key)}" data-student="${escapeAttr(name)}">
-          <span class="seat-band" aria-hidden="true"></span>
-          <span class="seat-name">${escapeHTML(name)}</span>
-          <span class="seat-score">${escapeHTML(compact)}</span>
-          ${marks}
-        </div>
-        <button class="seat-more" type="button" data-seat-menu="${escapeAttr(profile.key)}" aria-label="${escapeAttr("Move " + name + " to another table")}">⋯</button>`;
+      const more = { x: box.x + box.w, y: box.y };
+      return `<div class="drag-card ${band.className}" draggable="true" tabindex="0" role="button" aria-label="${escapeAttr(label)}" title="${escapeAttr(detail)}" data-profile-key="${escapeAttr(profile.key)}" data-student="${escapeAttr(name)}" style="${boxStyle(box)}">${nameMarkup(fit)}${score}${marks}</div>` +
+        `<button class="seat-more" type="button" data-seat-menu="${escapeAttr(profile.key)}" aria-label="${escapeAttr("Move " + name + " to another table")}" style="left:calc(var(--cm) * ${cmNumber(more.x)}); top:calc(var(--cm) * ${cmNumber(more.y)});">⋯</button>`;
     }
 
     function ordinalSuffix(n) {
@@ -18383,12 +19045,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const orderNote = state.roomShowOrder
         ? `<span class="legend-note"><b class="seat-order">1</b> the order the strategy placed each student</span>`
         : "";
+      const room = roomSize();
+      const desk = deskSize();
       return `
         <div class="room-legend">
-          <span class="legend-title">Seat colour = ${isBaselineMode() ? "percentile" : "end percentile"} band</span>
+          <span class="legend-title">Desk colour = ${isBaselineMode() ? "percentile" : "end percentile"} band</span>
           ${bands}
           <span class="legend-note"><i class="seat-moved">✎</i> moved by hand</span>
           ${orderNote}
+          <span class="legend-note">Room ${escapeHTML(formatMetres(room.width) + " × " + formatMetres(room.depth))} m, desks ${escapeHTML(formatInteger(desk.width) + " × " + formatInteger(desk.depth))} cm, drawn to scale: grid squares are 50 cm.</span>
         </div>
         <div class="room-plan-note" id="roomPlanNote">${planSentenceHTML()}</div>
       `;
@@ -18403,31 +19068,37 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const table = roomTable(index);
         const shapeOptions = TABLE_SHAPE_ORDER.map((shape) => `<option value="${shape}"${table.shape === shape ? " selected" : ""}>${escapeHTML(TABLE_SHAPES[shape].label)}</option>`).join("");
         body = `
-          <span class="inspector-title">${escapeHTML(tableLabel(index))} <small>${escapeHTML(formatInteger(tableSeatCount(index)) + " seats")}</small></span>
+          <span class="inspector-title">${escapeHTML(tableLabel(index))} <small>${escapeHTML(formatInteger(tableSeatCount(index)) + " desks")}</small></span>
           <label class="inspector-field">Name <input type="text" maxlength="24" value="${escapeAttr(state.tableLabels?.[index] || "")}" placeholder="${escapeAttr("Table " + formatInteger(index + 1))}" data-room-input="tableLabel" data-table-index="${escapeAttr(index)}" aria-label="Table name, shown on screen and in print, never remembered"></label>
-          <label class="inspector-field">Shape <select data-room-input="tableShape" data-table-index="${escapeAttr(index)}" aria-label="Table shape">${shapeOptions}</select></label>
+          <label class="inspector-field">Desks <select data-room-input="tableShape" data-table-index="${escapeAttr(index)}" aria-label="How the desks are pushed together">${shapeOptions}</select></label>
           <button class="btn small ghost" type="button" data-room-action="rotate">Turn</button>
-          <button class="btn small ghost" type="button" data-room-action="shape-all">Same shape for all tables</button>
+          <button class="btn small ghost" type="button" data-room-action="shape-all">Same for all tables</button>
           <button class="btn small ghost" type="button" data-room-action="deselect">Done</button>
         `;
       } else if (selection && selection.kind === "fixture") {
         const fixture = state.classroomLayout.fixtures.find((item) => item.id === selection.id);
         if (fixture) {
           const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+          const size = fixtureSize(fixture);
           const presetSelect = meta.preset
             ? `<label class="inspector-field">Says <select data-room-input="fixturePreset" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="Area label text">${NOTE_PRESETS.map((text, i) => `<option value="${i}"${(fixture.preset || 0) === i ? " selected" : ""}>${escapeHTML(text)}</option>`).join("")}</select></label>`
             : "";
+          const lengthName = meta.wall ? "Length" : "Width";
+          const where = meta.wall ? "on the " + (WALL_NAMES[normalizeRotation(fixture.rot)] || "front") + " wall" : "";
           body = `
-            <span class="inspector-title">${escapeHTML(meta.label)}</span>
+            <span class="inspector-title">${escapeHTML(fixtureLabel(fixture))}${where ? ` <small>${escapeHTML(where)}</small>` : ""}</span>
             ${presetSelect}
-            <button class="btn small ghost" type="button" data-room-action="rotate">Turn</button>
+            <label class="inspector-field">${lengthName} <input type="number" inputmode="numeric" min="10" max="${ROOM_MAX_CM}" step="5" value="${escapeAttr(size.w)}" data-room-change="fixtureLength" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="${escapeAttr(lengthName + (meta.wall ? " along the wall" : "") + ", in centimetres")}"><span class="inspector-unit">cm</span></label>
+            <label class="inspector-field">Depth <input type="number" inputmode="numeric" min="2" max="600" step="5" value="${escapeAttr(size.d)}" data-room-change="fixtureDepth" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="${escapeAttr("Depth" + (meta.wall ? " out from the wall" : "") + ", in centimetres")}"><span class="inspector-unit">cm</span></label>
+            ${meta.swing ? `<button class="btn small ghost" type="button" data-room-action="flip">Hinge on the other side</button>` : ""}
+            <button class="btn small ghost" type="button" data-room-action="rotate">${meta.wall ? "Next wall" : "Turn"}</button>
             <button class="btn small ghost" type="button" data-room-action="remove">Remove</button>
             <button class="btn small ghost" type="button" data-room-action="deselect">Done</button>
           `;
         }
       }
       if (!body) {
-        body = `<span class="inspector-hint">Drag a table or a piece of furniture to move it. Click one to name it, change its shape, turn it or remove it. Drag a student to any seat; drop on a taken seat to swap.</span>`;
+        body = `<span class="inspector-hint">Drag a table or a piece of furniture to move it. Click one to name it, change how its desks are pushed together, turn it, resize it or remove it; selected furniture has a grip at its corner to drag. Drag a student to any desk; drop on a taken desk to swap.</span>`;
       }
       return `<div class="room-inspector" id="roomInspector">${body}</div>`;
     }
@@ -18437,11 +19108,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.roomSelection = selection;
       if (same) return;
       document.querySelectorAll("[data-classroom-board] .is-selected").forEach((el) => el.classList.remove("is-selected"));
+      // Only the selected piece of furniture carries a resize grip.
+      document.querySelectorAll("[data-classroom-board] [data-fixture-resize]").forEach((el) => el.remove());
       if (selection) {
         const el = selection.kind === "table"
           ? document.querySelector(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(selection.index)}"]`)
           : document.querySelector(`[data-classroom-board] [data-layout-kind="fixture"][data-fixture-id="${cssEscape(selection.id)}"]`);
         if (el) el.classList.add("is-selected");
+        const fixture = selection.kind === "fixture" && el ? state.classroomLayout.fixtures.find((item) => item.id === selection.id) : null;
+        if (fixture) el.insertAdjacentHTML("beforeend", fixtureGripMarkup(fixture));
       }
       const inspector = document.getElementById("roomInspector");
       if (inspector) inspector.outerHTML = renderRoomInspector();
@@ -18523,7 +19198,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const index = Number(input.dataset.tableIndex);
         pushRoomHistory();
         roomTable(index).shape = normalizeShape(input.value);
-        settleAndRender("Table shape changed to " + TABLE_SHAPES[roomTable(index).shape].label.toLowerCase() + ".", kind);
+        settleAndRender(tableLabel(index) + " is now " + TABLE_SHAPES[roomTable(index).shape].short + ".", kind);
         return;
       }
       if (kind === "fixturePreset") {
@@ -18535,6 +19210,28 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       }
     }
 
+    // Sizes are typed, so they apply when the teacher commits them (Enter or
+    // leaving the field), not at every keystroke: "2" on the way to "240"
+    // is not a size.
+    function handleRoomChange(event) {
+      const input = event.target.closest ? event.target.closest("[data-room-change]") : null;
+      if (!input) return;
+      const fixture = state.classroomLayout.fixtures.find((item) => item.id === input.dataset.fixtureId);
+      if (!fixture) return;
+      const kind = input.dataset.roomChange;
+      const size = fixtureSize(fixture);
+      const value = Number(input.value);
+      if (!Number.isFinite(value) || value <= 0) {
+        input.value = String(kind === "fixtureLength" ? size.w : size.d);
+        return;
+      }
+      pushRoomHistory();
+      if (kind === "fixtureLength") fixture.w = clampFixtureLength(value, size.w);
+      else fixture.d = clampFixtureDepth(value, size.d);
+      Object.assign(fixture, placeFixture(fixture, fixture));
+      settleAndRender(fixtureLabel(fixture) + " is now " + fixtureDimensionsText(fixture) + ".", kind);
+    }
+
     // Redraws the room after a change and puts focus back where it was: on
     // the inspector control that made the change, or else on the selection,
     // so a keyboard user arrowing through a list is not thrown onto the table.
@@ -18542,10 +19239,26 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       initializeClassroomLayout(state.tableGroups.length, false);
       rerenderRoom();
       writeRoomLayout();
-      const again = refocusInput ? document.querySelector('#roomInspector [data-room-input="' + refocusInput + '"]') : null;
+      const again = refocusInput
+        ? document.querySelector('#roomInspector [data-room-input="' + refocusInput + '"], #roomInspector [data-room-change="' + refocusInput + '"]')
+        : null;
       if (again) again.focus();
       else focusRoomSelection();
       if (message) announce(message);
+    }
+
+    const ROOM_ZOOM_STEPS = [1, 1.25, 1.5, 2, 2.5, 3];
+
+    // Fit is the whole room in the window; the steps above it make desks
+    // big enough to read on a small screen, and the stage scrolls.
+    function setRoomZoom(zoom) {
+      state.roomZoom = clampBetween(finiteLayoutNumber(zoom, 1), 1, 3);
+      const board = document.querySelector("#tableGroups [data-classroom-board]");
+      if (board) board.style.setProperty("--room-zoom", String(state.roomZoom));
+      if (els.plannerZoomValue) els.plannerZoomValue.textContent = state.roomZoom === 1 ? "Fit" : Math.round(state.roomZoom * 100) + "%";
+      if (els.plannerZoomOut) els.plannerZoomOut.disabled = state.roomZoom <= 1;
+      if (els.plannerZoomIn) els.plannerZoomIn.disabled = state.roomZoom >= 3;
+      announce(state.roomZoom === 1 ? "The whole room fits the window." : "Room zoomed to " + Math.round(state.roomZoom * 100) + " percent.");
     }
 
     function runRoomAction(action) {
@@ -18564,11 +19277,37 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         removeSelectedFixture();
         return;
       }
+      if (action === "flip" && selection && selection.kind === "fixture") {
+        const fixture = state.classroomLayout.fixtures.find((item) => item.id === selection.id);
+        if (!fixture || !(FIXTURE_KINDS[fixture.kind] || {}).swing) return;
+        pushRoomHistory();
+        fixture.flip = !fixture.flip;
+        settleAndRender(fixtureLabel(fixture) + " now opens from its other side.");
+        return;
+      }
       if (action === "shape-all" && selection && selection.kind === "table") {
         pushRoomHistory();
         const shape = roomTable(selection.index).shape;
         state.classroomLayout.tables.forEach((table) => { table.shape = shape; });
-        settleAndRender("Every table is now a " + TABLE_SHAPES[shape].label.toLowerCase() + ".");
+        settleAndRender("Every table is now " + TABLE_SHAPES[shape].short + ".");
+        return;
+      }
+      if (action === "zoom-in" || action === "zoom-out" || action === "zoom-fit") {
+        const current = state.roomZoom || 1;
+        const next = action === "zoom-fit" ? 1
+          : action === "zoom-in" ? (ROOM_ZOOM_STEPS.find((step) => step > current + 0.001) || 3)
+            : ([...ROOM_ZOOM_STEPS].reverse().find((step) => step < current - 0.001) || 1);
+        setRoomZoom(next);
+        return;
+      }
+      if (action === "relayout") {
+        pushRoomHistory();
+        initializeClassroomLayout(state.tableGroups.length, true);
+        rerenderRoom();
+        writeRoomLayout();
+        const board = document.querySelector("#tableGroups [data-classroom-board]");
+        if (board) board.focus({ preventScroll: true });
+        announce("Tables laid out again on an even grid.");
         return;
       }
       if (action === "reset-room") {
@@ -18612,17 +19351,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (!fixture) return;
       const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
       if (meta.wall) {
-        // A wall fixture cannot turn in place; it moves to the next wall round.
-        const rot = normalizeRotation(fixture.rot);
-        const onLeft = fixture.x <= 0.01;
-        const onTop = fixture.y <= 0.01;
-        const next = rot === 0 && onTop ? { x: 100, y: 10 }
-          : rot === 90 && !onLeft ? { x: 40, y: 100 }
-            : rot === 0 && !onTop ? { x: 0, y: 40 }
-              : { x: 40, y: 0 };
-        Object.assign(fixture, placeFixture({ ...fixture, rot: rot === 0 ? 90 : 0 }, next));
-        const wall = fixture.y <= 0.01 ? "front" : fixture.x <= 0.01 ? "left" : fixture.rot === 90 ? "right" : "back";
-        settleAndRender(fixtureLabel(fixture) + " moved to the " + wall + " wall.");
+        // A wall piece cannot turn in place; it moves to the middle of the
+        // next wall round, clockwise.
+        const room = roomSize();
+        const next = normalizeRotation(normalizeRotation(fixture.rot) + 90);
+        const size = fixtureSize(fixture);
+        const upright = next === 90 || next === 270;
+        const footW = upright ? size.d : size.w;
+        const footH = upright ? size.w : size.d;
+        const centre = next === 0 ? { x: room.width / 2, y: 0 }
+          : next === 90 ? { x: room.width, y: room.depth / 2 }
+            : next === 180 ? { x: room.width / 2, y: room.depth }
+              : { x: 0, y: room.depth / 2 };
+        Object.assign(fixture, placeFixture({ ...fixture, rot: next }, { x: centre.x - footW / 2, y: centre.y - footH / 2 }));
+        settleAndRender(fixtureLabel(fixture) + " moved to the " + (WALL_NAMES[fixture.rot] || "front") + " wall.");
         return;
       }
       fixture.rot = normalizeRotation(fixture.rot + 90);
@@ -18648,16 +19390,22 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function addFixture(kind) {
       if (typeof kind !== "string" || !FIXTURE_KINDS[kind]) return;
       pushRoomHistory();
-      const fixture = { id: newFixtureId(), kind, x: 40, y: 40, rot: 0, preset: kind === "note" ? 0 : undefined };
+      const room = roomSize();
       const meta = FIXTURE_KINDS[kind];
-      const start = !meta.wall ? { x: 40, y: 45 }
-        : kind === "board" || kind === "screen" ? { x: 24, y: 0 }
-          : kind === "door" ? { x: 60, y: 100 }
-            : { x: 100, y: 25 };
+      const fixture = { id: newFixtureId(), kind, x: 0, y: 0, rot: 0, w: meta.w, d: meta.d, flip: meta.swing ? false : undefined, preset: meta.preset ? 0 : undefined };
+      // Where each kind usually goes: boards at the front, a second board to
+      // one side of the first, doors and display boards at the back, windows
+      // and fittings down the right; anything free-standing mid-floor.
+      let start;
+      if (!meta.wall) start = { x: (room.width - meta.w) / 2, y: (room.depth - meta.d) / 2 };
+      else if (kind === "board" || kind === "screen") start = { x: (room.width - meta.w) / 2, y: 0 };
+      else if (kind === "whiteboard") start = { x: room.width - meta.w - 60, y: 0 };
+      else if (kind === "door" || kind === "display") { fixture.rot = 180; start = { x: kind === "door" ? room.width * 0.7 : (room.width - meta.w) / 2, y: room.depth }; }
+      else { fixture.rot = 90; start = { x: room.width, y: room.depth * 0.3 }; }
       Object.assign(fixture, placeFixture(fixture, start));
       state.classroomLayout.fixtures.push(fixture);
       state.roomSelection = { kind: "fixture", id: fixture.id };
-      settleAndRender(fixtureLabel(fixture) + " added to the room. It is selected; drag it or use the arrow keys.");
+      settleAndRender(fixtureLabel(fixture) + " added to the room, " + fixtureDimensionsText(fixture) + ". It is selected; drag it, or drag its grip to resize it.");
     }
 
     // ---- The seat move menu ------------------------------------------------
@@ -18946,13 +19694,32 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         pushRoomHistory();
         const table = roomTable(selection.index);
         table.shape = TABLE_SHAPE_ORDER[(TABLE_SHAPE_ORDER.indexOf(table.shape) + 1) % TABLE_SHAPE_ORDER.length];
-        settleAndRender(tableLabel(selection.index) + " is now a " + TABLE_SHAPES[table.shape].label.toLowerCase() + ".");
+        settleAndRender(tableLabel(selection.index) + " is now " + TABLE_SHAPES[table.shape].short + ".");
         return;
       }
       if ((key === "Delete" || key === "Backspace") && selection && selection.kind === "fixture") {
         event.preventDefault();
         setRoomSelection(selection);
         removeSelectedFixture();
+        return;
+      }
+      if (["+", "=", "-", "_"].includes(key) && selection && selection.kind === "fixture") {
+        const fixture = state.classroomLayout.fixtures.find((item) => item.id === selection.id);
+        if (!fixture) return;
+        event.preventDefault();
+        setRoomSelection(selection);
+        if (!state.nudgeHistoryPending) {
+          pushRoomHistory();
+          state.nudgeHistoryPending = true;
+          setTimeout(() => { state.nudgeHistoryPending = false; }, 900);
+        }
+        const size = fixtureSize(fixture);
+        fixture.w = clampFixtureLength(size.w + (key === "+" || key === "=" ? 10 : -10), size.w);
+        Object.assign(fixture, placeFixture(fixture, fixture));
+        rerenderRoom();
+        writeRoomLayout();
+        focusRoomSelection();
+        announce(fixtureLabel(fixture) + " is now " + fixtureDimensionsText(fixture) + ".");
         return;
       }
       if (key === "Enter") {
@@ -18973,7 +19740,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         state.nudgeHistoryPending = true;
         setTimeout(() => { state.nudgeHistoryPending = false; }, 900);
       }
-      const step = event.shiftKey ? 5 : Math.max(1, getLayoutSnapPercent());
+      // One snap step, or 5 cm with free drag; Shift moves half a metre.
+      const step = event.shiftKey ? 50 : Math.max(5, getLayoutSnapCm());
       const next = {
         x: finiteLayoutNumber(position.x, 0) + (key === "ArrowRight" ? step : key === "ArrowLeft" ? -step : 0),
         y: finiteLayoutNumber(position.y, 0) + (key === "ArrowDown" ? step : key === "ArrowUp" ? -step : 0)
@@ -18996,6 +19764,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (kind === "table") {
         const index = Number(handle.dataset.tableIndex);
         Object.assign(roomTable(index), clampRoomBox(next, tableGeometryFor(index)));
+        // A room the teacher has arranged keeps its arrangement when the room
+        // or desk size changes; an untouched one is laid out afresh.
+        state.classroomLayout.arranged = true;
         return;
       }
       if (kind === "fixture") {
@@ -19006,6 +19777,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function handleLayoutPointerDown(event) {
       if (event.button !== undefined && event.button !== 0) return;
+      // The grip on selected furniture resizes it.
+      const grip = event.target.closest ? event.target.closest("[data-classroom-board] [data-fixture-resize]") : null;
+      if (grip) {
+        const element = grip.closest('[data-layout-kind="fixture"]');
+        const board = element && element.closest("[data-classroom-board]");
+        if (!element || !board || board.classList.contains("is-preview")) return;
+        event.preventDefault();
+        state.layoutDrag = {
+          kind: "resize",
+          id: element.dataset.fixtureId,
+          boardRect: board.getBoundingClientRect(),
+          element,
+          moved: false,
+          startX: event.clientX,
+          startY: event.clientY
+        };
+        element.classList.add("layout-dragging");
+        grip.setPointerCapture?.(event.pointerId);
+        element.focus({ preventScroll: true });
+        return;
+      }
       // Students, buttons and the menus have their own handlers.
       if (event.target.closest && event.target.closest(".drag-card, .seat-more, .seat-menu, button, input, select, textarea, a")) return;
       const element = event.target.closest ? event.target.closest("[data-classroom-board] [data-layout-handle]") : null;
@@ -19045,28 +19837,50 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         drag.moved = true;
         pushRoomHistory();
       }
+      const room = roomSize();
       const boardRect = drag.boardRect;
-      const x = (event.clientX - boardRect.left - drag.offsetX) / boardRect.width * 100;
-      const y = (event.clientY - boardRect.top - drag.offsetY) / boardRect.height * 100;
+      const toCmX = (clientX) => (clientX - boardRect.left) / boardRect.width * room.width;
+      const toCmY = (clientY) => (clientY - boardRect.top) / boardRect.height * room.depth;
+      if (drag.kind === "resize") {
+        const fixture = state.classroomLayout.fixtures.find((item) => item.id === drag.id);
+        if (!fixture) return;
+        const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+        const upright = fixture.rot === 90 || fixture.rot === 270;
+        const size = fixtureSize(fixture);
+        const toFive = (value) => Math.max(10, Math.round(value / 5) * 5);
+        const across = toFive(toCmX(event.clientX) - fixture.x);
+        const down = toFive(toCmY(event.clientY) - fixture.y);
+        if (meta.wall) {
+          fixture.w = clampFixtureLength(upright ? down : across, size.w);
+        } else {
+          fixture.w = clampFixtureLength(upright ? down : across, size.w);
+          fixture.d = clampFixtureDepth(upright ? across : down, size.d);
+        }
+        Object.assign(fixture, placeFixture(fixture, fixture));
+        drag.element.setAttribute("style", fixtureStyle(fixture));
+        const swing = drag.element.querySelector(".door-swing");
+        if (swing) swing.style.setProperty("--swing", "calc(var(--cm) * " + cmNumber(fixtureSize(fixture).w) + ")");
+        return;
+      }
+      const x = toCmX(event.clientX - drag.offsetX);
+      const y = toCmY(event.clientY - drag.offsetY);
       if (drag.kind === "table" && Number.isFinite(drag.index)) {
         const position = clampRoomBox({ x, y }, tableGeometryFor(drag.index));
         Object.assign(roomTable(drag.index), position);
-        drag.element.style.left = position.x + "%";
-        drag.element.style.top = position.y + "%";
+        state.classroomLayout.arranged = true;
+        drag.element.style.left = "calc(var(--cm) * " + cmNumber(position.x) + ")";
+        drag.element.style.top = "calc(var(--cm) * " + cmNumber(position.y) + ")";
       } else if (drag.kind === "fixture") {
         const fixture = state.classroomLayout.fixtures.find((item) => item.id === drag.id);
         if (!fixture) return;
-        const placed = placeFixture(fixture, { x, y });
-        const turned = placed.rot !== fixture.rot;
-        Object.assign(fixture, placed);
-        if (turned) {
-          // A wall fixture that crossed to a perpendicular wall changes
-          // footprint, so redraw it rather than just move it.
-          drag.element.setAttribute("style", fixtureStyle(fixture));
-          drag.element.classList.toggle("is-upright", placed.rot === 90 || placed.rot === 270);
-        } else {
-          drag.element.style.left = placed.x + "%";
-          drag.element.style.top = placed.y + "%";
+        Object.assign(fixture, placeFixture(fixture, { x, y }));
+        drag.element.setAttribute("style", fixtureStyle(fixture));
+        // A wall piece that crossed to another wall turns to lie along it.
+        const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+        if (meta.wall) {
+          ["wall-front", "wall-right", "wall-back", "wall-left"].forEach((name) => drag.element.classList.remove(name));
+          drag.element.classList.add("wall-" + (WALL_NAMES[fixture.rot] || "front"));
+          drag.element.classList.toggle("is-upright", fixture.rot === 90 || fixture.rot === 270);
         }
       }
     }
@@ -19081,6 +19895,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         rerenderRoom();
         writeRoomLayout();
         focusRoomSelection();
+        if (drag.kind === "resize") {
+          const fixture = state.classroomLayout.fixtures.find((item) => item.id === drag.id);
+          if (fixture) announce(fixtureLabel(fixture) + " is now " + fixtureDimensionsText(fixture) + ".");
+        }
       }
     }
 
@@ -19151,7 +19969,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           <li><strong>Dealt into tables by the strategy.</strong>
             <span class="how-strategies">${strategies.map((item) => `<span class="how-strategy${item.key === strategy ? " is-active" : ""}"><b>${escapeHTML(item.title)}</b><i>${escapeHTML(item.diagram)}</i><span>${escapeHTML(item.text)}</span></span>`).join("")}</span>
           </li>
-          <li><strong>You have the last word.</strong> Drag anyone to any seat, shape and place the tables, add your furniture. Your arrangement stays until you change the pattern, strategy or score, or press Rebuild.</li>
+          <li><strong>You have the last word.</strong> Drag anyone to any desk, choose how each group's desks are pushed together and where the group stands, add and size your furniture. Your arrangement stays until you change the pattern, strategy or score, or press Rebuild.</li>
         </ol>
       `;
     }
@@ -20101,8 +20919,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           movedByHand: state.movedKeys && state.movedKeys.has(profile.key) ? "Yes" : "No",
           strategy,
           scoreMode,
-          layoutX: table.x ?? "",
-          layoutY: table.y ?? ""
+          layoutX: Number.isFinite(table.x) ? Math.round(table.x) : "",
+          layoutY: Number.isFinite(table.y) ? Math.round(table.y) : ""
         };
       }));
       const poolRows = state.tableManualPool.map((profile, profileIndex) => ({
@@ -20164,28 +20982,28 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // without a second layout.
     function seatingPrintMetrics(paper, audience) {
       const size = PAPER_SIZES[paper] || PAPER_SIZES.A4;
-      const ratio = roomRatio();
+      const room = roomSize();
       const footer = audience === "wall" ? 9 : 14;
       // Whichever way round the sheet draws the room larger; a near-square
-      // room is bigger on a portrait page.
+      // room is bigger on a portrait page. unit is millimetres per centimetre.
       const fit = (landscape) => {
         const pageW = landscape ? size.height : size.width;
         const pageH = landscape ? size.width : size.height;
         const innerW = pageW - SEATING_PRINT_MARGIN * 2;
         const innerH = pageH - SEATING_PRINT_MARGIN * 2 - SEATING_PRINT_HEAD - footer - 6;
-        return { landscape, pageW, pageH, innerW, innerH, unit: Math.min(innerW / 100, innerH / roomHeightUnits(ratio)) };
+        return { landscape, pageW, pageH, innerW, innerH, unit: Math.min(innerW / room.width, innerH / room.depth) };
       };
       const wide = fit(true);
       const tall = fit(false);
-      const best = tall.unit > wide.unit + 0.001 ? tall : wide;
+      const best = tall.unit > wide.unit + 0.00001 ? tall : wide;
       const { landscape, pageW, pageH, innerW, innerH, unit } = best;
       return {
         paper: paper === "A3" ? "A3" : "A4",
         orientation: landscape ? "landscape" : "portrait",
         pageW, pageH, innerW, innerH,
         unit,
-        roomW: unit * 100,
-        roomH: unit * roomHeightUnits(ratio)
+        roomW: unit * room.width,
+        roomH: unit * room.depth
       };
     }
 
@@ -20198,7 +21016,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
+    font-family: ${SEATING_PRINT_FONT};
     color: #10151f;
     font-size: 10pt;
     line-height: 1.35;
@@ -20221,7 +21039,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .sp-room-wrap { display: flex; justify-content: center; }
   .sp-room {
     position: relative; overflow: hidden;
-    border: 0.5mm solid #7c8798; border-radius: 1.5mm; background: #fbfcfe;
+    border: 0.9mm solid #4a5568; border-radius: 0.8mm; background: #fbfcfe;
   }
   .sp-foot { display: flex; flex-wrap: wrap; gap: 2mm 5mm; align-items: center; padding: 2mm ${SEATING_PRINT_MARGIN}mm 0; font-size: 7.5pt; color: #4a5568; }
   .sp-foot .legend-title { font-weight: 800; color: #10151f; }
@@ -20230,72 +21048,84 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .sp-foot .seat-moved { font-style: normal; font-weight: 800; }
   .sp-note { font-size: 8.5pt; color: #2b3445; margin: 0 0 2mm; line-height: 1.4; }
   .sp-unplaced { font-size: 8pt; color: #2b3445; margin: 0; }
+  .sp-scale { margin-left: auto; font-size: 7pt; color: #6b7688; }
 
-  /* The room: the same geometry as the screen, in millimetres. */
-  .room-fixture { position: absolute; display: grid; place-items: center; font-weight: 800; text-align: center; overflow: hidden; }
-  .room-fixture span { font-size: calc(var(--unit) * 1.3); line-height: 1.05; padding: 0 0.5mm; }
-  .room-fixture.is-upright span { writing-mode: vertical-rl; }
-  .room-fixture.kind-board { background: #2f4f3a; color: #fff; border: 0.3mm solid #1f3327; text-transform: uppercase; letter-spacing: .06em; }
-  .room-fixture.kind-screen { background: #1f2937; color: #fff; border: 0.3mm solid #0f172a; text-transform: uppercase; letter-spacing: .06em; }
-  .room-fixture.kind-door { background: #f5d29c; color: #5b3412; border: 0.3mm solid #9a6b38; border-radius: 0.8mm; }
-  .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 0.3mm solid #93c5fd; }
-  .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 0.3mm solid #8b5e34; border-radius: 1mm; }
+  /* The room: the same geometry as the screen, in millimetres. --cm is one
+     centimetre of the room on this sheet. */
+  .room-floor {
+    position: absolute; inset: 0;
+    background:
+      linear-gradient(90deg, #e6ebf2 0.2mm, transparent 0.2mm),
+      linear-gradient(0deg, #e6ebf2 0.2mm, transparent 0.2mm);
+    background-size: calc(var(--cm) * 100) calc(var(--cm) * 100);
+  }
+  .room-scale { position: absolute; right: calc(var(--cm) * 14); bottom: calc(var(--cm) * 10); display: flex; align-items: center; gap: calc(var(--cm) * 4); font-size: calc(var(--cm) * 9); font-weight: 800; color: #6b7688; }
+  .room-scale-bar { display: block; width: calc(var(--cm) * 100); height: calc(var(--cm) * 3); border: 0.35mm solid currentColor; border-top: 0; }
+
+  .room-fixture { position: absolute; display: grid; place-items: center; text-align: center; }
+  .fixture-label { font-weight: 800; line-height: 1.05; white-space: nowrap; padding: 0 calc(var(--cm) * 3); border-radius: 999px; }
+  .room-fixture.is-upright .fixture-label { writing-mode: vertical-rl; padding: calc(var(--cm) * 3) 0; }
+  .room-fixture.on-wall .fixture-label { background: inherit; border: inherit; }
+  .room-fixture.wall-back { align-content: end; }
+  .room-fixture.wall-right { justify-content: end; }
+  .room-fixture.kind-board { background: #2f4f3a; color: #fff; border: 0.3mm solid #1f3327; }
+  .room-fixture.kind-whiteboard { background: #ffffff; color: #334155; border: 0.3mm solid #94a3b8; }
+  .room-fixture.kind-display { background: #e9d3a8; color: #5b3a12; border: 0.3mm solid #b08a52; }
+  .room-fixture.kind-screen { background: #1f2937; color: #fff; border: 0.3mm solid #0f172a; }
+  .room-fixture.kind-door { background: #f5d29c; color: #5b3412; border: 0.3mm solid #9a6b38; }
+  .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 0.5mm double #60a5fa; }
+  .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 0.3mm solid #8b5e34; border-radius: 0.8mm; }
+  .room-fixture.kind-table { background: #f1e6d3; color: #5b3a12; border: 0.3mm solid #a07a4f; border-radius: 0.8mm; }
   .room-fixture.kind-carpet { background: repeating-linear-gradient(45deg, #f3e8ff 0 1.2mm, #ede9fe 1.2mm 2.4mm); color: #5b21b6; border: 0.3mm dashed #a78bfa; border-radius: 1.5mm; }
-  .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 0.3mm solid #9ca3af; border-radius: 0.6mm; }
-  .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 0.3mm solid #7dd3fc; border-radius: 0.6mm; }
-  .room-fixture.kind-note { background: transparent; color: #4a5568; border: 0.3mm dashed #b7c0d0; border-radius: 0.8mm; font-style: italic; font-weight: 600; }
+  .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 0.3mm solid #9ca3af; }
+  .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 0.3mm solid #7dd3fc; }
+  .room-fixture.kind-note { background: transparent; color: #4a5568; border: 0.3mm dashed #b7c0d0; border-radius: 0.8mm; font-style: italic; }
+  .door-swing { position: absolute; width: var(--swing); height: var(--swing); border: 0 dashed #9a6b38; }
+  .wall-front .door-swing { top: 100%; left: 0; border-left: 0.4mm solid #9a6b38; border-right-width: 0.25mm; border-bottom-width: 0.25mm; border-bottom-right-radius: 100%; }
+  .wall-front.is-flipped .door-swing { left: auto; right: 0; border-left: 0.25mm dashed #9a6b38; border-right: 0.4mm solid #9a6b38; border-bottom-right-radius: 0; border-bottom-left-radius: 100%; }
+  .wall-back .door-swing { bottom: 100%; left: 0; border-left: 0.4mm solid #9a6b38; border-right-width: 0.25mm; border-top-width: 0.25mm; border-top-right-radius: 100%; }
+  .wall-back.is-flipped .door-swing { left: auto; right: 0; border-left: 0.25mm dashed #9a6b38; border-right: 0.4mm solid #9a6b38; border-top-right-radius: 0; border-top-left-radius: 100%; }
+  .wall-left .door-swing { left: 100%; top: 0; border-top: 0.4mm solid #9a6b38; border-right-width: 0.25mm; border-bottom-width: 0.25mm; border-bottom-right-radius: 100%; }
+  .wall-left.is-flipped .door-swing { top: auto; bottom: 0; border-top: 0.25mm dashed #9a6b38; border-bottom: 0.4mm solid #9a6b38; border-bottom-right-radius: 0; border-top-right-radius: 100%; }
+  .wall-right .door-swing { right: 100%; top: 0; border-top: 0.4mm solid #9a6b38; border-left-width: 0.25mm; border-bottom-width: 0.25mm; border-bottom-left-radius: 100%; }
+  .wall-right.is-flipped .door-swing { top: auto; bottom: 0; border-top: 0.25mm dashed #9a6b38; border-bottom: 0.4mm solid #9a6b38; border-bottom-left-radius: 0; border-top-left-radius: 100%; }
 
   .room-table { position: absolute; }
-  .room-top { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--unit) * 0.35); background: #f1f5fb; border: 0.35mm solid #7c8798; overflow: hidden; text-align: center; }
-  .room-top.kind-rect { border-radius: calc(var(--unit) * 1); }
-  .room-top.kind-strip { border-radius: calc(var(--unit) * 0.6); }
-  .room-top.kind-round { border-radius: 50%; }
-  .room-top.kind-u-down, .room-top.kind-u-up, .room-top.kind-u-left, .room-top.kind-u-right { background: transparent; border: 0; }
-  .room-top.kind-u-down::before, .room-top.kind-u-up::before, .room-top.kind-u-left::before, .room-top.kind-u-right::before {
-    content: ""; position: absolute; inset: 0; border: calc(var(--unit) * 6) solid #f1f5fb; box-shadow: inset 0 0 0 0.35mm #7c8798, 0 0 0 0.35mm #7c8798;
-  }
-  .room-top.kind-u-down::before { border-bottom: 0; border-radius: calc(var(--unit) * 3) calc(var(--unit) * 3) 0 0; }
-  .room-top.kind-u-up::before { border-top: 0; border-radius: 0 0 calc(var(--unit) * 3) calc(var(--unit) * 3); }
-  .room-top.kind-u-right::before { border-right: 0; border-radius: calc(var(--unit) * 3) 0 0 calc(var(--unit) * 3); }
-  .room-top.kind-u-left::before { border-left: 0; border-radius: 0 calc(var(--unit) * 3) calc(var(--unit) * 3) 0; }
-  .room-top > * { position: relative; }
-  .room-table-label { font-size: calc(var(--unit) * 1.6); font-weight: 800; line-height: 1.05; }
-  .room-table-meta { font-size: calc(var(--unit) * 1.05); color: #4a5568; font-variant-numeric: tabular-nums; line-height: 1.05; }
-  .room-mix { display: inline-flex; width: 70%; height: calc(var(--unit) * 0.9); border-radius: 1mm; overflow: hidden; }
+  .room-top { position: absolute; display: flex; align-items: center; justify-content: center; gap: calc(var(--cm) * 4); padding: 0 calc(var(--cm) * 4); background: #eef3fb; color: var(--sp-brand-deep); border: 0.3mm solid #b7c6e0; border-radius: calc(var(--cm) * 6); overflow: hidden; text-align: center; }
+  .room-top.kind-round { flex-direction: column; gap: calc(var(--cm) * 3); border-radius: 50%; background: #ffffff; color: #10151f; border: 0.4mm solid #7c8798; }
+  .room-table-label { font-weight: 800; line-height: 1.12; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .room-table-meta { color: #4a5568; font-weight: 700; line-height: 1.12; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .room-mix { display: inline-flex; flex: 0 0 auto; width: calc(var(--cm) * 26); height: calc(var(--cm) * 5); border-radius: 1mm; overflow: hidden; }
+  .room-top.kind-round .room-mix { width: 45%; }
   .room-mix i { display: block; height: 100%; }
-  .room-top.kind-strip .room-table-meta, .room-top.kind-strip .room-mix { display: none; }
-  .room-top.kind-strip .room-table-label { font-size: calc(var(--unit) * 1.3); }
-  .room-top.kind-round .room-table-meta { display: none; }
-  .room-top.kind-u-down .room-table-meta, .room-top.kind-u-up .room-table-meta { display: none; }
-  .room-top.kind-u-left, .room-top.kind-u-right { justify-content: center; }
-  .room-top.kind-u-left > *, .room-top.kind-u-right > * { max-width: calc(var(--unit) * 5.5); }
-  .room-top.kind-u-left .room-mix, .room-top.kind-u-right .room-mix, .room-top.kind-u-left .room-table-meta, .room-top.kind-u-right .room-table-meta { display: none; }
-  .room-top.kind-u-left .room-table-label, .room-top.kind-u-right .room-table-label { writing-mode: vertical-rl; }
-  .room-top.kind-u-down .room-table-label, .room-top.kind-u-up .room-table-label { position: absolute; left: 50%; transform: translateX(-50%); }
-  .room-top.kind-u-down .room-table-label { top: calc(var(--unit) * 1.4); }
-  .room-top.kind-u-up .room-table-label { bottom: calc(var(--unit) * 1.4); }
-  .room-top.kind-u-down .room-mix, .room-top.kind-u-up .room-mix { position: absolute; left: 50%; transform: translateX(-50%); width: 40%; }
-  .room-top.kind-u-down .room-mix { top: calc(var(--unit) * 3.6); }
-  .room-top.kind-u-up .room-mix { bottom: calc(var(--unit) * 3.6); }
 
-  .seat { position: absolute; width: calc(var(--unit) * ${SEAT_W}); height: calc(var(--unit) * ${SEAT_H}); }
-  .seat.is-empty { border: 0.3mm dashed #b7c0d0; border-radius: calc(var(--unit) * 0.8); color: #9aa5b8; font-size: calc(var(--unit) * 1); display: grid; place-items: center; }
-  .drag-card { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: calc(var(--unit) * 0.15); padding: 0 calc(var(--unit) * 0.6) 0 calc(var(--unit) * 1.5); background: #fff; border: 0.3mm solid #b7c0d0; border-radius: calc(var(--unit) * 0.8); overflow: hidden; }
-  .drag-card.is-wall { padding: 0 calc(var(--unit) * 0.6); text-align: center; align-items: center; }
-  .seat-band { position: absolute; left: 0; top: 0; bottom: 0; width: calc(var(--unit) * 0.9); }
-  .seat-name { font-weight: 800; font-size: calc(var(--unit) * 1.3); line-height: 1.08; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
-  .is-wall .seat-name { font-size: calc(var(--unit) * 1.7); white-space: normal; line-height: 1.05; }
-  .seat-score { font-size: calc(var(--unit) * 1); color: #4a5568; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-  .seat-moved { position: absolute; right: calc(var(--unit) * 0.5); top: calc(var(--unit) * 0.2); font-style: normal; font-size: calc(var(--unit) * 1.1); color: #4a5568; }
-  .seat-order { position: absolute; right: calc(var(--unit) * 0.5); top: calc(var(--unit) * 0.2); font-size: calc(var(--unit) * 0.95); color: #4a5568; font-weight: 800; }
+  .seat.is-desk { position: absolute; }
+  .seat-desk { position: absolute; background: #ffffff; border: 0.3mm solid #7c8798; border-radius: calc(var(--cm) * 2.5); }
+  .seat-desk::after { content: ""; position: absolute; border-radius: inherit; }
+  .face-up .seat-desk::after { left: 0; right: 0; top: 0; height: calc(var(--cm) * 5); }
+  .face-down .seat-desk::after { left: 0; right: 0; bottom: 0; height: calc(var(--cm) * 5); }
+  .face-left .seat-desk::after, .face-none .seat-desk::after { top: 0; bottom: 0; left: 0; width: calc(var(--cm) * 5); }
+  .face-right .seat-desk::after { top: 0; bottom: 0; right: 0; width: calc(var(--cm) * 5); }
+  .seat-desk.band-red { background: #fdeaea; border-color: #e3a3a3; } .seat-desk.band-orange { background: #fff0e0; border-color: #efb27a; } .seat-desk.band-yellow { background: #fdf6d8; border-color: #dcc25a; }
+  .seat-desk.band-green { background: #e3f5ea; border-color: #86c4a0; } .seat-desk.band-blue { background: #e4edfd; border-color: #93b1ec; } .seat-desk.band-missing { background: #f1f4f8; }
+  .seat-desk.band-red::after { background: #a50f1a; } .seat-desk.band-orange::after { background: #f77f00; } .seat-desk.band-yellow::after { background: #e5c11a; }
+  .seat-desk.band-green::after { background: #0f7a45; } .seat-desk.band-blue::after { background: #2563eb; } .seat-desk.band-missing::after { background: #94a3b8; }
+  .seat-chair { position: absolute; background: #eceff4; border: 0 solid #9aa5b8; border-radius: calc(var(--cm) * 5); }
+  .face-up .seat-chair { border-bottom-width: calc(var(--cm) * 5); }
+  .face-down .seat-chair { border-top-width: calc(var(--cm) * 5); }
+  .face-left .seat-chair { border-right-width: calc(var(--cm) * 5); }
+  .face-right .seat-chair { border-left-width: calc(var(--cm) * 5); }
+  .seat.is-empty .seat-desk { background: transparent; border-style: dashed; border-color: #b7c0d0; }
+  .seat.is-empty .seat-chair { background: transparent; border-color: #c8cfdb; }
+  .seat-empty { position: absolute; display: grid; place-items: center; color: #9aa5b8; font-size: calc(var(--cm) * 8); }
+  .drag-card { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(var(--cm) * 1); text-align: center; overflow: hidden; color: #10151f; }
+  .seat-name { font-weight: 800; line-height: 1.12; white-space: nowrap; letter-spacing: 0; }
+  .seat-score { font-weight: 700; line-height: 1.12; white-space: nowrap; color: #4a5568; font-variant-numeric: tabular-nums; }
+  .seat-moved, .seat-order { position: absolute; top: calc(var(--cm) * 1.5); right: calc(var(--cm) * 2); font-style: normal; font-size: calc(var(--cm) * 7); line-height: 1; color: #4a5568; font-weight: 800; }
   .sp-foot .seat-moved, .sp-roster .seat-moved { position: static; margin-left: 0.6mm; }
-  .drag-card.band-red { background: #fee2e2; color: #8d1a1a; } .drag-card.band-orange { background: #ffedd5; color: #9a3412; } .drag-card.band-yellow { background: #fef3c7; color: #854d0e; }
-  .drag-card.band-green { background: #dcfce7; color: #166534; } .drag-card.band-blue { background: #dbeafe; color: #1d4ed8; } .drag-card.band-missing { background: #eef2f7; color: #475569; }
-  .band-red .seat-band { background: #a50f1a; } .band-orange .seat-band { background: #f77f00; } .band-yellow .seat-band { background: #e5c11a; }
-  .band-green .seat-band { background: #0f7a45; } .band-blue .seat-band { background: #2563eb; } .band-missing .seat-band { background: #94a3b8; }
   i.band-red { background: #a50f1a; } i.band-orange { background: #f77f00; } i.band-yellow { background: #e5c11a; } i.band-green { background: #0f7a45; } i.band-blue { background: #2563eb; } i.band-missing { background: #94a3b8; }
   .room-table.is-over-capacity .room-top { border-color: #dc2626; box-shadow: 0 0 0 0.4mm #dc2626; }
-  .seat.is-extra .drag-card { border-color: #dc2626; }
+  .seat.is-extra .seat-desk { border-color: #dc2626; border-width: 0.5mm; }
 
   /* Roster page. */
   .sp-roster { padding: 4mm ${SEATING_PRINT_MARGIN}mm 0; }
@@ -20339,19 +21169,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const meta = wall
         ? [currentWindowName(), date]
         : [[filters.teacher, currentWindowName()].filter(Boolean).join(" · "), strategyLabel(strategy) + " · " + scoreModeLabel(scoreMode), date];
-      // The same scale as the screen: a bigger unit would grow every table
-      // relative to the room and tables that sit apart on screen would meet.
-      const roomStyle = `--unit:${(metrics.unit * roomScale()).toFixed(3)}mm; width:${metrics.roomW.toFixed(1)}mm; height:${metrics.roomH.toFixed(1)}mm;`;
+      // The room to scale: one centimetre of floor is metrics.unit mm.
+      const roomStyle = `--cm:${metrics.unit.toFixed(5)}mm; width:${metrics.roomW.toFixed(1)}mm; height:${metrics.roomH.toFixed(1)}mm;`;
+      const floor = roomSize();
+      const scaleNote = '<span class="sp-scale">Drawn to scale: the room is ' + escapeHTML(formatMetres(floor.width) + " × " + formatMetres(floor.depth)) + ' m, grid squares are 1 m.</span>';
       const room = '<div class="sp-room-wrap"><div class="sp-room" style="' + roomStyle + '">' +
         roomMarkup(wall ? "wall" : "teacher", scoreMode, strategy, { groups }) + "</div></div>";
       const unplacedNames = state.tableManualPool.map((profile) => profile.studentName);
       const footer = wall
-        ? '<div class="sp-foot">' + (unplacedNames.length ? '<span class="sp-unplaced">Also in our class: ' + escapeHTML(unplacedNames.join(", ")) + '</span>' : "") + '</div>'
+        ? '<div class="sp-foot">' + (unplacedNames.length ? '<span class="sp-unplaced">Also in our class: ' + escapeHTML(unplacedNames.join(", ")) + '</span>' : "") + scaleNote + '</div>'
         : '<div class="sp-foot"><span class="legend-title">Seat colour = ' + (isBaselineMode() ? "percentile" : "end percentile") + ' band</span>' +
           BANDS.map((band) => '<span class="legend-band"><i class="' + band.className + '"></i>' + escapeHTML(band.name + " " + formatInteger(band.min) + "–" + formatInteger(band.max)) + '</span>').join("") +
           '<span><i class="seat-moved">✎</i> moved by hand</span>' +
           (state.roomShowOrder ? '<span>numbers: order placed by the strategy</span>' : "") +
-          '<span>Averages ignore N/A.</span></div>';
+          '<span>Averages ignore N/A.</span>' + scaleNote + '</div>';
       const sheets = [
         '<section class="sp-sheet">' +
         seatingPrintHeader(wall ? "Our seating plan" : "Seating plan", title, meta) +
@@ -20996,8 +21827,8 @@ ${sheets.join("\n")}
       ["Met growth rate", (row) => isFiniteNumber(row.metRate) ? row.metRate : ""],
       ["Band", (row) => row.endBand.name],
       ["Planning group", (row) => row.suggestedGroup],
-      ["Layout X %", (row) => row.layoutX],
-      ["Layout Y %", (row) => row.layoutY],
+      ["Table from left wall (cm)", (row) => row.layoutX],
+      ["Table from front wall (cm)", (row) => row.layoutY],
       ["Missing data notes", (row) => row.missingDataReasons.join("; ")],
       ["Priority reasons", (row) => row.priorityReasons.join("; ")],
       ["Celebration reasons", (row) => row.celebrationReasons.join("; ")]
