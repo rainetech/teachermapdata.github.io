@@ -21,6 +21,10 @@
 //   - nothing in localStorage names a student, whatever the teacher did;
 //   - the wall print carries no score, no growth and no band mark, and the
 //     teacher print carries them all;
+//   - the teacher copy's roster never splits a table across pages, and says
+//     only that students are grouped by data and behaviour patterns;
+//   - a saved plan file brings back the room, the table names and who sits
+//     where;
 //   - the CSV has one row per seat.
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -280,8 +284,38 @@ const teacherInfo = await printPage.evaluate(() => ({
   roster: document.querySelectorAll(".sp-roster-table").length,
   sheets: document.querySelectorAll(".sp-sheet").length
 }));
-check(teacherInfo.scored > 0 && teacherInfo.roster > 0 && teacherInfo.sheets === 2, "teacher copy carries scores and a roster page");
+check(teacherInfo.scored > 0 && teacherInfo.roster > 0 && teacherInfo.sheets >= 2, "teacher copy carries scores and a roster page");
+check(/grouped according to data and behaviour patterns/.test(teacher) && !/How this plan was made/.test(teacher) && !/✎/.test(teacher), "the printed plan says students are grouped by data and behaviour patterns, and carries no method paragraph or hand-move marks");
+await printPage.emulateMedia({ media: "print" });
+const pdf = await printPage.pdf({ preferCSSPageSize: true, printBackground: true });
+const pdfPages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
+check(pdfPages === teacherInfo.sheets, "every sheet of the teacher copy prints as one page, so no table is split (" + pdfPages + " pages, " + teacherInfo.sheets + " sheets)");
 await printPage.close();
+
+console.log("Plan file");
+const saved = await page.evaluate(() => {
+  let out = "";
+  const original = window.downloadText;
+  window.downloadText = (name, text) => { out = text; };
+  if (!state.tableLabels) state.tableLabels = {};
+  state.tableLabels[0] = "Window table";
+  exportRoomLayout();
+  window.downloadText = original;
+  return out;
+});
+const seatsBefore = await page.evaluate(() => JSON.stringify(state.tableGroups.map((g) => g.map((p) => p.key))));
+await page.evaluate(() => {
+  const a = state.tableGroups[0][0].key;
+  moveProfileTo(a, state.tableGroups.length - 1, 0);
+  state.tableLabels = {};
+  roomTable(0).x = 20;
+  rerenderRoom();
+});
+await page.evaluate((text) => importRoomLayoutFile(new File([text], "plan.json", { type: "application/json" })), saved);
+await page.waitForTimeout(400);
+const restored = await page.evaluate(() => ({ seats: JSON.stringify(state.tableGroups.map((g) => g.map((p) => p.key))), label: state.tableLabels[0], x: state.classroomLayout.tables[0].x }));
+const savedX = JSON.parse(saved).tables[0].x;
+check(restored.seats === seatsBefore && restored.label === "Window table" && restored.x === savedX, "loading a saved plan file brings back the room, the table names and who sits where");
 
 console.log("Export");
 const csv = await page.evaluate(() => {
