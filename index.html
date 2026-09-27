@@ -7248,7 +7248,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // page can say that class figures carry both.
       const windowsBySubject = new Map();
       rows.forEach((row) => {
-        if (row.hasGrowthPair) return;
+        // An attempt with no score (an invalid or untested row) is not a
+        // second window; the Data Check lists it on its own.
+        if (row.hasGrowthPair || !row.hasCurrentScore) return;
         const key = studentKey(row) + "|" + row.subject;
         if (!windowsBySubject.has(key)) windowsBySubject.set(key, new Set());
         windowsBySubject.get(key).add(windowKey(row));
@@ -8232,7 +8234,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           // with its percentile, projected RIT and grouping columns stranded on
           // a second record. Re-deriving also means every computed field comes
           // from the one implementation instead of being patched by hand.
-          const mergedRaw = mergeRawRows(primary._raw, other._raw);
+          const mergedRaw = mergeSittingRaw(primary._raw, other._raw);
           if (!mergedRaw) return;
           const rebuilt = normalizeRecord(mergedRaw);
           if (!rebuilt) return;
@@ -8244,6 +8246,53 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         });
       });
       return merged;
+    }
+
+    // A Class Profile names its one test the way an ASG export names the end
+    // of a growth period (RitScore reads as the end RIT). Beside an ASG row
+    // that holds only the start of its period - a fall projection export, or
+    // a growth export whose spring test is still to come - the Class Profile
+    // score is that same fall test, not a spring result. Merged the plain way
+    // it filled the empty end-of-period slot, and a fall projection file with
+    // its Class Profiles read as "Fall to Spring growth" of 0 RIT for every
+    // student. So the Class Profile's score, date, error and duration move to
+    // the start slot, and the ASG row is the base the extras are added to.
+    const SITTING_END_TO_START = {
+      endRITRaw: "startRITRaw",
+      endPercentileRaw: "startPercentileRaw",
+      endTestDate: "testDate",
+      endRITSEMRaw: "startRITSEMRaw",
+      endPercentileSERaw: "startPercentileSERaw",
+      endTestDuration: "startTestDuration"
+    };
+
+    function rawHas(raw, key) {
+      const value = raw ? raw[key] : undefined;
+      return value !== undefined && value !== null && value !== "" && !isBlankLike(String(value));
+    }
+
+    function isStartOnlyRaw(raw) {
+      return rawHas(raw, "startRITRaw") && !rawHas(raw, "endRITRaw");
+    }
+
+    function isSingleTestRaw(raw) {
+      return rawHas(raw, "endRITRaw") && !rawHas(raw, "startRITRaw");
+    }
+
+    function mergeSittingRaw(primaryRaw, otherRaw) {
+      if (!primaryRaw || !otherRaw) return null;
+      const startOnly = isStartOnlyRaw(primaryRaw) ? primaryRaw : isStartOnlyRaw(otherRaw) ? otherRaw : null;
+      const single = startOnly === primaryRaw ? (isSingleTestRaw(otherRaw) ? otherRaw : null)
+        : startOnly === otherRaw ? (isSingleTestRaw(primaryRaw) ? primaryRaw : null)
+          : null;
+      if (!startOnly || !single) return mergeRawRows(primaryRaw, otherRaw);
+      const shifted = {};
+      Object.keys(single).forEach((key) => {
+        const target = SITTING_END_TO_START[key];
+        if (target) shifted[target] = single[key];
+        else shifted[key] = single[key];
+      });
+      return mergeRawRows(startOnly, shifted);
     }
 
     // Fill every blank on the primary source row from the other one. Returns
@@ -8482,8 +8531,23 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     // Human label for a window, preferring the term text the export supplied
     // ("Fall 2025") and falling back to the inferred season.
+    // NWEA names a term by its school year and, in a Class Profile, adds a
+    // note: "Fall 2026-2027 (Most Recent)". The page names windows the way an
+    // ASG comparison period does - "Fall 2026", "Spring 2027" - so a Class
+    // Profile and an ASG export of the same term read as the same window.
+    // Winter straddles the new year, so it keeps its school-year form.
     function windowLabel(termText, seasonKey, fallback) {
-      const cleaned = cleanString(termText);
+      let cleaned = cleanString(termText).replace(/\s*\([^)]*\)\s*$/, "").trim();
+      const schoolYear = cleaned.match(/^(fall|autumn|spring|summer)\s+(\d{4})\s*[-–\/]\s*(\d{2,4})$/i);
+      if (schoolYear) {
+        const first = Number(schoolYear[2]);
+        let second = Number(schoolYear[3]);
+        if (second < 100) second += Math.floor(first / 100) * 100;
+        if (second === first + 1) {
+          const season = schoolYear[1].toLowerCase() === "autumn" ? "Fall" : schoolYear[1][0].toUpperCase() + schoolYear[1].slice(1).toLowerCase();
+          cleaned = season + " " + (season === "Fall" ? first : second);
+        }
+      }
       if (cleaned && !isBlankLike(cleaned) && cleaned !== "Missing") return cleaned;
       if (seasonKey) return seasonLabel(seasonKey);
       return fallback;
@@ -12127,7 +12191,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
       if (diagnostics.mergedRecords) {
         notes.push(["Records combined across files", formatInteger(diagnostics.mergedRecords) +
-          " student-subject record(s) appeared in more than one file describing the same test. They were folded into one record rather than counted twice, so growth from an ASG export and the instructional areas from a Class Profile export sit on the same student."]);
+          " student-subject record(s) appeared in more than one file describing the same test. They were folded into one record rather than counted twice, so " +
+          (diagnostics.forwardProjectionCount && isBaselineMode() ? "NWEA's projection from the ASG export" : "growth from an ASG export") +
+          " and the instructional areas from a Class Profile export sit on the same student."]);
       }
       if (diagnostics.forwardProjectionCount) {
         notes.push(["NWEA projection for the window ahead",
