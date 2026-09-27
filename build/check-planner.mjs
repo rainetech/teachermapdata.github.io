@@ -263,6 +263,8 @@ const wallInfo = await printPage.evaluate(() => ({
 }));
 check(wallInfo.chips > 0 && wallInfo.scored === 0 && wallInfo.mix === 0 && wallInfo.legend === 0, "wall plan shows names only: no score, band, mix strip or legend");
 check(wallInfo.crowded === 0, "wall plan carries no over-capacity marks");
+const wallCaps = await printPage.evaluate(() => [...document.querySelectorAll("body *")].filter((el) => getComputedStyle(el).textTransform === "uppercase" && el.textContent.trim()).length);
+check(wallCaps === 0, "nothing on the wall plan is set in capitals");
 const wallNames = await printPage.evaluate(() => {
   const cards = [...document.querySelectorAll(".sp-room .drag-card")];
   return {
