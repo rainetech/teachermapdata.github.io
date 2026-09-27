@@ -7035,8 +7035,12 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (!rendered) return;
       const fileNote = usable.length > 1 ? formatInteger(usable.length) + " files combined. " : "";
       const skipNote = rejected.length ? " " + formatInteger(rejected.length) + " file(s) were skipped - see Data Check." : "";
+      const projectionCount = isBaselineMode() ? state.allRows.filter((row) => row.forwardProjection).length : 0;
       const modeNote = isBaselineMode()
-        ? currentWindowName() + " baseline loaded - single test window, so growth is not measured."
+        ? (projectionCount
+            ? currentWindowName() + " projection loaded - NWEA's projected growth to " + projectionHorizon(state.allRows) + " for " +
+              formatInteger(projectionCount) + " records. Growth itself is measured once that window is tested."
+            : currentWindowName() + " baseline loaded - single test window, so growth is not measured.")
         : "Growth file loaded - " + state.dataWindow.priorWindowLabel + " to " + state.dataWindow.currentWindowLabel + ".";
       setStatus(fileNote + modeNote + skipNote, false);
       // The success status line is hidden once data is loaded, which also
@@ -7444,7 +7448,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const endQuadrant = parseQuadrant(raw.endGrowthAchievementRaw);
       const gap = computeGap(startPercentile, endPercentile, metGrowth, exceededGrowth);
       const subject = subjectFromCourse(raw.course, raw.subjectRaw);
-      const studentName = formatStudentName(raw.studentFirstName, raw.studentLastName, raw.studentFullNameRaw);
+      const studentName = formatStudentName(raw.studentFirstName, raw.studentLastName, raw.studentFullNameRaw, raw.studentID);
 
       // --- Test-window resolution -------------------------------------------
       // A fall export has only one real window, and different report runs put it
@@ -7505,6 +7509,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         endTestDuration,
         normsReference: cleanString(raw.normsReferenceRaw) || null,
         comparisonPeriod: comparison ? comparison.start + " to " + comparison.end : null,
+        comparisonStart: comparison ? comparison.start : null,
+        comparisonEnd: comparison ? comparison.end : null,
         // NWEA reports weeks of instruction at each window, which is the real
         // teaching time the growth happened across.
         weeksOfInstructionStart: cleanNumber(raw.weeksOfInstructionStartRaw),
@@ -7615,6 +7621,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // about them. The distinction is the measured second window, not the
     // column names.
     function applyForwardProjection(record) {
+      // A single-window export names the window it looks ahead to ("Fall
+      // 2026 - Spring 2027"). Where that is the spring the goals aim at, the
+      // goals take its name, so the page says "Spring 2027" rather than
+      // "spring, same grade".
+      if (record.goals && !record.hasGrowthPair && record.goals.horizonLabel === "Spring, same grade" &&
+          record.comparisonEnd && detectSeasonFromText(record.comparisonEnd) === "spring" &&
+          record.comparisonStart && detectSeasonFromText(record.comparisonStart) === record.currentSeason) {
+        record.goals.horizonLabel = record.comparisonEnd;
+      }
       const target = record.projectedRIT;
       const gain = isFiniteNumber(record.projectedGrowth)
         ? record.projectedGrowth
@@ -7628,7 +7643,128 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             aboveTypical: record.goals && isFiniteNumber(gain) ? gain - record.goals.typicalGain : null
           }
         : null;
+      if (record.forwardProjection) {
+        // Where the projection lands against the grade-level mean for the
+        // window it projects to. A projection is typical growth for a student
+        // starting on that score, so it roughly holds a student's place: one
+        // that ends below grade level is a gap that meeting it will not close.
+        const fp = record.forwardProjection;
+        const endSeason = record.comparisonEnd ? detectSeasonFromText(record.comparisonEnd) : null;
+        const gradeLevelRIT = endSeason && endSeason !== record.currentSeason
+          ? getUSNormRIT(record.subject, record.usNormStudentGrade, endSeason)
+          : (record.goals ? record.goals.gradeLevelRIT : null);
+        fp.horizonLabel = record.comparisonEnd || (record.goals ? record.goals.horizonLabel : "") || "the window ahead";
+        fp.gradeLevelRIT = isFiniteNumber(gradeLevelRIT) ? gradeLevelRIT : null;
+        fp.shortOfGradeLevel = isFiniteNumber(gradeLevelRIT) ? gradeLevelRIT - target : null;
+        fp.reachesGradeLevel = isFiniteNumber(gradeLevelRIT) ? target >= gradeLevelRIT : null;
+        fp.alreadyAtGradeLevel = isFiniteNumber(gradeLevelRIT) && isFiniteNumber(record.currentRIT) ? record.currentRIT >= gradeLevelRIT : null;
+      }
       return record;
+    }
+
+    // A goal horizon in a sentence: generic labels read in lower case
+    // ("by spring, same grade"), a named window keeps its capitals ("by
+    // Spring 2027").
+    function horizonText(label) {
+      const text = cleanString(label);
+      if (!text) return "the next window";
+      return /\d{4}/.test(text) ? text : text.toLowerCase();
+    }
+
+    // ---- Projection files ---------------------------------------------------
+    // A single-window file that carries NWEA's projection for the window
+    // ahead. Nothing in it measures growth, so everything forward-looking on
+    // the page reads from the projection rather than from norm-based typical
+    // growth, and nothing reads as if growth had already happened.
+    function projectionRowsOf(rows) {
+      return (rows || []).filter((row) => row.forwardProjection);
+    }
+
+    function isProjectionView(rows) {
+      return isBaselineMode() && projectionRowsOf(rows || state.filteredRows).length > 0;
+    }
+
+    function projectionHorizon(rows) {
+      const labels = unique(projectionRowsOf(rows || state.filteredRows).map((row) => row.forwardProjection.horizonLabel).filter(Boolean));
+      return labels.length === 1 ? labels[0] : "next spring";
+    }
+
+    function projectionSummary(rows) {
+      const projected = projectionRowsOf(rows);
+      const measured = projected.filter((row) => row.forwardProjection.reachesGradeLevel !== null);
+      const short = measured.filter((row) => row.forwardProjection.reachesGradeLevel === false);
+      const bySubject = unique(projected.map((row) => row.subject)).map((subject) => {
+        const subjectRows = projected.filter((row) => row.subject === subject);
+        return { subject, count: subjectRows.length, gain: avg(subjectRows.map((row) => row.forwardProjection.gain)) };
+      }).filter((entry) => isFiniteNumber(entry.gain)).sort((a, b) => b.gain - a.gain);
+      return {
+        count: projected.length,
+        measuredCount: measured.length,
+        avgGain: avg(projected.map((row) => row.forwardProjection.gain)),
+        avgTarget: avg(projected.map((row) => row.forwardProjection.targetRIT)),
+        // At or above the grade-level mean for the horizon already.
+        alreadyCount: measured.filter((row) => row.forwardProjection.alreadyAtGradeLevel).length,
+        // Below it now, at or above it if they meet their projection.
+        reachCount: measured.filter((row) => !row.forwardProjection.alreadyAtGradeLevel && row.forwardProjection.reachesGradeLevel).length,
+        // Below it even after meeting their projection.
+        shortCount: short.length,
+        atGradeLevelOnProjection: share(measured, (row) => row.forwardProjection.reachesGradeLevel === true),
+        maxShort: short.length ? Math.max(...short.map((row) => row.forwardProjection.shortOfGradeLevel)) : null,
+        bySubject,
+        horizon: projectionHorizon(projected)
+      };
+    }
+
+    function projectionSubjectText(summary) {
+      return summary.bySubject.length > 1
+        ? summary.bySubject.map((entry) => entry.subject + " " + formatSignedNumber(entry.gain)).join(", ")
+        : "";
+    }
+
+    function projectedRITCell(row) {
+      return row.forwardProjection ? "<strong>" + escapeHTML(formatNumber(row.forwardProjection.targetRIT, 0)) + "</strong>" : "-";
+    }
+
+    // How far the projection leaves a student from the grade-level mean.
+    function projectionBeyondCell(row) {
+      const fp = row.forwardProjection;
+      if (!fp || fp.reachesGradeLevel === null) return '<span class="muted-cell">-</span>';
+      if (fp.alreadyAtGradeLevel) return '<span class="status-pill status-good">Already there</span>';
+      if (fp.reachesGradeLevel) return '<span class="status-pill status-good" title="' +
+        escapeAttr("Meeting the projection takes this student to the grade-level mean for " + fp.horizonLabel + ".") + '">Projection reaches it</span>';
+      return '<span class="status-pill status-watch" title="' +
+        escapeAttr("The projection ends " + formatNumber(fp.shortOfGradeLevel, 0) + " RIT below the grade-level mean for " + fp.horizonLabel + ", so meeting it is not enough.") +
+        '">+' + escapeHTML(formatNumber(fp.shortOfGradeLevel, 0)) + " beyond projection</span>";
+    }
+
+    function baselineColumnsWithProjection(columns, kind) {
+      if (!isProjectionView()) return columns;
+      const extra = kind === "priority"
+        ? [
+            ["NWEA projected RIT", "forwardProjection.targetRIT", projectedRITCell],
+            ["Beyond projection", "forwardProjection.shortOfGradeLevel", projectionBeyondCell]
+          ]
+        : [
+            ["NWEA projected RIT", "forwardProjection.targetRIT", projectedRITCell],
+            ["Projected gain", "forwardProjection.gain", (row) => (row.forwardProjection ? escapeHTML(formatSignedNumber(row.forwardProjection.gain)) : "-")],
+            ["Grade level by then", "forwardProjection.shortOfGradeLevel", projectionBeyondCell]
+          ];
+      const anchorName = kind === "priority" ? "Gain to grade level" : "US norm grade level";
+      const anchor = columns.findIndex((column) => column[0] === anchorName);
+      const at = anchor >= 0 ? anchor + 1 : columns.length;
+      return columns.slice(0, at).concat(extra, columns.slice(at));
+    }
+
+    function baselineExportWithProjection(columns) {
+      if (!isProjectionView() || columns.some((column) => column[0] === "NWEA projected RIT")) return columns;
+      return columns.concat([
+        ["NWEA projected RIT", (row) => (row.forwardProjection ? row.forwardProjection.targetRIT : "")],
+        ["NWEA projected gain", (row) => (row.forwardProjection ? row.forwardProjection.gain : "")],
+        ["Projected to", (row) => (row.forwardProjection ? row.forwardProjection.horizonLabel : "")],
+        ["Grade-level mean then", (row) => (row.forwardProjection && isFiniteNumber(row.forwardProjection.gradeLevelRIT) ? row.forwardProjection.gradeLevelRIT : "")],
+        ["RIT beyond projection to grade level", (row) => (row.forwardProjection && row.forwardProjection.reachesGradeLevel === false
+          ? Math.round(row.forwardProjection.shortOfGradeLevel) : "")]
+      ]);
     }
 
     // "Met growth" is the most consequential yes/no this page produces: it is
@@ -8035,12 +8171,22 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (isFiniteNumber(row.usNormDeltaRIT) && row.usNormDeltaRIT <= -8) {
         reasons.push(formatNumber(Math.abs(row.usNormDeltaRIT), 0) + " RIT below the grade/season norm");
       }
-      if (row.goals && !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0 && isFiniteNumber(row.goals.typicalGain) && row.goals.typicalGain > 0) {
-        reasons.push("Needs above-typical growth to reach grade level by " + row.goals.horizonLabel.toLowerCase());
+      if (row.forwardProjection && row.forwardProjection.reachesGradeLevel !== null) {
+        // NWEA's own projection is a better estimate of where a typical year
+        // takes this student than a norm-based typical gain.
+        if (row.forwardProjection.reachesGradeLevel === false) reasons.push(projectionShortReason(row));
+      } else if (row.goals && !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0 && isFiniteNumber(row.goals.typicalGain) && row.goals.typicalGain > 0) {
+        reasons.push("Needs above-typical growth to reach grade level by " + horizonText(row.goals.horizonLabel));
       }
       if (row.shortTest) reasons.push("Very short test - confirm before placing");
       if (row.rapidGuessed) reasons.push("Rapid guessing on " + formatNumber(row.rapidGuessedPct, 0) + "% of items - score understates the student");
       return reasons;
+    }
+
+    function projectionShortReason(row) {
+      const fp = row.forwardProjection;
+      return "NWEA projects RIT " + formatNumber(fp.targetRIT, 0) + " by " + fp.horizonLabel + ", " +
+        formatNumber(fp.shortOfGradeLevel, 0) + " below grade level";
     }
 
     function getBaselineStrengthReasons(row) {
@@ -8055,7 +8201,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (isFiniteNumber(row.usNormDeltaRIT) && row.usNormDeltaRIT >= 8) {
         reasons.push("+" + formatNumber(row.usNormDeltaRIT, 0) + " RIT above the grade/season norm");
       }
-      if (row.goals && row.goals.alreadyAtOrAbove) reasons.push("Already above the " + row.goals.horizonLabel.toLowerCase() + " grade-level target");
+      if (row.goals && row.goals.alreadyAtOrAbove) reasons.push("Already above the grade-level target for " + horizonText(row.goals.horizonLabel));
       return reasons;
     }
 
@@ -8415,7 +8561,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return cleanString(value).toLowerCase().replace(/\b[a-z]/g, (letter) => letter.toUpperCase());
     }
 
-    function formatStudentName(first, last, combined) {
+    function formatStudentName(first, last, combined, studentID) {
       const parts = [cleanString(first), cleanString(last)].filter(Boolean);
       if (parts.length) return parts.join(" ");
       // Some exports carry one "StudentName" column, usually "Last, First".
@@ -8425,6 +8571,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         if (commaParts.length === 2) return commaParts[1] + " " + commaParts[0];
         return whole;
       }
+      // An export run with names hidden still carries NWEA's student ID, and
+      // a single "Unnamed Student" merged every child into one on any list
+      // that counts people.
+      const id = cleanString(studentID);
+      if (id && !isBlankLike(id) && id.toLowerCase() !== "missing") return "Student " + id;
       return "Unnamed Student";
     }
 
@@ -8874,6 +9025,19 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         node.hidden = baseline;
       });
 
+      // Growth strength means nothing without a second window: in a
+      // single-window file it silently fell back to percentile.
+      if (els.groupScoreSelect) {
+        const growthOption = els.groupScoreSelect.querySelector('option[value="growth"]');
+        if (growthOption) {
+          growthOption.hidden = baseline;
+          growthOption.disabled = baseline;
+          if (baseline && els.groupScoreSelect.value === "growth") els.groupScoreSelect.value = "endPercentile";
+        }
+        const endOption = els.groupScoreSelect.querySelector('option[value="endPercentile"]');
+        if (endOption) endOption.textContent = baseline ? "Percentile" : "End percentile";
+      }
+
       setText("bandFilterLabel", baseline ? currentWindowName() + " Band" : "End Band");
 
       // The toggle only exists when the file actually contains a test the
@@ -8897,7 +9061,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       setText("groupingLead", baseline
         ? "Groups are based on achievement band and distance from the US grade/season norm. Growth columns stay hidden until a second window exists."
         : "Groups are based on achievement band, growth projection, conditional growth, and gap status.");
-      setText("goalsNote", baseline
+      setText("goalsNote", baseline && state.allRows.some((row) => row.forwardProjection)
+        ? "NWEA's projection for every student to " + projectionHorizon(state.allRows) + ", with the grade-level target beside it and how far beyond the projection it sits."
+        : baseline
         ? "Norm-referenced RIT targets for the end of this school year, so the winter or spring upload has something to measure against."
         : "Norm-referenced RIT targets for the next reporting window, alongside the growth already achieved.");
 
@@ -8925,6 +9091,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       setText("modeChip", chip);
       if (info.mode === "baseline") {
         const projected = state.allRows.filter((row) => row.forwardProjection).length;
+        if (projected) {
+          const horizon = projectionHorizon(state.allRows);
+          setText("modeChip", "Projection file");
+          setText("modeHeadline", currentWindowName() + " scores, with NWEA's projection to " + horizon);
+          setText("modeDetail", "One test window, so nothing here measures growth yet. " + formatInteger(projected) + " of " +
+            formatInteger(info.scoredRowCount) + " scored records carry NWEA's projected growth to " + horizon +
+            ": the typical gain for a student starting on that score, and the RIT the " + horizon + " export will score met growth against. " +
+            "Meeting a projection roughly holds a student's place against their peers; closing a gap to grade level takes more than it.");
+          return;
+        }
         setText("modeHeadline", currentWindowName() + " baseline - one test window");
         setText("modeDetail", "No prior window to compare against, so growth, gap closure and quadrant movement are not shown. " +
           formatInteger(info.scoredRowCount) + " scored records are analysed as a starting point." +
@@ -9117,7 +9293,15 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             shareCard("Secure (61+)", metrics.shares.secure, { threshold: 50 }),
             statCard("Tier 2 or 3", formatInteger((metrics.tierCounts.intensive || 0) + (metrics.tierCounts.strategic || 0)), { raw: (metrics.tierCounts.intensive || 0) + (metrics.tierCounts.strategic || 0), format: "integer", tone: "warn", hint: "Records below the 41st percentile" }),
             statCard("Support list", formatInteger(focusCount), { raw: focusCount, format: "integer", tone: focusCount ? "warn" : "good", hint: "Records with a start-of-year flag" })
-          ]
+          ].concat(projectionRowsOf(rows).length ? (() => {
+            const projection = projectionSummary(rows);
+            return [
+              statCard("NWEA projected gain", formatSignedNumber(projection.avgGain), { raw: projection.avgGain, format: "signed", tone: "good",
+                hint: "Mean to " + projection.horizon + ", " + formatInteger(projection.count) + " records" }),
+              shareCard("Grade level on projection", projection.atGradeLevelOnProjection, { threshold: 50,
+                hint: "At or above the " + projection.horizon + " grade-level mean if every projection is met" })
+            ];
+          })() : [])
         : [
             statCard("Records", formatInteger(rows.length), { raw: rows.length, format: "integer", hint: formatInteger(studentTotal) + " students" }),
             shareCard("Met growth", metrics.shares.met, { threshold: 50 }),
@@ -9351,6 +9535,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       els.subjectOverview.innerHTML = buckets.map((bucket, index) => {
         const rows = bucketRows(state.filteredRows, bucket, lens);
         const metrics = aggregateRows(rows);
+        const projection = baseline ? projectionSummary(rows) : null;
         const metricRows = baseline
           ? [
               ["Scored records", formatInteger(metrics.scoredCount)],
@@ -9363,9 +9548,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Grade-level gap", formatSignedNumber(metrics.avgUSNormGradeGap)],
               ["Secure (61+)", formatShare(metrics.shares.secure)],
               ["Below 41st", formatShare(metrics.shares.belowStrategic)],
-              ["Typical gain ahead", formatSignedNumber(metrics.avgTypicalGain)],
-              ["Need accelerated growth", formatInteger(metrics.needsAcceleratedGrowthCount)]
-            ]
+            ].concat(projection && projection.count
+              ? [
+                  ["NWEA projected gain", formatSignedNumber(projection.avgGain)],
+                  ["Projected RIT, " + projection.horizon, formatNumber(projection.avgTarget)],
+                  ["Short of grade level on projection", formatInteger(projection.shortCount)]
+                ]
+              : [
+                  ["Typical gain ahead", formatSignedNumber(metrics.avgTypicalGain)],
+                  ["Need accelerated growth", formatInteger(metrics.needsAcceleratedGrowthCount)]
+                ])
           : [
               ["Met growth", formatShare(metrics.shares.met)],
               ["Exceeded", formatShare(metrics.shares.exceeded)],
@@ -9690,7 +9882,21 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             ? formatInteger(aboveNorm) + " of " + formatInteger(normRows.length) + " records are at or above the norm mean (mean " +
               formatNumber(metrics.avgCurrentRIT, 1) + " RIT against a norm of " + formatNumber(avg(rows.map((row) => row.usNormBenchmarkRIT)), 1) + ")."
             : "No grade or season could be matched to a US norm for these records."),
-        chartCard("Typical gain to " + (goalRows.length ? goalRows[0].goals.horizonLabel.toLowerCase() : "the next window"),
+        projectionRowsOf(rows).length
+          ? chartCard("NWEA projected gain to " + projectionHorizon(rows),
+              barChartSVG({
+                labels: ["NWEA projected gain", "Gain to grade level"],
+                datasets: [{
+                  label: "RIT",
+                  color: "var(--green)",
+                  values: [projectionSummary(rows).avgGain, avg(goalRows.map((row) => row.goals.catchUpGain))]
+                }],
+                format: (value) => formatSignedNumber(value)
+              }),
+              "The projected gain is NWEA's typical growth from each student's own starting score, averaged. Gain to grade level is how far the group sits from the " +
+              projectionHorizon(rows) + " grade-level mean. Where the second bar is taller, meeting the projections will not close the gap.")
+          :
+        chartCard("Typical gain to " + (goalRows.length ? horizonText(goalRows[0].goals.horizonLabel) : "the next window"),
           barChartSVG({
             labels: ["Typical peer gain", "Gain to grade level"],
             datasets: [{
@@ -10155,6 +10361,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           ? escapeHTML(formatSignedNumber(row.forwardProjection.gain)) : "-"],
         ["vs typical peer gain", "forwardProjection.aboveTypical", (row) => projectionVsTypicalCell(row)]
       ] : [];
+      if (hasProjection) {
+        // The projection is the student's own keep-pace figure, so the norm
+        // keep-pace columns give way to how far beyond it grade level sits.
+        return lead.concat(projection, [
+          ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
+          ["Norm mean now", "usNormBenchmarkRIT", (row) => formatNumber(row.usNormBenchmarkRIT, 0)],
+          ["Grade-level target", "forwardProjection.gradeLevelRIT", (row) => formatNumber(row.forwardProjection ? row.forwardProjection.gradeLevelRIT : row.goals ? row.goals.gradeLevelRIT : null, 0)],
+          ["Gain to grade level", "goals.catchUpGain", (row) => goalGainCell(row)],
+          ["Beyond projection", "forwardProjection.shortOfGradeLevel", (row) => projectionBeyondCell(row)]
+        ]);
+      }
       return lead.concat(projection, [
         ["Grade", "studentGrade", (row) => escapeHTML(row.studentGrade)],
         ["Norm mean now", "usNormBenchmarkRIT", (row) => formatNumber(row.usNormBenchmarkRIT, 0)],
@@ -10209,7 +10426,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const onTrack = rows.filter((row) => row.goals.alreadyAtOrAbove);
       const projectionRows = state.filteredRows.filter((row) => row.forwardProjection);
       const projectionGain = avg(projectionRows.map((row) => row.forwardProjection.gain));
-      els.goalCards.innerHTML = [
+      const projection = projectionRows.length ? projectionSummary(projectionRows) : null;
+      els.goalCards.innerHTML = projection && projection.measuredCount ? [
+        statCard("NWEA projected gain", formatSignedNumber(projectionGain),
+          { raw: projectionGain, format: "signed", tone: "good",
+            hint: formatInteger(projectionRows.length) + " records carry NWEA's own target for " + projection.horizon }),
+        statCard("Records with a target", formatInteger(Math.max(rows.length, projectionRows.length)), { raw: Math.max(rows.length, projectionRows.length), format: "integer", hint: "Horizon: " + projection.horizon }),
+        statCard("Already past the target", formatInteger(projection.alreadyCount), { raw: projection.alreadyCount, format: "integer", tone: "good", hint: "At or above the grade-level mean for " + projection.horizon + " now" }),
+        statCard("Reach it on projection", formatInteger(projection.reachCount), { raw: projection.reachCount, format: "integer", tone: "good", hint: "Below grade level now, at or above it by " + projection.horizon + " if they meet their projection" }),
+        statCard("Short even on projection", formatInteger(projection.shortCount), { raw: projection.shortCount, format: "integer", tone: projection.shortCount ? "warn" : "good", hint: "Still below the grade-level mean after meeting their projection" }),
+        statCard("Largest gap beyond it", formatSignedNumber(projection.maxShort), { raw: projection.maxShort, format: "signed", hint: "Extra RIT beyond NWEA's projection for the furthest-behind record" })
+      ].join("") : [
         // When the export carries NWEA's own forward projection it leads: that
         // is the number the next window is scored against.
         projectionRows.length
@@ -10233,7 +10460,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         : "Targets use US norm means.");
       setText("goalMethodNote", normsWarning + (normsWarning ? " " : "") +
         (projectionRows.length ? METHOD_NOTES.forwardProjection + " " : "") +
-        METHOD_NOTES.keepPace + " " + METHOD_NOTES.gradeLevel +
+        // Projection mode shows no keep-pace column: the projection is it.
+        (projection && projection.measuredCount ? "" : METHOD_NOTES.keepPace + " ") + METHOD_NOTES.gradeLevel +
         (flatNormCount ? " " + formatInteger(flatNormCount) + " record(s) are at a grade and subject where the published means flatten between these seasons, so keeping pace there means holding the current RIT." : "") +
         " " + METHOD_NOTES.typicalGainSource +
         (hasGrowthContext() ? " " + METHOD_NOTES.nweaProjection : "") + " " + METHOD_NOTES.normSource);
@@ -10391,12 +10619,29 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           why: "Between the 21st and 40th percentile in at least one subject: close enough to grade level that focused small-group work moves them quickly.",
           move: "Pick the two highest-leverage skills per subject and check progress every two weeks."
         },
+        ...(isProjectionView(rows) ? [
+          {
+            tone: "watch",
+            title: "Aim above the projection",
+            students: namesFor(rows, (row) => row.forwardProjection && row.forwardProjection.reachesGradeLevel === false),
+            why: "NWEA's projection for these students ends below the grade-level mean for " + projectionHorizon(rows) +
+              ". A projection is typical growth from where a student starts: meeting it keeps them roughly where they stand against their peers, and does not close the gap.",
+            move: "Set each goal above the projected RIT. Growth Goals and the goal sheet show the extra RIT beyond the projection."
+          },
+          {
+            tone: "good",
+            title: "On course if they keep pace",
+            students: namesFor(rows, (row) => row.forwardProjection && row.forwardProjection.reachesGradeLevel === true && row.forwardProjection.alreadyAtGradeLevel === false),
+            why: "Below the " + projectionHorizon(rows) + " grade-level mean now, but their NWEA projection reaches it: a typical year from here is enough.",
+            move: "Protect their time in core lessons and check at the next window that they are on course. Consistency matters more than intervention here."
+          }
+        ] : []),
         {
           tone: "watch",
           title: "Set stretch goals",
-          students: namesFor(rows, (row) => row.goals && !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0),
+          students: isProjectionView(rows) ? [] : namesFor(rows, (row) => row.goals && !row.goals.alreadyAtOrAbove && row.goals.acceleration > 0),
           why: "Typical peer growth will not be enough for these students to reach the grade-level norm by " +
-            (rows.find((row) => row.goals) ? rows.find((row) => row.goals).goals.horizonLabel.toLowerCase() : "the next window") + ".",
+            (rows.find((row) => row.goals) ? horizonText(rows.find((row) => row.goals).goals.horizonLabel) : "the next window") + ".",
           move: "Name the extra RIT each student needs in the goal sheet and share it with them."
         },
         {
@@ -10664,7 +10909,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           (subjects.length > 1
             ? "That's across " + formatInteger(subjects.length) + " subjects: " + listSentence(subjects) + ". "
             : "") +
-          (baseline
+          (baseline && projectionRowsOf(rows).length
+            ? "One window only, so there's no growth to measure yet. But the file carries NWEA's projection for every child to " +
+              projectionHorizon(rows) + ", so we can see where a typical year would take them. "
+            : baseline
             ? "One window only, so there's no growth to show yet - this is the starting picture. "
             : "") +
           "Five minutes and you'll know where they are and what to do about it."
@@ -10694,6 +10942,32 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             : "") +
           "That's the starting line, not the verdict."
       });
+
+      const briefingProjection = baseline ? projectionSummary(rows) : null;
+      if (briefingProjection && briefingProjection.count && briefingProjection.measuredCount) {
+        const bySubject = briefingProjection.bySubject;
+        scenes.push({
+          key: "projection",
+          eyebrow: "NWEA's projection",
+          title: "Where a typical year takes them",
+          stats: [
+            [formatSignedNumber(briefingProjection.avgGain), "RIT projected, on average"],
+            [formatShare(briefingProjection.atGradeLevelOnProjection), "at grade level by " + briefingProjection.horizon + " if met"],
+            [formatInteger(briefingProjection.shortCount), "still short after it"]
+          ],
+          say: "Here's what NWEA expects. It projects your class to gain " + formatNumber(briefingProjection.avgGain, 1) +
+            " RIT on average by " + briefingProjection.horizon +
+            (bySubject.length > 1
+              ? ": " + listSentence(bySubject.map((entry) => formatNumber(entry.gain, 1) + " in " + entry.subject.toLowerCase())) + ". "
+              : ". ") +
+            "Each projection is typical growth for a child starting where yours start, so meeting it keeps them roughly where they stand against their peers. It doesn't close gaps. " +
+            "If every child hits their projection, " + spokenShare(briefingProjection.atGradeLevelOnProjection, "results") +
+            " end the year at or above grade level" +
+            (briefingProjection.shortCount
+              ? ", and " + formatInteger(briefingProjection.shortCount) + " still don't. For those, the goal has to sit above the projection, not on it."
+              : ".")
+        });
+      }
 
       if (!baseline && metrics.shares.met.of) {
         scenes.push({
@@ -10761,12 +11035,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         stats: [
           [formatInteger(focus), "flagged for support"],
           [formatInteger(strength), "worth celebrating"],
-          [formatInteger(metrics.needsAcceleratedGrowthCount), "need above-typical growth"]
+          briefingProjection && briefingProjection.measuredCount
+            ? [formatInteger(briefingProjection.shortCount), "short of grade level on projection"]
+            : [formatInteger(metrics.needsAcceleratedGrowthCount), "need above-typical growth"]
         ],
         say: "So what do you do on Monday? " +
           formatInteger(focus) + " results are carrying a flag worth a proper look, and " + formatInteger(strength) +
           " deserve saying out loud to the child who earned them. " +
-          (metrics.needsAcceleratedGrowthCount
+          (briefingProjection && briefingProjection.measuredCount
+            ? (briefingProjection.shortCount
+                ? "The ones to watch are the " + formatInteger(briefingProjection.shortCount) +
+                  " whose NWEA projection still ends below grade level by " + briefingProjection.horizon + ". " +
+                  "Meeting it won't be enough, so their goals need to sit above it. "
+                : "")
+            : metrics.needsAcceleratedGrowthCount
             ? "The ones to watch are the " + formatInteger(metrics.needsAcceleratedGrowthCount) +
               " that need more than a typical year just to reach grade level. " +
               "Good core teaching on its own will not catch those up. "
@@ -10781,9 +11063,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (state.diagnostics && state.diagnostics.noScoreCount) {
         caveats.push(formatInteger(state.diagnostics.noScoreCount) + " records have no usable score and sit outside every figure here");
       }
-      if (metrics.shortTestCount) caveats.push(formatInteger(metrics.shortTestCount) + " tests were unusually short");
+      if (metrics.shortTestCount) caveats.push(formatInteger(metrics.shortTestCount) + (metrics.shortTestCount === 1 ? " test was unusually short" : " tests were unusually short"));
       if (state.diagnostics && state.diagnostics.rapidGuessFlagged) {
-        caveats.push(formatInteger(state.diagnostics.rapidGuessFlagged) + " were flagged for rapid guessing");
+        caveats.push(formatInteger(state.diagnostics.rapidGuessFlagged) + (state.diagnostics.rapidGuessFlagged === 1 ? " test was" : " tests were") + " flagged for rapid guessing");
       }
       if (state.dataWindow.mode === "mixed") {
         caveats.push(formatInteger(state.dataWindow.baselineRowCount) + " records have only one window and are left out of every growth figure");
@@ -11522,7 +11804,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       els.crossSubjectCards.innerHTML = [
         statCard("Students with 2+ subjects", formatInteger(profiles.length), { raw: profiles.length, format: "integer" }),
         statCard("Uneven achievement", formatInteger(uneven.length), { raw: uneven.length, format: "integer", tone: uneven.length ? "warn" : "good", hint: UNEVEN_SPREAD + "+ percentile points between strongest and weakest" }),
-        statCard("Uneven growth", formatInteger(unevenGrowth.length), { raw: unevenGrowth.length, format: "integer", tone: unevenGrowth.length ? "warn" : "good", hint: hasGrowthContext() ? UNEVEN_GROWTH_SPREAD + "+ CGP points between subjects" : "Needs two test windows" }),
+        hasGrowthContext()
+          ? statCard("Uneven growth", formatInteger(unevenGrowth.length), { raw: unevenGrowth.length, format: "integer", tone: unevenGrowth.length ? "warn" : "good", hint: UNEVEN_GROWTH_SPREAD + "+ CGP points between subjects" })
+          : "",
         statCard("Widest spread", formatNumber(profiles.length ? profiles[0].subjectSpread : null, 0), { raw: profiles.length ? profiles[0].subjectSpread : null, hint: profiles.length ? profiles[0].studentName : "" }),
         statCard("Median spread", formatNumber(median(profiles.map((profile) => profile.subjectSpread)), 0), { raw: median(profiles.map((profile) => profile.subjectSpread)) })
       ].join("");
@@ -11727,13 +12011,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         notes.push(["Norms reference", "This export was scored against NWEA's " + diagnostics.fileNormsYears.join(", ") +
           " norms, which matches the reference table built into this page."]);
       }
+      const projectionFile = isBaselineMode() && diagnostics.forwardProjectionCount > 0;
       if (diagnostics.comparisonPeriods && diagnostics.comparisonPeriods.length) {
-        notes.push(["Windows compared", diagnostics.comparisonPeriods.join("; ") +
-          ". Taken from the export's own growth comparison period, which is more reliable than the term columns - in a spring export those name the reporting term for both windows."]);
+        notes.push(projectionFile
+          ? ["Projection window", diagnostics.comparisonPeriods.join("; ") +
+              ". Only the first window has been tested. Every figure for the second one in this file is NWEA's projection, not a result."]
+          : ["Windows compared", diagnostics.comparisonPeriods.join("; ") +
+              ". Taken from the export's own growth comparison period, which is more reliable than the term columns - in a spring export those name the reporting term for both windows."]);
       }
       if (diagnostics.instructionalWeeks && diagnostics.instructionalWeeks.length) {
-        notes.push(["Weeks of instruction between windows", diagnostics.instructionalWeeks.join(", ") +
-          " weeks, as reported by NWEA. Growth projections assume a typical interval, so a noticeably shorter or longer gap is worth holding in mind when reading whether growth was met."]);
+        notes.push(projectionFile
+          ? ["Weeks of instruction in the projection", diagnostics.instructionalWeeks.join(", ") +
+              " weeks, as reported by NWEA. The projection is typical growth over that much teaching, so it assumes the next test sits that far into the year."]
+          : ["Weeks of instruction between windows", diagnostics.instructionalWeeks.join(", ") +
+              " weeks, as reported by NWEA. Growth projections assume a typical interval, so a noticeably shorter or longer gap is worth holding in mind when reading whether growth was met."]);
       }
       notes.push(["How norms are used", METHOD_NOTES.normSource]);
       if (hasGrowthContext()) notes.push(["Median conditional growth percentile", METHOD_NOTES.medianCGP]);
@@ -11840,7 +12131,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["vs US norm", formatSignedNumber(row.usNormDeltaRIT)],
               ["Grade-level equivalent", row.usNormEquivalentGrade ? "Grade " + formatUSNormGradeLabel(row.usNormEquivalentGrade) : "n/a"],
               ["Tier", row.currentTier.name + " (" + row.currentTier.tierLabel + ")"]
-            ]
+            ].concat(row.forwardProjection
+              ? [["NWEA projection, " + row.forwardProjection.horizonLabel, "RIT " + formatNumber(row.forwardProjection.targetRIT, 0) + " (" + formatSignedNumber(row.forwardProjection.gain) + ")"]]
+              : [])
           : [
               ["Start RIT", formatNumber(row.startRIT, 0)],
               ["End RIT", formatNumber(row.endRIT, 0)],
@@ -11860,7 +12153,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
             '">Rapid guessing</span>' : "") + "</div>" +
           '<div class="spotlight-facts">' + facts.map(([label, value]) =>
             '<span><i>' + escapeHTML(label) + "</i><b>" + escapeHTML(String(value)) + "</b></span>").join("") + "</div>" +
-          (goal
+          (baseline && row.forwardProjection && row.forwardProjection.reachesGradeLevel !== null
+            ? '<p class="spotlight-goal"><strong>' + escapeHTML(row.forwardProjection.horizonLabel) + ":</strong> NWEA projects RIT " +
+              escapeHTML(formatNumber(row.forwardProjection.targetRIT, 0)) + " (" + escapeHTML(formatSignedNumber(row.forwardProjection.gain)) + "). Grade level is RIT " +
+              escapeHTML(formatNumber(row.forwardProjection.gradeLevelRIT, 0)) +
+              (row.forwardProjection.alreadyAtGradeLevel
+                ? ", which they are already at or above."
+                : row.forwardProjection.reachesGradeLevel
+                  ? ", which the projection reaches: a typical year from here is enough."
+                  : ", " + escapeHTML(formatNumber(row.forwardProjection.shortOfGradeLevel, 0)) + " beyond the projection, so the goal needs to sit above it.") + "</p>"
+            : goal
             ? '<p class="spotlight-goal"><strong>' + escapeHTML(goal.horizonLabel) + " target:</strong> keep pace at RIT " +
               escapeHTML(formatNumber(goal.keepPaceRIT, 0)) + ", grade level at RIT " + escapeHTML(formatNumber(goal.gradeLevelRIT, 0)) +
               (goal.alreadyAtOrAbove ? " (already at or above)." : ", which needs " + escapeHTML(formatSignedNumber(goal.catchUpGain)) + " RIT.") + "</p>"
@@ -12248,17 +12550,30 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         .map((tier) => tier.name + ": " + formatInteger(metrics.tierCounts[tier.key] || 0))
         .join("; ");
       const goalRows = rows.filter((row) => row.goals);
-      const horizon = goalRows.length ? goalRows[0].goals.horizonLabel.toLowerCase() : "the next window";
+      const horizon = goalRows.length ? horizonText(goalRows[0].goals.horizonLabel) : "the next window";
 
-      return `This is a ${currentWindowName()} baseline for ${formatInteger(students)} students across ${formatInteger(rows.length)} student-${lensLabel} records. Because the export contains a single test window, no growth, gap closure or quadrant movement can be calculated; everything below describes where the group is starting. The median percentile is ${formatNumber(metrics.medianCurrentPercentile)} and the mean RIT is ${formatNumber(metrics.avgCurrentRIT)}. Against US norms for the same grade and season the group averages ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT, with ${formatShareInline(metrics.shares.atOrAboveUSNorm, "records")} at or above the norm mean.
+      const projection = projectionSummary(rows);
+      const projected = projection.count > 0 && projection.measuredCount > 0;
+      const opening = projected
+        ? `This is a ${currentWindowName()} projection report for ${formatInteger(students)} students across ${formatInteger(rows.length)} student-${lensLabel} records: one tested window, with NWEA's projected growth to ${projection.horizon}. No growth, gap closure or quadrant movement can be calculated until ${projection.horizon} is tested; everything below describes where the group is starting and where NWEA projects it to be.`
+        : `This is a ${currentWindowName()} baseline for ${formatInteger(students)} students across ${formatInteger(rows.length)} student-${lensLabel} records. Because the export contains a single test window, no growth, gap closure or quadrant movement can be calculated; everything below describes where the group is starting.`;
+      const subjectGains = projectionSubjectText(projection);
+      const lookAhead = projected
+        ? `NWEA projects a mean gain of ${formatSignedNumber(projection.avgGain)} RIT by ${projection.horizon}${subjectGains ? " (" + subjectGains + ")" : ""}. A projection is the typical growth for a student's own starting score, so meeting it roughly holds a student's place against their peers rather than closing a gap. If every student meets their projection, ${formatShareInline(projection.atGradeLevelOnProjection, "records")} finish at or above the grade-level mean for ${projection.horizon}, and ${formatInteger(projection.shortCount)} do not: those are the goals to set above the projection rather than on it.`
+        : `Looking ahead to ${horizon}, a typical student at these grades gains ${formatSignedNumber(metrics.avgTypicalGain)} RIT. ${formatInteger(metrics.needsAcceleratedGrowthCount)} records would need more than that typical gain to reach the grade-level norm, so they are the ones whose goals should be set deliberately rather than left to core instruction.`;
+      const nextSteps = projected
+        ? `Suggested next steps: open intervention groups from the Intensive and Strategic tiers first; for every student whose projection ends below grade level, set a written RIT target above the projection and share it with them; plan extension for the Advanced tier now; and upload the ${projection.horizon} export when it arrives to see who met or beat their projection.`
+        : `Suggested next steps: open intervention groups from the Intensive and Strategic tiers first; set a written RIT target for every student who needs above-typical growth; plan extension for the Advanced tier now rather than after the winter window; and re-upload once a second window exists so this baseline becomes a growth measure.`;
+
+      return `${opening} The median percentile is ${formatNumber(metrics.medianCurrentPercentile)} and the mean RIT is ${formatNumber(metrics.avgCurrentRIT)}. Against US norms for the same grade and season the group averages ${formatSignedNumber(metrics.avgUSNormDeltaRIT)} RIT, with ${formatShareInline(metrics.shares.atOrAboveUSNorm, "records")} at or above the norm mean.
 
 Instructional tiers at the start of the year are ${tierText}. ${capitalizeFirst(formatShareInline(metrics.shares.secure, "records"))} are already at or above the 61st-percentile secure benchmark, and ${formatShareInline(metrics.shares.belowStrategic, "records")} are below the 41st. ${strongest ? "The strongest starting area is " + strongest.bucket + " (median percentile " + formatNumber(strongest.metrics.medianCurrentPercentile) + ")" : "No area had enough scores to rank"}${weakest && strongest && weakest.bucket !== strongest.bucket ? ", and " + weakest.bucket + " starts furthest back (median percentile " + formatNumber(weakest.metrics.medianCurrentPercentile) + ")" : ""}.
 
-Looking ahead to ${horizon}, a typical student at these grades gains ${formatSignedNumber(metrics.avgTypicalGain)} RIT. ${formatInteger(metrics.needsAcceleratedGrowthCount)} records would need more than that typical gain to reach the grade-level norm, so they are the ones whose goals should be set deliberately rather than left to core instruction. ${metrics.shortTestCount ? formatInteger(metrics.shortTestCount) + " test session(s) finished unusually quickly and are worth confirming before they are used for placement." : "No test sessions were flagged as unusually short."}${metrics.metTooCloseCount ? " " + formatInteger(metrics.metTooCloseCount) + " met-growth result(s) sit within measurement error of the projection and cannot be resolved either way by this test pair, so they should not be read as evidence in either direction." : ""}${metrics.rapidGuessCount ? " NWEA flagged rapid guessing on " + formatInteger(metrics.rapidGuessCount) + " test(s), which understate what those students can do." : ""}${strandSummarySentence()}
+${lookAhead} ${metrics.shortTestCount ? formatInteger(metrics.shortTestCount) + " test session(s) finished unusually quickly and are worth confirming before they are used for placement." : "No test sessions were flagged as unusually short."}${metrics.metTooCloseCount ? " " + formatInteger(metrics.metTooCloseCount) + " met-growth result(s) sit within measurement error of the projection and cannot be resolved either way by this test pair, so they should not be read as evidence in either direction." : ""}${metrics.rapidGuessCount ? " NWEA flagged rapid guessing on " + formatInteger(metrics.rapidGuessCount) + " test(s), which understate what those students can do." : ""}${strandSummarySentence()}
 
-Suggested next steps: open intervention groups from the Intensive and Strategic tiers first; set a written RIT target for every student who needs above-typical growth; plan extension for the Advanced tier now rather than after the winter window; and re-upload once a second window exists so this baseline becomes a growth measure.
+${nextSteps}
 
-${METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
+${projected ? METHOD_NOTES.forwardProjection : METHOD_NOTES.keepPace} ${METHOD_NOTES.normEquivalent}`;
     }
 
     function buildGrowthSummaryText(rows) {
@@ -13747,7 +14062,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           options, correct: formatInteger(count),
           explanation: formatInteger(count) + " of " + formatInteger(ctx.rows.length) + " records, covering " + formatInteger(listedStudents) + " " + quizPlural(listedStudents, "student") +
             (ctx.baseline
-              ? ". A record is listed when it starts below the 41st percentile, tests a grade or more below placement, sits well below the norm, needs above-typical growth to reach grade level, or has a score that needs confirming."
+              ? ". A record is listed when it starts below the 41st percentile, tests a grade or more below placement, sits well below the norm, " +
+                (projectionRowsOf(ctx.rows).length ? "has an NWEA projection that ends below grade level" : "needs above-typical growth to reach grade level") +
+                ", or has a score that needs confirming."
               : ". A record is listed for missed growth, a band drop, a missing end score, negative growth, finishing below the 21st percentile, secure regression or a widened gap."),
           section: "sec-priority",
           followUp: "Name three of them and tell me what is different for them this week."
@@ -13778,7 +14095,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const canonFor = (row) => ctx.growth
           ? QUIZ_PRIORITY_REASONS.filter((reason) => !(row.metCertainty === "too-close" && reason === "Did not meet growth"))
           : ["At or below the 20th percentile", "Between the 21st and 40th percentile", "Very short test - confirm before placing", "No usable score in " + ctx.window]
-              .concat(row.goals ? ["Needs above-typical growth to reach grade level by " + row.goals.horizonLabel.toLowerCase()] : []);
+              .concat(row.forwardProjection && row.forwardProjection.reachesGradeLevel !== null
+                ? [projectionShortReason(row)]
+                : row.goals ? ["Needs above-typical growth to reach grade level by " + horizonText(row.goals.horizonLabel)] : []);
         const candidates = quizStudentRows(ctx.rows).map((row) => {
           const reasons = focusReasons(row);
           const canon = canonFor(row);
@@ -14198,7 +14517,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           family: "baseline-no-growth-tf", topic: "Interpretation", type: "tf", persona: "inspector", exclusive: "constant",
           stem: "True or false: from this file you can say how much progress these students have made this year.",
           ...quizTF(false),
-          explanation: "This export has one test window, so there is no earlier score to measure movement against. It shows where students are starting - percentile, tier, distance from the norm - not how far they have moved. Growth appears once a second window is uploaded.",
+          explanation: "This export has one test window, so there is no earlier score to measure movement against. It shows where students are starting - percentile, tier, distance from the norm - not how far they have moved. Growth appears once a second window is uploaded." +
+            (projectionRowsOf(ctx.rows).length
+              ? " The projected growth it carries is NWEA's prediction of a typical year from each starting score, not progress anyone has made."
+              : ""),
           section: "sec-baseline",
           followUp: "So when will you be able to say, and what are you doing in the meantime?"
         };
@@ -14219,6 +14541,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         };
       },
       function quizTypicalGainTF(ctx) {
+        // With NWEA's own projection in the file, the question is about that.
+        if (ctx.baseline && projectionRowsOf(ctx.rows).length >= 3) return null;
         const value = ctx.metrics.avgTypicalGain;
         if (ctx.metrics.goalRowCount < 3 || !isFiniteNumber(value) || value <= 0) return null;
         const horizon = quizHorizonForRows(ctx.rows);
@@ -14236,6 +14560,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       },
       function quizNeedStretch(ctx) {
         const metrics = ctx.metrics;
+        const projection = ctx.baseline ? projectionSummary(ctx.rows) : null;
+        if (projection && projection.measuredCount >= 3) {
+          const shortOptions = quizCountOptions(projection.shortCount, projection.measuredCount);
+          if (!shortOptions) return null;
+          return {
+            family: "projection-short", topic: "Goals", type: "mc", persona: "principal",
+            stem: "If every student meets their NWEA projection, how many records would still be below the grade-level mean in " + projection.horizon + "?",
+            options: shortOptions, correct: formatInteger(projection.shortCount),
+            explanation: formatInteger(projection.shortCount) + " of " + formatInteger(projection.measuredCount) + " records have a projected RIT below the grade-level mean for " + projection.horizon + ". " +
+              formatInteger(projection.alreadyCount) + " are at or above it already and " + formatInteger(projection.reachCount) + " reach it on their projection. " +
+              "Meeting a projection is typical growth from where a student starts, so for the " + formatInteger(projection.shortCount) + " the goal has to sit above it. The Beyond projection column in Growth Goals shows by how much.",
+            section: "sec-goals",
+            followUp: "Which of those students are furthest short, and what will be different for them so they beat their projection?"
+          };
+        }
         if (metrics.goalRowCount < 3) return null;
         const options = quizCountOptions(metrics.needsAcceleratedGrowthCount, metrics.goalRowCount);
         if (!options) return null;
@@ -14250,7 +14589,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         };
       },
       function quizKeepPace(ctx) {
-        const rows = quizStudentRows(ctx.rows).filter((row) => row.goals && isFiniteNumber(row.goals.keepPaceRIT) && row.goals.typicalGain > 0 && !row.goals.flatNorm && isFiniteNumber(row.currentRIT) &&
+        // A student with NWEA's projection has a better keep-pace figure than
+        // the norm-based one, so they are asked about that instead.
+        const rows = quizStudentRows(ctx.rows).filter((row) => !row.forwardProjection && row.goals && isFiniteNumber(row.goals.keepPaceRIT) && row.goals.typicalGain > 0 && !row.goals.flatNorm && isFiniteNumber(row.currentRIT) &&
           Math.abs(Math.round(row.goals.keepPaceRIT) - Math.round(row.currentRIT)) >= 2 && Math.abs(Math.round(row.goals.keepPaceRIT) - Math.round(row.goals.gradeLevelRIT)) >= 2);
         if (rows.length < 2) return null;
         const row = quizPick(rows);
@@ -14282,11 +14623,64 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         if (!options) return null;
         return {
           key: "nwea-projection:" + studentKey(row) + ":" + row.subject, family: "nwea-projection", topic: "Goals", type: "mc", persona: "datalead", answerStudent: row.studentName,
-          stem: "How much growth does NWEA project for " + row.studentName + " in " + row.subject + " for the window ahead?",
+          stem: "How much growth does NWEA project for " + row.studentName + " in " + row.subject + " by " + (row.forwardProjection.horizonLabel || "the window ahead") + "?",
           options, correct: formatSignedNumber(row.forwardProjection.gain),
-          explanation: "NWEA projects " + formatSignedNumber(row.forwardProjection.gain) + " RIT, a target of " + formatNumber(row.forwardProjection.targetRIT, 0) + ". The projection is conditioned on " + row.studentName + "'s own starting RIT and grade, and it is the figure the next export will score 'met growth' against.",
+          explanation: "NWEA projects " + formatSignedNumber(row.forwardProjection.gain) + " RIT, a target of " + formatNumber(row.forwardProjection.targetRIT, 0) + ". The projection is conditioned on " + row.studentName + "'s own starting RIT and grade, and it is the figure the next export will score 'met growth' against." +
+            (row.forwardProjection.reachesGradeLevel === null ? ""
+              : row.forwardProjection.alreadyAtGradeLevel ? " They are already at or above the grade-level mean for " + row.forwardProjection.horizonLabel + "."
+              : row.forwardProjection.reachesGradeLevel ? " Meeting it takes them to the grade-level mean for " + row.forwardProjection.horizonLabel + "."
+              : " Even meeting it leaves them " + formatNumber(row.forwardProjection.shortOfGradeLevel, 0) + " RIT below the grade-level mean for " + row.forwardProjection.horizonLabel + ", so their goal needs to sit above it."),
           section: "sec-goals",
           followUp: "Is that more or less than a typical peer gains, and why?"
+        };
+      },
+      function quizProjectedGainClass(ctx) {
+        if (!ctx.baseline) return null;
+        const projection = projectionSummary(ctx.rows);
+        if (projection.count < 3 || !isFiniteNumber(projection.avgGain)) return null;
+        const options = quizNumberOptions(projection.avgGain, [2, 3, 4, 5], formatSignedNumber);
+        if (!options) return null;
+        const subjects = projectionSubjectText(projection);
+        return {
+          family: "projected-gain", topic: "Goals", type: "mc", persona: "datalead",
+          stem: "On average, how much growth does NWEA project for this group between " + ctx.window + " and " + projection.horizon + "?",
+          options, correct: formatSignedNumber(projection.avgGain),
+          explanation: "NWEA projects " + formatSignedNumber(projection.avgGain) + " RIT on average across " + formatInteger(projection.count) + " records" +
+            (subjects ? " (" + subjects + ")" : "") + ". Each projection is the typical growth for that student's own starting score and grade, and it is the figure the " +
+            projection.horizon + " export will score met growth against. The NWEA projected gain card in Class Snapshot and Growth Goals shows it.",
+          section: "sec-goals",
+          followUp: "Is a typical year enough for this class, or do some students need more than their projection?"
+        };
+      },
+      function quizProjectionMeaningTF(ctx) {
+        if (!ctx.baseline) return null;
+        const projection = projectionSummary(ctx.rows);
+        if (projection.count < 3) return null;
+        return {
+          family: "projection-meaning-tf", topic: "Interpretation", type: "tf", persona: "inspector",
+          stem: "True or false: a student who meets their NWEA projection by " + projection.horizon + " moves up against their peers.",
+          ...quizTF(false),
+          explanation: "False. A projection is the typical growth for students who start on the same score, so a student who meets it grows about as much as their peers and keeps roughly the same percentile. Moving up takes growth beyond the projection." +
+            (projection.shortCount ? " In this view " + formatInteger(projection.shortCount) + " records would still be below the grade-level mean for " + projection.horizon + " after meeting theirs." : ""),
+          section: "sec-goals",
+          followUp: "So for a student who starts behind, is the projection the goal, or the floor?"
+        };
+      },
+      function quizProjectionSubject(ctx) {
+        if (!ctx.baseline) return null;
+        const projection = projectionSummary(ctx.rows);
+        const ranked = projection.bySubject.filter((entry) => entry.count >= 3);
+        if (ranked.length < 2 || ranked[0].gain - ranked[1].gain < 1) return null;
+        const options = quizLabelOptions(ranked[0].subject, ranked.map((entry) => entry.subject), SUBJECTS);
+        if (!options) return null;
+        return {
+          family: "projection-subject", topic: "Subjects", type: "mc", persona: "hod",
+          stem: "In which subject does NWEA project the larger average gain for this group by " + projection.horizon + "?",
+          options, correct: ranked[0].subject,
+          explanation: ranked.map((entry) => entry.subject + " " + formatSignedNumber(entry.gain) + " RIT (" + formatInteger(entry.count) + " records)").join("; ") +
+            ". The difference mostly reflects how much a typical student at this grade grows in each subject over the year, not a prediction that this class will do better in one of them. Set each subject's projection against its own gap to grade level.",
+          section: "sec-overview",
+          followUp: "Which subject has more students whose projection still ends below grade level?"
         };
       },
       // ---------------------------------------------------------- Data quality
@@ -16242,7 +16636,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         available: () => true,
         headline: () => "How To Read Your MAP Score",
         sub: () => "Three numbers on your report, and what each one is measured against.",
-        message: () => "Your percentile compares you with students your age. Your growth score compares you with your own starting point. Only one of those is about how hard you worked this year.",
+        message: (scope) => isProjectionView(scope && scope.rows)
+          ? "Your percentile compares you with students your age. Your projection is what a typical student starting where you are will grow. Beat it, and you move up."
+          : "Your percentile compares you with students your age. Your growth score compares you with your own starting point. Only one of those is about how hard you worked this year.",
         body: (scope) => {
           const medianRIT = median(scope.rows.map((row) => row.currentRIT));
           const bands = BANDS.map((band) => '<span style="flex:1;background:' + bandPrintColour(band) + ";color:" + bandPrintInk(band) +
@@ -16252,7 +16648,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             '<div class="poster-callout"><strong>RIT score</strong><b>' + (isFiniteNumber(medianRIT) ? escapeHTML("Ours: " + formatNumber(medianRIT, 0)) : "One scale") +
             "</b><small>one scale for every year of school, so it never restarts. It goes up as you learn, whatever grade you are in.</small></div>" +
             '<div class="poster-callout"><strong>Percentile</strong><b>Out of 100</b><small>how your score compares with students in your grade across the country. 50 is the middle. It is not the share of questions you got right.</small></div>' +
-            '<div class="poster-callout is-good"><strong>Growth score</strong><b>50 is typical</b><small>how much you grew compared with students who started on the same score as you. Above 50 means faster than typical.</small></div>' +
+            (isProjectionView(scope.rows)
+              ? '<div class="poster-callout is-good"><strong>Projected growth</strong><b>Our next step</b><small>how much a typical student who starts on your score grows by ' +
+                escapeHTML(projectionHorizon(scope.rows)) + '. Growing more than that is how you move up.</small></div>'
+              : '<div class="poster-callout is-good"><strong>Growth score</strong><b>50 is typical</b><small>how much you grew compared with students who started on the same score as you. Above 50 means faster than typical.</small></div>') +
             "</div>" +
             '<div class="poster-block"><div class="poster-stack poster-stack-bands">' + bands + "</div>" +
             '<p class="poster-empty">The colour band is where your percentile sits today. It is a starting line, not a label.</p></div>' +
@@ -19184,7 +19583,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function renderGroupingTable() {
-      const columns = isBaselineMode() ? BASELINE_GROUPING_COLUMNS : GROUPING_COLUMNS;
+      const columns = isBaselineMode() ? baselineColumnsWithProjection(BASELINE_GROUPING_COLUMNS, "grouping") : GROUPING_COLUMNS;
       const rows = sortRows(state.filteredRows, state.sort.grouping);
       els.groupingCount.textContent = `${formatInteger(rows.length)} records`;
       els.groupingTable.innerHTML = renderTable("grouping", columns, rows);
@@ -19237,7 +19636,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     ];
 
     function renderPriorityTable() {
-      const columns = isBaselineMode() ? BASELINE_PRIORITY_COLUMNS : PRIORITY_COLUMNS;
+      const columns = isBaselineMode() ? baselineColumnsWithProjection(BASELINE_PRIORITY_COLUMNS, "priority") : PRIORITY_COLUMNS;
       const rows = sortRows(state.filteredRows.filter((row) => focusReasons(row).length), state.sort.priority);
       els.priorityCount.textContent = `${formatInteger(rows.length)} records`;
       els.priorityTable.innerHTML = renderTable("priority", columns, rows);
@@ -19658,15 +20057,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     }
 
     function exportGrouping() {
-      exportCSV("student-grouping", sortRows(state.filteredRows, state.sort.grouping), isBaselineMode() ? BASELINE_EXPORT_COLUMNS : GROUPING_EXPORT_COLUMNS);
+      exportCSV("student-grouping", sortRows(state.filteredRows, state.sort.grouping), isBaselineMode() ? baselineExportWithProjection(BASELINE_EXPORT_COLUMNS) : GROUPING_EXPORT_COLUMNS);
     }
 
     function exportPriority() {
-      exportCSV(isBaselineMode() ? "support-list" : "priority-students", sortRows(state.filteredRows.filter((row) => focusReasons(row).length), state.sort.priority), isBaselineMode() ? BASELINE_SUPPORT_COLUMNS : PRIORITY_EXPORT_COLUMNS);
+      exportCSV(isBaselineMode() ? "support-list" : "priority-students", sortRows(state.filteredRows.filter((row) => focusReasons(row).length), state.sort.priority), isBaselineMode() ? baselineExportWithProjection(BASELINE_SUPPORT_COLUMNS) : PRIORITY_EXPORT_COLUMNS);
     }
 
     function exportCelebration() {
-      exportCSV(isBaselineMode() ? "strengths" : "celebration-students", sortRows(state.filteredRows.filter((row) => strengthReasons(row).length), state.sort.celebration), isBaselineMode() ? BASELINE_STRENGTH_COLUMNS : CELEBRATION_EXPORT_COLUMNS);
+      exportCSV(isBaselineMode() ? "strengths" : "celebration-students", sortRows(state.filteredRows.filter((row) => strengthReasons(row).length), state.sort.celebration), isBaselineMode() ? baselineExportWithProjection(BASELINE_STRENGTH_COLUMNS) : CELEBRATION_EXPORT_COLUMNS);
     }
 
     function exportGap() {
@@ -20099,7 +20498,7 @@ ${sheets.join("\n")}
     ];
 
     function exportBaseline() {
-      exportCSV("baseline", sortRows(state.filteredRows, state.sort.grouping), BASELINE_EXPORT_COLUMNS);
+      exportCSV("baseline", sortRows(state.filteredRows, state.sort.grouping), baselineExportWithProjection(BASELINE_EXPORT_COLUMNS));
     }
 
     function exportGoals() {
@@ -20459,7 +20858,7 @@ ${sheets.join("\n")}
               ? "(" + formatSignedNumber(row.forwardProjection.gain) + " from where I am now)"
               : "(holding the ground I have made)") + "</small></div>"
           : goal
-            ? '<div class="gs-target"><strong>My next step by ' + escapeHTML(goal.horizonLabel.toLowerCase()) + "</strong>" +
+            ? '<div class="gs-target"><strong>My next step by ' + escapeHTML(horizonText(goal.horizonLabel)) + "</strong>" +
               "<b>RIT " + escapeHTML(formatNumber(goal.keepPaceRIT, 0)) + "</b> " +
               "<small>" + escapeHTML(goal.typicalGain > 0
                 ? "(" + formatSignedNumber(goal.typicalGain) + " from now)"
