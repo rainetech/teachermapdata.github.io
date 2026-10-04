@@ -8,7 +8,9 @@ It is built from the repository root `index.html` by:
 
 The build applies the differences that make this a separate instance — the
 teal and wine palette, the ENS Dashboards title and favicon, and the removal
-of the support prompt — and asserts that every one of them matched. If the
+of the support prompt and of the credit footer the open site shows (the
+copyright and licence notices in the page source stay) — and asserts that
+every one of them matched. If the
 upstream page changes in a way that moves a token or a block, the build fails
 rather than shipping a half-themed page.
 

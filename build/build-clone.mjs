@@ -166,6 +166,14 @@ const dockChip = html.match(/    <a class="support-chip coffee" id="supportDockC
 if (!dockChip) throw new Error("build-clone: support dock coffee chip not found.");
 cut("support dock chip", dockChip[0]);
 
+// The credit footer is for the open GitHub Pages site, where a copy would be
+// taken from. This instance is a school's own site and carries none; the
+// notices in the page source stay. The footer's styling is a few unused lines
+// here, like the other shared rules.
+const creditFooter = html.match(/\n\n    <!-- The credit the Attribution Licence asks every copy to show \(see LICENSE\)\. -->\n    <footer class="site-credit">[\s\S]*?<\/footer>/);
+if (!creditFooter) throw new Error("build-clone: credit footer not found.");
+cut("credit footer", creditFooter[0]);
+
 const prompt = html.match(/  <div class="support-backdrop" id="supportBackdrop" hidden>[\s\S]*?\n  <\/div>\n/);
 if (!prompt) throw new Error("build-clone: support prompt dialog not found.");
 cut("support prompt dialog", prompt[0]);

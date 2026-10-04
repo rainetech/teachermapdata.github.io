@@ -3108,6 +3108,22 @@
     }
 
     .method-note.wide { grid-column: 1 / -1; }
+
+    /* The credit line from the licence: quiet, at the foot of the page, and
+       clear of the fixed support and back-to-top buttons. */
+    .site-credit {
+      margin: 32px 0 0;
+      padding: 16px 0 72px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+    }
+    .site-credit p { margin: 0; overflow-wrap: anywhere; }
+    .site-credit a { color: var(--brand-ink); text-decoration: underline; text-underline-offset: 2px; }
+    .site-credit a:hover { text-decoration-thickness: 2px; }
+    .site-credit a:focus-visible { outline: none; box-shadow: var(--focus); border-radius: 3px; }
     .muted-cell { color: var(--muted); font-style: italic; }
     .card-story { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
 
@@ -5689,6 +5705,11 @@
         <div class="quality-detail" id="qualityDetail"></div>
       </section>
     </main>
+
+    <!-- The credit the Attribution Licence asks every copy to show (see LICENSE). -->
+    <footer class="site-credit">
+      <p>Built on the NWEA MAP Growth Teacher Dashboard by Christopher Raine &ndash; <a href="https://github.com/rainetech/teachermapdata.github.io" target="_blank" rel="noopener noreferrer">https://github.com/rainetech/teachermapdata.github.io</a></p>
+    </footer>
   </div>
 
   <div id="liveRegion" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
