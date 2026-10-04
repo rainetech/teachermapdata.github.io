@@ -20,7 +20,9 @@
 //   - the goal sheet says what grade level a score matches on the US norms,
 //     and every student's sheets still print as exactly two pages;
 //   - a gap to grade level inside measurement error is not counted as short;
-//   - the page still carries its copyright and licence notice.
+//   - the page still carries its copyright and licence notice, and the open
+//     site shows the credit line in a footer (CREDIT_FOOTER=absent holds a
+//     build that carries none to the opposite).
 import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -191,6 +193,12 @@ console.log("Notice");
   const source = fs.readFileSync(TARGET, "utf8");
   check(/Copyright \(c\) 2026 Christopher Raine/.test(source) && /Attribution Licence/.test(source) && /<meta name="author" content="Christopher Raine">/.test(source),
     "the page still carries its copyright and licence notice");
+  // The open site shows the credit line. A build that deliberately carries
+  // none (CREDIT_FOOTER=absent) is held to the opposite: no footer at all,
+  // with the notice above still in its source.
+  const footerAbsent = process.env.CREDIT_FOOTER === "absent";
+  const footer = /<footer class="site-credit">[\s\S]*?Built on the NWEA MAP Growth Teacher Dashboard by Christopher Raine[\s\S]*?https:\/\/github\.com\/rainetech\/teachermapdata\.github\.io[\s\S]*?<\/footer>/.test(source);
+  check(footerAbsent ? !/class="site-credit"/.test(source) : footer, footerAbsent ? "this build carries no credit footer" : "the open site shows the credit line in its footer");
 }
 
 await browser.close();
