@@ -7164,8 +7164,17 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
       const parsed = combineParsed(usable);
       state.allRows = [];
+      // Only Growth tests are used. A Class Profile lists the screener a child
+      // sat in place of (or beside) the growth test, and it must go before the
+      // files are folded together: a screener row would otherwise merge into
+      // the same student's growth row, or be kept in its place as the later test.
+      const screeningLeftOut = [];
       usable.forEach((file) => {
         file.parsed.rows.map(normalizeRecord).filter(Boolean).forEach((row) => {
+          if (isScreeningTest(row)) {
+            screeningLeftOut.push(row.studentName + " (" + row.subject + ")");
+            return;
+          }
           row.sourceFile = file.name;
           state.allRows.push(row);
         });
@@ -7203,6 +7212,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       state.diagnostics.mergedRecords = mergedRecords;
       state.diagnostics.setAside = setAside;
       state.diagnostics.setAsideCount = setAside.length;
+      state.diagnostics.screeningCount = screeningLeftOut.length;
+      state.diagnostics.screeningList = screeningLeftOut.slice(0, 30);
       state.spotlightKey = "";
       state.quiz = emptyQuizState();
       resetQuizPool();
@@ -7212,13 +7223,19 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const rendered = safeRenderAll();
 
       if (!state.allRows.length) {
-        setStatus("No usable rows found. Check that this is an NWEA ASG CSV export.", true);
-        toast("No usable rows found in that file.", "error");
+        const onlyScreening = screeningLeftOut.length > 0;
+        setStatus(onlyScreening
+          ? "Every row in that file is a screening test, and only Growth tests are used. Load a Growth export or Class Profile."
+          : "No usable rows found. Check that this is an NWEA ASG CSV export.", true);
+        toast(onlyScreening ? "Only screening tests were found - they are not used." : "No usable rows found in that file.", "error");
         return;
       }
       if (!rendered) return;
       const fileNote = usable.length > 1 ? formatInteger(usable.length) + " files combined. " : "";
-      const skipNote = rejected.length ? " " + formatInteger(rejected.length) + " file(s) were skipped - see Data Check." : "";
+      const skipNote = (rejected.length ? " " + formatInteger(rejected.length) + " file(s) were skipped - see Data Check." : "") +
+        (screeningLeftOut.length
+          ? " " + formatInteger(screeningLeftOut.length) + " screening test" + (screeningLeftOut.length === 1 ? " was" : "s were") + " left out - only Growth tests are used."
+          : "");
       const projectionCount = isBaselineMode() ? state.allRows.filter((row) => row.forwardProjection).length : 0;
       const modeNote = isBaselineMode()
         ? (projectionCount
@@ -7231,7 +7248,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       // silences its aria-live - so a teacher who dropped four files and had
       // one rejected saw a green success toast and planned from three subjects.
       toast(formatInteger(state.allRows.length) + " records ready. " + fileNote + modeNote + skipNote,
-        rejected.length ? "info" : "success");
+        rejected.length || screeningLeftOut.length ? "info" : "success");
       celebrateLoad();
       queueSupportPrompt();
     }
@@ -8173,6 +8190,18 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // anything unrecognised is kept and counted rather than silently dropped.
     const INVALID_TEST_STATUS = /\b(not\s*valid|invalid|terminated|suspended|incomplete|abandoned|did\s*not\s*finish|never\s*started)\b/i;
     const VALID_TEST_STATUS = /\b(valid|growth\s*event|complete|completed|tested|screening|survey|instructional)\b/i;
+
+    // A screening test is NWEA's short placement check, not a Growth test: it
+    // has no growth norms and is not comparable with the Growth RIT scale
+    // results this page is built on. It is named in TestName ("Screening:
+    // Reading 2-5 1.1 ...", against "Growth: Reading 2-5 ..."). The match is on the
+    // word, so a Growth test whose name only mentions a "Screen Reader"
+    // version is kept. Without a TestName the status is read instead.
+    function isScreeningTest(row) {
+      const name = cleanString(row.testName);
+      if (name && name !== "Missing") return /\bscreen(ing|er)\b/i.test(name);
+      return /\bscreening\b/i.test(cleanString(row.testStatus));
+    }
 
     function testValidity(row) {
       const status = cleanString(row.testStatus);
@@ -12294,6 +12323,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (diagnostics.areaRecordCount) {
         notes.push(["Instructional areas found", formatInteger(diagnostics.areaRecordCount) +
           " record(s) carry instructional area scores, so the Areas section is available. " + METHOD_NOTES.instructionalArea]);
+      }
+      if (diagnostics.screeningCount) {
+        notes.push(["Screening tests left out",
+          formatInteger(diagnostics.screeningCount) + " row(s) are screening tests (TestName starts with \u201cScreening\u201d), not Growth tests, so they are not read at all: " +
+          "no score from them reaches a record, a growth pair or any figure on this page. A student whose only test in a subject was a screener has no record in it. " +
+          diagnostics.screeningList.join("; ") +
+          (diagnostics.screeningCount > diagnostics.screeningList.length
+            ? " and " + formatInteger(diagnostics.screeningCount - diagnostics.screeningList.length) + " more" : "") + "."]);
       }
       if (diagnostics.notValidCount) {
         notes.push(["Tests the export marks as not valid",

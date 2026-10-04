@@ -15,6 +15,8 @@
 //   - Class Profile term names read as the page's own window names
 //     ("Fall 2026", not "Fall 2026-2027 (Most Recent)");
 //   - an invalid, unscored attempt is not counted as a second window;
+//   - screening tests (TestName "Screening: ...") are never read: only Growth
+//     tests count, and a screener cannot replace or merge into a growth test;
 //   - a real fall-to-spring growth export loaded with a spring Class Profile
 //     still merges into growth records;
 //   - the goal sheet says what grade level a score matches on the US norms,
@@ -68,6 +70,20 @@ function classProfile(subject, course, rits, date, term, withInvalid) {
   }
   return csv(rows);
 }
+// A Class Profile that also lists screening tests: one with a score and a later
+// date for a student who also has a growth test, and one with no score. Only
+// Growth tests are used, so neither may reach a record.
+function classProfileWithScreeners(subject, course, rits, date, term) {
+  const rows = [cpHeader];
+  students.forEach(([id, last, first], i) => {
+    rows.push([id, last, first, "", "5", term, term, "Test School", "Teacher, Test", "5.4", subject, course, "Growth: " + course + " (with Screen Reader Compatibility)", "Growth Event", "N/A", "0", "50", date, rits[i], "3.3", pct(rits[i]), "Area one", rits[i] - 3, "Area two", rits[i] + 2]);
+  });
+  const [id, last, first] = students[1];
+  rows.push([id, last, first, "", "5", term, term, "Test School", "Teacher, Test", "5.4", subject, course, "Screening: " + course + " 1.1 (with Screen Reader Compatibility)", "Growth Event", "N/A", "0", "20", "09/29/26", 150, "3.5", pct(150), "Area one", 147, "Area two", 152]);
+  const [id2, last2, first2] = students[4];
+  rows.push([id2, last2, first2, "", "5", term, term, "Test School", "Teacher, Test", "5.4", subject, course, "Screening: " + course + " 1.1", "Invalid test", "SEM too high", "", "", "09/08/26", "", "", "", "", "", "", ""]);
+  return csv(rows);
+}
 function growthASG() {
   const rows = [asgHeader];
   students.forEach(([id, last, first], i) => {
@@ -100,7 +116,12 @@ async function load(files) {
     projectionView: isProjectionView(),
     status: document.getElementById("statusText") ? document.getElementById("statusText").textContent : "",
     quality: document.getElementById("qualityDetail") ? document.getElementById("qualityDetail").innerText : "",
-    names: Array.from(new Set(state.allRows.map((row) => row.studentName))).sort()
+    names: Array.from(new Set(state.allRows.map((row) => row.studentName))).sort(),
+    records: state.allRows.length,
+    screeners: state.allRows.filter((row) => /^\s*screening/i.test(row.testName || "")).length,
+    screeningCount: state.diagnostics ? state.diagnostics.screeningCount : 0,
+    readingRIT: Object.fromEntries(state.allRows.filter((row) => row.subject === "Reading").map((row) => [row.studentID, row.currentRIT])),
+    statusLine: document.getElementById("statusLine") ? document.getElementById("statusLine").textContent : ""
   }));
   await page.close();
   return { info, errors };
@@ -127,6 +148,29 @@ const cps = await load([
   ["CP_Reading_Fall2026.csv", classProfile("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)", false)]
 ]);
 check(cps.info.mode === "baseline" && cps.info.window === "Fall 2026" && cps.info.rows === 12, "one fall window named Fall 2026 (" + cps.info.window + ")");
+
+console.log("Screening tests");
+const screened = await load([
+  ["projection.csv", projectionASG()],
+  ["CP_Math_Fall2026.csv", classProfile("Mathematics", "Math K-12", math, "09/21/26", "Fall 2026-2027 (Most Recent)", false)],
+  ["CP_Reading_Fall2026.csv", classProfileWithScreeners("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)")]
+]);
+const sc = screened.info;
+check(sc.screeners === 0 && sc.screeningCount === 2, "screening tests are left out, not read (" + sc.screeners + " kept, " + sc.screeningCount + " left out)");
+check(sc.records === 12 && sc.projections === 12 && sc.pairs === 0 && sc.mode === "baseline", "the records are the growth tests only, still a projection (" + JSON.stringify({ records: sc.records, projections: sc.projections, pairs: sc.pairs, mode: sc.mode }) + ")");
+check(sc.readingRIT["90002"] === read[1], "a later screening score does not replace the student's growth score (" + sc.readingRIT["90002"] + ", expected " + read[1] + ")");
+check(/Screening tests left out/.test(sc.quality) && /2 screening tests were left out/.test(sc.statusLine), "the Data Check and the status line say what was left out");
+check(screened.errors.length === 0, "no page errors");
+// A growth test whose name only mentions the screen reader version is kept.
+const screenReader = await load([
+  ["CP_Reading_Fall2026.csv", classProfileWithScreeners("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)")]
+]);
+check(screenReader.info.records === 6 && screenReader.info.screeningCount === 2, "a Growth test with \u201cScreen Reader Compatibility\u201d in its name is kept (" + screenReader.info.records + " records)");
+const onlyScreeners = await load([["CP_Screening.csv", (() => {
+  const lines = classProfileWithScreeners("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)").trim().split("\n");
+  return lines.filter((line, index) => index === 0 || /Screening/.test(line)).join("\n") + "\n";
+})()]]);
+check(onlyScreeners.info.records === 0 && /only Growth tests are used/.test(onlyScreeners.info.statusLine), "a file of nothing but screening tests says so (" + onlyScreeners.info.statusLine + ")");
 
 console.log("Growth export with a spring Class Profile");
 const growth = await load([
