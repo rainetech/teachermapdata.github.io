@@ -1,0 +1,52 @@
+Attribution Licence
+
+NWEA MAP Growth Teacher Dashboard
+Copyright (c) 2026 Christopher Raine
+https://github.com/rainetech/teachermapdata.github.io
+
+All rights are reserved except those granted here.
+
+Permission is granted, free of charge, to any person who obtains a copy of
+this software and its associated files (the "Software") to use, copy, modify,
+merge, publish, distribute and deploy the Software, and to make derived works
+from it, on the conditions below. They are conditions of the permission, not
+requests.
+
+1. Credit users can see. Every copy, deployment or derived work of the
+   Software that is used or shown by anyone other than its author must
+   display this credit line where its users can read it without opening the
+   source - for example in a page footer, an About or Help page, or the front
+   of a guide:
+
+   Built on the NWEA MAP Growth Teacher Dashboard by Christopher Raine -
+   https://github.com/rainetech/teachermapdata.github.io
+
+2. Notices kept. This licence file, the copyright line above, and the notice
+   at the top of index.html must stay, unaltered, in every copy of the source,
+   including in a derived work.
+
+3. No false claim. Do not present the Software, or a derived work, as your own
+   original work, and do not suggest that the author endorses, sponsors or is
+   responsible for your copy or for what you use it for.
+
+4. Rewriting is copying. These conditions apply to a version of the Software
+   that has been translated, rewritten, restructured or regenerated, by a
+   person or by an automated tool, wherever it is substantially derived from
+   the Software.
+
+If you do not meet these conditions you have no permission to use, copy or
+modify the Software, and any permission you had ends automatically. It is
+restored when you meet them. For any other use - for example without the
+credit - ask the author for written permission first.
+
+Logos, names and brand assets of other organisations, including those in
+build/assets and in the ensdashboards directory, are not part of the Software
+and are not licensed here. NWEA and MAP are trademarks of NWEA. This Software
+is independent of NWEA and is not endorsed by it.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
