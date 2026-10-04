@@ -18,7 +18,8 @@
 //   - a real fall-to-spring growth export loaded with a spring Class Profile
 //     still merges into growth records;
 //   - the goal sheet says what grade level a score matches on the US norms,
-//     and every student's sheets still print as exactly two pages;
+//     and every student's sheets print as exactly two pages, however many
+//     subjects or areas they have and however long the name (a hard limit);
 //   - a gap to grade level inside measurement error is not counted as short;
 //   - the page still carries its copyright and licence notice, and the open
 //     site (not the ENS instance) shows the credit line in a footer.
@@ -169,6 +170,62 @@ console.log("Goal sheets");
   await sheetPage.close();
   check(sheets.sheets === 12 && pdfPages === 12, "each of the 6 students' goal sheets prints as exactly two pages (" + pdfPages + " pages, " + sheets.sheets + " sheets)");
   check(sheets.lines === 12 && /About Grade \d level/.test(sheets.text) && /US norms: a typical/.test(sheets.text), "every subject on the goal sheet says what grade level the score matches on the US norms (" + sheets.lines + " lines)");
+  // Two pages per student is a hard limit (front and back of one sheet of
+  // paper): however many subjects or areas a student has, and however long
+  // the name, the printed file must come out at exactly two pages each.
+  const printedPages = async (shape) => {
+    const printed = await page.evaluate((shape) => {
+      const saved = state.filteredRows;
+      const savedFit = window.fitGoalSheets;
+      const base = saved.filter((row) => row.goals || row.forwardProjection);
+      const rows = saved.slice();
+      const extra = { five: 3, eight: 6, twelve: 10 }[shape.subjects] || 0;
+      for (let k = 0; k < extra; k++) base.forEach((row) => rows.push(Object.assign({}, row, { subject: "Extra subject number " + (k + 1) })));
+      if (shape.areas) rows.forEach((row) => {
+        if (!Number.isFinite(row.currentRIT)) return;
+        row.hasInstructionalAreas = true;
+        row.instructionalAreas = Array.from({ length: 8 }, (_, i) => ({ name: "Operations and Algebraic Thinking strand " + (i + 1), rit: row.currentRIT + (i % 3) * 4 - 4, delta: (i % 3) * 4 - 4 - (i === 0 ? 6 : 0) }));
+      });
+      if (shape.name) rows.forEach((row) => { row.studentName = "Abdulrahman Mohammed Al Nahyan Al Mazrouei Bin Khalifa Al Qubaisi Al Hamed"; });
+      if (shape.noFit) window.fitGoalSheets = (html) => html;
+      if (shape.noMeasure) { const create = document.createElement.bind(document); document.createElement = (tag, ...rest) => { if (String(tag).toLowerCase() === "iframe") throw new Error("blocked"); return create(tag, ...rest); }; }
+      state.filteredRows = rows;
+      window.__sheets = "";
+      const open = window.open;
+      window.open = () => ({ document: { open() { }, write(text) { window.__sheets += text; }, close() { } }, focus() { }, print() { } });
+      try { printGoalSheets(); } finally { window.open = open; state.filteredRows = saved; window.fitGoalSheets = savedFit; }
+      return { html: window.__sheets, students: new Set(rows.filter((row) => row.goals || row.forwardProjection).map((row) => studentKey(row))).size };
+    }, shape);
+    if (shape.noMeasure) await page.reload();
+    const view = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+    await view.setContent(printed.html);
+    await view.emulateMedia({ media: "print" });
+    const inked = await view.evaluate(() => Math.max(...[...document.querySelectorAll(".sheet")].map((sheet) => {
+      const top = sheet.getBoundingClientRect().top;
+      let lowest = 0;
+      sheet.querySelectorAll("*").forEach((el) => { const box = el.getBoundingClientRect(); if (box.width > 0 && box.height > 0) lowest = Math.max(lowest, box.bottom - top); });
+      return lowest / 96 * 25.4;
+    })));
+    const out = await view.pdf({ preferCSSPageSize: true, printBackground: true });
+    await view.close();
+    return { pages: (out.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length, students: printed.students, lowest: inked };
+  };
+  const stress = [
+    ["5 subjects", { subjects: "five" }],
+    ["8 subjects", { subjects: "eight" }],
+    ["12 subjects (only the first 8 are printed)", { subjects: "twelve" }],
+    ["8 areas in every subject", { areas: true }],
+    ["a 70-character name", { name: true }],
+    ["8 subjects, 8 areas each and the long name", { subjects: "eight", areas: true, name: true }]
+  ];
+  for (const [label, shape] of stress) {
+    const result = await printedPages(shape);
+    check(result.pages === result.students * 2, "goal sheets with " + label + " print as exactly two pages per student (" + result.pages + " pages for " + result.students + " students)");
+    check(result.lowest <= 294.5, "  and nothing on any of them runs past the page (lowest content at " + result.lowest.toFixed(0) + " mm of 297)");
+  }
+  // The page-size box alone must hold the limit even if nothing was shrunk.
+  const unfitted = await printedPages({ subjects: "twelve", areas: true, name: true, noFit: true });
+  check(unfitted.pages === unfitted.students * 2, "even with no shrinking at all, the page box keeps it to two pages per student (" + unfitted.pages + " pages for " + unfitted.students + " students)");
   const cases = await page.evaluate(() => {
     const level = (rit, extra) => goalSheetGradeLevel({ subject: "Mathematics", currentSeason: "fall", usNormStudentGrade: "5", currentRIT: rit, ...extra });
     const stretch = (acceleration) => needsStretchGoal({ alreadyAtOrAbove: false, acceleration });
