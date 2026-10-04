@@ -214,6 +214,26 @@ console.log("Goal sheets");
   await sheetPage.close();
   check(sheets.sheets === 12 && pdfPages === 12, "each of the 6 students' goal sheets prints as exactly two pages (" + pdfPages + " pages, " + sheets.sheets + " sheets)");
   check(sheets.lines === 12 && /About Grade \d level/.test(sheets.text) && /US norms: a typical/.test(sheets.text), "every subject on the goal sheet says what grade level the score matches on the US norms (" + sheets.lines + " lines)");
+  // Safari lays a printed page out 1.25 times as wide as the paper is in
+  // points (744px for A4, not 794) and shrinks that to fit, which prints
+  // everything about 7% larger than its size here and wraps it differently:
+  // a page that measured as fitting ran onto a second sheet, four pages a
+  // student. A document that is itself A4 wide is laid out at 794px and
+  // printed at its true size, so the sheets must stay A4 wide in a narrower
+  // window.
+  {
+    const narrow = await browser.newPage({ viewport: { width: 744, height: 1052 } });
+    await narrow.setContent(html);
+    await narrow.emulateMedia({ media: "print" });
+    const widths = await narrow.evaluate(() => ({
+      body: document.body.getBoundingClientRect().width,
+      sheet: document.querySelector(".sheet").getBoundingClientRect().width,
+      scroll: document.documentElement.scrollWidth
+    }));
+    await narrow.close();
+    check(Math.abs(widths.body - 793.7) < 1 && Math.abs(widths.sheet - 793.7) < 1 && widths.scroll >= 793,
+      "the goal sheets stay A4 wide in a narrower print window, so Safari prints them at true size (body " + widths.body.toFixed(0) + "px, sheet " + widths.sheet.toFixed(0) + "px, scroll " + widths.scroll + "px)");
+  }
   // Two pages per student is a hard limit (front and back of one sheet of
   // paper): however many subjects or areas a student has, and however long
   // the name, the printed file must come out at exactly two pages each.

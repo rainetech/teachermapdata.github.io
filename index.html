@@ -21829,6 +21829,13 @@ ${sheets.join("\n")}
     const GOAL_SHEET_CSS = `
   @page { size: A4 portrait; margin: 0; }
   * { box-sizing: border-box; }
+  /* The document is exactly one A4 sheet wide, whatever the window it is
+     printed from. Safari lays a page out at 1.25 times the paper's width and
+     shrinks it to fit, which prints everything about 7% larger than its size
+     here and wraps it differently, so a page measured as fitting overflowed
+     onto a second sheet. A document that is itself A4 wide is printed at its
+     true size. */
+  html, body { width: 210mm; }
   body {
     margin: 0;
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif;
@@ -21843,7 +21850,7 @@ ${sheets.join("\n")}
      page tall: fitGoalSheets() measures it before printing and shrinks it to
      fit, and the box clips anything still past the edge instead of letting
      it run onto a third page. */
-  .sheet { position: relative; height: 296mm; overflow: hidden; padding: 0; page-break-after: always; break-after: page; }
+  .sheet { position: relative; width: 210mm; height: 293mm; overflow: hidden; padding: 0; page-break-after: always; break-after: page; }
   .sheet:last-child { page-break-after: auto; break-after: auto; }
   .sheet-fit { transform-origin: 0 0; transform: scale(var(--fit, 1)); width: calc(100% / var(--fit, 1)); padding-bottom: 8mm; }
 
@@ -21977,7 +21984,7 @@ ${sheets.join("\n")}
     // subjects and the areas. Scaling also widens the layout, so the height
     // is not proportional to the scale: the largest scale that fits is found
     // by halving the gap between one that fits and one that does not.
-    const GOAL_SHEET_FIT_MM = 294;
+    const GOAL_SHEET_FIT_MM = 289;
     const GOAL_SHEET_MAX_SUBJECTS = 8;
     function fitGoalSheets(html, subjectCounts) {
       const pxPerMm = 96 / 25.4;
