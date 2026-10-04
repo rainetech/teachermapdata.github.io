@@ -344,6 +344,7 @@ function buildHTML(data, pictures, baselineTitles) {
   <p>In September there is nothing to compare against yet. Upload the single-window export anyway: the dashboard detects it and switches to a start-of-year view with tiers, norm placement and growth targets instead of showing empty growth panels. It does not matter whether the export puts the fall test in the Start or the End columns.</p>
   <h3>Several files at once</h3>
   <p>Select all the files at once when you upload and they are read as one data set. Where an ASG file and a Class Profile file describe the same test, the two are folded into one record so growth and instructional areas sit on the same student. An ASG file on its own gives you everything except the instructional areas; Class Profile files on their own give you the areas and one window, but no growth.</p>
+  <p>Only Growth tests are read. A Class Profile also lists any screening test a student sat (its TestName starts with &ldquo;Screening&rdquo; rather than &ldquo;Growth&rdquo;); those rows are left out entirely, so a screener can never replace or merge into a student's growth test. The Data Check names each one that was left out.</p>
   <div class="callout">
     <h4>Not ready to export?</h4>
     <p>Click <em>Load Sample Data</em> on the upload panel to explore every feature with a small made-up class first. Everything in this guide was pictured with that sample.</p>
