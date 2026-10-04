@@ -16,7 +16,12 @@
 //     ("Fall 2026", not "Fall 2026-2027 (Most Recent)");
 //   - an invalid, unscored attempt is not counted as a second window;
 //   - a real fall-to-spring growth export loaded with a spring Class Profile
-//     still merges into growth records.
+//     still merges into growth records;
+//   - the goal sheet says what grade level a score matches on the US norms,
+//     and every student's sheets still print as exactly two pages;
+//   - a gap to grade level inside measurement error is not counted as short;
+//   - the page still carries its copyright and licence notice.
+import fs from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -129,6 +134,64 @@ const growth = await load([
 const g = growth.info;
 check(g.mode === "growth" && g.pairs === 6 && g.rows === 6 && g.areas === 6, "still merges into growth records with the areas added (" + JSON.stringify({ mode: g.mode, pairs: g.pairs, rows: g.rows, areas: g.areas }) + ")");
 check(growth.errors.length === 0, "no page errors");
+
+console.log("Goal sheets");
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => {
+    try {
+      localStorage.clear();
+      localStorage.setItem("asg-dashboard-preferences", JSON.stringify({ reducedMotion: true, supportPromptOff: true, supportPromptLastShown: Date.now(), view: "full" }));
+    } catch (error) { /* storage may be unavailable */ }
+  });
+  await page.goto(pathToFileURL(TARGET).href);
+  await page.setInputFiles("#csvInput", [
+    ["projection.csv", projectionASG()],
+    ["CP_Math_Fall2026.csv", classProfile("Mathematics", "Math K-12", math, "09/21/26", "Fall 2026-2027 (Most Recent)", false)],
+    ["CP_Reading_Fall2026.csv", classProfile("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)", false)]
+  ].map(([name, text]) => ({ name, mimeType: "text/csv", buffer: Buffer.from(text) })));
+  await page.waitForTimeout(2500);
+  const html = await page.evaluate(() => {
+    window.__sheets = "";
+    window.open = () => ({ document: { open() { }, write(text) { window.__sheets += text; }, close() { } }, focus() { }, print() { } });
+    printGoalSheets();
+    return window.__sheets;
+  });
+  const sheetPage = await browser.newPage({ viewport: { width: 794, height: 1123 } });
+  await sheetPage.setContent(html);
+  await sheetPage.emulateMedia({ media: "print" });
+  const sheets = await sheetPage.evaluate(() => ({ sheets: document.querySelectorAll(".sheet").length, lines: document.querySelectorAll(".gs-gradelevel").length, text: document.body.innerText }));
+  const pdf = await sheetPage.pdf({ preferCSSPageSize: true, printBackground: true });
+  const pdfPages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
+  await sheetPage.close();
+  check(sheets.sheets === 12 && pdfPages === 12, "each of the 6 students' goal sheets prints as exactly two pages (" + pdfPages + " pages, " + sheets.sheets + " sheets)");
+  check(sheets.lines === 12 && /About Grade \d level/.test(sheets.text) && /US norms: a typical/.test(sheets.text), "every subject on the goal sheet says what grade level the score matches on the US norms (" + sheets.lines + " lines)");
+  const cases = await page.evaluate(() => {
+    const level = (rit, extra) => goalSheetGradeLevel({ subject: "Mathematics", currentSeason: "fall", usNormStudentGrade: "5", currentRIT: rit, ...extra });
+    const stretch = (acceleration) => needsStretchGoal({ alreadyAtOrAbove: false, acceleration });
+    return {
+      k: level(145) && level(145).headline,
+      own: level(206) && level(206).headline,
+      above: level(260) && level(260).headline,
+      none: goalSheetGradeLevel({ subject: "Mathematics", currentSeason: null, usNormStudentGrade: "5", currentRIT: 200 }),
+      stretchInside: stretch(3), stretchOutside: stretch(4)
+    };
+  });
+  check(cases.k === "About Kindergarten level", "a Grade 5 student on 145 in fall maths is about Kindergarten level (" + cases.k + ")");
+  check(cases.own === "About Grade 5 level, my own grade" && /^Above /.test(cases.above) && cases.none === null, "the wording covers a student's own grade, a score past the top of the norms, and no season");
+  check(cases.stretchInside === false && cases.stretchOutside === true, "a stretch of 3 RIT or less to grade level is inside measurement error; 4 is not");
+  check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
+  await page.close();
+}
+
+console.log("Notice");
+{
+  const source = fs.readFileSync(TARGET, "utf8");
+  check(/Copyright \(c\) 2026 Christopher Raine/.test(source) && /Attribution Licence/.test(source) && /<meta name="author" content="Christopher Raine">/.test(source),
+    "the page still carries its copyright and licence notice");
+}
 
 await browser.close();
 console.log(failures ? `\n${failures} check(s) failed` : "\nAll import checks passed");
