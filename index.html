@@ -21801,8 +21801,14 @@ ${sheets.join("\n")}
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .sheet { padding: 0 0 8mm; page-break-after: always; }
-  .sheet:last-child { page-break-after: auto; }
+  /* A student's goal sheet is two pages, the two sides of one sheet of paper,
+     and that is a limit, not a target. Each page is therefore exactly one
+     page tall: fitGoalSheets() measures it before printing and shrinks it to
+     fit, and the box clips anything still past the edge instead of letting
+     it run onto a third page. */
+  .sheet { position: relative; height: 296mm; overflow: hidden; padding: 0; page-break-after: always; break-after: page; }
+  .sheet:last-child { page-break-after: auto; break-after: auto; }
+  .sheet-fit { transform-origin: 0 0; transform: scale(var(--fit, 1)); width: calc(100% / var(--fit, 1)); padding-bottom: 8mm; }
 
   .gs-head { background: #14307f; color: #fff; padding: 7mm 16mm 6mm; }
   .gs-kicker {
@@ -21926,6 +21932,72 @@ ${sheets.join("\n")}
   }
 `;
 
+    // Shrinks any goal-sheet page that would run past one A4 page until it
+    // fits, and returns the document with each page's scale written into it,
+    // so the printed file needs no script. The pages are laid out in a hidden
+    // frame of the printed width and measured, because how tall a page comes
+    // out depends on how its text wraps, and that depends on the names, the
+    // subjects and the areas. Scaling also widens the layout, so the height
+    // is not proportional to the scale: the largest scale that fits is found
+    // by halving the gap between one that fits and one that does not.
+    const GOAL_SHEET_FIT_MM = 294;
+    const GOAL_SHEET_MAX_SUBJECTS = 8;
+    function fitGoalSheets(html, subjectCounts) {
+      const pxPerMm = 96 / 25.4;
+      const limit = GOAL_SHEET_FIT_MM * pxPerMm;
+      let fits = null;
+      let frame = null;
+      try {
+        frame = document.createElement("iframe");
+        frame.setAttribute("aria-hidden", "true");
+        frame.setAttribute("scrolling", "no");
+        frame.tabIndex = -1;
+        frame.style.cssText = "position:fixed; left:-12000px; top:0; width:" + Math.round(210 * pxPerMm) + "px; height:1200px; border:0; visibility:hidden;";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write(html);
+        doc.close();
+        doc.documentElement.style.overflow = "hidden";
+        const nodes = [...doc.querySelectorAll(".sheet-fit")];
+        const measured = nodes.map((node) => {
+          const natural = node.offsetHeight;
+          if (!(natural > 0)) throw new Error("not laid out");
+          if (natural <= limit) return 1;
+          const fitsAt = (scale) => {
+            node.style.setProperty("--fit", String(scale));
+            return node.offsetHeight * scale <= limit;
+          };
+          let low = limit / natural;
+          for (let step = 0; step < 40 && !fitsAt(low); step++) low *= 0.96;
+          let high = 1;
+          for (let step = 0; step < 8; step++) {
+            const mid = (low + high) / 2;
+            if (fitsAt(mid)) low = mid;
+            else high = mid;
+          }
+          return Math.floor(low * 1000) / 1000;
+        });
+        fits = measured.length === nodes.length ? measured : null;
+      } catch (error) {
+        fits = null;
+      } finally {
+        if (frame) frame.remove();
+      }
+      // Without a measurement, scale by how many subjects there are: a page
+      // runs to about 160mm plus 40mm for each subject.
+      const estimate = (sheetIndex) => {
+        const count = subjectCounts && subjectCounts[Math.floor(sheetIndex / 2)];
+        return count > 3 ? Math.floor(Math.min(1, 270 / (160 + 40 * count)) * 1000) / 1000 : 1;
+      };
+      let index = 0;
+      return html.replace(/<div class="sheet-fit">/g, () => {
+        const scale = fits ? fits[index] : estimate(index);
+        index += 1;
+        return scale < 1 ? '<div class="sheet-fit" style="--fit:' + scale + '">' : '<div class="sheet-fit">';
+      });
+    }
+
     function printGoalSheets() {
       const rows = state.filteredRows.filter((row) => row.goals || row.forwardProjection);
       if (!rows.length) {
@@ -21949,8 +22021,15 @@ ${sheets.join("\n")}
           " students. Filter to a class to print the rest.", "info");
       }
       const floor = state.strandAnalysis ? state.strandAnalysis.floor : AREA_MIN_FLOOR;
+      const subjectCounts = [];
+      let cutSubjects = 0;
       const sheets = printed.map(([, allRows]) => {
-        const subjects = latestSubjectRecords(allRows);
+        // Past this many subjects the page is shrunk below a size a child can
+        // read, so the rest are left off and the teacher is told.
+        const allSubjects = latestSubjectRecords(allRows);
+        const subjects = allSubjects.slice(0, GOAL_SHEET_MAX_SUBJECTS);
+        if (allSubjects.length > subjects.length) cutSubjects += 1;
+        subjectCounts.push(subjects.length);
         const studentRows = subjects.map((entry) => entry.current);
         const first = studentRows[0];
         const repeated = subjects.some((entry) => entry.earlier.length || entry.retests);
@@ -21959,7 +22038,7 @@ ${sheets.join("\n")}
           first.className && first.className !== "Missing" ? "Class " + first.className : "",
           currentWindowName()
         ].filter(Boolean).join("  ·  ");
-        return '<section class="sheet">' +
+        return '<section class="sheet"><div class="sheet-fit">' +
           '<header class="gs-head"><span class="gs-kicker">My learning goals</span>' +
           "<h1>" + escapeHTML(first.studentName) + "</h1>" +
           "<p>" + escapeHTML(meta) + "</p></header>" +
@@ -21978,11 +22057,11 @@ ${sheets.join("\n")}
               ? " Approximate grade level is the grade whose typical score in that season is closest to mine on the " + EMBEDDED_NORMS_YEAR +
                 " US norms. It comes from one test on one day, so it shows where to start, not what I can do."
               : "")) + "</p>" +
-          "</section>" +
+          "</div></section>" +
           // Page two is the student's, not the data's: the targets repeated
           // in one line each so the numbers are in front of them, then room
           // to write. The data page never shares a sheet with the plan.
-          '<section class="sheet gs-page-plan">' +
+          '<section class="sheet gs-page-plan"><div class="sheet-fit">' +
           '<header class="gs-head"><span class="gs-kicker">My plan</span>' +
           "<h1>" + escapeHTML(first.studentName) + "</h1>" +
           "<p>" + escapeHTML(meta) + "</p></header>" +
@@ -21995,11 +22074,15 @@ ${sheets.join("\n")}
           '<p class="gs-prompt">The practice and the habits: what I will do, when, and how often. Start with the part named above.</p><div class="gs-write is-tall"></div></div>' +
           '<div class="gs-section"><h2>How my teacher will help</h2><div class="gs-write is-mid"></div></div>' +
           '<div class="gs-sign"><span>Me <i></i></span><span>My teacher <i></i></span><span>Date <i></i></span></div>' +
-          "</div></section>";
+          "</div></div></section>";
       }).join("");
-      const html = '<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' +
+      const html = fitGoalSheets('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>' +
         escapeHTML("Growth goal sheets") + "</title><style>" + GOAL_SHEET_CSS + "</style></head><body>" +
-        sheets + "</body></html>";
+        sheets + "</body></html>", subjectCounts);
+      if (cutSubjects) {
+        toast(formatInteger(cutSubjects) + (cutSubjects === 1 ? " student has" : " students have") + " more than " +
+          GOAL_SHEET_MAX_SUBJECTS + " subjects. Their sheets show the first " + GOAL_SHEET_MAX_SUBJECTS + ".", "info");
+      }
       const printWindow = window.open("", "_blank");
       if (!printWindow) {
         downloadText("nwea-goal-sheets.html", html, "text/html");
