@@ -8837,6 +8837,37 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       };
     }
 
+    // The grade level a score has REACHED on the US norms: the highest grade whose
+    // typical score, in the same season, the score is at or above. Where the
+    // estimator above answers "which grade's mean is nearest", this answers "which
+    // grade has this child got to", and the two differ exactly where it matters
+    // to a parent: a Grade 5 child one point under the typical Grade 5 score is
+    // nearest to Grade 5, but has not reached it, so they are placed in Grade 4.
+    // There is no tolerance. A grade's score is never taken as lower than a
+    // younger grade's (the table dips at Grade 12), and grades that share a score
+    // are returned together, since nothing separates them.
+    function usNormGradeReached(subject, seasonKey, rit) {
+      if (!subject || !seasonKey || !isFiniteNumber(rit)) return null;
+      const subjectNorms = US_ACHIEVEMENT_NORMS[subject];
+      if (!subjectNorms) return null;
+      let highestSoFar = -Infinity;
+      const steps = Object.keys(subjectNorms)
+        .map((gradeKey) => ({ gradeKey, gradeValue: gradeKeyToValue(gradeKey), rit: getUSNormRIT(subject, gradeKey, seasonKey) }))
+        .filter((step) => isFiniteNumber(step.gradeValue) && isFiniteNumber(step.rit))
+        .sort((a, b) => a.gradeValue - b.gradeValue)
+        .map((step) => {
+          highestSoFar = Math.max(highestSoFar, step.rit);
+          return { gradeKey: step.gradeKey, gradeValue: step.gradeValue, rit: highestSoFar };
+        });
+      if (!steps.length) return null;
+      if (rit < steps[0].rit) return { outOfRange: "below", grades: [steps[0]], rit: steps[0].rit, next: steps[0], steps };
+      const reached = steps.filter((step) => step.rit <= rit);
+      const last = reached[reached.length - 1];
+      const next = steps[reached.length] || null;
+      if (!next && rit > last.rit) return { outOfRange: "above", grades: [last], rit: last.rit, next: null, steps };
+      return { outOfRange: null, grades: reached.filter((step) => step.rit === last.rit), rit: last.rit, next, steps };
+    }
+
     function isFiniteNumber(value) {
       return typeof value === "number" && Number.isFinite(value);
     }
@@ -22098,8 +22129,8 @@ ${sheets.join("\n")}
             ? METHOD_NOTES.forwardProjection
             : METHOD_NOTES.keepPace) +
             (studentRows.some((row) => goalSheetGradeLevel(row))
-              ? " Approximate grade level is the grade whose typical score in that season is closest to mine on the " + EMBEDDED_NORMS_YEAR +
-                " US norms. It comes from one test on one day, so it shows where to start, not what I can do."
+              ? " Grade level is the highest grade whose typical score in that season my score has reached on the " + EMBEDDED_NORMS_YEAR +
+                " US norms, so a score under the typical score for my own grade is placed in the grade below. It comes from one test on one day, so it shows where to start, not what I can do."
               : "")) + "</p>" +
           "</div></section>" +
           // Page two is the student's, not the data's: the targets repeated
@@ -22187,43 +22218,63 @@ ${sheets.join("\n")}
         goalSheetFocusLine(row, floor) + "</li>";
     }
 
-    // Where a score sits on the US norms, said as a grade: the grade whose
-    // typical score in that season is closest to it. It uses the estimator
-    // behind the Grouping table's "US norm grade level", so a sheet and a
-    // table never disagree, and it says so plainly where the norms cannot
-    // give one grade - a score past the top or bottom of the table, or one
-    // that several grades share. It is the school's reading of one test, not
-    // a verdict on the child, so it is a small line under the subject name.
+    // Where a score sits on the US norms, said as a grade, and said strictly: the
+    // highest grade whose typical score in that season the score has reached. A
+    // sheet goes home, and a parent reads "Grade 5 level" as "working at Grade
+    // 5", so a child below the typical Grade 5 score is placed in Grade 4 and the
+    // line says why, with both scores. There is no "about" and no allowance: a
+    // score either has or has not reached a grade's typical score. (The Grouping
+    // table keeps the nearest-grade estimate, which is a teacher's planning
+    // signal; this is the version written for the family.) Where the norms give
+    // no single grade - a score below or above the table, or grades that share
+    // one score - it says so. It is one test on one day, so it is a small line
+    // under the subject name, not a verdict on the child.
     function goalSheetGradeLevel(row) {
       if (!row || !isFiniteNumber(row.currentRIT) || !row.currentSeason) return null;
-      const equivalent = estimateUSNormEquivalentGrade(row.subject, row.currentSeason, row.currentRIT, row.usNormStudentGrade);
-      if (!equivalent) return null;
+      const placed = usNormGradeReached(row.subject, row.currentSeason, row.currentRIT);
+      if (!placed) return null;
       const season = seasonLabel(row.currentSeason).toLowerCase();
       if (season === "missing") return null;
       const grade = (key) => (key === "K" ? "Kindergarten" : "Grade " + key);
-      const about = isFiniteNumber(equivalent.rit) ? " (about " + formatNumber(equivalent.rit, 0) + " in the " + season + ")" : "";
-      if (equivalent.outOfRange === "above") {
-        return { headline: "Above " + grade(equivalent.gradeKey) + " level", detail: "US norms: higher than a typical " + grade(equivalent.gradeKey) + " student" + about + "." };
+      const low = placed.grades[0];
+      const high = placed.grades[placed.grades.length - 1];
+      const score = (value) => formatNumber(value, 0);
+      if (placed.outOfRange === "above") {
+        return { headline: "Above " + grade(high.gradeKey) + " level", detail: "US norms (" + season + "): higher than the typical " + grade(high.gradeKey) + " score, " + score(placed.rit) + "." };
       }
-      if (equivalent.outOfRange === "below") {
-        return { headline: "Below " + grade(equivalent.gradeKey) + " level", detail: "US norms: lower than a typical " + grade(equivalent.gradeKey) + " student" + about + "." };
+      if (placed.outOfRange === "below") {
+        return { headline: "Below " + grade(low.gradeKey) + " level", detail: "US norms (" + season + "): not yet the typical " + grade(low.gradeKey) + " score, " + score(placed.rit) + "." };
       }
-      if (equivalent.indeterminate && equivalent.candidates && equivalent.candidates.length > 1) {
-        const low = equivalent.candidates[0].gradeKey;
-        const high = equivalent.candidates[equivalent.candidates.length - 1].gradeKey;
-        return { headline: "About " + grade(low) + " to " + grade(high).replace(/^Grade /, "") + " level", detail: "US norms: typical students in these grades score about the same in the " + season + "." };
+      const ownValue = gradeKeyToValue(row.usNormStudentGrade);
+      const atOwn = isFiniteNumber(ownValue) && ownValue >= low.gradeValue && ownValue <= high.gradeValue;
+      const shown = atOwn ? placed.grades.find((step) => step.gradeValue === ownValue) : high;
+      if (!atOwn && placed.grades.length > 1) {
+        return {
+          headline: grade(low.gradeKey) + " to " + grade(high.gradeKey).replace(/^Grade /, "") + " level",
+          detail: "US norms (" + season + "): reached the typical score for these grades, " + score(placed.rit) + ", which is the same for each."
+        };
       }
-      const own = row.usNormStudentGrade && String(row.usNormStudentGrade) === String(equivalent.gradeKey);
+      // Below the child's own grade, say so with the score that is still ahead:
+      // "not yet Grade 5, 206" is the sentence that stops a parent reading
+      // Grade 4 as a rounding.
+      const ownStep = !atOwn && isFiniteNumber(ownValue) && ownValue > high.gradeValue
+        ? placed.steps.find((step) => step.gradeValue === ownValue)
+        : null;
+      const notYet = ownStep ? ownStep.rit : null;
       return {
-        headline: "About " + grade(equivalent.gradeKey) + " level" + (own ? ", my own grade" : ""),
-        detail: "US norms: a typical " + grade(equivalent.gradeKey) + " student scores about " + formatNumber(equivalent.rit, 0) + " in the " + season + "."
+        headline: grade(shown.gradeKey) + " level" + (atOwn ? ", my own grade" : ""),
+        detail: "US norms (" + season + "): reached the typical " + grade(shown.gradeKey) + " score, " + score(placed.rit) + "." +
+          (isFiniteNumber(notYet) ? " Not yet " + grade(row.usNormStudentGrade) + ", " + score(notYet) + "." : "")
       };
     }
 
     function goalSheetGradeLevelLine(row) {
       const level = goalSheetGradeLevel(row);
+      // "Grade" and its number stay together: "typical Grade / 2 score" reads as
+      // two things on a narrow card.
+      const together = (text) => escapeHTML(text).replace(/Grade (?=\d)/g, "Grade\u00a0");
       return level
-        ? '<p class="gs-gradelevel"><b>' + escapeHTML(level.headline) + "</b><span>" + escapeHTML(level.detail) + "</span></p>"
+        ? '<p class="gs-gradelevel"><b>' + together(level.headline) + "</b><span>" + together(level.detail) + "</span></p>"
         : "";
     }
 
