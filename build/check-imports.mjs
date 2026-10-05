@@ -260,7 +260,7 @@ console.log("Goal sheets");
   const pdfPages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
   await sheetPage.close();
   check(sheets.sheets === 12 && pdfPages === 12, "each of the 6 students' goal sheets prints as exactly two pages (" + pdfPages + " pages, " + sheets.sheets + " sheets)");
-  check(sheets.lines === 12 && /Grade\s\d level/.test(sheets.text) && /Typical score in the (fall|winter|spring): /.test(sheets.text) && !/About Grade/.test(sheets.text),
+  check(sheets.lines === 12 && /(At my grade level|Grade\s\d level|Kindergarten level)/.test(sheets.text) && /Typical score in the (fall|winter|spring): /.test(sheets.text) && !/About Grade/.test(sheets.text),
     "every subject on the goal sheet says what grade level the score has reached on the US norms (" + sheets.lines + " lines)");
   // Safari lays a printed page out 1.25 times as wide as the paper is in
   // points (744px for A4, not 794) and shrinks that to fit, which prints
@@ -358,7 +358,9 @@ console.log("Goal sheets");
       nextGrade: line("Mathematics", "fall", "5", 210),
       top: line("Mathematics", "fall", "5", 230),
       shared: line("Reading", "fall", "7", 216),
-      sharedOwn: line("Reading", "fall", "8", 216),
+      sharedNoGrade: line("Reading", "fall", null, 216),
+      sharedBelow: line("Reading", "fall", "11", 216),
+      topNoGrade: line("Mathematics", "fall", null, 230),
       none: goalSheetGradeLevel({ subject: "Mathematics", currentSeason: null, usNormStudentGrade: "5", currentRIT: 200 }),
       noGrade: line("Reading", "fall", null, 190),
       stretchInside: stretch(3), stretchOutside: stretch(4)
@@ -368,11 +370,14 @@ console.log("Goal sheets");
   check(/^Below Kindergarten level/.test(cases.below), "under the lowest typical score it says below, not a grade (" + cases.below + ")");
   check(/^Grade 4 level \|/.test(cases.oneUnder) && /Grade 4 = 197, Grade 5 = 206/.test(cases.oneUnder),
     "a Grade 5 student one point under the Grade 5 fall score is placed in Grade 4, with both scores (" + cases.oneUnder + ")");
-  check(/^Grade 5 level, my own grade \|/.test(cases.onIt) && /^Grade 5 level, my own grade \|/.test(cases.aboveIt) && /^Grade 6 level \|/.test(cases.nextGrade),
-    "on the Grade 5 score, or above it but short of Grade 6, is Grade 5; on the Grade 6 score is Grade 6");
-  check(/^Above Grade 12 level/.test(cases.top) && /^Grade 8 to 9 level \|/.test(cases.shared) && /^Grade 8 level, my own grade/.test(cases.sharedOwn),
-    "past the top of the table says above; grades that share a score are named together unless one is the child's own");
-  check(![cases.k, cases.below, cases.oneUnder, cases.onIt, cases.nextGrade, cases.top, cases.shared].some((text) => /About /i.test(text)), "the wording never says \u201cabout\u201d");
+  // At or above the child's own grade, the sheet says "at my grade level" and
+  // nothing higher: a family reads "Grade 6 level" on a Grade 5 child as "no
+  // need to do more". The table a teacher plans from still shows the level.
+  check([cases.onIt, cases.aboveIt, cases.nextGrade, cases.top, cases.shared].every((text) => /^At my grade level \| Typical score in the (fall|winter|spring): Grade 5 = 206\.$/.test(text) || /^At my grade level \| Typical score in the fall: Grade 7 = 212\.$/.test(text)),
+    "on, above or well above the child's own grade's typical score is \u201cat my grade level\u201d, never a higher grade (" + [cases.onIt, cases.nextGrade, cases.top].join(" / ") + ")");
+  check(/^Grade 8 to 9 level \|/.test(cases.sharedNoGrade) && /^Above Grade 12 level/.test(cases.topNoGrade) && /^Grade 8 to 9 level \| Typical score in the fall: Grades 8 and 9 = 216, Grade 11 = 218\.$/.test(cases.sharedBelow),
+    "with no grade recorded, or below the child's own grade, grades that share a score are named together and past the top of the table says above");
+  check(![cases.k, cases.below, cases.oneUnder, cases.onIt, cases.nextGrade, cases.top, cases.shared, cases.sharedNoGrade].some((text) => /About /i.test(text)), "the wording never says \u201cabout\u201d");
   check(cases.none === null && /^Grade 3 level \| Typical score in the fall: Grade 3 = 185\.$/.test(cases.noGrade), "no season gives no line; no recorded grade gives the grade reached without a comparison");
   check(cases.stretchInside === false && cases.stretchOutside === true, "a stretch of 3 RIT or less to grade level is inside measurement error; 4 is not");
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
