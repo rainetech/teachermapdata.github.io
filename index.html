@@ -22117,7 +22117,7 @@ ${sheets.join("\n")}
               ? "My targets are NWEA's projection of my growth, from where I started."
               : "My next steps are the growth typical for my grade over this time.") +
             (studentRows.some((row) => goalSheetGradeLevel(row))
-              ? " US norms are the typical scores of students in each US grade at the same time of year, and a grade level here shows where one test sits on them. A higher level is not a reason to stop: every student has a next target."
+              ? " US norms are the typical scores of students in each US grade at the same time of year, and a grade level here shows where one test sits on them. Every student has a next target, whatever their level."
               : "")) + "</p>" +
           "</div></section>" +
           // Page two is the student's, not the data's: the targets repeated
@@ -22227,29 +22227,34 @@ ${sheets.join("\n")}
       // The detail is only the typical scores the level rests on, so a parent
       // can see both numbers and nothing has to be read twice.
       const typical = (pairs) => "Typical score in the " + season + ": " + pairs.join(", ") + ".";
+      // A score that has reached the typical score for the child's own grade is
+      // "at my grade level", whatever it is above that. A family reads "Grade 6
+      // level" on a Grade 5 child as "no need to do more", and the sheet is not
+      // the place to rank a child above their year group; the table a teacher
+      // plans from still shows the level reached.
+      const ownGradeValue = gradeKeyToValue(row.usNormStudentGrade);
+      const ownReached = isFiniteNumber(ownGradeValue) ? placed.steps.find((step) => step.gradeValue === ownGradeValue) : null;
+      if (ownReached && ownReached.rit <= row.currentRIT) {
+        return { headline: "At my grade level", detail: typical([grade(row.usNormStudentGrade) + " = " + score(ownReached.rit)]) };
+      }
       if (placed.outOfRange === "above") {
         return { headline: "Above " + grade(high.gradeKey) + " level", detail: typical([grade(high.gradeKey) + " = " + score(placed.rit)]) };
       }
       if (placed.outOfRange === "below") {
         return { headline: "Below " + grade(low.gradeKey) + " level", detail: typical([grade(low.gradeKey) + " = " + score(placed.rit)]) };
       }
-      const ownValue = gradeKeyToValue(row.usNormStudentGrade);
-      const atOwn = isFiniteNumber(ownValue) && ownValue >= low.gradeValue && ownValue <= high.gradeValue;
-      if (!atOwn && placed.grades.length > 1) {
-        const names = placed.grades.length === 2 ? grade(low.gradeKey) + " and " + high.gradeKey : grade(low.gradeKey) + " to " + high.gradeKey;
+      // Below the child's own grade, or no grade recorded: the grade reached, with
+      // the typical score for it and for the child's own grade beside it.
+      const ownStep = isFiniteNumber(ownGradeValue) ? placed.steps.find((step) => step.gradeValue === ownGradeValue) : null;
+      const ownPair = ownStep ? [grade(row.usNormStudentGrade) + " = " + score(ownStep.rit)] : [];
+      if (placed.grades.length > 1) {
+        const names = placed.grades.length === 2 ? "Grades " + low.gradeKey + " and " + high.gradeKey : "Grades " + low.gradeKey + " to " + high.gradeKey;
         return {
           headline: grade(low.gradeKey) + " to " + grade(high.gradeKey).replace(/^Grade /, "") + " level",
-          detail: typical([names.replace(/^Grade /, "Grades ") + " = " + score(placed.rit)])
+          detail: typical([names + " = " + score(placed.rit)].concat(ownPair))
         };
       }
-      const shown = atOwn ? placed.grades.find((step) => step.gradeValue === ownValue) : high;
-      const ownStep = !atOwn && isFiniteNumber(ownValue) ? placed.steps.find((step) => step.gradeValue === ownValue) : null;
-      const pairs = [grade(shown.gradeKey) + " = " + score(placed.rit)];
-      if (ownStep) pairs.push(grade(row.usNormStudentGrade) + " = " + score(ownStep.rit));
-      return {
-        headline: grade(shown.gradeKey) + " level" + (atOwn ? ", my own grade" : ""),
-        detail: typical(pairs)
-      };
+      return { headline: grade(high.gradeKey) + " level", detail: typical([grade(high.gradeKey) + " = " + score(placed.rit)].concat(ownPair)) };
     }
 
     function goalSheetGradeLevelLine(row) {
