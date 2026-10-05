@@ -19,8 +19,9 @@
 //     tests count, and a screener cannot replace or merge into a growth test;
 //   - a real fall-to-spring growth export loaded with a spring Class Profile
 //     still merges into growth records;
-//   - the goal sheet says what grade level a score matches on the US norms,
-//     and every student's sheets print as exactly two pages, however many
+//   - the goal sheet says what grade level a score has reached on the US norms
+//     (the highest grade whose typical score it has reached: strict, never
+//     "about"), and every student's sheets print as exactly two pages, however many
 //     subjects or areas they have and however long the name (a hard limit);
 //   - a gap to grade level inside measurement error is not counted as short;
 //   - the page still carries its copyright and licence notice, and the open
@@ -213,7 +214,8 @@ console.log("Goal sheets");
   const pdfPages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
   await sheetPage.close();
   check(sheets.sheets === 12 && pdfPages === 12, "each of the 6 students' goal sheets prints as exactly two pages (" + pdfPages + " pages, " + sheets.sheets + " sheets)");
-  check(sheets.lines === 12 && /About Grade \d level/.test(sheets.text) && /US norms: a typical/.test(sheets.text), "every subject on the goal sheet says what grade level the score matches on the US norms (" + sheets.lines + " lines)");
+  check(sheets.lines === 12 && /Grade\s\d level/.test(sheets.text) && /US norms \((fall|winter|spring)\): (reached|not yet|higher)/.test(sheets.text) && !/About Grade/.test(sheets.text),
+    "every subject on the goal sheet says what grade level the score has reached on the US norms (" + sheets.lines + " lines)");
   // Safari lays a printed page out 1.25 times as wide as the paper is in
   // points (744px for A4, not 794) and shrinks that to fit, which prints
   // everything about 7% larger than its size here and wraps it differently:
@@ -290,19 +292,42 @@ console.log("Goal sheets");
   // The page-size box alone must hold the limit even if nothing was shrunk.
   const unfitted = await printedPages({ subjects: "twelve", areas: true, name: true, noFit: true });
   check(unfitted.pages === unfitted.students * 2, "even with no shrinking at all, the page box keeps it to two pages per student (" + unfitted.pages + " pages for " + unfitted.students + " students)");
+  // Grade level on the goal sheet is strict: the highest grade whose typical
+  // score in that season the score has reached, with no "about" and no
+  // allowance. A Grade 5 child under the typical Grade 5 score is placed in
+  // Grade 4, so that "Grade 5 level" never reads as "working at Grade 5" to a
+  // family when the score has not got there.
   const cases = await page.evaluate(() => {
-    const level = (rit, extra) => goalSheetGradeLevel({ subject: "Mathematics", currentSeason: "fall", usNormStudentGrade: "5", currentRIT: rit, ...extra });
+    const line = (subject, season, grade, rit) => {
+      const level = goalSheetGradeLevel({ subject, currentSeason: season, usNormStudentGrade: grade, currentRIT: rit });
+      return level ? level.headline + " | " + level.detail : null;
+    };
     const stretch = (acceleration) => needsStretchGoal({ alreadyAtOrAbove: false, acceleration });
     return {
-      k: level(145) && level(145).headline,
-      own: level(206) && level(206).headline,
-      above: level(260) && level(260).headline,
+      k: line("Mathematics", "fall", "5", 145),
+      below: line("Mathematics", "fall", "5", 140),
+      oneUnder: line("Mathematics", "fall", "5", 205),
+      onIt: line("Mathematics", "fall", "5", 206),
+      aboveIt: line("Mathematics", "fall", "5", 209),
+      nextGrade: line("Mathematics", "fall", "5", 210),
+      top: line("Mathematics", "fall", "5", 230),
+      shared: line("Reading", "fall", "7", 216),
+      sharedOwn: line("Reading", "fall", "8", 216),
       none: goalSheetGradeLevel({ subject: "Mathematics", currentSeason: null, usNormStudentGrade: "5", currentRIT: 200 }),
+      noGrade: line("Reading", "fall", null, 190),
       stretchInside: stretch(3), stretchOutside: stretch(4)
     };
   });
-  check(cases.k === "About Kindergarten level", "a Grade 5 student on 145 in fall maths is about Kindergarten level (" + cases.k + ")");
-  check(cases.own === "About Grade 5 level, my own grade" && /^Above /.test(cases.above) && cases.none === null, "the wording covers a student's own grade, a score past the top of the norms, and no season");
+  check(/^Kindergarten level \|/.test(cases.k) && /Not yet Grade 5, 206\./.test(cases.k), "a Grade 5 student on 145 in fall maths has reached the Kindergarten score, not Grade 1 (" + cases.k + ")");
+  check(/^Below Kindergarten level/.test(cases.below), "under the lowest typical score it says below, not a grade (" + cases.below + ")");
+  check(/^Grade 4 level \|/.test(cases.oneUnder) && /reached the typical Grade 4 score, 197\. Not yet Grade 5, 206\./.test(cases.oneUnder),
+    "a Grade 5 student one point under the Grade 5 fall score is placed in Grade 4, with both scores (" + cases.oneUnder + ")");
+  check(/^Grade 5 level, my own grade \|/.test(cases.onIt) && /^Grade 5 level, my own grade \|/.test(cases.aboveIt) && /^Grade 6 level \|/.test(cases.nextGrade),
+    "on the Grade 5 score, or above it but short of Grade 6, is Grade 5; on the Grade 6 score is Grade 6");
+  check(/^Above Grade 12 level/.test(cases.top) && /^Grade 8 to 9 level \|/.test(cases.shared) && /^Grade 8 level, my own grade/.test(cases.sharedOwn),
+    "past the top of the table says above; grades that share a score are named together unless one is the child's own");
+  check(![cases.k, cases.below, cases.oneUnder, cases.onIt, cases.nextGrade, cases.top, cases.shared].some((text) => /About /i.test(text)), "the wording never says \u201cabout\u201d");
+  check(cases.none === null && /^Grade 3 level \| US norms \(fall\): reached the typical Grade 3 score, 185\.$/.test(cases.noGrade), "no season gives no line; no recorded grade gives the grade reached without a \u201cnot yet\u201d");
   check(cases.stretchInside === false && cases.stretchOutside === true, "a stretch of 3 RIT or less to grade level is inside measurement error; 4 is not");
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
   await page.close();
