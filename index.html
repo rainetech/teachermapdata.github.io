@@ -5267,7 +5267,7 @@
           </div>
           <div class="explain-card">
             <strong>What you can plan from</strong>
-            <span>Percentile placement, distance from the US grade/season norm, approximate grade-level equivalence, and instructional tiers are all measurable from one window.</span>
+            <span>Percentile placement, distance from the US grade/season norm, grade level against the US norms, and instructional tiers are all measurable from one window.</span>
           </div>
           <div class="explain-card">
             <strong>What to do next</strong>
@@ -6176,7 +6176,7 @@
     const GRADE_LEVEL_TOLERANCE_RIT = 3;
 
     const METHOD_NOTES = {
-      normEquivalent: "Grade-level equivalence compares a student's RIT with the mean RIT for each grade in the same season. It is a rough placement signal, not a reading or maths \u201cgrade level\u201d, and it is least reliable at the top and bottom of the scale.",
+      normEquivalent: "Grade level is read strictly: the highest grade whose mean RIT, in the same season, the student's score has reached. A student under the mean for their own grade is placed in the grade below. Where grades share a mean the score fits them all, and the grade nearest the student's own is used. Flags, groups and counts ignore a shortfall of " + GRADE_LEVEL_TOLERANCE_RIT + " RIT or less, which is inside measurement error. It is a placement signal from one test, not a reading or maths \u201cgrade level\u201d.",
       keepPace: "Keep-pace targets add the gain a typical student at this grade makes between these two seasons (the difference between the two US norm means). They describe typical peer progress, not an NWEA projected RIT.",
       gradeLevel: "Grade-level targets are the US norm mean RIT for this grade and season, which sits near the 50th percentile. Reaching it from below requires more than typical growth. A gap of " + GRADE_LEVEL_TOLERANCE_RIT + " RIT or less is inside measurement error and does not count as short.",
       growthError: "A RIT score carries a standard error, so the difference between two of them carries a larger one. Where the export reports it, growth is shown with a 95% range and a result inside that range of its projection is marked too close to call. NWEA's own Yes or No is never changed - this sits beside it. The error is within-test only: it does not include illness, motivation or a bad morning, so the true uncertainty is wider than the range shown, not narrower.",
@@ -8064,21 +8064,34 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function applyNormFields(record) {
       const grade = record.usNormStudentGrade;
       const benchmark = getUSNormRIT(record.subject, grade, record.currentSeason);
-      const equivalent = estimateUSNormEquivalentGrade(record.subject, record.currentSeason, record.currentRIT, grade);
+      const placed = usNormGradeReached(record.subject, record.currentSeason, record.currentRIT);
+      const ownGradeValue = gradeKeyToValue(grade);
+      const placement = placed ? usNormPlacementFor(placed, ownGradeValue) : null;
       record.usNormBenchmarkRIT = benchmark;
       record.usNormDeltaRIT = isFiniteNumber(record.currentRIT) && isFiniteNumber(benchmark)
         ? record.currentRIT - benchmark
         : null;
       record.usNormAtOrAbove = isFiniteNumber(record.usNormDeltaRIT) ? record.usNormDeltaRIT >= 0 : null;
-      record.usNormEquivalentGrade = equivalent ? equivalent.gradeKey : null;
-      record.usNormEquivalentGradeValue = equivalent ? equivalent.gradeValue : null;
-      record.usNormEquivalentOutOfRange = equivalent ? equivalent.outOfRange : null;
-      record.usNormEquivalentIndeterminate = Boolean(equivalent && equivalent.indeterminate);
-      // A RIT past either end of the norm table, or one consistent with too many
-      // grades to distinguish, has no meaningful grade gap.
-      record.usNormGradeGap = equivalent && !equivalent.outOfRange && !equivalent.indeterminate && grade
-        ? equivalent.gradeValue - gradeKeyToValue(grade)
+      record.usNormEquivalentGrade = placement ? placement.chosen.gradeKey : null;
+      record.usNormEquivalentGradeValue = placement ? placement.chosen.gradeValue : null;
+      record.usNormEquivalentGrades = placement ? placement.keys : [];
+      record.usNormEquivalentLabel = placement ? placement.label : null;
+      record.usNormEquivalentRIT = placed ? placed.rit : null;
+      record.usNormEquivalentOutOfRange = placed ? placed.outOfRange : null;
+      // A RIT past either end of the norm table has no meaningful grade gap.
+      record.usNormGradeGap = placement && !placed.outOfRange && isFiniteNumber(ownGradeValue)
+        ? placement.chosen.gradeValue - ownGradeValue
         : null;
+      // What the page DESCRIBES is strict (above); what it FLAGS is not. A score
+      // has a standard error near 3 RIT, so a child a point or two under their
+      // grade's typical score is described as not having reached it, but is not
+      // flagged as behind, grouped as behind or counted as behind: the same
+      // allowance the page already gives a gap to grade level. The planning gap
+      // is the strict gap with that shortfall (or surplus) set to zero.
+      record.usNormPlanningGap = isFiniteNumber(record.usNormGradeGap) && record.usNormGradeGap !== 0 &&
+        isFiniteNumber(record.usNormDeltaRIT) && Math.abs(record.usNormDeltaRIT) < GRADE_LEVEL_TOLERANCE_RIT
+        ? 0
+        : record.usNormGradeGap;
       const startBenchmark = getUSNormRIT(record.subject, grade, record.startSeason);
       record.startUSNormDeltaRIT = isFiniteNumber(record.startRIT) && isFiniteNumber(startBenchmark)
         ? record.startRIT - startBenchmark
@@ -8432,7 +8445,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function suggestBaselineGroup(row) {
       if (!isFiniteNumber(row.currentPercentile)) return "No Score Yet";
       const percentile = row.currentPercentile;
-      const behindGradeLevel = isFiniteNumber(row.usNormGradeGap) && row.usNormGradeGap <= -1;
+      const behindGradeLevel = isFiniteNumber(row.usNormPlanningGap) && row.usNormPlanningGap <= -1;
       if (percentile < 21) return "Intensive Support";
       if (percentile < 41) return "Targeted Support";
       if (percentile < 61) return behindGradeLevel ? "Watch Group" : "Core Instruction";
@@ -8451,8 +8464,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         if (row.currentPercentile < 21) reasons.push("At or below the 20th percentile");
         else if (row.currentPercentile < 41) reasons.push("Between the 21st and 40th percentile");
       }
-      if (isFiniteNumber(row.usNormGradeGap) && row.usNormGradeGap <= -1) {
-        reasons.push(gradeGapPhrase(row.usNormGradeGap));
+      if (isFiniteNumber(row.usNormPlanningGap) && row.usNormPlanningGap <= -1) {
+        reasons.push(gradeGapPhrase(row.usNormPlanningGap, row));
       }
       if (isFiniteNumber(row.usNormDeltaRIT) && row.usNormDeltaRIT <= -8) {
         reasons.push(formatNumber(Math.abs(row.usNormDeltaRIT), 0) + " RIT below the grade/season norm");
@@ -8481,8 +8494,8 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         if (row.currentPercentile >= 81) reasons.push("At or above the 81st percentile");
         else if (row.currentPercentile >= 61) reasons.push("At or above the secure benchmark");
       }
-      if (isFiniteNumber(row.usNormGradeGap) && row.usNormGradeGap >= 1) {
-        reasons.push(gradeGapPhrase(row.usNormGradeGap));
+      if (isFiniteNumber(row.usNormPlanningGap) && row.usNormPlanningGap >= 1) {
+        reasons.push(gradeGapPhrase(row.usNormPlanningGap, row));
       }
       if (isFiniteNumber(row.usNormDeltaRIT) && row.usNormDeltaRIT >= 8) {
         reasons.push("+" + formatNumber(row.usNormDeltaRIT, 0) + " RIT above the grade/season norm");
@@ -8499,11 +8512,16 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     // Beyond about two grades the norm-mean comparison is extrapolating past
     // the useful part of the scale, so the wording stops quoting a number.
-    function gradeGapPhrase(gradeGap) {
+    function gradeGapPhrase(gradeGap, row) {
+      const own = row && row.usNormStudentGrade ? "grade " + formatUSNormGradeLabel(row.usNormStudentGrade) : "their grade";
+      const level = usNormLevelText(row);
+      if (level) {
+        return gradeGap < 0
+          ? "Has reached " + level + ", not yet the typical score for " + own
+          : "Has reached " + level + ", above the typical score for " + own;
+      }
       const years = Math.abs(gradeGap);
-      const direction = gradeGap < 0 ? "below" : "above";
-      if (years > 2) return "Testing well " + direction + " grade placement (beyond the reliable range of this estimate)";
-      return "Testing about " + formatNumber(years, 0) + (years === 1 ? " grade " : " grades ") + direction + " placement";
+      return "Testing " + formatNumber(years, 0) + (years === 1 ? " grade " : " grades ") + (gradeGap < 0 ? "below" : "above") + " placement";
     }
 
     function getBaselineAction(row) {
@@ -8773,79 +8791,18 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return gradeKey === "K" ? "K" : String(gradeKey);
     }
 
-    // Grade equivalence from rounded grade means is a blunt instrument: at the
-    // upper grades several grades share the same mean RIT to the point, so a
-    // single "nearest grade" answer is arbitrary. This returns the whole set of
-    // grades the RIT is consistent with, prefers the student's own grade when it
-    // is in that set, and declines to answer when the set is too wide to mean
-    // anything.
-    const NORM_EQUIVALENT_TOLERANCE = 1;
-    const NORM_EQUIVALENT_MAX_SPAN = 3;
-
-    function estimateUSNormEquivalentGrade(subject, seasonKey, rit, studentGradeKey) {
-      if (!subject || !seasonKey || !isFiniteNumber(rit)) return null;
-      const subjectNorms = US_ACHIEVEMENT_NORMS[subject];
-      if (!subjectNorms) return null;
-      const points = Object.keys(subjectNorms)
-        .map((gradeKey) => ({
-          gradeKey,
-          gradeValue: gradeKeyToValue(gradeKey),
-          rit: getUSNormRIT(subject, gradeKey, seasonKey)
-        }))
-        .filter((point) => isFiniteNumber(point.gradeValue) && isFiniteNumber(point.rit))
-        .sort((a, b) => a.gradeValue - b.gradeValue);
-      if (!points.length) return null;
-
-      const ritValues = points.map((point) => point.rit);
-      const lowestRIT = Math.min(...ritValues);
-      const highestRIT = Math.max(...ritValues);
-      // Outside the range the table covers there is nothing to match against;
-      // saying so is more useful than extrapolating a grade level.
-      if (rit < lowestRIT) {
-        const lowest = points.find((point) => point.rit === lowestRIT);
-        return { gradeKey: lowest.gradeKey, gradeValue: lowest.gradeValue, rit: lowest.rit, outOfRange: "below", candidates: [] };
-      }
-      if (rit > highestRIT) {
-        const highest = points.filter((point) => point.rit === highestRIT).pop();
-        return { gradeKey: highest.gradeKey, gradeValue: highest.gradeValue, rit: highest.rit, outOfRange: "above", candidates: [] };
-      }
-
-      const bestDistance = Math.min(...points.map((point) => Math.abs(rit - point.rit)));
-      const candidates = points.filter((point) => Math.abs(rit - point.rit) <= bestDistance + NORM_EQUIVALENT_TOLERANCE);
-      const span = candidates[candidates.length - 1].gradeValue - candidates[0].gradeValue;
-      // The student's own grade wins whenever the RIT is consistent with it, so
-      // a student sitting exactly on their grade mean is never reported as
-      // being years behind because a neighbouring grade shares that mean.
-      const studentGradeValue = gradeKeyToValue(studentGradeKey);
-      const ownGrade = isFiniteNumber(studentGradeValue)
-        ? candidates.find((point) => point.gradeValue === studentGradeValue)
-        : null;
-      if (ownGrade) {
-        return { gradeKey: ownGrade.gradeKey, gradeValue: ownGrade.gradeValue, rit: ownGrade.rit, outOfRange: null, candidates, indeterminate: false };
-      }
-      const chosen = candidates.reduce((best, point) =>
-        Math.abs(rit - point.rit) < Math.abs(rit - best.rit) ? point : best, candidates[0]);
-      return {
-        gradeKey: chosen.gradeKey,
-        gradeValue: chosen.gradeValue,
-        rit: chosen.rit,
-        outOfRange: null,
-        candidates,
-        // Where the means flatten, several grades fit equally well and no single
-        // grade level can be claimed.
-        indeterminate: span >= NORM_EQUIVALENT_MAX_SPAN
-      };
-    }
-
     // The grade level a score has REACHED on the US norms: the highest grade whose
-    // typical score, in the same season, the score is at or above. Where the
-    // estimator above answers "which grade's mean is nearest", this answers "which
-    // grade has this child got to", and the two differ exactly where it matters
-    // to a parent: a Grade 5 child one point under the typical Grade 5 score is
-    // nearest to Grade 5, but has not reached it, so they are placed in Grade 4.
-    // There is no tolerance. A grade's score is never taken as lower than a
-    // younger grade's (the table dips at Grade 12), and grades that share a score
-    // are returned together, since nothing separates them.
+    // typical score, in the same season, the score is at or above. This is the one
+    // reading of grade level on the page - the Grouping table, the exports and
+    // the goal sheets all use it - and it is strict on purpose: a Grade 5 child
+    // one point under the typical Grade 5 score has not reached Grade 5, so they
+    // are placed in Grade 4, where a "nearest grade" reading would call them
+    // Grade 5 and a family would take that to mean the work is on track. There
+    // is no tolerance here. (Flags and groups, which are decisions rather than a
+    // description, ignore a shortfall inside measurement error; see
+    // usNormPlanningGap.) A grade's score is never taken as lower than a younger
+    // grade's (the table dips at Grade 12), and grades that share a score are
+    // returned together, since nothing separates them.
     function usNormGradeReached(subject, seasonKey, rit) {
       if (!subject || !seasonKey || !isFiniteNumber(rit)) return null;
       const subjectNorms = US_ACHIEVEMENT_NORMS[subject];
@@ -8866,6 +8823,35 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const next = steps[reached.length] || null;
       if (!next && rit > last.rit) return { outOfRange: "above", grades: [last], rit: last.rit, next: null, steps };
       return { outOfRange: null, grades: reached.filter((step) => step.rit === last.rit), rit: last.rit, next, steps };
+    }
+
+    // The one grade a record is placed in, and how it is written. Where several
+    // grades share the score, the one nearest the child's own grade is used, so
+    // a shared score never overstates how far above or below their grade they
+    // are; the label still names them all.
+    function usNormPlacementFor(placed, ownGradeValue) {
+      const grades = placed.grades;
+      const chosen = isFiniteNumber(ownGradeValue)
+        ? grades.reduce((best, step) => (Math.abs(step.gradeValue - ownGradeValue) < Math.abs(best.gradeValue - ownGradeValue) ? step : best), grades[0])
+        : grades[0];
+      const keys = grades.map((step) => step.gradeKey);
+      const label = placed.outOfRange === "above" ? "Above " + chosen.gradeKey
+        : placed.outOfRange === "below" ? "Below " + chosen.gradeKey
+        : keys.length > 1 ? keys[0] + " to " + keys[keys.length - 1]
+        : keys[0];
+      return { chosen, keys, label };
+    }
+
+    // The placement in words for a person: "Grade 4", "Grades 8 to 9",
+    // "Above Grade 12", "Below Kindergarten".
+    function usNormLevelText(row) {
+      if (!row || !row.usNormEquivalentLabel) return "";
+      const grade = (key) => (key === "K" ? "Kindergarten" : "Grade " + key);
+      const label = row.usNormEquivalentLabel;
+      const side = /^(Above|Below) (.+)$/.exec(label);
+      if (side) return side[1] + " " + grade(side[2]);
+      if (/ to /.test(label)) return "Grades " + label;
+      return grade(label);
     }
 
     function isFiniteNumber(value) {
@@ -9795,13 +9781,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }).join("");
 
       const normRows = rows.filter((row) => isFiniteNumber(row.usNormDeltaRIT));
-      const behind = rows.filter((row) => isFiniteNumber(row.usNormGradeGap) && row.usNormGradeGap <= -1).length;
-      const ahead = rows.filter((row) => isFiniteNumber(row.usNormGradeGap) && row.usNormGradeGap >= 1).length;
+      const behind = rows.filter((row) => isFiniteNumber(row.usNormPlanningGap) && row.usNormPlanningGap <= -1).length;
+      const ahead = rows.filter((row) => isFiniteNumber(row.usNormPlanningGap) && row.usNormPlanningGap >= 1).length;
       els.normCards.innerHTML = [
         statCard("Mean RIT vs norm", formatSignedNumber(metrics.avgUSNormDeltaRIT), { raw: metrics.avgUSNormDeltaRIT, format: "signed", tone: toneFor(metrics.avgUSNormDeltaRIT, 0), hint: formatInteger(normRows.length) + " records matched to a norm" }),
         shareCard("At or above norm", metrics.shares.atOrAboveUSNorm, { threshold: 50 }),
-        statCard("Testing a grade+ below", formatInteger(behind), { raw: behind, format: "integer", tone: behind ? "warn" : "good", hint: "Approximate placement only" }),
-        statCard("Testing a grade+ above", formatInteger(ahead), { raw: ahead, format: "integer", tone: "good", hint: "Approximate placement only" }),
+        statCard("Testing a grade+ below", formatInteger(behind), { raw: behind, format: "integer", tone: behind ? "warn" : "good", hint: "Reached a lower grade, by more than 3 RIT" }),
+        statCard("Testing a grade+ above", formatInteger(ahead), { raw: ahead, format: "integer", tone: "good", hint: "Reached a higher grade, by more than 3 RIT" }),
         statCard("Median RIT", formatNumber(metrics.medianCurrentRIT), { raw: metrics.medianCurrentRIT }),
         statCard("Short tests to confirm", formatInteger(metrics.shortTestCount), { raw: metrics.shortTestCount, format: "integer", tone: metrics.shortTestCount ? "warn" : "good", title: METHOD_NOTES.shortTest })
       ].join("") + '<p class="method-note wide">' + escapeHTML(METHOD_NOTES.normEquivalent) + "</p>";
@@ -12520,7 +12506,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
               ["Percentile", formatNumber(row.currentPercentile, 0)],
               ["Band", row.currentBand.name],
               ["vs US norm", formatSignedNumber(row.usNormDeltaRIT)],
-              ["Grade-level equivalent", row.usNormEquivalentGrade ? "Grade " + formatUSNormGradeLabel(row.usNormEquivalentGrade) : "n/a"],
+              ["Grade level reached", usNormLevelText(row) || "n/a"],
               ["Tier", row.currentTier.name + " (" + row.currentTier.tierLabel + ")"]
             ].concat(row.forwardProjection
               ? [["NWEA projection, " + row.forwardProjection.horizonLabel, "RIT " + formatNumber(row.forwardProjection.targetRIT, 0) + " (" + formatSignedNumber(row.forwardProjection.gain) + ")"]]
@@ -13053,7 +13039,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       },
       "sec-baseline": {
         what: "The instructional tier ladder for the current window (Intensive at or below the 20th percentile, Strategic 21st to 40th, On Track 41st to 60th, Secure 61st to 80th, Advanced 81st and above), placement against the US grade and season norms, and a breakdown by subject or class.",
-        read: "Tiers describe achievement only: where a student is, not how far they moved. The grade-level equivalence is an approximation from grade-mean RIT scores, not a reading or maths grade level, and it is least reliable at the top and bottom of the scale.",
+        read: "Tiers describe achievement only: where a student is, not how far they moved. The grade level is read strictly from grade-mean RIT scores: the highest grade whose typical score the student has reached, so a student under the typical score for their own grade is placed in the grade below. It is not a reading or maths grade level, and a shortfall of 3 RIT or less is not flagged as behind.",
         act: "Click a tier row to filter the whole page to that tier. Use the counts to size intervention and extension groups before the timetable is fixed."
       },
       "sec-overview": {
@@ -14337,20 +14323,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       },
       function quizGradeBelow(ctx) {
         if (ctx.diagnostics && ctx.diagnostics.normsMismatch && ctx.diagnostics.normsMismatch.length) return null;
-        const graded = ctx.rows.filter((row) => isFiniteNumber(row.usNormGradeGap));
+        const graded = ctx.rows.filter((row) => isFiniteNumber(row.usNormPlanningGap));
         if (graded.length < 3) return null;
-        const count = graded.filter((row) => row.usNormGradeGap <= -1).length;
-        const behindNames = unique(graded.filter((row) => row.usNormGradeGap <= -1).map((row) => row.studentName));
-        const behindStudents = new Set(graded.filter((row) => row.usNormGradeGap <= -1).map((row) => studentKey(row))).size;
+        const count = graded.filter((row) => row.usNormPlanningGap <= -1).length;
+        const behindNames = unique(graded.filter((row) => row.usNormPlanningGap <= -1).map((row) => row.studentName));
+        const behindStudents = new Set(graded.filter((row) => row.usNormPlanningGap <= -1).map((row) => studentKey(row))).size;
         const options = quizCountOptions(count, graded.length);
         if (!options) return null;
         return {
           key: "grade-below-count", family: "grade-below", topic: "Norms", type: "mc", persona: "principal",
-          stem: "How many records are testing a grade or more below their grade placement, by the dashboard's approximate grade-level estimate?",
+          stem: "How many records have reached a grade level at least one below their own grade, and are more than 3 RIT short of their grade's typical score?",
           options, correct: formatInteger(count),
-          explanation: formatInteger(count) + " of " + formatInteger(graded.length) + " records with a grade-level estimate sit a grade or more below placement" +
+          explanation: formatInteger(count) + " of " + formatInteger(graded.length) + " records with a grade level have reached a grade at least one below their own, and sit more than 3 RIT under their grade's typical score" +
             (count ? ", covering " + formatInteger(behindStudents) + " " + quizPlural(behindStudents, "student") + ": " + quizNameList(behindNames, 5) + "." : "."),
-          caution: "Approximate placement only: grade-level equivalence compares a RIT with the mean RIT of each grade in the same season. It is not a reading or maths grade level.",
+          caution: "Strict reading: the grade level is the highest grade whose typical RIT in the same season the score has reached, and a shortfall of 3 RIT or less is treated as measurement error. It is not a reading or maths grade level.",
           section: "sec-baseline",
           followUp: "What are those students getting that is different from the rest of the class?"
         };
@@ -15484,22 +15470,22 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const subjects = quizShuffle(ctx.subjects);
         for (let i = 0; i < subjects.length; i += 1) {
           const subject = subjects[i];
-          const rows = quizScoredStudentRows(ctx, subject).filter((row) => isFiniteNumber(row.usNormGradeGap));
+          const rows = quizScoredStudentRows(ctx, subject).filter((row) => isFiniteNumber(row.usNormPlanningGap));
           if (unique(rows.map((row) => row.studentName)).length !== rows.length) continue;
-          const behind = rows.filter((row) => row.usNormGradeGap <= -1);
+          const behind = rows.filter((row) => row.usNormPlanningGap <= -1);
           if (!behind.length) continue;
           const row = quizPick(behind);
-          const others = rows.filter((other) => other.usNormGradeGap > -1);
-          const nearMiss = others.filter((other) => other.usNormGradeGap === 0 && isFiniteNumber(other.usNormDeltaRIT) && other.usNormDeltaRIT < 0);
+          const others = rows.filter((other) => other.usNormPlanningGap > -1);
+          const nearMiss = others.filter((other) => other.usNormPlanningGap === 0 && isFiniteNumber(other.usNormDeltaRIT) && other.usNormDeltaRIT < 0);
           const options = quizLabelOptions(row.studentName, quizShuffle(nearMiss.map((other) => other.studentName)).concat(quizShuffle(others.map((other) => other.studentName))));
           if (!options) continue;
-          const years = Math.abs(row.usNormGradeGap);
+          const years = Math.abs(row.usNormPlanningGap);
           return {
             key: "grade-below-who:" + subject, family: "grade-below", topic: "Norms", type: "mc", persona: "principal", answerStudent: row.studentName,
-            stem: "Which of these students is testing about a grade or more below their current grade in " + subject + ", by the dashboard's approximate grade-level estimate?",
+            stem: "Which of these students has reached a grade level at least one below their own in " + subject + ", and is more than 3 RIT short of their grade's typical score?",
             options, correct: row.studentName,
-            explanation: row.studentName + " is testing about " + formatNumber(years, 0) + " " + quizPlural(years, "grade") + " below placement in " + subject + " (RIT " + formatNumber(row.currentRIT, 0) + " against a " + row.usNormSeasonLabel.toLowerCase() + " norm mean of " + formatNumber(row.usNormBenchmarkRIT, 0) + "); the US Norm Grade Level cell in the Grouping table shows the estimate, and Starting Point counts " + formatInteger(ctx.rows.filter((entry) => isFiniteNumber(entry.usNormGradeGap) && entry.usNormGradeGap <= -1).length) + " such records under Testing a grade+ below.",
-            caution: "A rough placement signal from grade-mean RITs, not a reading or maths grade level, and least reliable at the top and bottom of the scale.",
+            explanation: row.studentName + " has reached " + usNormLevelText(row) + " in " + subject + ", " + formatNumber(years, 0) + " " + quizPlural(years, "grade") + " below their own (RIT " + formatNumber(row.currentRIT, 0) + " against a " + row.usNormSeasonLabel.toLowerCase() + " norm mean of " + formatNumber(row.usNormBenchmarkRIT, 0) + "); the US Norm Grade Level cell in the Grouping table shows it, and Starting Point counts " + formatInteger(ctx.rows.filter((entry) => isFiniteNumber(entry.usNormPlanningGap) && entry.usNormPlanningGap <= -1).length) + " such records under Testing a grade+ below.",
+            caution: "Strict reading from grade-mean RITs: the highest grade whose typical score has been reached, with a shortfall of 3 RIT or less treated as measurement error. Not a reading or maths grade level.",
             section: "sec-grouping",
             followUp: "What does keeping pace look like for " + row.studentName + " by " + quizHorizonForRows(ctx.rows) + ", and is keeping pace enough?"
           };
@@ -20506,6 +20492,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           avgRITChange: avg(rowsForStudent.map((row) => row.ritChange)),
           avgUSNormDeltaRIT: avg(normRows.map((row) => row.usNormDeltaRIT)),
           avgUSNormGradeGap: avg(normGradeRows.map((row) => row.usNormGradeGap)),
+          avgUSNormPlanningGap: avg(rowsForStudent.filter((row) => isFiniteNumber(row.usNormPlanningGap)).map((row) => row.usNormPlanningGap)),
           atOrAboveUSNormRate: normRows.length ? normRows.filter((row) => row.usNormAtOrAbove === true).length / normRows.length : null,
           avgConditionalGrowthPercentile,
           avgCurrentRIT: avg(rowsForStudent.map((row) => row.currentRIT)),
@@ -20557,7 +20544,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       let score = isFiniteNumber(profile.avgEndPercentile) ? 100 - profile.avgEndPercentile : 45;
       if (isBaselineMode()) {
         // No growth signal exists, so weight distance from the grade/season norm.
-        if (isFiniteNumber(profile.avgUSNormGradeGap)) score += Math.max(0, -profile.avgUSNormGradeGap) * 12;
+        if (isFiniteNumber(profile.avgUSNormPlanningGap)) score += Math.max(0, -profile.avgUSNormPlanningGap) * 12;
         if (isFiniteNumber(profile.avgUSNormDeltaRIT)) score += Math.max(0, -profile.avgUSNormDeltaRIT) * 0.8;
         if (profile.needsAcceleration) score += 10;
         score += profile.priorityReasons.length * 8;
@@ -20929,21 +20916,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (!row.usNormSeason || row.usNormSeason === "Missing") return `<span class="status-pill status-neutral">Missing season</span>`;
       if (!row.usNormEquivalentGrade && !isFiniteNumber(row.usNormBenchmarkRIT)) return `<span class="status-pill status-neutral">No norm match</span>`;
 
-      if (row.usNormEquivalentIndeterminate) {
-        return `<span class="status-pill status-neutral">No clear grade level</span><br><span>${escapeHTML("The published means for " + row.subject + " are too close together around this RIT to separate one grade from the next.")}</span><br><span>${escapeHTML("Delta RIT " + formatSignedNumber(row.usNormDeltaRIT) + " | " + row.usNormSeasonLabel + " norm " + formatNumber(row.usNormBenchmarkRIT))}</span>`;
-      }
       if (row.usNormEquivalentOutOfRange) {
         const direction = row.usNormEquivalentOutOfRange === "above" ? "above the top" : "below the bottom";
         return `<span class="status-pill status-neutral">Outside the norm range</span><br><span>${escapeHTML("This RIT is " + direction + " of the published grade means for " + row.subject + ", so no grade level can be matched.")}</span>`;
       }
-      const equivalent = formatUSNormGradeLabel(row.usNormEquivalentGrade);
+      const equivalent = row.usNormEquivalentLabel || formatUSNormGradeLabel(row.usNormEquivalentGrade);
       const student = formatUSNormGradeLabel(row.usNormStudentGrade);
       const gradeGap = formatUSNormGradeGap(row.usNormGradeGap);
       const ritDelta = formatSignedNumber(row.usNormDeltaRIT);
       const benchmarkText = isFiniteNumber(row.usNormBenchmarkRIT)
         ? `${row.usNormSeasonLabel} norm ${formatNumber(row.usNormBenchmarkRIT)}`
         : `${row.usNormSeasonLabel} norm unavailable`;
-      return `<span class="status-pill ${usNormGapClass(row.usNormGradeGap)}">Norm level ${escapeHTML(equivalent)}</span><br><span>vs grade ${escapeHTML(student)} (${escapeHTML(gradeGap)})</span><br><span>${escapeHTML(`Delta RIT ${ritDelta} | ${benchmarkText}`)}</span>`;
+      const reached = isFiniteNumber(row.usNormEquivalentRIT)
+        ? `The highest grade whose typical ${row.usNormSeasonLabel.toLowerCase()} score (${formatNumber(row.usNormEquivalentRIT)}) this RIT has reached. A shortfall of ${GRADE_LEVEL_TOLERANCE_RIT} RIT or less is not flagged as behind.`
+        : "The highest grade whose typical score this RIT has reached.";
+      return `<span class="status-pill ${usNormGapClass(row.usNormPlanningGap)}" title="${escapeAttr(reached)}">Norm level ${escapeHTML(equivalent)}</span><br><span>vs grade ${escapeHTML(student)} (${escapeHTML(gradeGap)})</span><br><span>${escapeHTML(`Delta RIT ${ritDelta} | ${benchmarkText}`)}</span>`;
     }
 
     function usNormGapClass(gradeGap) {
@@ -21725,7 +21712,7 @@ ${sheets.join("\n")}
     ]);
 
     const BASELINE_STRENGTH_COLUMNS = BASELINE_CORE_COLUMNS.concat([
-      ["US norm grade equivalent", (row) => (row.usNormEquivalentGrade && !row.usNormEquivalentOutOfRange && !row.usNormEquivalentIndeterminate ? formatUSNormGradeLabel(row.usNormEquivalentGrade) : "")],
+      ["US norm grade equivalent", (row) => row.usNormEquivalentLabel || ""],
       ["Already at grade-level target", (row) => (row.goals && row.goals.alreadyAtOrAbove ? "Yes" : "No")],
       ["Planning group", (row) => row.baselineGroup],
       ["Strength", (row) => getBaselineStrengthReasons(row).join("; ")],
@@ -21751,7 +21738,7 @@ ${sheets.join("\n")}
       ["Tier label", (row) => row.currentTier.tierLabel],
       ["US norm mean RIT", (row) => row.usNormBenchmarkRIT],
       ["RIT vs US norm", (row) => row.usNormDeltaRIT],
-      ["US norm grade equivalent", (row) => (row.usNormEquivalentGrade ? formatUSNormGradeLabel(row.usNormEquivalentGrade) : "")],
+      ["US norm grade equivalent", (row) => row.usNormEquivalentLabel || ""],
       ["US norm grade gap", (row) => row.usNormGradeGap],
       ["Points to secure (61st)", (row) => row.distanceToSecure],
       ["Test minutes", (row) => row.currentDuration],
@@ -22125,12 +22112,12 @@ ${sheets.join("\n")}
           "</div>" +
           goalSheetAreas(studentRows, floor) +
           "</div>" +
-          '<p class="gs-foot">' + escapeHTML((studentRows.some((row) => row.forwardProjection)
-            ? METHOD_NOTES.forwardProjection
-            : METHOD_NOTES.keepPace) +
+          '<p class="gs-foot">' + escapeHTML(
+            (studentRows.some((row) => row.forwardProjection)
+              ? "My targets are NWEA's projection of my growth, from where I started."
+              : "My next steps are the growth typical for my grade over this time.") +
             (studentRows.some((row) => goalSheetGradeLevel(row))
-              ? " Grade level is the highest grade whose typical score in that season my score has reached on the " + EMBEDDED_NORMS_YEAR +
-                " US norms, so a score under the typical score for my own grade is placed in the grade below. It comes from one test on one day, so it shows where to start, not what I can do."
+              ? " US norms are the typical scores of students in each US grade at the same time of year, and a grade level here shows where one test sits on them. A higher level is not a reason to stop: every student has a next target."
               : "")) + "</p>" +
           "</div></section>" +
           // Page two is the student's, not the data's: the targets repeated
@@ -22193,12 +22180,10 @@ ${sheets.join("\n")}
       const focus = goalSheetFocusArea(row, floor);
       if (!focus) return "";
       if (focus.even) {
-        return '<small class="gs-focus is-even">' + escapeHTML("Every part of this subject is within " +
-          formatInteger(floor) + " RIT of my overall score, so my practice is across the whole subject.") + "</small>";
+        return '<small class="gs-focus is-even">' + escapeHTML("All the parts are close together, so I practise across the whole subject.") + "</small>";
       }
-      return '<small class="gs-focus"><i>Work on first</i>' + escapeHTML(focus.area.name + " - " +
-        formatNumber(focus.area.rit, 0) + " now, " + formatNumber(focus.overall, 0) +
-        " would match the rest of my " + row.subject.toLowerCase() + ".") + "</small>";
+      return '<small class="gs-focus"><i>Work on first</i>' + escapeHTML(focus.area.name + ": " +
+        formatNumber(focus.area.rit, 0) + " now, my " + row.subject.toLowerCase() + " overall is " + formatNumber(focus.overall, 0) + ".") + "</small>";
     }
 
     // One line per subject for the plan page: where I am, where I am going,
@@ -22239,32 +22224,31 @@ ${sheets.join("\n")}
       const low = placed.grades[0];
       const high = placed.grades[placed.grades.length - 1];
       const score = (value) => formatNumber(value, 0);
+      // The detail is only the typical scores the level rests on, so a parent
+      // can see both numbers and nothing has to be read twice.
+      const typical = (pairs) => "Typical score in the " + season + ": " + pairs.join(", ") + ".";
       if (placed.outOfRange === "above") {
-        return { headline: "Above " + grade(high.gradeKey) + " level", detail: "US norms (" + season + "): higher than the typical " + grade(high.gradeKey) + " score, " + score(placed.rit) + "." };
+        return { headline: "Above " + grade(high.gradeKey) + " level", detail: typical([grade(high.gradeKey) + " = " + score(placed.rit)]) };
       }
       if (placed.outOfRange === "below") {
-        return { headline: "Below " + grade(low.gradeKey) + " level", detail: "US norms (" + season + "): not yet the typical " + grade(low.gradeKey) + " score, " + score(placed.rit) + "." };
+        return { headline: "Below " + grade(low.gradeKey) + " level", detail: typical([grade(low.gradeKey) + " = " + score(placed.rit)]) };
       }
       const ownValue = gradeKeyToValue(row.usNormStudentGrade);
       const atOwn = isFiniteNumber(ownValue) && ownValue >= low.gradeValue && ownValue <= high.gradeValue;
-      const shown = atOwn ? placed.grades.find((step) => step.gradeValue === ownValue) : high;
       if (!atOwn && placed.grades.length > 1) {
+        const names = placed.grades.length === 2 ? grade(low.gradeKey) + " and " + high.gradeKey : grade(low.gradeKey) + " to " + high.gradeKey;
         return {
           headline: grade(low.gradeKey) + " to " + grade(high.gradeKey).replace(/^Grade /, "") + " level",
-          detail: "US norms (" + season + "): reached the typical score for these grades, " + score(placed.rit) + ", which is the same for each."
+          detail: typical([names.replace(/^Grade /, "Grades ") + " = " + score(placed.rit)])
         };
       }
-      // Below the child's own grade, say so with the score that is still ahead:
-      // "not yet Grade 5, 206" is the sentence that stops a parent reading
-      // Grade 4 as a rounding.
-      const ownStep = !atOwn && isFiniteNumber(ownValue) && ownValue > high.gradeValue
-        ? placed.steps.find((step) => step.gradeValue === ownValue)
-        : null;
-      const notYet = ownStep ? ownStep.rit : null;
+      const shown = atOwn ? placed.grades.find((step) => step.gradeValue === ownValue) : high;
+      const ownStep = !atOwn && isFiniteNumber(ownValue) ? placed.steps.find((step) => step.gradeValue === ownValue) : null;
+      const pairs = [grade(shown.gradeKey) + " = " + score(placed.rit)];
+      if (ownStep) pairs.push(grade(row.usNormStudentGrade) + " = " + score(ownStep.rit));
       return {
         headline: grade(shown.gradeKey) + " level" + (atOwn ? ", my own grade" : ""),
-        detail: "US norms (" + season + "): reached the typical " + grade(shown.gradeKey) + " score, " + score(placed.rit) + "." +
-          (isFiniteNumber(notYet) ? " Not yet " + grade(row.usNormStudentGrade) + ", " + score(notYet) + "." : "")
+        detail: typical(pairs)
       };
     }
 
@@ -22351,9 +22335,8 @@ ${sheets.join("\n")}
       if (!groups) return "";
       return '<div class="gs-section"><h2>What is inside each subject</h2>' +
         '<div class="gs-areas">' + groups + "</div>" +
-        '<p class="gs-note">' + escapeHTML("The middle line in each bar is my own overall score in that subject, not the year group's. " +
-          "Bars reaching left are the parts I find harder, right the parts I find easier. A bar shorter than " +
-          formatInteger(floor) + " RIT either way is too small to be sure about - these come from fewer questions than the overall score, so they move around more.") +
+        '<p class="gs-note">' + escapeHTML("Each bar compares a part of the subject with my overall score in it: left is harder, right is easier. " +
+          "A bar shorter than " + formatInteger(floor) + " RIT is too small to be sure about.") +
         "</p></div>";
     }
 
@@ -22453,7 +22436,7 @@ ${sheets.join("\n")}
       ["US norm season", (row) => row.usNormSeasonLabel],
       ["US norm benchmark RIT", (row) => row.usNormBenchmarkRIT],
       ["US norm delta RIT", (row) => row.usNormDeltaRIT],
-      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm equivalent grade level", (row) => row.usNormEquivalentLabel || ""],
       ["US norm grade gap", (row) => row.usNormGradeGap],
       ["Start Percentile", (row) => row.startPercentile],
       ["End Percentile", (row) => row.endPercentile],
@@ -22481,7 +22464,7 @@ ${sheets.join("\n")}
       ["ClassName", (row) => row.className],
       ["US norm season", (row) => row.usNormSeasonLabel],
       ["US norm delta RIT", (row) => row.usNormDeltaRIT],
-      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm equivalent grade level", (row) => row.usNormEquivalentLabel || ""],
       ["US norm grade gap", (row) => row.usNormGradeGap],
       ["End Percentile", (row) => row.endPercentile],
       ["RIT change", (row) => row.ritChange],
@@ -22499,7 +22482,7 @@ ${sheets.join("\n")}
       ["ClassName", (row) => row.className],
       ["US norm season", (row) => row.usNormSeasonLabel],
       ["US norm delta RIT", (row) => row.usNormDeltaRIT],
-      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm equivalent grade level", (row) => row.usNormEquivalentLabel || ""],
       ["US norm grade gap", (row) => row.usNormGradeGap],
       ["Growth efficiency", (row) => isFiniteNumber(row.growthEfficiency) ? row.growthEfficiency : ""],
       ["Percentile change", (row) => row.percentileChange],
@@ -22516,7 +22499,7 @@ ${sheets.join("\n")}
       ["Grade", (row) => row.studentGrade],
       ["US norm season", (row) => row.usNormSeasonLabel],
       ["US norm delta RIT", (row) => row.usNormDeltaRIT],
-      ["US norm equivalent grade level", (row) => formatUSNormGradeLabel(row.usNormEquivalentGrade)],
+      ["US norm equivalent grade level", (row) => row.usNormEquivalentLabel || ""],
       ["US norm grade gap", (row) => row.usNormGradeGap],
       ["Start Percentile", (row) => row.startPercentile],
       ["End Percentile", (row) => row.endPercentile],

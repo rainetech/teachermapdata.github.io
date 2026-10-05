@@ -19,6 +19,8 @@
 //     tests count, and a screener cannot replace or merge into a growth test;
 //   - a real fall-to-spring growth export loaded with a spring Class Profile
 //     still merges into growth records;
+//   - the Grouping table reads grade level strictly, like the goal sheet, while
+//     flags and groups ignore a shortfall inside measurement error (3 RIT);
 //   - the goal sheet says what grade level a score has reached on the US norms
 //     (the highest grade whose typical score it has reached: strict, never
 //     "about"), and every student's sheets print as exactly two pages, however many
@@ -182,6 +184,50 @@ const g = growth.info;
 check(g.mode === "growth" && g.pairs === 6 && g.rows === 6 && g.areas === 6, "still merges into growth records with the areas added (" + JSON.stringify({ mode: g.mode, pairs: g.pairs, rows: g.rows, areas: g.areas }) + ")");
 check(growth.errors.length === 0, "no page errors");
 
+console.log("Grade level in the Grouping table");
+{
+  // Grade 5 fall maths: the typical Grade 4 score is 197, Grade 5 206, Grade 6 210.
+  const fives = [205, 202, 206, 210, 160, 209];
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.addInitScript(() => { try { localStorage.clear(); } catch (error) { /* storage may be unavailable */ } });
+  await page.goto(pathToFileURL(TARGET).href);
+  await page.setInputFiles("#csvInput", [{ name: "CP_Math_Fall2026.csv", mimeType: "text/csv", buffer: Buffer.from(classProfile("Mathematics", "Math K-12", fives, "09/21/26", "Fall 2026-2027 (Most Recent)", false)) }]);
+  await page.waitForTimeout(2200);
+  const seen = await page.evaluate(() => {
+    const byRit = {};
+    state.allRows.forEach((row) => {
+      byRit[row.currentRIT] = {
+        label: row.usNormEquivalentLabel, gap: row.usNormGradeGap, planning: row.usNormPlanningGap, delta: row.usNormDeltaRIT,
+        cell: usNormGradeCell(row).replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+        risk: /status-risk/.test(usNormGradeCell(row)), watch: /status-watch/.test(usNormGradeCell(row)),
+        reason: getBaselineFocusReasons(row).filter((text) => /Has reached/.test(text)).join(" | "),
+        level: usNormLevelText(row)
+      };
+    });
+    return {
+      byRit,
+      watchWithPlanningZero: suggestBaselineGroup({ currentPercentile: 50, usNormPlanningGap: 0 }),
+      watchWithPlanningBehind: suggestBaselineGroup({ currentPercentile: 50, usNormPlanningGap: -1 })
+    };
+  });
+  const r = seen.byRit;
+  check(r[205].label === "4" && r[205].gap === -1 && r[205].level === "Grade 4" && /Norm level 4/.test(r[205].cell) && /vs grade 5 \(-1 grade\)/.test(r[205].cell),
+    "the Grouping table is strict: a Grade 5 student one point under the Grade 5 fall score is Norm level 4, -1 grade (" + r[205].cell + ")");
+  check(r[206].label === "5" && r[206].gap === 0 && r[209].label === "5" && r[209].gap === 0 && r[210].label === "6" && r[210].gap === 1,
+    "on the Grade 5 score, or above it short of Grade 6, is level 5; on the Grade 6 score is level 6 (+1)");
+  check(r[205].planning === 0 && r[205].risk === false && r[205].watch === true && r[205].reason === "",
+    "a shortfall inside measurement error is described but not flagged: not red, no behind reason (planning gap " + r[205].planning + ")");
+  check(r[202].planning === -1 && r[202].risk === true && /Has reached Grade 4, not yet the typical score for grade 5/.test(r[202].reason),
+    "beyond 3 RIT it is flagged, and the reason says what was reached (" + r[202].reason + ")");
+  check(r[160].level === "Grade 1", "a score far below still gets the grade it has reached (" + r[160].level + ")");
+  check(seen.watchWithPlanningZero === "Core Instruction" && seen.watchWithPlanningBehind === "Watch Group",
+    "mid-band students are grouped as Watch only when behind beyond measurement error");
+  check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
+  await page.close();
+}
+
 console.log("Goal sheets");
 {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -214,7 +260,7 @@ console.log("Goal sheets");
   const pdfPages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
   await sheetPage.close();
   check(sheets.sheets === 12 && pdfPages === 12, "each of the 6 students' goal sheets prints as exactly two pages (" + pdfPages + " pages, " + sheets.sheets + " sheets)");
-  check(sheets.lines === 12 && /Grade\s\d level/.test(sheets.text) && /US norms \((fall|winter|spring)\): (reached|not yet|higher)/.test(sheets.text) && !/About Grade/.test(sheets.text),
+  check(sheets.lines === 12 && /Grade\s\d level/.test(sheets.text) && /Typical score in the (fall|winter|spring): /.test(sheets.text) && !/About Grade/.test(sheets.text),
     "every subject on the goal sheet says what grade level the score has reached on the US norms (" + sheets.lines + " lines)");
   // Safari lays a printed page out 1.25 times as wide as the paper is in
   // points (744px for A4, not 794) and shrinks that to fit, which prints
@@ -318,16 +364,16 @@ console.log("Goal sheets");
       stretchInside: stretch(3), stretchOutside: stretch(4)
     };
   });
-  check(/^Kindergarten level \|/.test(cases.k) && /Not yet Grade 5, 206\./.test(cases.k), "a Grade 5 student on 145 in fall maths has reached the Kindergarten score, not Grade 1 (" + cases.k + ")");
+  check(/^Kindergarten level \|/.test(cases.k) && /Kindergarten = 141, Grade 5 = 206/.test(cases.k), "a Grade 5 student on 145 in fall maths has reached the Kindergarten score, not Grade 1 (" + cases.k + ")");
   check(/^Below Kindergarten level/.test(cases.below), "under the lowest typical score it says below, not a grade (" + cases.below + ")");
-  check(/^Grade 4 level \|/.test(cases.oneUnder) && /reached the typical Grade 4 score, 197\. Not yet Grade 5, 206\./.test(cases.oneUnder),
+  check(/^Grade 4 level \|/.test(cases.oneUnder) && /Grade 4 = 197, Grade 5 = 206/.test(cases.oneUnder),
     "a Grade 5 student one point under the Grade 5 fall score is placed in Grade 4, with both scores (" + cases.oneUnder + ")");
   check(/^Grade 5 level, my own grade \|/.test(cases.onIt) && /^Grade 5 level, my own grade \|/.test(cases.aboveIt) && /^Grade 6 level \|/.test(cases.nextGrade),
     "on the Grade 5 score, or above it but short of Grade 6, is Grade 5; on the Grade 6 score is Grade 6");
   check(/^Above Grade 12 level/.test(cases.top) && /^Grade 8 to 9 level \|/.test(cases.shared) && /^Grade 8 level, my own grade/.test(cases.sharedOwn),
     "past the top of the table says above; grades that share a score are named together unless one is the child's own");
   check(![cases.k, cases.below, cases.oneUnder, cases.onIt, cases.nextGrade, cases.top, cases.shared].some((text) => /About /i.test(text)), "the wording never says \u201cabout\u201d");
-  check(cases.none === null && /^Grade 3 level \| US norms \(fall\): reached the typical Grade 3 score, 185\.$/.test(cases.noGrade), "no season gives no line; no recorded grade gives the grade reached without a \u201cnot yet\u201d");
+  check(cases.none === null && /^Grade 3 level \| Typical score in the fall: Grade 3 = 185\.$/.test(cases.noGrade), "no season gives no line; no recorded grade gives the grade reached without a comparison");
   check(cases.stretchInside === false && cases.stretchOutside === true, "a stretch of 3 RIT or less to grade level is inside measurement error; 4 is not");
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
   await page.close();
