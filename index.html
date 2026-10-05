@@ -16453,6 +16453,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
      A graphic poster has no hero: its picture is the first row and must be
      the one that stretches, or a race of hairlines collapses to one. */
   .poster.is-portrait .poster-body.is-graphic { grid-template-rows: minmax(0, 1fr) auto; }
+  /* A full-width body has no hero, so its one block is the stretch row. In
+     the auto row it sat under the masthead with the rest of the page blank. */
+  .poster.is-portrait .poster-body.is-full { grid-template-rows: minmax(0, 1fr); }
+  .poster.is-portrait .poster-body.is-full .poster-main { justify-content: center; gap: calc(16 * var(--s)); }
   .poster.is-portrait .poster-hero {
     flex-direction: row;
     align-items: center;
@@ -16512,6 +16516,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .poster-body .poster-callouts { flex: 0 0 auto; }
   .poster-callouts { display: grid; grid-template-columns: 1fr 1fr; gap: calc(5 * var(--s)); }
   .poster-callouts-big { flex: 1 1 auto; align-items: stretch; }
+  .poster-callouts-big .poster-callout:last-child:nth-child(odd) { grid-column: 1 / -1; }
   .poster-callouts-big .poster-callout {
     padding: calc(8 * var(--s)) calc(9 * var(--s));
     display: flex;
@@ -16663,7 +16668,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       {
         id: "growth",
         title: "We grew this year",
-        blurb: "The share of the class who met or beat the growth NWEA projected for them.",
+        blurb: "Every result as a line from where it started to where it is now, with how many climbed, held level or moved down.",
         // Not merely "is there a number" - is the number a percentage anyone
         // should paint on a wall. Under the floor the poster is withheld
         // rather than printed with counts: "2 of 3 of us met our growth goal"
@@ -16673,7 +16678,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         headline: (scope) => scope.label ? "How Far We Came In " + scope.label : "We Grew This Year",
         sub: (scope) => (scope.label ? "This is " + scope.label.toLowerCase() + " only. " : "") +
           "Every line is one result: where it started on the left, where it is now on the right.",
-        message: () => "Your score tells you where you are. Your growth tells you how hard you have been working. Growth is the part you control.",
+        message: () => "Your score tells you where you are. Your growth shows how far you have come, and growth is the part you can keep working on.",
         body: (scope) => {
           const metrics = aggregateRows(scope.rows);
           const chart = posterSlopeChart(scope.rows, {
@@ -16685,7 +16690,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             posterCaption([
               [formatInteger(chart.counts.up), "lines climbed - at least " + SLOPE_DEADBAND + " percentile points up", "up"],
               [formatInteger(chart.counts.flat), "held about level", "flat"],
-              [formatInteger(chart.counts.down), "slipped", "down"],
+              [formatInteger(chart.counts.down), "moved down", "down"],
               isFiniteNumber(median) && metrics.cgpCount >= MIN_SHARE_N
                 ? [formatNumber(median, 0), "our middle growth score, where 50 is typical for students who started where we did"]
                 : null
@@ -16707,30 +16712,38 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         },
         message: () => "Nobody on this chart is stuck where they are. The band you are in today says where to begin, not where you finish.",
         body: (scope) => {
-          const rows = scope.rows.filter((row) => isFiniteNumber(row.currentPercentile));
+          const scored = scope.rows.filter((row) => isFiniteNumber(row.currentPercentile));
           // Across subjects this is a strip per subject on a shared scale, so
           // "where are we strongest" is a question the eye answers. Squashing
           // four subjects into one bar of five colours was the old answer, and
-          // it made 96 results look like 96 children.
-          const subjects = scope.subject ? [] : sortPosterSubjects(unique(rows.map((row) => row.subject)));
-          const strips = subjects.length > 1
-            ? subjects.map((subject) => posterDotStrip(rows.filter((row) => row.subject === subject), { label: subject })).join("")
+          // it made 96 results look like 96 children. A subject only a few
+          // children sat does not get a strip: a row of three marks is three
+          // children.
+          const groups = scope.subject ? [] : posterSubjectGroups(scored);
+          const split = groups.length > 1;
+          const rows = split ? groups.reduce((all, group) => all.concat(group.rows), []) : scored;
+          const strips = split
+            ? groups.map((group) => posterDotStrip(group.rows, { label: group.subject })).join("")
             : posterDotStrip(rows, { label: scope.label || null, solo: true });
           const secure = rows.filter((row) => row.currentPercentile >= SECURE_BENCHMARK).length;
           const middle = median(rows.map((row) => row.currentPercentile));
           const students = new Set(rows.map((row) => studentKey(row))).size;
           // Records and children are different counts, and a poster that says
           // "96" next to "our class" invites a child to read it as 96 people.
-          const lead = subjects.length > 1
-            ? "of us, with " + formatInteger(rows.length) + " results across " +
-              formatInteger(subjects.length) + " subjects"
-            : "of us, with " + formatInteger(rows.length) + " results in " + (scope.label || "this subject").toLowerCase();
+          // Where every child has one result the two counts are the same and
+          // the line does not say it twice.
+          const names = unique(rows.map((row) => row.subject));
+          const lead = names.length > 1
+            ? "of us, with " + formatInteger(rows.length) + " results across " + formatInteger(names.length) + " subjects"
+            : rows.length === students
+              ? "of us took the " + String(names[0]).toLowerCase() + " test"
+              : "of us, with " + formatInteger(rows.length) + " results in " + String(names[0]).toLowerCase();
           return '<div class="poster-body is-full"><div class="poster-main">' +
             '<div class="poster-lead"><b>' + escapeHTML(formatInteger(students)) + "</b>" +
             "<span>" + escapeHTML(lead) + "</span>" +
             '<em>' + escapeHTML(
               (rows.length > POSTER_MAX_MARKS ? "Each band drawn to scale. " : "One mark, one result. ") +
-              (subjects.length > 1 ? "One row per subject. " : "") +
+              (split ? "One row per subject. " : "") +
               "Dashed line: the 61st percentile, our secure benchmark.") + "</em></div>" +
             '<div class="poster-strips">' + strips + posterStripScale() + "</div>" +
             posterBandKey(rows) +
@@ -16746,11 +16759,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         id: "areas",
         title: "Our learning areas",
         blurb: "The strand the class is strongest in and the one to work on next, from the Class Profile export.",
-        available: () => Boolean(state.strandAnalysis && state.strandAnalysis.subjects.some((subject) =>
-          subject.areas.some((area) => area.verdict === "gap" || area.verdict === "strength"))),
+        // One strength on its own is a card on an otherwise empty sheet. A gap
+        // is worth a poster by itself - it is the "what is next" - and
+        // strengths are worth one once there are two to set side by side.
+        available: () => {
+          const areas = state.strandAnalysis ? state.strandAnalysis.subjects.reduce((all, subject) => all.concat(subject.areas), []) : [];
+          const gaps = areas.filter((area) => area.verdict === "gap").length;
+          const strengths = areas.filter((area) => area.verdict === "strength").length;
+          return gaps >= 1 || strengths >= 2;
+        },
         headline: () => "What We Are Good At, And What Is Next",
         sub: () => "Every subject has parts. These are the parts where our class stands out.",
-        message: () => "Being behind in one part of a subject is not being behind in the subject. It is one thing to practise, and it is the fastest thing to change.",
+        // "Being behind in one part" is a comfort for a poster that shows a
+        // gap. On one that shows only strengths it answers a question nobody
+        // asked, so the sentence follows what is on the wall.
+        message: () => {
+          const analysis = state.strandAnalysis;
+          const hasGap = Boolean(analysis) && analysis.subjects.some((subject) => subject.areas.some((area) => area.verdict === "gap"));
+          return hasGap
+            ? "Being behind in one part of a subject is not being behind in the subject. It is one thing to practise, and it is the fastest thing to change."
+            : "What we are good at shows what our habits can do. The same habits work on every other part of the subject.";
+        },
         body: (scope) => {
           const analysis = state.strandAnalysis;
           const strengths = [];
@@ -16785,8 +16814,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         sub: (scope) => {
           const ladder = posterLadder(scope.rows);
           const projected = Boolean(ladder) && ladder.panels.some((panel) => panel.gainSource === "projection");
-          return "RIT is one scale that keeps going all the way through school. The rungs are what a typical student in each grade scores; the solid mark is us" +
-            (projected ? ", the hollow one where NWEA projects us to be." : ".");
+          // A rung is a typical score for one time of year. Spring scores are
+          // higher than fall ones, so the poster says which it is drawing.
+          const season = ladder && ladder.season ? " in the " + ladder.season : "";
+          return "RIT is one scale that keeps going all the way through school. The rungs are what a typical student in each grade scores" + season +
+            "; the solid mark is us" + (projected ? ", the hollow one where NWEA projects us to be." : ".");
         },
         message: () => "A RIT point is small. A year of them is not. Growth happens in the lessons you turn up for, not on the day of the test.",
         body: (scope) => {
@@ -16802,7 +16834,6 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
               best ? [formatSignedNumber(best.gain),
                 (best.gainSource === "projection" ? "RIT is NWEA's projection for us in " : "RIT is a typical year in ") +
                 best.subject.toLowerCase() + " - the longest climb on the wall", "up"] : null,
-              [formatInteger(ladder.panels.length), ladder.panels.length === 1 ? "ladder; the rungs are typical scores for each grade" : "ladders; the rungs are typical scores for each grade"]
             ]) + "</div>";
         }
       },
@@ -16926,7 +16957,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           : "Starting Behind Is Not Staying Behind",
         sub: (scope) => "One lane for every " + (scope.label ? scope.label.toLowerCase() + " " : "") +
           "result that began below the 61st percentile, running from where it started to where it is now.",
-        message: () => "Catching up means growing faster than students who started ahead of you. That is the hardest kind of growth there is, and this many of us did it.",
+        message: (scope) => {
+          const race = posterRaceTrack(scope.rows);
+          const moved = race ? race.counts.crossed + race.counts.forward : 0;
+          return race && moved * 2 >= race.n
+            ? "Catching up means growing faster than the students who started ahead of you. It is some of the hardest growth there is, and this many of us did it."
+            : "Catching up means growing faster than the students who started ahead of you. It is some of the hardest growth there is, and it is where our next push goes.";
+        },
         body: (scope) => {
           const race = posterRaceTrack(scope.rows);
           return '<div class="poster-body is-graphic"><div class="poster-graphic">' + race.html + "</div>" +
@@ -16946,8 +16983,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         perSubject: true,
         available: (scope) => hasGrowthContext() && posterBandedRows(scope.rows).length >= MIN_SHARE_N,
         headline: (scope) => scope.label ? "We Moved Up In " + scope.label : "We Moved Up",
-        sub: () => "A colour band is 20 percentile points wide. Moving up one means overtaking a lot of people your age.",
-        message: () => "Staying in your band already means you kept pace with students across the country. Moving up means you outgrew them.",
+        sub: () => "A colour band is 20 percentile points wide. Moving up a band means you grew more than students who started where you did.",
+        message: () => "Staying in your band means you held your place among students across the country. Moving up means you grew more than they did.",
         body: (scope) => {
           const rows = posterBandedRows(scope.rows);
           const up = rows.filter((row) => row.bandMovement === "Moved Up").length;
@@ -16982,9 +17019,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             '<div class="poster-callouts">' +
             (twoPlus
               ? '<div class="poster-callout is-good"><strong>Two bands or more</strong><b>' + escapeHTML(formatInteger(twoPlus)) +
-                "</b><small>" + escapeHTML(twoPlus === 1 ? "result jumped" : "results jumped") + " at least 40 percentile points</small></div>"
+                "</b><small>" + escapeHTML(twoPlus === 1 ? "result moved" : "results moved") + " up two colour bands or more</small></div>"
               : '<div class="poster-callout"><strong>What a band is</strong><b>20 points</b>' +
-                "<small>wide, so moving up one means overtaking a fifth of the country</small></div>") +
+                "<small>wide: each colour holds a fifth of the students in the country</small></div>") +
             "</div></div></div>";
         }
       },
@@ -16994,8 +17031,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         blurb: "The class's middle percentile in each subject, so the strongest subject and the next focus are both on the wall.",
         available: (scope) => posterSubjectEntries(scope.rows).length >= 2,
         headline: () => "Our Subjects Side By Side",
-        sub: () => "Our middle score in each subject, out of 100 against students our age across the country.",
-        message: () => "A strong subject shows what this class can do. The next one along is where the same effort pays off fastest.",
+        sub: () => "Our middle score in each subject, out of 100 against students in our grade across the country.",
+        message: () => "A strong subject shows what this class can do. The subject with the most room is a good place for our next push.",
         body: (scope) => {
           const entries = posterSubjectEntries(scope.rows);
           const best = entries[0];
@@ -17007,15 +17044,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             return posterBarRow(entry.subject, formatInteger(entry.count) + " results", entry.median, formatNumber(entry.median, 0),
               bandPrintColour(band), "#eceff5", entry.median >= SECURE_BENCHMARK ? "secure" : "");
           }).join("");
+          // A few percentile points between subjects is noise on a class
+          // median, not a strongest and a weakest. Under the same five points
+          // the growth chart calls level, the poster says the subjects are
+          // close rather than naming one to work on.
+          const gap = Math.round(best.median - low.median);
+          const close = best.median - low.median < SLOPE_DEADBAND;
+          const heroLabel = close
+            ? (tops.length === entries.length
+                ? "is our middle score in every subject"
+                : "is our middle score in " + tops.join(" and ") + ", our highest - with every subject close behind")
+            : "is our middle score in " + tops.join(" and ") + ", our strongest " + (tops.length === 1 ? "subject" : "subjects");
+          const focus = close
+            ? '<div class="poster-callout"><strong>How close we are</strong><b>' + escapeHTML(gap === 0 ? "Level" : formatInteger(gap) + (gap === 1 ? " point" : " points")) +
+              "</b><small>between our highest and our lowest subject, so none is far ahead of the others</small></div>"
+            : '<div class="poster-callout is-next"><strong>Next focus</strong><b>' + escapeHTML(lows.join(" and ")) +
+              "</b><small>" + escapeHTML("middle score " + formatNumber(low.median, 0) + " - the most room to grow") + "</small></div>";
           return '<div class="poster-body">' +
-            posterHero(formatNumber(best.median, 0), "is our middle score in " + tops.join(" and ") + ", our strongest " + (tops.length === 1 ? "subject" : "subjects"), "green") +
+            posterHero(formatNumber(best.median, 0), heroLabel, best.median >= SECURE_BENCHMARK ? "green" : null) +
             '<div class="poster-main"><div class="poster-bars">' + bars + "</div>" +
-            '<div class="poster-callouts">' +
-            (lows.length < entries.length
-              ? '<div class="poster-callout is-next"><strong>Next focus</strong><b>' + escapeHTML(lows.join(" and ")) +
-                "</b><small>" + escapeHTML("middle score " + formatNumber(low.median, 0) + " - the same effort moves this fastest") + "</small></div>"
-              : "") +
-            '<div class="poster-callout"><strong>What 50 means</strong><b>The middle</b><small>half of students your age across the country score above it, half below</small></div>' +
+            '<div class="poster-callouts">' + focus +
+            '<div class="poster-callout"><strong>What 50 means</strong><b>The middle</b><small>half of students in your grade across the country score above it, half below</small></div>' +
             "</div></div></div>";
         }
       },
@@ -17027,19 +17076,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         headline: () => "How To Read Your MAP Score",
         sub: () => "Three numbers on your report, and what each one is measured against.",
         message: (scope) => isProjectionView(scope && scope.rows)
-          ? "Your percentile compares you with students your age. Your projection is what a typical student starting where you are will grow. Beat it, and you move up."
-          : "Your percentile compares you with students your age. Your growth score compares you with your own starting point. Only one of those is about how hard you worked this year.",
+          ? "Your percentile compares you with students in your grade. Your projection is what a typical student starting where you are will grow. Beat it, and you move up."
+          : "Your percentile compares you with students in your grade. Your growth score compares you with students who started where you did. Both can change, and neither is a label.",
         body: (scope) => {
-          const medianRIT = median(scope.rows.map((row) => row.currentRIT));
+          // RIT is a separate scale in every subject, so a median across
+          // subjects is a number that means nothing. It is quoted only where
+          // the group sat one subject.
+          const oneSubject = unique(scope.rows.map((row) => row.subject)).length === 1;
+          const medianRIT = oneSubject ? median(scope.rows.map((row) => row.currentRIT)) : null;
           const bands = BANDS.map((band) => '<span style="flex:1;background:' + bandPrintColour(band) + ";color:" + bandPrintInk(band) +
             '"><b>' + escapeHTML(band.name) + "</b><i>" + escapeHTML(band.min + "-" + band.max) + "</i></span>").join("");
           return '<div class="poster-body is-full"><div class="poster-main">' +
             '<div class="poster-callouts poster-callouts-big">' +
-            '<div class="poster-callout"><strong>RIT score</strong><b>' + (isFiniteNumber(medianRIT) ? escapeHTML("Ours: " + formatNumber(medianRIT, 0)) : "One scale") +
-            "</b><small>one scale for every year of school, so it never restarts. It goes up as you learn, whatever grade you are in.</small></div>" +
+            '<div class="poster-callout"><strong>RIT score</strong><b>' + (isFiniteNumber(medianRIT) ? escapeHTML("Ours: " + formatNumber(medianRIT, 0)) : "One per subject") +
+            "</b><small>a number on a scale that runs through every year of school, so it never restarts. Each subject has its own. It goes up as you learn, whatever grade you are in.</small></div>" +
             '<div class="poster-callout"><strong>Percentile</strong><b>Out of 100</b><small>how your score compares with students in your grade across the country. 50 is the middle. It is not the share of questions you got right.</small></div>' +
             (isProjectionView(scope.rows)
-              ? '<div class="poster-callout is-good"><strong>Projected growth</strong><b>Our next step</b><small>how much a typical student who starts on your score grows by ' +
+              ? '<div class="poster-callout is-good"><strong>Projected growth</strong><b>Your next step</b><small>how much a typical student who starts on your score grows by ' +
                 escapeHTML(projectionHorizon(scope.rows)) + '. Growing more than that is how you move up.</small></div>'
               : '<div class="poster-callout is-good"><strong>Growth score</strong><b>50 is typical</b><small>how much you grew compared with students who started on the same score as you. Above 50 means faster than typical.</small></div>') +
             "</div>" +
@@ -17221,7 +17274,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (timed.length < MIN_SHARE_N) return null;
       const rushedCount = timed.filter((row) => row.shortTest || row.rapidGuessed).length;
       const med = median(timed.map((row) => row.currentDuration));
-      const max = Math.max(...timed.map((row) => row.currentDuration));
+      const longest = Math.max(...timed.map((row) => row.currentDuration));
+      // One test left open for two hours would draw every other bar the same
+      // height and hide the difference between a twenty-minute test and a
+      // forty-five-minute one, which is the whole point of the poster. Past
+      // twice the middle a bar stops growing, and the top of the scale says so.
+      const max = Math.min(longest, med * 2);
+      const clipped = longest > max;
       // Above the cap one bar per test is a barcode. The bars become an even
       // sample of the sorted tests, which keeps the shape and the share of
       // amber, and the scale line says so.
@@ -17232,7 +17291,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
             timed[Math.round(index * (timed.length - 1) / (POSTER_MAX_MARKS - 1))]);
       const bars = drawn.map((row) =>
         '<i class="poster-sky-bar' + ((row.shortTest || row.rapidGuessed) ? " is-rushed" : "") +
-        '" style="height:' + (row.currentDuration / max * 100).toFixed(1) + '%"></i>').join("");
+        '" style="height:' + (Math.min(row.currentDuration, max) / max * 100).toFixed(1) + '%"></i>').join("");
       return {
         n: timed.length,
         countable,
@@ -17242,7 +17301,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           '<div class="poster-sky-bars">' + bars +
           '<i class="poster-sky-median" style="bottom:' + (med / max * 100).toFixed(1) + '%"><b>' +
           escapeHTML("the middle: " + formatNumber(med, 0) + " minutes") + "</b></i>" +
-          '<i class="poster-sky-max"><b>' + escapeHTML(formatNumber(max, 0) + " min") + "</b></i>" +
+          '<i class="poster-sky-max"><b>' + escapeHTML(formatNumber(max, 0) + (clipped ? "+ min" : " min")) + "</b></i>" +
           "</div>" +
           '<div class="poster-strip-scale"><span>fastest test</span><span>' +
           escapeHTML(countable
@@ -17285,6 +17344,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         bySubject.get(row.subject).push(row);
       });
       const panels = [...bySubject.entries()].map(([subject, group]) => {
+        // The mark on a ladder is the class's median. For a subject only a few
+        // children sat, that is one child's score drawn on a wall.
+        if (new Set(group.map((row) => studentKey(row))).size < POSTER_MIN_STUDENTS) return null;
         const now = median(group.map((row) => row.currentRIT));
         // A fall export carries NWEA's own projection for each student,
         // conditioned on that student's starting score; the norm's typical
@@ -17356,8 +17418,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         };
       }).filter(Boolean).sort((a, b) => posterSubjectRank(a.subject) - posterSubjectRank(b.subject) || a.subject.localeCompare(b.subject));
       if (!panels.length) return null;
+      const seasons = modeOf(rows.filter((row) => row.goals && isFiniteNumber(row.currentRIT)).map((row) => row.currentSeason));
       return {
         panels,
+        season: seasons ? String(seasons).toLowerCase() : null,
         html: '<div class="poster-ladders' + (panels.length > 2 ? " has-many" : "") + '">' +
           panels.map((panel) => panel.html).join("") + "</div>"
       };
@@ -17519,6 +17583,29 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function sortPosterSubjects(subjects) {
       return subjects.slice().sort((a, b) => posterSubjectRank(a) - posterSubjectRank(b) || a.localeCompare(b));
+    }
+
+    // The subjects a poster may draw a figure for, in wall order. A subject
+    // that fewer than POSTER_MIN_STUDENTS children sat is not given its own:
+    // its median is one child's score and its row of marks is three children.
+    // Those small subjects are pooled into one "Other subjects" group where
+    // the pool is itself big enough, and left out where it is not.
+    function posterSubjectGroups(rows) {
+      const bySubject = new Map();
+      rows.forEach((row) => {
+        if (!bySubject.has(row.subject)) bySubject.set(row.subject, []);
+        bySubject.get(row.subject).push(row);
+      });
+      const enough = (group) => new Set(group.map((row) => studentKey(row))).size >= POSTER_MIN_STUDENTS;
+      const groups = [];
+      let small = [];
+      sortPosterSubjects([...bySubject.keys()]).forEach((subject) => {
+        const group = bySubject.get(subject);
+        if (enough(group)) groups.push({ subject, rows: group });
+        else small = small.concat(group);
+      });
+      if (small.length && enough(small)) groups.push({ subject: "Other subjects", rows: small });
+      return groups;
     }
 
     // The whole class first, then one scope per subject. The posters print
@@ -17733,7 +17820,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         // The page block is the whole sheet of paper and the poster sits in
         // the middle of it. A block the size of the poster alone printed at
         // the top-left corner of the paper with the spare paper down one side.
-        ".poster-page { width: " + page.paper.width + "mm; height: " + page.paper.height + "mm; box-sizing: border-box;" +
+        ".poster-page { width: " + page.paper.width + "mm; height: " + (page.paper.height - 1) + "mm; box-sizing: border-box;" +
         " display: flex; align-items: center; justify-content: center; overflow: hidden; break-after: page; page-break-after: always; }" +
         ".poster-page:last-child { break-after: auto; page-break-after: auto; }" +
         ".poster { width: " + page.width + "mm; height: " + page.height + "mm; flex: none; }" +
