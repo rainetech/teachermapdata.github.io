@@ -423,7 +423,7 @@ function buildHTML(data, pictures, baselineTitles) {
     <li><strong>The page itself</strong> - the browser's print command prints the dashboard; the quiz and the seating tools are left out.</li>
   </ul>
   <h3>Wall posters</h3>
-  <p>Posters are written for students, in student language, and carry class shares, medians and counts only: no name, no individual score, no rank. They follow your filters, so filter to one class before you print, and the footer of each records which group it describes. Which posters are available depends on the file: growth posters need two windows and at least ${data.minShare} growth results, the learning-areas poster needs a Class Profile export, and every poster needs at least ${data.posterMin} students in view.</p>
+  <p>Posters are written for students, in student language, and carry class shares, medians and counts only: no name, no individual score, no rank. They follow your filters, so filter to one class before you print, and the footer of each records which group it describes. Which posters are available depends on the file: growth posters need two windows and at least ${data.minShare} growth results, the learning-areas poster needs a Class Profile export, and every poster needs at least ${data.posterMin} students in view. A subject that fewer than ${data.posterMin} students sat is not given a row, a ladder or a median of its own, because a figure for three children is three children.</p>
   <table><thead><tr><th>Poster</th><th>What it says</th></tr></thead><tbody>${posterRows}</tbody></table>
   <p>Choose A3 or A4, landscape or portrait; add the class name the students know; tick the posters you want and print. In the print dialog turn on background graphics and choose fit to page.</p>
 </div>

@@ -26,6 +26,12 @@
 //     "about"), and every student's sheets print as exactly two pages, however many
 //     subjects or areas they have and however long the name (a hard limit);
 //   - a gap to grade level inside measurement error is not counted as short;
+//   - wall posters never draw a figure for a handful of children: a subject
+//     fewer than five students sat has no row, no ladder and no median, the
+//     explainer quotes no RIT across subjects, a poster says "close together"
+//     rather than naming a weakest subject on a few points, one test left open
+//     does not flatten the test-length chart, and the poster copy makes no
+//     claim the figures cannot carry;
 //   - the page still carries its copyright and licence notice, and the open
 //     site (not the ENS instance) shows the credit line in a footer.
 import fs from "node:fs";
@@ -380,6 +386,144 @@ console.log("Goal sheets");
   check(![cases.k, cases.below, cases.oneUnder, cases.onIt, cases.nextGrade, cases.top, cases.shared, cases.sharedNoGrade].some((text) => /About /i.test(text)), "the wording never says \u201cabout\u201d");
   check(cases.none === null && /^Grade 3 level \| Typical score in the fall: Grade 3 = 185\.$/.test(cases.noGrade), "no season gives no line; no recorded grade gives the grade reached without a comparison");
   check(cases.stretchInside === false && cases.stretchOutside === true, "a stretch of 3 RIT or less to grade level is inside measurement error; 4 is not");
+  check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
+  await page.close();
+}
+
+console.log("Wall posters");
+{
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  await page.addInitScript(() => {
+    try {
+      localStorage.clear();
+      localStorage.setItem("asg-dashboard-preferences", JSON.stringify({ reducedMotion: true, supportPromptOff: true, supportPromptLastShown: Date.now(), view: "full" }));
+    } catch (error) { /* storage may be unavailable */ }
+  });
+  await page.goto(pathToFileURL(TARGET).href);
+  await page.setInputFiles("#csvInput", [{ name: "projection.csv", mimeType: "text/csv", buffer: Buffer.from(projectionASG()) }]);
+  await page.waitForTimeout(2500);
+  const errors = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  const result = await page.evaluate(() => {
+    const base = state.filteredRows.find((row) => row.goals && Number.isFinite(row.currentRIT));
+    // A made-up class: [subject, how many students sat it, percentile].
+    const make = (spec) => {
+      const rows = [];
+      spec.forEach(([subject, count, percentile]) => {
+        for (let i = 0; i < count; i += 1) {
+          const pct = Array.isArray(percentile) ? percentile[i % percentile.length] : percentile;
+          rows.push(Object.assign({}, base, {
+            subject, studentID: "T-" + subject + "-" + i, studentName: "Pupil " + subject + " " + i,
+            currentPercentile: pct, currentBand: getBand(pct), currentRIT: 200 + i,
+            currentDuration: 40 + (i % 5), shortTest: false, rapidGuessed: false
+          }));
+        }
+      });
+      return rows;
+    };
+    const withRows = (rows, fn) => {
+      const saved = state.filteredRows;
+      state.filteredRows = rows;
+      state.posterStudentCountCache = null;
+      try { return fn(rows); } finally { state.filteredRows = saved; state.posterStudentCountCache = null; }
+    };
+    const poster = (id, rows, scope) => POSTERS.find((entry) => entry.id === id).body(scope || { rows, subject: null, label: null });
+    const text = (html) => { const d = document.createElement("div"); d.innerHTML = html; return d.textContent; };
+    const labels = (html) => { const d = document.createElement("div"); d.innerHTML = html; return [...d.querySelectorAll(".poster-strip-label")].map((node) => node.firstChild.textContent); };
+    const out = {};
+    // Rows per subject on the whole-class bands poster.
+    out.bandsSmallDropped = withRows(make([["Mathematics", 12, [20, 50, 70]], ["Reading", 12, [30, 60, 90]], ["Science", 3, 40]]), (rows) => {
+      const html = poster("bands", rows);
+      return { labels: labels(html), lead: text(html).match(/\d+of us[^.]*?(?=One mark|Each band)/)[0] };
+    });
+    out.bandsPooled = withRows(make([["Mathematics", 12, [20, 50, 70]], ["Science", 3, 40], ["Art", 3, 55]]), (rows) => labels(poster("bands", rows)));
+    out.bandsAllSmall = withRows(make([["Mathematics", 4, 20], ["Reading", 4, 50], ["Science", 4, 70], ["Art", 4, 90]]), (rows) => {
+      const html = poster("bands", rows);
+      return { labels: labels(html), hasRow: /One row per subject/.test(text(html)), lead: text(html).match(/\d+of us[^.]*?(?=One mark|Each band)/)[0] };
+    });
+    out.bandsOneEach = withRows(make([["Mathematics", 12, [20, 50, 70]]]), (rows) => text(poster("bands", rows, { rows, subject: "Mathematics", label: "Mathematics" })).match(/\d+of us[^.]*?(?=One mark|Each band)/)[0]);
+    // The ladder: a median on a wall must stand on at least five children.
+    out.ladder = withRows(make([["Mathematics", 12, 50], ["Science", 3, 50]]), (rows) => {
+      const ladder = posterLadder(rows);
+      return ladder ? ladder.panels.map((panel) => panel.subject) : null;
+    });
+    out.ladderNone = withRows(make([["Mathematics", 4, 50], ["Science", 4, 50]]), (rows) => posterLadder(rows));
+    // The explainer's RIT is quoted for one subject only.
+    out.explainerOne = withRows(make([["Mathematics", 12, 50]]), (rows) => text(poster("explainer", rows)));
+    out.explainerMany = withRows(make([["Mathematics", 12, 50], ["Reading", 12, 50]]), (rows) => text(poster("explainer", rows)));
+    // Subjects: a few points apart is "close", a real gap names a focus.
+    out.subjectsClose = withRows(make([["Mathematics", 12, 50], ["Reading", 12, 52]]), (rows) => text(poster("subjects", rows)));
+    out.subjectsApart = withRows(make([["Mathematics", 12, 50], ["Reading", 12, 70]]), (rows) => text(poster("subjects", rows)));
+    // Test length: one test left open must not flatten every other bar.
+    out.effort = withRows(make([["Mathematics", 20, 50]]), (rows) => {
+      rows[0].currentDuration = 200;
+      const strip = posterDurationStrip(rows);
+      const heights = [...strip.html.matchAll(/class="poster-sky-bar[^"]*" style="height:([0-9.]+)%/g)].map((match) => Number(match[1]));
+      return { heights, label: (strip.html.match(/poster-sky-max"><b>([^<]*)</) || [])[1], median: strip.median };
+    });
+    // Learning areas: a lone strength is a card on an empty sheet.
+    const analysis = (areas) => ({ subjects: [{ subject: "Mathematics", areas }] });
+    const area = (name, verdict) => ({ name, verdict, meanDelta: verdict === "gap" ? -3 : 3 });
+    const areasOffered = (areas) => { state.strandAnalysis = analysis(areas); return POSTERS.find((entry) => entry.id === "areas").available(); };
+    out.areas = {
+      none: areasOffered([area("A", "even")]),
+      oneStrength: areasOffered([area("A", "strength")]),
+      twoStrengths: areasOffered([area("A", "strength"), area("B", "strength")]),
+      oneGap: areasOffered([area("A", "gap")])
+    };
+    state.strandAnalysis = analysis([area("A", "strength"), area("B", "strength")]);
+    out.areasStrengthMessage = POSTERS.find((entry) => entry.id === "areas").message();
+    state.strandAnalysis = analysis([area("A", "gap")]);
+    out.areasGapMessage = POSTERS.find((entry) => entry.id === "areas").message();
+    // The sheet a poster is printed on is a fraction of a millimetre shorter
+    // than the paper. Exactly the paper's height overflowed by a rounding error
+    // in Safari's engine, and every A3 landscape or A4 portrait poster came out
+    // as two pages with a blank one after it.
+    out.pageBoxes = withRows(make([["Mathematics", 12, [20, 50, 70]], ["Reading", 12, [30, 60, 90]]]), () => Object.keys(POSTER_PAGES).map((orientation) => {
+      els.posterOrientation.value = orientation;
+      window.__posterHtml = "";
+      const open = window.open;
+      window.open = () => ({ document: { open() { }, write(html) { window.__posterHtml += html; }, close() { } }, focus() { }, print() { } });
+      printPosters();
+      window.open = open;
+      const box = /\.poster-page \{ width: ([0-9.]+)mm; height: ([0-9.]+)mm;/.exec(window.__posterHtml);
+      return { orientation, paper: POSTER_PAGES[orientation].paper, width: box && Number(box[1]), height: box && Number(box[2]) };
+    }));
+    return out;
+  });
+  check(JSON.stringify(result.bandsSmallDropped.labels) === JSON.stringify(["Mathematics", "Reading"]) && /of us, with 24 results across 2 subjects/.test(result.bandsSmallDropped.lead),
+    "a subject only three children sat gets no row on the whole-class poster, and its results are not counted in it (" + result.bandsSmallDropped.labels.join(", ") + "; " + result.bandsSmallDropped.lead + ")");
+  check(JSON.stringify(result.bandsPooled) === JSON.stringify(["Mathematics", "Other subjects"]), "small subjects are pooled into one row when the pool is big enough (" + result.bandsPooled.join(", ") + ")");
+  check(result.bandsAllSmall.labels.length === 0 && !result.bandsAllSmall.hasRow && /of us, with 16 results across 4 subjects/.test(result.bandsAllSmall.lead),
+    "when every subject is small the class is one strip with no subject rows (" + result.bandsAllSmall.lead + ")");
+  check(/of us took the mathematics test/.test(result.bandsOneEach),
+    "one result per child is not said twice (" + result.bandsOneEach + ")");
+  check(JSON.stringify(result.ladder) === JSON.stringify(["Mathematics"]) && result.ladderNone === null,
+    "a ladder is drawn only for a subject at least five students sat (" + JSON.stringify(result.ladder) + ")");
+  check(/Ours: 20\d/.test(result.explainerOne) && /One per subject/.test(result.explainerMany) && !/Ours:/.test(result.explainerMany),
+    "the explainer quotes the class's RIT for one subject and never a median across subjects");
+  check(/How close we are\s*2 points/.test(result.subjectsClose) && !/Next focus/.test(result.subjectsClose) && /Next focus\s*Mathematics/.test(result.subjectsApart) && !/How close we are/.test(result.subjectsApart),
+    "two subjects a few points apart are \u201cclose\u201d, not a strongest and a weakest; a real gap names the next focus");
+  const heights = result.effort.heights;
+  check(heights.length === 20 && Math.max(...heights) === 100 && heights.filter((height) => height === 100).length === 1 && Math.min(...heights) > 40 && /\+ min$/.test(result.effort.label),
+    "one test left open does not flatten the test-length chart: it stops at twice the middle and the scale says so (" + result.effort.label + ", shortest bar " + Math.min(...heights) + "%)");
+  check(result.areas.none === false && result.areas.oneStrength === false && result.areas.twoStrengths === true && result.areas.oneGap === true,
+    "the learning-areas poster needs a gap, or two strengths, to have anything to say");
+  check(!/Being behind/.test(result.areasStrengthMessage) && /Being behind/.test(result.areasGapMessage), "the learning-areas message follows what the poster shows");
+  check(result.pageBoxes.length === 4 && result.pageBoxes.every((box) => box.width === box.paper.width && box.height < box.paper.height && box.height > box.paper.height - 3),
+    "a poster's page box is just under the paper's height, so it cannot spill onto a second page in Safari (" + result.pageBoxes.map((box) => box.orientation + " " + box.height + "/" + box.paper.height).join(", ") + ")");
+  // Copy the figures cannot carry. These were all on a wall once.
+  const source = fs.readFileSync(TARGET, "utf8");
+  const posterSource = source.slice(source.indexOf("const POSTERS = ["), source.indexOf("// Records for the catching-up poster"));
+  const banned = [
+    [/your age|our age|people your age/i, "\u201cstudents your age\u201d (a percentile compares a grade, not an age)"],
+    [/40 percentile points/, "\u201cat least 40 percentile points\u201d for two bands (it is 21)"],
+    [/how hard you have been working|how hard you worked|how hard you work/i, "growth as a measure of effort"],
+    [/overtaking a (lot|fifth)/i, "overtaking claims for a band move"],
+    [/\bslipped\b/i, "\u201cslipped\u201d for a percentile that moved down"],
+    [/own starting point/i, "the growth score as a comparison with your own start"]
+  ];
+  banned.forEach(([pattern, what]) => check(!pattern.test(posterSource), "poster copy has no " + what));
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
   await page.close();
 }
