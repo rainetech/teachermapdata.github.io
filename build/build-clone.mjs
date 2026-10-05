@@ -11,8 +11,14 @@
 // Every substitution below asserts that it matched. If a token is renamed or a
 // block is edited upstream, this fails loudly at build time instead of quietly
 // shipping a half-themed page.
+//
+// The Emirates National Schools logo is not part of this repository, which is
+// public. It is supplied at build time (see "The ENS logo" below). The output,
+// ensdashboards/, is generated and not committed.
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -102,11 +108,22 @@ swap("theme colour (light)", '<meta name="theme-color" content="#f5f7fb" media="
 // ---------------------------------------------------------------------------
 // The ENS logo
 // ---------------------------------------------------------------------------
-// The Emirates National Schools mark, from build/assets. Two files rather than
-// one: the full lockup for anywhere with room for a wordmark, and the symbol
-// on its own for the favicon, where 709x130 of Arabic and English would be a
-// smear at 16px. Both are checked in as real files so they can be reviewed and
-// replaced without touching this script.
+// The Emirates National Schools mark, in two files: the full lockup for
+// anywhere with room for a wordmark, and the symbol on its own for the
+// favicon, where 709x130 of Arabic and English would be a smear at 16px.
+//
+// The repository is public and the mark belongs to the school, so neither
+// file is in it. They are supplied when this runs, in this order:
+//   1. the environment: ENS_LOGO_PNG_B64 and ENS_SYMBOL_PNG_B64, each the
+//      base64 of the PNG. A long value may be split across ENS_LOGO_PNG_B64_1,
+//      _2, ... which are joined in order. This is how Vercel builds the site.
+//   2. a directory of the two files, ens-logo.png and ens-symbol.png: the
+//      folder named by ENS_BRAND_DIR, or build/assets (ignored by git).
+//   3. neither: a plain text wordmark stands in, so the build still runs on a
+//      machine without the files and the user guide can be photographed
+//      without the mark. On Vercel (VERCEL is set) this is an error instead:
+//      a deploy must never quietly publish the site without its logo.
+// ENS_BRAND=plain forces the stand-in even when the files are there.
 //
 // Inlined as data URIs, like every other asset here. A logo fetched from a CDN
 // would be the one request that breaks the promise the upload panel makes, and
@@ -119,10 +136,85 @@ swap("theme colour (light)", '<meta name="theme-color" content="#f5f7fb" media="
 // management artefact, and far enough apart to read as a mistake if the two
 // teals ever touch. So the chrome uses the specified colours, and the logo is
 // always placed on white, where its own teal never abuts the interface's.
-const logoDataUri = (file) =>
-  "data:image/png;base64," + fs.readFileSync(path.join(root, "build", "assets", file)).toString("base64");
-const ENS_LOGO = logoDataUri("ens-logo.png");
-const ENS_SYMBOL = logoDataUri("ens-symbol.png");
+const BRAND_DIR = path.resolve(root, process.env.ENS_BRAND_DIR || path.join("build", "assets"));
+const PLAIN_BRAND = process.env.ENS_BRAND === "plain";
+const ON_VERCEL = Boolean(process.env.VERCEL);
+
+// What was read is reported by a short fingerprint, never by its content, so a
+// value that was mangled on its way into an environment variable can be found
+// by comparing the build log with the file it came from.
+const fingerprint = (text) => crypto.createHash("sha256").update(text).digest("hex").slice(0, 12);
+
+function brandAsset(file, envKey) {
+  if (PLAIN_BRAND) return null;
+  if (process.env[envKey]) {
+    const whole = process.env[envKey].replace(/\s+/g, "");
+    console.log("  " + file + ": from " + envKey + ", " + whole.length + " characters [" + fingerprint(whole) + "]");
+    return Buffer.from(whole, "base64");
+  }
+  const parts = [];
+  for (let i = 1; process.env[envKey + "_" + i]; i += 1) parts.push(process.env[envKey + "_" + i].replace(/\s+/g, ""));
+  if (parts.length) {
+    console.log("  " + file + ": from " + envKey + "_1.._" + parts.length + ", " + parts.map((part) => part.length + " [" + fingerprint(part) + "]").join(", "));
+    return Buffer.from(parts.join(""), "base64");
+  }
+  const local = path.join(BRAND_DIR, file);
+  if (!fs.existsSync(local)) return null;
+  console.log("  " + file + ": from " + path.relative(root, local));
+  return fs.readFileSync(local);
+}
+
+// Real PNG or nothing. A value that was cut short, or had a character altered
+// on the way into an environment variable, must stop the build rather than
+// ship a broken image, so the whole file is walked and every chunk's checksum
+// is verified, and the last chunk must be IEND.
+function pngDataUri(bytes, what) {
+  const fail = (why) => { throw new Error("build-clone: the " + what + " is not a complete PNG (" + why + "). Is the base64 whole?"); };
+  const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  if (bytes.length < 64 || !bytes.subarray(0, 8).equals(signature)) fail("no PNG signature");
+  let at = 8;
+  let last = "";
+  while (at + 12 <= bytes.length) {
+    const length = bytes.readUInt32BE(at);
+    const type = bytes.toString("latin1", at + 4, at + 8);
+    const end = at + 12 + length;
+    if (end > bytes.length) fail("the " + type + " chunk runs past the end");
+    if (zlib.crc32(bytes.subarray(at + 4, at + 8 + length)) !== bytes.readUInt32BE(at + 8 + length)) fail("the " + type + " chunk fails its checksum");
+    last = type;
+    at = end;
+    if (type === "IEND") break;
+  }
+  if (last !== "IEND" || at !== bytes.length) fail("it does not end cleanly at IEND");
+  return "data:image/png;base64," + bytes.toString("base64");
+}
+
+// The stand-in: the school's name set in the brand teal, with the same shape
+// as the real lockup (709x130) so every place that sizes the logo by its
+// height lays out the same. No quote marks, because these are written into
+// JavaScript strings as well as into attributes.
+const svgDataUri = (svg) => "data:image/svg+xml," + encodeURIComponent(svg);
+const PLAIN_LOGO = svgDataUri(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="709" height="130" viewBox="0 0 709 130">' +
+  '<text x="0" y="84" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="58" font-weight="700" fill="#007272" ' +
+  'textLength="709" lengthAdjust="spacingAndGlyphs">Emirates National Schools</text></svg>');
+const PLAIN_SYMBOL = svgDataUri(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">' +
+  '<rect width="64" height="64" rx="14" fill="#007272"/>' +
+  '<text x="32" y="45" text-anchor="middle" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="38" font-weight="700" fill="#ffffff">E</text></svg>');
+
+const logoBytes = brandAsset("ens-logo.png", "ENS_LOGO_PNG_B64");
+const symbolBytes = brandAsset("ens-symbol.png", "ENS_SYMBOL_PNG_B64");
+if ((!logoBytes || !symbolBytes) && ON_VERCEL) {
+  throw new Error("build-clone: the ENS logo is not available to this Vercel build. Set ENS_LOGO_PNG_B64 and " +
+    "ENS_SYMBOL_PNG_B64 (base64 of the two PNGs, optionally split as _1, _2, ...) in the Vercel project's " +
+    "environment variables. Refusing to publish the site without its logo.");
+}
+const ENS_LOGO = logoBytes ? pngDataUri(logoBytes, "logo") : PLAIN_LOGO;
+const ENS_SYMBOL = symbolBytes ? pngDataUri(symbolBytes, "symbol") : PLAIN_SYMBOL;
+if (!logoBytes || !symbolBytes) {
+  console.log("note: no ENS logo files found, using the plain text wordmark" +
+    (PLAIN_BRAND ? " (ENS_BRAND=plain)." : ". See the comment on \"The ENS logo\" in build/build-clone.mjs."));
+}
 
 {
   const icon = html.match(/  <link rel="icon" href="[^"]*">/);
@@ -326,6 +418,19 @@ for (const block of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) {
 
 fs.mkdirSync(OUT_DIR, { recursive: true });
 fs.writeFileSync(OUT, html);
+
+// The instance's own copy of the user guide, which the page links to. It is
+// photographed from this build (the pictures carry the instance's colours and
+// name), which needs a browser, so it is built ahead of time and committed -
+// from the plain wordmark build, so it carries no logo. See build/README.md.
+const GUIDE_SRC = path.join(root, "build", "ens-guide", "teacher-dashboard-guide.pdf");
+if (fs.existsSync(GUIDE_SRC)) {
+  fs.copyFileSync(GUIDE_SRC, path.join(OUT_DIR, "teacher-dashboard-guide.pdf"));
+} else if (ON_VERCEL) {
+  throw new Error("build-clone: build/ens-guide/teacher-dashboard-guide.pdf is missing, so the guide link on the site would be dead.");
+} else {
+  console.log("note: build/ens-guide/teacher-dashboard-guide.pdf not found, so no guide was copied.");
+}
 const kb = (Buffer.byteLength(html) / 1024).toFixed(0);
 console.log(`built ${path.relative(root, OUT)}  (${kb} KB)`);
 applied.forEach((line) => console.log("  - " + line));

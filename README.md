@@ -7,12 +7,14 @@ say at a data meeting, what to put on the wall, and a seating planner. Open
 Nothing is uploaded and the page makes no network requests.
 
 - `index.html` is the whole dashboard.
-- `ensdashboards/` is a generated, re-branded copy (see its README). Edit the
-  root `index.html` and run `node build/build-clone.mjs`; never edit the copy.
+- The ENS Dashboards copy is built from the same `index.html` by
+  `node build/build-clone.mjs` (see [build/README.md](build/README.md)). It is
+  generated into `ensdashboards/`, which is not committed, and the school's logo
+  it carries is supplied at build time rather than stored here.
 - `guide/` builds the PDF user guide from the page itself.
 - `build/check-planner.mjs` and `build/check-imports.mjs` are the browser
-  checks (Playwright). Run them on the root page and on the generated copy
-  after any change.
+  checks (Playwright). Run them on the root page and, after building it, on the
+  generated copy (`TARGET=ensdashboards/index.html`) after any change.
 
 ## Licence and credit
 
