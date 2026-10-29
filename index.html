@@ -2123,7 +2123,9 @@
 
     .table-scroll {
       overflow: auto;
-      max-height: 560px;
+      /* Never taller than the screen can show, or the wheel gets stuck inside
+         it on a short screen. Taller screens still get 560px. */
+      max-height: min(560px, max(280px, calc(100vh - 260px)));
       width: 100%;
     }
 
@@ -2240,8 +2242,6 @@
 
       .summary-grid,
       .gap-grid,
-      .subject-breakdown,
-      #quadrantSubjectBreakdown,
       .explain-grid {
         grid-template-columns: repeat(4, minmax(150px, 1fr));
       }
@@ -2269,7 +2269,6 @@
         grid-template-columns: 1fr;
       }
 
-      .filters,
       .overview-grid,
       .summary-grid,
       .chart-grid,
@@ -2281,6 +2280,18 @@
       .explain-grid,
       .group-controls {
         grid-template-columns: 1fr;
+      }
+
+      /* A tablet gets the filters in rows of two to four, not one stacked
+         column that takes a third of the screen. */
+      .filters {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      }
+
+      /* The planner is a full-width dialog: its grouping controls fit in a
+         row or two, which leaves the room more height. */
+      .planner-slot .group-controls {
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
       }
 
       .seat.is-tray { width: 100%; }
@@ -2304,6 +2315,30 @@
 
       table {
         min-width: 980px;
+      }
+    }
+
+    /* The "By subject" cards need room of their own: about 220px for the
+       figures and 340px for a quadrant map. On a screen the columns fall as it
+       narrows, so a card is never squeezed beside three others, and a tablet
+       keeps two columns of figures and the 3 x 3 quadrant map instead of the
+       phone layout. (Print keeps the one-column rules above.) */
+    @media screen and (min-width: 561px) and (max-width: 1000px) {
+      .subject-breakdown {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media screen and (min-width: 561px) and (max-width: 860px) {
+      .quadrant-map {
+        grid-template-columns: repeat(var(--quadrant-columns, 2), minmax(0, 1fr));
+      }
+    }
+
+    /* On a phone the search box takes the first row, so its hint is not cut. */
+    @media (max-width: 560px) {
+      .filter-bar > .filters:first-child .field:first-child {
+        grid-column: 1 / -1;
       }
     }
 
@@ -2626,6 +2661,20 @@
     /* Offset scroll targets so the sticky bars don't cover section headings */
     main > .section {
       scroll-margin-top: var(--scroll-offset, 160px);
+    }
+
+    /* A phone: the jump bar wraps to five or more rows there, and pinned under
+       the filters the two took three quarters of the screen. The filters stay
+       pinned; the jump bar scrolls away with the page, and a jump lands the
+       heading just under the filters. */
+    @media (max-width: 640px) {
+      .section-nav {
+        position: static;
+      }
+
+      main > .section {
+        scroll-margin-top: calc(var(--stick-top, 90px) + 12px);
+      }
     }
 
     /* Short screens: a laptop at 150% or 200% display scaling is only 600 or
@@ -4074,6 +4123,28 @@
       }
     }
 
+    /* Short screens: a laptop at 150% or 200% display scaling is 450 to 600px
+       high, and the buttons and grouping controls above the room used to take
+       a third to a half of that, leaving a window of 140 to 280px onto a room
+       that is about 760px deep. Below 700px of height the planner scrolls as
+       one page instead, edge to edge: the room gets the whole screen once the
+       buttons and controls have been scrolled past (and sideways scrolling,
+       when the room is wider than the screen, sits at the screen's edge). */
+    @media (max-height: 700px) {
+      .planner-backdrop { padding: 0; }
+
+      .planner {
+        display: block;
+        border: 0;
+        border-radius: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+
+      .planner-slot { max-height: none; }
+      .planner-stage { overflow: visible; }
+    }
+
     .spotlight-backdrop {
       position: fixed;
       inset: 0;
@@ -5002,6 +5073,39 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
+    }
+
+    /* =====================================================================
+       Touch: a finger needs about 44px. These rules apply only where the main
+       pointer is coarse (a tablet or a phone), so a mouse sees none of them.
+       The jump chips are 40px because there are twenty of them in a few rows.
+       Two things stay small: the dots on the growth scatter and the "..." on
+       a seat sit close together or inside a seat, so a larger target would
+       steal taps from its neighbours; zoom the room to make them larger.
+       ===================================================================== */
+    @media (pointer: coarse) {
+      .btn,
+      .btn.small,
+      .room-menu > summary,
+      .back-to-top { min-height: 44px; }
+      .zoom-control .btn { min-width: 44px; }
+      .field input,
+      .field select,
+      .filter-check,
+      .room-menu-grid button { min-height: 44px; }
+      .section-nav-links button { min-height: 40px; }
+      th.sortable { padding-top: 14px; padding-bottom: 14px; }
+
+      /* The visible control keeps its size; its hit area grows (the border
+         takes a pixel each side, hence 9 and 12). */
+      .section-help-btn::after,
+      .student-link::after {
+        content: "";
+        position: absolute;
+        inset: -9px;
+      }
+      .student-link { position: relative; }
+      .student-link::after { inset: -12px -6px; }
     }
 
   </style>
@@ -6941,6 +7045,13 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
       window.addEventListener("scroll", handleWindowScroll, { passive: true });
       window.addEventListener("resize", updateStickyOffsets, { passive: true });
+      // The pinned bars also change height with no resize: an opened "More
+      // filters" panel, a jump bar that wraps differently in the other view.
+      // Jumps and the jump bar's own offset follow the bars' real heights.
+      if ("ResizeObserver" in window) {
+        const stickyWatch = new ResizeObserver(() => updateStickyOffsets());
+        [document.querySelector(".filter-bar"), els.sectionNav].forEach((bar) => bar && stickyWatch.observe(bar));
+      }
       handleWindowScroll();
       updateStickyOffsets();
       setupSectionSpy();
