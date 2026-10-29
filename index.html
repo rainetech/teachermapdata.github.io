@@ -658,6 +658,10 @@
       backdrop-filter: blur(12px);
       padding: 12px;
       margin-bottom: 18px;
+      /* An opened "More filters" panel scrolls inside the bar instead of
+         growing past the screen. */
+      max-height: 60vh;
+      overflow-y: auto;
     }
 
     @supports not (overflow-x: clip) {
@@ -1954,6 +1958,11 @@
       border: 1px solid var(--line-strong);
       border-radius: var(--radius-sm);
       box-shadow: var(--shadow-lift);
+      /* The planner clips what hangs below it, so the panel stops short of the
+         planner's foot and scrolls. */
+      max-height: calc(100vh - 140px);
+      overflow: auto;
+      overscroll-behavior: contain;
     }
     .room-menu-panel .field { margin: 0; }
     .room-menu-panel .field .hint { font-size: 0.7rem; }
@@ -2617,6 +2626,27 @@
     /* Offset scroll targets so the sticky bars don't cover section headings */
     main > .section {
       scroll-margin-top: var(--scroll-offset, 160px);
+    }
+
+    /* Short screens: a laptop at 150% or 200% display scaling is only 600 or
+       450px high, and the two pinned bars can take a third to most of that.
+       Below 700px of height they scroll away with the page, so the page keeps
+       the whole screen; taller screens keep them pinned. Nothing is pinned
+       any more, so a jump lands the heading near the top. */
+    @media (max-height: 700px) {
+      .filter-bar,
+      .section-nav {
+        position: static;
+      }
+
+      .filter-bar {
+        max-height: none;
+        overflow-y: visible;
+      }
+
+      main > .section {
+        scroll-margin-top: 12px;
+      }
     }
 
     .back-to-top {
