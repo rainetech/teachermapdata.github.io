@@ -32,14 +32,14 @@
 //     rather than naming a weakest subject on a few points, one test left open
 //     does not flatten the test-length chart, and the poster copy makes no
 //     claim the figures cannot carry;
-//   - the columns of the support list, the strengths list and the grouping
-//     table can be chosen, on a fall file and on a spring file: a Columns
-//     button once the table has rows, tick-boxes for every column with the
-//     first always shown, a Key columns and an All columns preset that keep
+//   - the columns of the support list, the strengths list, the grouping table
+//     and the goals table can be chosen, on a fall file and on a spring file: a
+//     Columns button once the table has rows, tick-boxes for every column with
+//     the first always shown, a Key columns and an All columns preset that keep
 //     what each table is for, a choice for one table that leaves the others
 //     alone, the choice remembered as column keys only (a hostile stored value
-//     is dropped), a CSV export that keeps every column whatever is shown, and
-//     Escape to close;
+//     is dropped), a CSV export that is the same whatever is shown, nothing
+//     printed, and Escape to close;
 //   - the page still carries its copyright and licence notice, and the open
 //     site shows the credit line in a footer (CREDIT_FOOTER=absent holds a
 //     build that carries none to the opposite).
@@ -262,10 +262,12 @@ console.log("Choosing columns");
     ]
   };
   // What each table is for, as the columns Key columns must keep.
+  // Each also names a column to switch off by hand: [key, heading].
   const tables = [
-    ["priority", "the support list", "exportPriority", { "a fall file": ["Subject", "Why it is flagged", "Action"], "a spring file": ["Subject", "Priority Reason", "Action"] }],
-    ["grouping", "the grouping table", "exportGrouping", { "a fall file": ["Subject", "Planning group", "Suggested teacher action"], "a spring file": ["Subject", "Suggested Group", "Suggested Teacher Action"] }],
-    ["celebration", "the strengths list", "exportCelebration", { "a fall file": ["Subject", "Strength", "Extension"], "a spring file": ["Subject", "Celebration Reason", "Next Extension"] }]
+    ["priority", "the support list", "exportPriority", { "a fall file": ["Subject", "Why it is flagged", "Action"], "a spring file": ["Subject", "Priority Reason", "Action"] }, ["studentID", "Student ID"]],
+    ["grouping", "the grouping table", "exportGrouping", { "a fall file": ["Subject", "Planning group", "Suggested teacher action"], "a spring file": ["Subject", "Suggested Group", "Suggested Teacher Action"] }, ["studentID", "Student ID"]],
+    ["celebration", "the strengths list", "exportCelebration", { "a fall file": ["Subject", "Strength", "Extension"], "a spring file": ["Subject", "Celebration Reason", "Next Extension"] }, ["studentID", "Student ID"]],
+    ["goal", "the goals table", "exportGoals", { "a fall file": ["Subject", "NWEA target", "Gain to grade level"], "a spring file": ["Subject", "Keep-pace target", "Gain to grade level"] }, ["currentPercentile", "Current %ile"]]
   ];
   async function openWith(files, prefs) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
@@ -305,9 +307,9 @@ console.log("Choosing columns");
     const all = {};
     for (const [table] of tables) all[table] = await headsOf(page, table);
     everyHeads[setName] = all;
-    check(await page.evaluate(() => ["sec-priority", "sec-grouping", "sec-celebration"].every((id) => /Columns/.test(SECTION_HELP[id].act))), "the help for the three tables says there is a Columns button (" + setName + ")");
+    check(await page.evaluate(() => ["sec-priority", "sec-grouping", "sec-celebration", "sec-goals"].every((id) => /Columns/.test(SECTION_HELP[id].act))), "the help for the four tables says there is a Columns button (" + setName + ")");
 
-    for (const [table, label, exportFn, mustKeepBySet] of tables) {
+    for (const [table, label, exportFn, mustKeepBySet, [dropKey, dropHeading]] of tables) {
       const where = label + " on " + setName;
       const mustKeep = mustKeepBySet[setName];
       const mine = all[table];
@@ -317,23 +319,27 @@ console.log("Choosing columns");
       await page.click("#" + table + "ColumnsBtn");
       const opened = await panelOf(page, table);
       check(opened.open && opened.expanded === "true" && opened.boxes === mine.length && opened.firstFixed, where + ": it opens a tick-box for every column, the first ticked and fixed (" + opened.boxes + ")");
+      const said = await page.evaluate((id) => document.querySelector("#" + id + "Columns .col-panel-head").innerText, table);
+      check(/does not change a CSV export/.test(said) && !/keep every column/i.test(said), where + ": the list says hiding a column does not change a CSV export, and claims no more (" + said.replace(/\s+/g, " ").trim() + ")");
       await page.emulateMedia({ media: "print" });
       const printed = await page.evaluate((id) => ({ button: getComputedStyle(document.getElementById(id + "ColumnsBtn")).display, panel: getComputedStyle(document.getElementById(id + "Columns")).display }), table);
       await page.emulateMedia({ media: "screen" });
       check(printed.button === "none" && printed.panel === "none", where + ": neither the button nor the open list of columns is printed");
 
-      await page.uncheck("#" + table + 'Columns input[data-col-key="studentID"]');
+      if (table === "goal") await page.evaluate(() => { document.getElementById("goalCards").firstElementChild.__kept = true; });
+      await page.uncheck("#" + table + 'Columns input[data-col-key="' + dropKey + '"]');
       await page.waitForTimeout(150);
       const afterOne = await headsOf(page, table);
       const buttonOne = await buttonText(page, table);
-      check(afterOne.length === mine.length - 1 && !afterOne.includes("Student ID") && buttonOne === "Columns · " + (mine.length - 1) + " of " + mine.length, where + ": unticking Student ID takes it out and the button says how many are shown (" + buttonOne + ")");
+      check(afterOne.length === mine.length - 1 && !afterOne.includes(dropHeading) && buttonOne === "Columns · " + (mine.length - 1) + " of " + mine.length, where + ": unticking " + dropHeading + " takes it out and the button says how many are shown (" + buttonOne + ")");
+      if (table === "goal") check(await page.evaluate(() => Boolean(document.getElementById("goalCards").firstElementChild.__kept)), where + ": choosing columns leaves the cards above the table as they were");
       const others = [];
       for (const [other] of tables) if (other !== table) others.push(JSON.stringify(await headsOf(page, other)) === JSON.stringify(all[other]) && (await buttonText(page, other)) === "Columns");
-      check(others.every(Boolean), where + ": the other two tables are left alone");
+      check(others.every(Boolean), where + ": the other tables are left alone");
       const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
       const first = await page.evaluate(() => Array.from(new Set(state.allRows.map((row) => row.studentName.split(/\s+/)[0]).filter((name) => name.length > 2))));
-      check(JSON.stringify(stored.columns) === JSON.stringify({ [table]: ["studentID"] }) && !first.some((name) => JSON.stringify(stored).includes(name)), where + ": the choice is remembered as column keys only, with no name in it (" + JSON.stringify(stored.columns) + ")");
-      check((await csvOf(page, exportFn)) === csvAll, where + ": an export still carries every column and every row");
+      check(JSON.stringify(stored.columns) === JSON.stringify({ [table]: [dropKey] }) && !first.some((name) => JSON.stringify(stored).includes(name)), where + ": the choice is remembered as column keys only, with no name in it (" + JSON.stringify(stored.columns) + ")");
+      check((await csvOf(page, exportFn)) === csvAll, where + ": an export is unchanged, every row and every column of it");
 
       await page.click("#" + table + 'Columns [data-col-preset="key"]');
       await page.waitForTimeout(150);
@@ -343,7 +349,7 @@ console.log("Choosing columns");
         return columnLists[id].filter((column, index) => index === 0 || keys.has(column[1])).map((column) => column[0]);
       }, table);
       check(key.length >= 5 && key.length < mine.length && JSON.stringify(key) === JSON.stringify(expected) && key[0] === mine[0] && mustKeep.every((name) => key.includes(name)), where + ": Key columns keeps the student and what the table is for (" + key.join(", ") + ")");
-      check((await csvOf(page, exportFn)) === csvAll, where + ": and an export still carries every column");
+      check((await csvOf(page, exportFn)) === csvAll, where + ": and an export is unchanged");
       const widths = await page.evaluate((id) => { const box = document.getElementById(id + "Table"); return { content: box.scrollWidth, shown: box.clientWidth }; }, table);
       check(widths.content <= widths.shown + 1, where + ": with the key columns the table fits the page and does not scroll sideways (" + widths.content + " in " + widths.shown + ")");
 
@@ -364,18 +370,19 @@ console.log("Choosing columns");
   // Each table keeps its own choice at the same time, and a stored choice is
   // honoured; a hand-edited one cannot do harm.
   const fall = sets["a fall file"];
-  const kept = await openWith(fall, { columns: { priority: ["studentID", "className"], grouping: ["studentID", "className", "subject"], celebration: ["className"] } });
+  const kept = await openWith(fall, { columns: { priority: ["studentID", "className"], grouping: ["studentID", "className", "subject"], celebration: ["className"], goal: ["currentPercentile", "studentGrade"] } });
   const keptHeads = {};
   for (const [table] of tables) keptHeads[table] = await headsOf(kept.page, table);
-  const dropped = { priority: 2, grouping: 3, celebration: 1 };
-  check(tables.every(([table]) => keptHeads[table].length === everyHeads["a fall file"][table].length - dropped[table]) && !keptHeads.priority.includes("Student ID") && !keptHeads.grouping.includes("Subject") && !keptHeads.celebration.includes("Class") && keptHeads.celebration.includes("Student ID"),
-    "a remembered choice for each of the three tables is there when the page opens (" + tables.map(([table]) => table + " " + keptHeads[table].length).join(", ") + " columns)");
+  const dropped = { priority: 2, grouping: 3, celebration: 1, goal: 2 };
+  check(tables.every(([table]) => keptHeads[table].length === everyHeads["a fall file"][table].length - dropped[table]) && !keptHeads.priority.includes("Student ID") && !keptHeads.grouping.includes("Subject") && !keptHeads.celebration.includes("Class") && keptHeads.celebration.includes("Student ID") && !keptHeads.goal.includes("Current %ile") && !keptHeads.goal.includes("Grade") && keptHeads.goal.includes("Subject"),
+    "a remembered choice for each of the four tables is there when the page opens (" + tables.map(([table]) => table + " " + keptHeads[table].length).join(", ") + " columns)");
   check(kept.errors.length === 0, "no page errors with remembered choices");
   await kept.page.close();
   const hostile = await openWith(fall, { columns: {
     priority: ["studentName", "<img src=x onerror=alert(1)>", 5, null, "a".repeat(80), "subject"],
     grouping: ["studentName", "x".repeat(41), { toString: "no" }, "subject", "subject"],
     celebration: [5, null, "studentID"],
+    goal: ["studentName", "currentPercentile", "currentPercentile", "<b>bold</b>"],
     nothing: ["subject"],
     __proto__: { polluted: true }
   } });
@@ -383,8 +390,8 @@ console.log("Choosing columns");
   for (const [table] of tables) hostileHeads[table] = await headsOf(hostile.page, table);
   const hostileStored = await hostile.page.evaluate(() => state.prefs.columns);
   const every = everyHeads["a fall file"];
-  check(JSON.stringify(hostileStored) === JSON.stringify({ priority: ["studentName", "subject"], grouping: ["studentName", "subject"], celebration: ["studentID"] })
-    && tables.every(([table]) => hostileHeads[table][0] === every[table][0]) && hostileHeads.priority.length === every.priority.length - 1 && hostileHeads.grouping.length === every.grouping.length - 1 && hostileHeads.celebration.length === every.celebration.length - 1,
+  check(JSON.stringify(hostileStored) === JSON.stringify({ priority: ["studentName", "subject"], grouping: ["studentName", "subject"], celebration: ["studentID"], goal: ["studentName", "currentPercentile"] })
+    && tables.every(([table]) => hostileHeads[table][0] === every[table][0]) && hostileHeads.priority.length === every.priority.length - 1 && hostileHeads.grouping.length === every.grouping.length - 1 && hostileHeads.celebration.length === every.celebration.length - 1 && hostileHeads.goal.length === every.goal.length - 1,
     "a hand-edited choice is cleaned: odd keys, repeats and other tables dropped, and no first column can be switched off (" + JSON.stringify(hostileStored) + ")");
   check(hostile.errors.length === 0 && (await hostile.page.evaluate(() => ({}).polluted === undefined)), "and does no harm");
   await hostile.page.close();

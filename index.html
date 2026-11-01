@@ -5774,7 +5774,9 @@
           <div class="table-tools">
             <strong id="goalCount">0 records</strong>
             <span class="status-line" id="goalTargetsNote">Targets use US norm means.</span>
+            <button class="btn small ghost col-toggle" id="goalColumnsBtn" type="button" data-columns-for="goal" aria-expanded="false" aria-controls="goalColumns" hidden>Columns</button>
           </div>
+          <div class="col-panel" id="goalColumns" data-columns-for="goal" hidden></div>
           <div class="table-scroll" id="goalTable"></div>
         </div>
       </section>
@@ -11165,7 +11167,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     // ---------------------------------------------------------------------
     // Growth Goals
     // ---------------------------------------------------------------------
-    function goalColumns(hasProjection) {
+    function goalTableColumns(hasProjection) {
       const lead = [
         ["Student", "studentName", (row) => studentLink(row)],
         ["Subject", "subject", (row) => escapeHTML(row.subject)],
@@ -11290,11 +11292,20 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       els.goalCount.textContent = projectionRows.length
         ? formatInteger(projectionRows.length) + " records with NWEA's own target for " + (horizon || "the window ahead")
         : formatInteger(rows.length) + " records with a norm-referenced target";
+      renderGoalTable();
+    }
+
+    // The table alone, so choosing its columns does not rebuild the cards above it.
+    function renderGoalTable() {
+      if (!els.goalTable) return;
+      const rows = state.filteredRows.filter((row) => row.goals);
+      const columns = goalTableColumns(state.filteredRows.some((row) => row.forwardProjection));
+      renderColumnChooser("goal", columns, rows.length > 0);
       if (!rows.length) {
         els.goalTable.innerHTML = '<div class="empty-state">Targets need a student grade, a subject with US norms, and a RIT score. None of the visible records have all three.</div>';
         return;
       }
-      els.goalTable.innerHTML = renderTable("goal", goalColumns(projectionRows.length > 0), sortRows(rows, state.sort.goal));
+      els.goalTable.innerHTML = renderTable("goal", columns, sortRows(rows, state.sort.goal));
     }
 
     // ---------------------------------------------------------------------
@@ -13537,7 +13548,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-goals": {
         what: "Norm-referenced RIT targets for the next reporting point: the typical gain a peer makes, a keep-pace target, the grade-level target and the stretch above typical some students need. Where a fall export carries NWEA's own projection, that figure leads.",
         read: "Keep pace means holding your relative position; grade level means reaching the norm mean. Typical gain comes from the difference between two norm means, not from NWEA's projection for an individual student. The norm table built in is a reference, not the official study.",
-        act: "Print the goal sheets, set a written target for every student who needs above-typical growth, and re-upload after the next window so the target becomes a result.",
+        act: "Print the goal sheets, set a written target for every student who needs above-typical growth, and re-upload after the next window so the target becomes a result. Use Columns to show only the columns you need; hiding a column does not change the CSV.",
         baseline: {
           what: "Norm-referenced RIT targets for the end of this school year, so the winter or spring upload has something to measure against: the typical gain, a keep-pace target, the grade-level target and the stretch above typical some students need. Where the export carries NWEA's own projection for the window ahead, that figure leads."
         }
@@ -13585,7 +13596,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-grouping": {
         what: "Every record in view in one sortable table: scores, bands, growth, gap status, the planning group the dashboard suggests and the teacher action that goes with it.",
         read: "This is the full evidence behind every card above. Sort a column by clicking its heading; the group and gap filters at the top narrow it.",
-        act: "Export it as a CSV for your own planning documents, or open a student's name for their one-page spotlight. The table has a column for everything, so use Columns to show only the ones you need; an export keeps them all.",
+        act: "Export it as a CSV for your own planning documents, or open a student's name for their one-page spotlight. The table has a column for everything, so use Columns to show only the ones you need; hiding a column does not change a CSV export.",
         baseline: {
           what: "Every record in view in one sortable table: RIT, percentile, band, tier, distance from the norm, the planning group the dashboard suggests and the teacher action that goes with it. Growth columns appear once a second window exists."
         }
@@ -13593,7 +13604,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-priority": {
         what: "Records that need attention first, each with the reasons: missed growth, a dropped band, a missing end score, negative growth, finishing below the 21st percentile, secure regression or a widened gap.",
         read: "A record can be listed for a reason other than low achievement, so the reason column matters more than the tier. A met-growth call within measurement error is marked too close to call.",
-        act: "This is where the first small groups come from. Name three students and what changes for them this week, before anyone asks. The table has a column for everything, so use Columns to show only the ones you need; an export keeps them all.",
+        act: "This is where the first small groups come from. Name three students and what changes for them this week, before anyone asks. The table has a column for everything, so use Columns to show only the ones you need; hiding a column does not change a CSV export.",
         baseline: {
           what: "Records that need attention from the start of the year, each with the reasons: starting below the 41st percentile, testing a grade or more below placement, sitting well below the norm, needing above-typical growth to reach grade level, or a score that needs confirming.",
           read: "A record can be listed for a reason other than low achievement, so the reason column matters more than the tier."
@@ -13602,7 +13613,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-celebration": {
         what: "Records with something to celebrate: growth beyond the projection, a band moved up, a gap closed or sharply reduced, a strong RIT gain, or a rise from low to high on a quadrant axis, each with a next extension.",
         read: "Celebration is about growth, not just high scores. A secure student who grew slowly is not here; a low starter who beat their projection is.",
-        act: "Name the success to the student, then set the next measurable target so celebration does not turn into coasting. Use Columns to show only the columns you need; an export keeps them all.",
+        act: "Name the success to the student, then set the next measurable target so celebration does not turn into coasting. Use Columns to show only the columns you need; hiding a column does not change a CSV export.",
         baseline: {
           what: "Records already showing a strength at the start of the year: at or above the secure line, well above the norm mean, testing a grade or more above placement, or already above the grade-level target, each with an extension action.",
           read: "These are strengths to build on from day one, not growth: with one window nothing here measures movement."
@@ -21853,7 +21864,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // A teacher chooses which columns a long table shows. Every column is on to
     // begin with; what is chosen is remembered on this device as column keys,
     // never a name or a score. The first column (who the row is about) is
-    // always shown, and a CSV export carries every column whatever is shown.
+    // always shown, and a CSV export is the same whatever is shown.
     // "key" is the short list: the columns that make the table useful at a
     // glance, named for both versions of the table (a file with two windows,
     // and a single window).
@@ -21876,6 +21887,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         key: ["subject", "celebrationReasons", "extensionAction", "growthEfficiency", "bandMovement",
           "currentPercentile", "currentBand.name", "usNormDeltaRIT", "baselineAction"],
         render: () => renderCelebrationTable()
+      },
+      // The targets: where each student is, the target, and what it takes.
+      goal: {
+        key: ["subject", "currentRIT", "forwardProjection.targetRIT", "forwardProjection.gain", "forwardProjection.gradeLevelRIT",
+          "forwardProjection.shortOfGradeLevel", "goals.keepPaceRIT", "goals.gradeLevelRIT", "goals.catchUpGain", "goals.acceleration"],
+        render: () => renderGoalTable()
       }
     };
 
@@ -21918,7 +21935,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         panel.dataset.signature = signature;
         panel.innerHTML =
           '<div class="col-panel-head"><strong>Columns shown</strong>' +
-          "<span>The first column is always shown. Exports keep every column.</span>" +
+          "<span>The first column is always shown. Hiding a column does not change a CSV export.</span>" +
           '<span class="btn-row">' +
           '<button class="btn small ghost" type="button" data-col-table="' + table + '" data-col-preset="key">Key columns</button>' +
           '<button class="btn small ghost" type="button" data-col-table="' + table + '" data-col-preset="all">All columns</button>' +
