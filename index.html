@@ -2142,6 +2142,7 @@
        short table cannot clip it. */
     .col-toggle[hidden],
     .col-panel[hidden] { display: none; }
+    .table-tools .col-toggle { margin-left: auto; }
     .col-toggle.is-active { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-soft); }
 
     .col-panel {
@@ -5967,7 +5968,9 @@
           <div class="table-tools">
             <strong id="groupingCount">0 records</strong>
             <span class="status-line">Click a column header to sort.</span>
+            <button class="btn small ghost col-toggle" id="groupingColumnsBtn" type="button" data-columns-for="grouping" aria-expanded="false" aria-controls="groupingColumns" hidden>Columns</button>
           </div>
+          <div class="col-panel" id="groupingColumns" data-columns-for="grouping" hidden></div>
           <div class="table-scroll" id="groupingTable"></div>
         </div>
       </section>
@@ -6080,7 +6083,9 @@
         <div class="table-shell">
           <div class="table-tools">
             <strong id="celebrationCount">0 students</strong>
+            <button class="btn small ghost col-toggle" id="celebrationColumnsBtn" type="button" data-columns-for="celebration" aria-expanded="false" aria-controls="celebrationColumns" hidden>Columns</button>
           </div>
+          <div class="col-panel" id="celebrationColumns" data-columns-for="celebration" hidden></div>
           <div class="table-scroll" id="celebrationTable"></div>
         </div>
       </section>
@@ -13580,7 +13585,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-grouping": {
         what: "Every record in view in one sortable table: scores, bands, growth, gap status, the planning group the dashboard suggests and the teacher action that goes with it.",
         read: "This is the full evidence behind every card above. Sort a column by clicking its heading; the group and gap filters at the top narrow it.",
-        act: "Export it as a CSV for your own planning documents, or open a student's name for their one-page spotlight.",
+        act: "Export it as a CSV for your own planning documents, or open a student's name for their one-page spotlight. The table has a column for everything, so use Columns to show only the ones you need; an export keeps them all.",
         baseline: {
           what: "Every record in view in one sortable table: RIT, percentile, band, tier, distance from the norm, the planning group the dashboard suggests and the teacher action that goes with it. Growth columns appear once a second window exists."
         }
@@ -13597,7 +13602,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-celebration": {
         what: "Records with something to celebrate: growth beyond the projection, a band moved up, a gap closed or sharply reduced, a strong RIT gain, or a rise from low to high on a quadrant axis, each with a next extension.",
         read: "Celebration is about growth, not just high scores. A secure student who grew slowly is not here; a low starter who beat their projection is.",
-        act: "Name the success to the student, then set the next measurable target so celebration does not turn into coasting.",
+        act: "Name the success to the student, then set the next measurable target so celebration does not turn into coasting. Use Columns to show only the columns you need; an export keeps them all.",
         baseline: {
           what: "Records already showing a strength at the start of the year: at or above the secure line, well above the norm mean, testing a grade or more above placement, or already above the grade-level target, each with an extension action.",
           read: "These are strengths to build on from day one, not growth: with one window nothing here measures movement."
@@ -21754,6 +21759,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const columns = isBaselineMode() ? baselineColumnsWithProjection(BASELINE_GROUPING_COLUMNS, "grouping") : GROUPING_COLUMNS;
       const rows = sortRows(state.filteredRows, state.sort.grouping);
       els.groupingCount.textContent = `${formatInteger(rows.length)} records`;
+      renderColumnChooser("grouping", columns, rows.length > 0);
       els.groupingTable.innerHTML = renderTable("grouping", columns, rows);
     }
 
@@ -21830,6 +21836,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const columns = isBaselineMode() ? BASELINE_CELEBRATION_COLUMNS : CELEBRATION_COLUMNS;
       const rows = sortRows(state.filteredRows.filter((row) => strengthReasons(row).length), state.sort.celebration);
       els.celebrationCount.textContent = `${formatInteger(rows.length)} records`;
+      renderColumnChooser("celebration", columns, rows.length > 0);
       els.celebrationTable.innerHTML = renderTable("celebration", columns, rows);
     }
 
@@ -21851,9 +21858,24 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // glance, named for both versions of the table (a file with two windows,
     // and a single window).
     const COLUMN_CHOICES = {
+      // The support list.
       priority: {
         key: ["subject", "endPercentile", "gapStatus", "currentPercentile", "currentTier.name", "usNormDeltaRIT", "priorityReasons", "suggestedAction", "baselineAction"],
         render: () => renderPriorityTable()
+      },
+      // Every record with its evidence: the longest table, 24 columns on a
+      // file with two windows. The short list is who, where they stand, how
+      // they moved, the planning group and the action.
+      grouping: {
+        key: ["subject", "endPercentile", "ritChange", "metGrowth", "gapStatus", "suggestedGroup", "suggestedAction",
+          "currentPercentile", "currentTier.name", "usNormDeltaRIT", "baselineGroup", "baselineAction"],
+        render: () => renderGroupingTable()
+      },
+      // The strengths list.
+      celebration: {
+        key: ["subject", "celebrationReasons", "extensionAction", "growthEfficiency", "bandMovement",
+          "currentPercentile", "currentBand.name", "usNormDeltaRIT", "baselineAction"],
+        render: () => renderCelebrationTable()
       }
     };
 

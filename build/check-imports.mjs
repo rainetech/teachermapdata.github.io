@@ -32,11 +32,14 @@
 //     rather than naming a weakest subject on a few points, one test left open
 //     does not flatten the test-length chart, and the poster copy makes no
 //     claim the figures cannot carry;
-//   - the support list's columns can be chosen: a Columns button once the list
-//     has rows, tick-boxes for every column with the first always shown, a
-//     Key columns and an All columns preset, the choice remembered as column
-//     keys only (a hostile stored value is dropped), a CSV export that keeps
-//     every column whatever is shown, and Escape to close;
+//   - the columns of the support list, the strengths list and the grouping
+//     table can be chosen, on a fall file and on a spring file: a Columns
+//     button once the table has rows, tick-boxes for every column with the
+//     first always shown, a Key columns and an All columns preset that keep
+//     what each table is for, a choice for one table that leaves the others
+//     alone, the choice remembered as column keys only (a hostile stored value
+//     is dropped), a CSV export that keeps every column whatever is shown, and
+//     Escape to close;
 //   - the page still carries its copyright and licence notice, and the open
 //     site shows the credit line in a footer (CREDIT_FOOTER=absent holds a
 //     build that carries none to the opposite).
@@ -99,10 +102,12 @@ function classProfileWithScreeners(subject, course, rits, date, term) {
   rows.push([id2, last2, first2, "", "5", term, term, "Test School", "Teacher, Test", "5.4", subject, course, "Screening: " + course + " 1.1", "Invalid test", "SEM too high", "", "", "09/08/26", "", "", "", "", "", "", ""]);
   return csv(rows);
 }
-function growthASG() {
+// Fall to spring in mathematics. Each student gains 8 RIT unless gains says otherwise.
+function growthASG(gains) {
   const rows = [asgHeader];
   students.forEach(([id, last, first], i) => {
-    rows.push(["Spring 2026-2027", "Spring 2026-2027", "Test District", "Test School", "Teacher, Test", "5.4", "Mathematics", "Math K-12", "Class", "2025", "Fall 2026 - Spring 2027", "4", "32", id, last, first, "5", "9/21/26", math[i], "3.3", pct(math[i]), "50", "5/20/27", math[i] + 8, "3.3", pct(math[i] + 8), "50", (math[i] + 9).toFixed(2), "9", "8", "48"]);
+    const gain = gains ? gains[i] : 8;
+    rows.push(["Spring 2026-2027", "Spring 2026-2027", "Test District", "Test School", "Teacher, Test", "5.4", "Mathematics", "Math K-12", "Class", "2025", "Fall 2026 - Spring 2027", "4", "32", id, last, first, "5", "9/21/26", math[i], "3.3", pct(math[i]), "50", "5/20/27", math[i] + gain, "3.3", pct(math[i] + gain), "50", (math[i] + 9).toFixed(2), "9", String(gain), gains ? (gain >= 14 ? "80" : "30") : "48"]);
   });
   return csv(rows);
 }
@@ -242,12 +247,27 @@ console.log("Grade level in the Grouping table");
 
 console.log("Choosing columns");
 {
-  const files = [
-    ["projection.csv", projectionASG()],
-    ["CP_Math_Fall2026.csv", classProfile("Mathematics", "Math K-12", math, "09/21/26", "Fall 2026-2027 (Most Recent)", false)],
-    ["CP_Reading_Fall2026.csv", classProfile("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)", true)]
+  // A fall file with NWEA's projection (one window), and a spring file with two
+  // windows in which some students gained a great deal and one very little.
+  const gains = [20, 2, 14, 25, 16, 11];
+  const sets = {
+    "a fall file": [
+      ["projection.csv", projectionASG()],
+      ["CP_Math_Fall2026.csv", classProfile("Mathematics", "Math K-12", math, "09/21/26", "Fall 2026-2027 (Most Recent)", false)],
+      ["CP_Reading_Fall2026.csv", classProfile("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)", true)]
+    ],
+    "a spring file": [
+      ["growth.csv", growthASG(gains)],
+      ["CP_Math_Spring2027.csv", classProfile("Mathematics", "Math K-12", math.map((rit, i) => rit + gains[i]), "05/20/27", "Spring 2026-2027 (Most Recent)", false)]
+    ]
+  };
+  // What each table is for, as the columns Key columns must keep.
+  const tables = [
+    ["priority", "the support list", "exportPriority", { "a fall file": ["Subject", "Why it is flagged", "Action"], "a spring file": ["Subject", "Priority Reason", "Action"] }],
+    ["grouping", "the grouping table", "exportGrouping", { "a fall file": ["Subject", "Planning group", "Suggested teacher action"], "a spring file": ["Subject", "Suggested Group", "Suggested Teacher Action"] }],
+    ["celebration", "the strengths list", "exportCelebration", { "a fall file": ["Subject", "Strength", "Extension"], "a spring file": ["Subject", "Celebration Reason", "Next Extension"] }]
   ];
-  async function support(prefs) {
+  async function openWith(files, prefs) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
@@ -262,69 +282,110 @@ console.log("Choosing columns");
     await page.waitForTimeout(2500);
     return { page, errors };
   }
-  const heads = (page) => page.evaluate(() => [...document.querySelectorAll("#priorityTable thead th")].map((th) => th.textContent.trim()));
-  const csvOf = (page) => page.evaluate(() => {
+  const headsOf = (page, table) => page.evaluate((id) => [...document.querySelectorAll("#" + id + "Table thead th")].map((th) => th.textContent.trim()), table);
+  const buttonText = (page, table) => page.evaluate((id) => document.getElementById(id + "ColumnsBtn").textContent, table);
+  const csvOf = (page, fn) => page.evaluate((name) => {
     let out = "";
     const original = window.downloadText;
-    window.downloadText = (name, text) => { out = text; };
-    exportPriority();
+    window.downloadText = (file, text) => { out = text; };
+    window[name]();
     window.downloadText = original;
     return out;
-  });
+  }, fn);
+  const panelOf = (page, table) => page.evaluate((id) => {
+    const button = document.getElementById(id + "ColumnsBtn");
+    const panel = document.getElementById(id + "Columns");
+    const first = panel.querySelector("input[data-col-key]");
+    return { hidden: button.hidden, text: button.textContent, open: !panel.hidden, expanded: button.getAttribute("aria-expanded"), rows: document.querySelectorAll("#" + id + "Table tbody tr").length, boxes: panel.querySelectorAll("input[data-col-key]").length, firstFixed: Boolean(first && first.checked && first.disabled) };
+  }, table);
 
-  const { page, errors } = await support();
-  const all = await heads(page);
-  const start = await page.evaluate(() => ({ hidden: document.getElementById("priorityColumnsBtn").hidden, text: document.getElementById("priorityColumnsBtn").textContent, open: document.getElementById("priorityColumns").hidden === false, expanded: document.getElementById("priorityColumnsBtn").getAttribute("aria-expanded"), rows: document.querySelectorAll("#priorityTable tbody tr").length }));
-  check(start.rows > 0 && !start.hidden && start.text === "Columns" && !start.open && start.expanded === "false", "the support list has a Columns button, closed, with every column on to begin with (" + all.length + " columns)");
-  const csvAll = await csvOf(page);
-  await page.click("#priorityColumnsBtn");
-  const panel = await page.evaluate(() => ({ open: !document.getElementById("priorityColumns").hidden, expanded: document.getElementById("priorityColumnsBtn").getAttribute("aria-expanded"), boxes: document.querySelectorAll("#priorityColumns input[data-col-key]").length, firstFixed: (() => { const first = document.querySelector("#priorityColumns input[data-col-key]"); return first.checked && first.disabled; })() }));
-  check(panel.open && panel.expanded === "true" && panel.boxes === all.length && panel.firstFixed, "it opens a tick-box for every column, and the first column is ticked and cannot be switched off (" + panel.boxes + ")");
+  const everyHeads = {};
+  for (const [setName, files] of Object.entries(sets)) {
+    const { page, errors } = await openWith(files);
+    const all = {};
+    for (const [table] of tables) all[table] = await headsOf(page, table);
+    everyHeads[setName] = all;
+    check(await page.evaluate(() => ["sec-priority", "sec-grouping", "sec-celebration"].every((id) => /Columns/.test(SECTION_HELP[id].act))), "the help for the three tables says there is a Columns button (" + setName + ")");
 
-  const target = await page.evaluate(() => [...document.querySelectorAll("#priorityColumns input[data-col-key]")].map((box) => box.dataset.colKey).find((key) => key === "studentID"));
-  await page.uncheck('#priorityColumns input[data-col-key="studentID"]');
-  await page.waitForTimeout(200);
-  const afterOne = await heads(page);
-  const buttonOne = await page.evaluate(() => document.getElementById("priorityColumnsBtn").textContent);
-  check(target === "studentID" && afterOne.length === all.length - 1 && !afterOne.includes("Student ID") && buttonOne === "Columns \u00b7 " + (all.length - 1) + " of " + all.length, "unticking Student ID takes that column out of the table, and the button says how many are shown (" + buttonOne + ")");
-  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
-  const names = await page.evaluate(() => Array.from(new Set(state.allRows.map((row) => row.studentName.split(/\s+/)[0]).filter((name) => name.length > 2))));
-  check(JSON.stringify(stored.columns) === JSON.stringify({ priority: ["studentID"] }) && !names.some((name) => JSON.stringify(stored).includes(name)), "the choice is remembered as column keys only, with no name in it (" + JSON.stringify(stored.columns) + ")");
-  check((await csvOf(page)) === csvAll, "an export still carries every column and every row");
+    for (const [table, label, exportFn, mustKeepBySet] of tables) {
+      const where = label + " on " + setName;
+      const mustKeep = mustKeepBySet[setName];
+      const mine = all[table];
+      const start = await panelOf(page, table);
+      check(start.rows > 0 && !start.hidden && start.text === "Columns" && !start.open && start.expanded === "false", where + ": a Columns button, closed, every column on to begin with (" + mine.length + " columns)");
+      const csvAll = await csvOf(page, exportFn);
+      await page.click("#" + table + "ColumnsBtn");
+      const opened = await panelOf(page, table);
+      check(opened.open && opened.expanded === "true" && opened.boxes === mine.length && opened.firstFixed, where + ": it opens a tick-box for every column, the first ticked and fixed (" + opened.boxes + ")");
+      await page.emulateMedia({ media: "print" });
+      const printed = await page.evaluate((id) => ({ button: getComputedStyle(document.getElementById(id + "ColumnsBtn")).display, panel: getComputedStyle(document.getElementById(id + "Columns")).display }), table);
+      await page.emulateMedia({ media: "screen" });
+      check(printed.button === "none" && printed.panel === "none", where + ": neither the button nor the open list of columns is printed");
 
-  await page.click('#priorityColumns [data-col-preset="key"]');
-  await page.waitForTimeout(200);
-  const key = await heads(page);
-  const keyExpected = await page.evaluate(() => {
-    const keys = new Set(COLUMN_CHOICES.priority.key);
-    return columnLists.priority.filter((column, index) => index === 0 || keys.has(column[1])).map((column) => column[0]);
-  });
-  check(key.length < all.length && JSON.stringify(key) === JSON.stringify(keyExpected) && key[0] === all[0], "Key columns keeps the student and the columns that matter at a glance (" + key.join(", ") + ")");
-  check((await csvOf(page)) === csvAll, "and an export still carries every column");
-  const widths = await page.evaluate(() => { const box = document.getElementById("priorityTable"); return { content: box.scrollWidth, shown: box.clientWidth }; });
-  check(widths.content <= widths.shown + 1, "with the key columns the table fits the page and does not scroll sideways (" + widths.content + " in " + widths.shown + ")");
+      await page.uncheck("#" + table + 'Columns input[data-col-key="studentID"]');
+      await page.waitForTimeout(150);
+      const afterOne = await headsOf(page, table);
+      const buttonOne = await buttonText(page, table);
+      check(afterOne.length === mine.length - 1 && !afterOne.includes("Student ID") && buttonOne === "Columns · " + (mine.length - 1) + " of " + mine.length, where + ": unticking Student ID takes it out and the button says how many are shown (" + buttonOne + ")");
+      const others = [];
+      for (const [other] of tables) if (other !== table) others.push(JSON.stringify(await headsOf(page, other)) === JSON.stringify(all[other]) && (await buttonText(page, other)) === "Columns");
+      check(others.every(Boolean), where + ": the other two tables are left alone");
+      const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
+      const first = await page.evaluate(() => Array.from(new Set(state.allRows.map((row) => row.studentName.split(/\s+/)[0]).filter((name) => name.length > 2))));
+      check(JSON.stringify(stored.columns) === JSON.stringify({ [table]: ["studentID"] }) && !first.some((name) => JSON.stringify(stored).includes(name)), where + ": the choice is remembered as column keys only, with no name in it (" + JSON.stringify(stored.columns) + ")");
+      check((await csvOf(page, exportFn)) === csvAll, where + ": an export still carries every column and every row");
 
-  await page.click('#priorityColumns [data-col-preset="all"]');
-  await page.waitForTimeout(200);
-  const restored = await heads(page);
-  const storedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
-  check(JSON.stringify(restored) === JSON.stringify(all) && !storedAfter.columns.priority && (await page.evaluate(() => document.getElementById("priorityColumnsBtn").textContent)) === "Columns", "All columns brings every column back and forgets the choice");
+      await page.click("#" + table + 'Columns [data-col-preset="key"]');
+      await page.waitForTimeout(150);
+      const key = await headsOf(page, table);
+      const expected = await page.evaluate((id) => {
+        const keys = new Set(COLUMN_CHOICES[id].key);
+        return columnLists[id].filter((column, index) => index === 0 || keys.has(column[1])).map((column) => column[0]);
+      }, table);
+      check(key.length >= 5 && key.length < mine.length && JSON.stringify(key) === JSON.stringify(expected) && key[0] === mine[0] && mustKeep.every((name) => key.includes(name)), where + ": Key columns keeps the student and what the table is for (" + key.join(", ") + ")");
+      check((await csvOf(page, exportFn)) === csvAll, where + ": and an export still carries every column");
+      const widths = await page.evaluate((id) => { const box = document.getElementById(id + "Table"); return { content: box.scrollWidth, shown: box.clientWidth }; }, table);
+      check(widths.content <= widths.shown + 1, where + ": with the key columns the table fits the page and does not scroll sideways (" + widths.content + " in " + widths.shown + ")");
 
-  await page.focus('#priorityColumns input[data-col-key="subject"]');
-  await page.keyboard.press("Escape");
-  check(await page.evaluate(() => document.getElementById("priorityColumns").hidden && document.activeElement === document.getElementById("priorityColumnsBtn") && document.getElementById("priorityColumnsBtn").getAttribute("aria-expanded") === "false"), "Escape closes the list of columns and returns to the button");
-  check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
-  await page.close();
+      await page.click("#" + table + 'Columns [data-col-preset="all"]');
+      await page.waitForTimeout(150);
+      const restored = await headsOf(page, table);
+      const storedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
+      check(JSON.stringify(restored) === JSON.stringify(mine) && !storedAfter.columns[table] && (await buttonText(page, table)) === "Columns", where + ": All columns brings every column back and forgets the choice");
 
-  // A stored choice is honoured, and a hand-edited one cannot do harm.
-  const kept = await support({ columns: { priority: ["studentID", "className"] } });
-  const keptHeads = await heads(kept.page);
-  check(keptHeads.length === all.length - 2 && !keptHeads.includes("Student ID") && !keptHeads.includes("Class"), "a remembered choice is there when the page opens (" + keptHeads.length + " of " + all.length + " columns)");
+      await page.focus("#" + table + 'Columns input[data-col-key="subject"]');
+      await page.keyboard.press("Escape");
+      check(await page.evaluate((id) => document.getElementById(id + "Columns").hidden && document.activeElement === document.getElementById(id + "ColumnsBtn") && document.getElementById(id + "ColumnsBtn").getAttribute("aria-expanded") === "false", table), where + ": Escape closes the list of columns and returns to the button");
+    }
+    check(errors.length === 0, "no page errors on " + setName + (errors.length ? ": " + errors.join(" | ") : ""));
+    await page.close();
+  }
+
+  // Each table keeps its own choice at the same time, and a stored choice is
+  // honoured; a hand-edited one cannot do harm.
+  const fall = sets["a fall file"];
+  const kept = await openWith(fall, { columns: { priority: ["studentID", "className"], grouping: ["studentID", "className", "subject"], celebration: ["className"] } });
+  const keptHeads = {};
+  for (const [table] of tables) keptHeads[table] = await headsOf(kept.page, table);
+  const dropped = { priority: 2, grouping: 3, celebration: 1 };
+  check(tables.every(([table]) => keptHeads[table].length === everyHeads["a fall file"][table].length - dropped[table]) && !keptHeads.priority.includes("Student ID") && !keptHeads.grouping.includes("Subject") && !keptHeads.celebration.includes("Class") && keptHeads.celebration.includes("Student ID"),
+    "a remembered choice for each of the three tables is there when the page opens (" + tables.map(([table]) => table + " " + keptHeads[table].length).join(", ") + " columns)");
+  check(kept.errors.length === 0, "no page errors with remembered choices");
   await kept.page.close();
-  const hostile = await support({ columns: { priority: ["studentName", "<img src=x onerror=alert(1)>", 5, null, "a".repeat(80), "subject"], nothing: ["subject"], __proto__: { polluted: true } } });
-  const hostileHeads = await heads(hostile.page);
+  const hostile = await openWith(fall, { columns: {
+    priority: ["studentName", "<img src=x onerror=alert(1)>", 5, null, "a".repeat(80), "subject"],
+    grouping: ["studentName", "x".repeat(41), { toString: "no" }, "subject", "subject"],
+    celebration: [5, null, "studentID"],
+    nothing: ["subject"],
+    __proto__: { polluted: true }
+  } });
+  const hostileHeads = {};
+  for (const [table] of tables) hostileHeads[table] = await headsOf(hostile.page, table);
   const hostileStored = await hostile.page.evaluate(() => state.prefs.columns);
-  check(hostileHeads[0] === all[0] && !hostileHeads.includes("Subject") && hostileHeads.length === all.length - 1 && JSON.stringify(hostileStored) === JSON.stringify({ priority: ["studentName", "subject"] }), "a hand-edited choice is cleaned: odd keys and other tables dropped, and the first column cannot be switched off (" + JSON.stringify(hostileStored) + ")");
+  const every = everyHeads["a fall file"];
+  check(JSON.stringify(hostileStored) === JSON.stringify({ priority: ["studentName", "subject"], grouping: ["studentName", "subject"], celebration: ["studentID"] })
+    && tables.every(([table]) => hostileHeads[table][0] === every[table][0]) && hostileHeads.priority.length === every.priority.length - 1 && hostileHeads.grouping.length === every.grouping.length - 1 && hostileHeads.celebration.length === every.celebration.length - 1,
+    "a hand-edited choice is cleaned: odd keys, repeats and other tables dropped, and no first column can be switched off (" + JSON.stringify(hostileStored) + ")");
   check(hostile.errors.length === 0 && (await hostile.page.evaluate(() => ({}).polluted === undefined)), "and does no harm");
   await hostile.page.close();
 }
