@@ -1432,6 +1432,22 @@
     .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 2px double #60a5fa; border-radius: 2px; }
     .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 2px solid #8b5e34; border-radius: 5px; }
     .room-fixture.kind-table { background: #f1e6d3; color: #5b3a12; border: 2px solid #a07a4f; border-radius: 5px; }
+    /* An assistant's desk is a desk and a chair like a student's, in plain
+       slate so it claims none of the five band colours. The frame is only
+       the footprint; the desk, the chair and the name are drawn inside it. */
+    .room-fixture.kind-assistantDesk { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+    .seat-desk.is-assistant { background: var(--panel-2); border-color: var(--muted); }
+    .seat-desk.is-assistant::after { background: var(--muted); }
+    .assistant-name {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      font-weight: 850;
+      line-height: 1.05;
+      white-space: nowrap;
+      color: var(--muted-strong);
+      pointer-events: none;
+    }
     .room-fixture.kind-carpet { background: repeating-linear-gradient(45deg, #ede9fe 0 6px, #ddd6fe 6px 12px); color: #5b21b6; border: 2px dashed #a78bfa; border-radius: 10px; }
     .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 2px solid #9ca3af; border-radius: 3px; }
     .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 2px solid #7dd3fc; border-radius: 3px; }
@@ -5747,6 +5763,7 @@
                 <button type="button" data-add-fixture="door">Door</button>
                 <button type="button" data-add-fixture="window">Window</button>
                 <button type="button" data-add-fixture="teacherDesk">Teacher desk</button>
+                <button type="button" data-add-fixture="assistantDesk">Assistant desk</button>
                 <button type="button" data-add-fixture="table">Side table</button>
                 <button type="button" data-add-fixture="carpet">Carpet</button>
                 <button type="button" data-add-fixture="shelf">Shelves</button>
@@ -5754,7 +5771,7 @@
                 <button type="button" data-add-fixture="sink">Sink</button>
                 <button type="button" data-add-fixture="note">Area label</button>
               </div>
-              <span class="hint">Boards, screens, doors, windows, shelves and sinks stick to the nearest wall. Each piece arrives at a typical size: select it to type its real length and depth, or drag the grip on its corner.</span>
+              <span class="hint">Boards, screens, doors, windows, shelves and sinks stick to the nearest wall. Each piece arrives at a typical size: select it to type its real length and depth, or drag the grip on its corner. An assistant desk is one desk and its chair for an adult, with no student seat: add as many as the room has, and turn each to face the way that adult sits. To give a group a second table, select its table and choose Add a table to this group.</span>
             </div>
           </details>
           <details class="room-menu" id="plannerRoomMenu">
@@ -13106,9 +13123,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         act: "Tick the posters you want, choose A3 or A4, add the class name the students know, and print with background graphics on and fit-to-page."
       },
       "sec-tables": {
-        what: "Table groups built from the data by a chosen strategy, and a full-screen planner drawn to scale: your room's size in metres, single desks (70 x 49 cm unless you set another size) pushed together into groups, a chair behind each, and your own furniture at its real size. A group of five is two facing pairs with one desk at the head; you can also choose a desk at each end, a row facing the front, a horseshoe or a round table. The room is remembered on this device; the students never are.",
-        read: "Each desk carries the student's band colour and the score that drove the grouping; the strip on each table's name plate shows its band mix, so a balanced table reads as a spread of colours and a skill group as one block. Names are always shown in full, sized to fit the desk. A warning above the room names any tables that overlap or stand on furniture. The paragraph under the room says exactly how the plan was made, and the placement-order toggle numbers the desks in the order the strategy dealt them. Students without a usable score wait in Unplaced rather than being seated by a number they do not have.",
-        act: "Set your room size and desk size under Room, add and size the board, door, windows and teacher desk, then build the groups for the week. Drag anyone the data placed badly to any desk (dropping on a taken desk swaps), save a plan file under Room to keep who sits where for next time, and print the teacher copy for your planner and the wall plan, with names only, for the room."
+        what: "Table groups built from the data by a chosen strategy, and a full-screen planner drawn to scale: your room's size in metres, single desks (70 x 49 cm unless you set another size) pushed together into groups, a chair behind each, and your own furniture at its real size. A group of five is two facing pairs with one desk at the head; you can also choose a desk at each end, a row facing the front, a horseshoe or a round table. A group can sit at more than one table, and an assistant has a desk of their own. The room is remembered on this device; the students never are.",
+        read: "Each desk carries the student's band colour and the score that drove the grouping; the strip on each table's name plate shows its band mix, so a balanced table reads as a spread of colours and a skill group as one block. Names are always shown in full, sized to fit the desk. When a group sits at more than one table, the extra tables carry its name and a letter (Table 1 · B) and show how many of their desks are filled. A warning above the room names any tables that overlap or stand on furniture. The paragraph under the room says exactly how the plan was made, and the placement-order toggle numbers the desks in the order the strategy dealt them. Students without a usable score wait in Unplaced rather than being seated by a number they do not have.",
+        act: "Set your room size and desk size under Room, add and size the board, door, windows and teacher desk, then build the groups for the week. Select a table and choose Add a table to this group when a group needs more room: the group keeps its students and its seats carry on across the tables, and each table can be moved, turned and given its own number of desks. Add an assistant desk from Add to room: one desk and a chair with no student seat. Drag anyone the data placed badly to any desk (dropping on a taken desk swaps), save a plan file under Room to keep who sits where for next time, and print the teacher copy for your planner and the wall plan, with names only, for the room."
       },
       "sec-grouping": {
         what: "Every record in view in one sortable table: scores, bands, growth, gap status, the planning group the dashboard suggests and the teacher action that goes with it.",
@@ -17878,6 +17895,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // The coloured edge on a desk: the side the student faces.
     const DESK_STRIPE = 5;
     const ROOM_HISTORY_MAX = 40;
+    // A group's seats fill its tables in order, so a group may sit at several:
+    // its own table and up to three more, each with its own desks.
+    const MAX_GROUP_TABLES = 4;
+    const MAX_TABLE_DESKS = 16;
+    // Side by side, this far apart, until the teacher moves them.
+    const TABLE_PART_GAP = 14;
     const ROOM_SNAP_STEPS = [0, 5, 10, 25, 50];
     const SEATING_PRINT_FONT = '"Segoe UI", Tahoma, Geneva, Verdana, Arial, sans-serif';
     // Null-prototype maps: a kind or shape read from a file is looked up by
@@ -17901,6 +17924,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       door: { label: "Door", w: 90, d: 12, wall: true, swing: true },
       window: { label: "Window", w: 180, d: 12, wall: true },
       teacherDesk: { label: "Teacher desk", w: 140, d: 70, wall: false },
+      // One desk and its chair for an adult in the room, with no student seat.
+      // Its depth is the desk and the chair behind it, like a student's place.
+      assistantDesk: { label: "Assistant desk", short: "Assistant", w: DESK_DEFAULT.width, d: DESK_DEFAULT.depth + CHAIR_ZONE, wall: false, chair: true },
       table: { label: "Side table", w: 120, d: 60, wall: false },
       carpet: { label: "Carpet", w: 250, d: 200, wall: false, under: true },
       shelf: { label: "Shelves", w: 120, d: 35, wall: true },
@@ -18152,7 +18178,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function fixtureSize(fixture) {
       const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
-      return { w: clampFixtureLength(fixture.w, meta.w), d: clampFixtureDepth(fixture.d, meta.d) };
+      const depth = clampFixtureDepth(fixture.d, meta.d);
+      return { w: clampFixtureLength(fixture.w, meta.w), d: meta.chair ? Math.max(depth, CHAIR_ZONE + 20) : depth };
     }
 
     function fixtureFootprint(fixture) {
@@ -18233,12 +18260,31 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const tables = Array.isArray(raw.tables) ? raw.tables : [];
       // A table from the last version was a different size, so its place
       // means nothing now: it keeps its shape and turn and is laid out afresh.
-      layout.tables = tables.slice(0, 80).map((table) => ({
-        x: current ? toX(table?.x) : NaN,
-        y: current ? toY(table?.y) : NaN,
-        shape: normalizeShape(table?.shape),
-        rot: normalizeRotation(table?.rot)
-      }));
+      layout.tables = tables.slice(0, 80).map((table) => {
+        const out = {
+          x: current ? toX(table?.x) : NaN,
+          y: current ? toY(table?.y) : NaN,
+          shape: normalizeShape(table?.shape),
+          rot: normalizeRotation(table?.rot)
+        };
+        // The other tables a group sits at. A place that is missing or not a
+        // number stays NaN, and the room puts the table beside its group's first.
+        if (current && Array.isArray(table?.more) && table.more.length) {
+          const spot = (value, max) => {
+            const n = finiteLayoutNumber(value, NaN);
+            return Number.isFinite(n) ? clampBetween(n, 0, max) : NaN;
+          };
+          out.seats = clampInteger(Number(table.seats), 1, MAX_TABLE_DESKS) || 1;
+          out.more = table.more.slice(0, MAX_GROUP_TABLES - 1).map((extra) => ({
+            x: spot(extra?.x, room.width),
+            y: spot(extra?.y, room.depth),
+            shape: normalizeShape(extra?.shape),
+            rot: normalizeRotation(extra?.rot),
+            seats: clampInteger(Number(extra?.seats), 1, MAX_TABLE_DESKS) || 1
+          }));
+        }
+        return out;
+      });
       if (Array.isArray(raw.fixtures)) {
         layout.fixtures = raw.fixtures.slice(0, 60)
           .filter((fixture) => fixture && typeof fixture.kind === "string" && FIXTURE_KINDS[fixture.kind])
@@ -18281,7 +18327,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         desk: deskSize(),
         snap: getLayoutSnapCm(),
         arranged: Boolean(layout.arranged),
-        tables: layout.tables.map((table) => ({ x: tenth(table.x), y: tenth(table.y), shape: table.shape, rot: table.rot })),
+        tables: layout.tables.map((table) => {
+          const out = { x: tenth(table.x), y: tenth(table.y), shape: table.shape, rot: table.rot };
+          if (Array.isArray(table.more) && table.more.length) {
+            out.seats = clampDeskCount(table.seats);
+            out.more = table.more.map((extra) => ({
+              x: tenth(extra.x),
+              y: tenth(extra.y),
+              shape: normalizeShape(extra.shape),
+              rot: normalizeRotation(extra.rot),
+              seats: clampDeskCount(extra.seats)
+            }));
+          }
+          return out;
+        }),
         fixtures: layout.fixtures.map((fixture) => {
           const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
           const size = fixtureSize(fixture);
@@ -18513,9 +18572,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const fy = to.depth / Math.max(1, from.depth);
       layout.tables.forEach((table, index) => {
         if (index >= state.tableGroups.length) return;
-        const geo = tableGeometryFor(index);
-        table.x = (table.x + geo.width / 2) * fx - geo.width / 2;
-        table.y = (table.y + geo.height / 2) * fy - geo.height / 2;
+        roomTableParts(index).forEach((part) => {
+          part.table.x = (part.table.x + part.geo.width / 2) * fx - part.geo.width / 2;
+          part.table.y = (part.table.y + part.geo.height / 2) * fy - part.geo.height / 2;
+        });
       });
       layout.fixtures.forEach((fixture) => {
         const foot = fixtureFootprint(fixture);
@@ -18540,15 +18600,221 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return cleanString(custom) || "Table " + formatInteger(index + 1);
     }
 
-    function tableSeatCount(index) {
+    // ---- A group at more than one table --------------------------------------
+    // The tables a group sits at, in the order its seats fill them: the one
+    // the plan built, then each added to it. Every table has its own
+    // arrangement, turn, place and desks. The group stays one group, with one
+    // name, one roster and one band mix, so adding a table never moves a
+    // student: the seats just carry on from one table to the next.
+    function clampDeskCount(value, fallback = 1) {
+      const n = clampInteger(Number(value), 1, MAX_TABLE_DESKS);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function tablePartLetter(k) {
+      return String.fromCharCode(65 + k);
+    }
+
+    // "Table 3", and for a table added to its group "Table 3 · B".
+    function tablePartLabel(index, k) {
+      return k > 0 ? tableLabel(index) + " \u00b7 " + tablePartLetter(k) : tableLabel(index);
+    }
+
+    function groupTableList(index) {
+      const table = roomTable(index);
+      return [table].concat(Array.isArray(table.more) ? table.more : []);
+    }
+
+    // The desks the group needs: what its plan allows, or the students it holds.
+    function groupDeskNeed(index) {
       const capacity = state.tableCapacities[index] || 0;
       const seated = state.tableGroups[index] ? state.tableGroups[index].length : 0;
       return Math.max(1, capacity, seated);
     }
 
-    function tableGeometryFor(index) {
+    // Desks at each of the group's tables. With one table that is all of
+    // them. With several, each has the number the teacher gave it, and any
+    // student beyond those desks stands at the last table, which is the end
+    // of the order the seats fill.
+    function tableDeskCounts(index) {
+      const tables = groupTableList(index);
+      const need = groupDeskNeed(index);
+      if (tables.length === 1) return [need];
+      const counts = tables.map((table) => clampDeskCount(table.seats));
+      const total = counts.reduce((sum, n) => sum + n, 0);
+      if (need > total) counts[counts.length - 1] += need - total;
+      return counts;
+    }
+
+    function tableSeatCount(index) {
+      return tableDeskCounts(index).reduce((sum, n) => sum + n, 0);
+    }
+
+    // One entry per table the group sits at: the layout's own object (where
+    // it stands, how it is arranged), its desks, which seats of the group are
+    // there (offset is the first), and its geometry.
+    function roomTableParts(index) {
+      const tables = groupTableList(index);
+      const counts = tableDeskCounts(index);
+      let offset = 0;
+      return tables.map((table, k) => {
+        table.shape = normalizeShape(table.shape);
+        table.rot = normalizeRotation(table.rot);
+        const part = { table, k, extra: k > 0, seats: counts[k], offset, geo: tableGeometry(table.shape, counts[k], table.rot) };
+        offset += counts[k];
+        return part;
+      });
+    }
+
+    // The geometry of one of a group's tables; the first unless told.
+    function tableGeometryFor(index, k = 0) {
+      const parts = roomTableParts(index);
+      return (parts[k] || parts[0]).geo;
+    }
+
+    // One of a group's tables as the layout holds it.
+    function roomTablePart(index, k = 0) {
       const table = roomTable(index);
-      return tableGeometry(table.shape, tableSeatCount(index), table.rot);
+      if (!(k > 0)) return table;
+      return (Array.isArray(table.more) ? table.more[k - 1] : null) || null;
+    }
+
+    // Where a group's tables stand relative to its first when nothing else
+    // says: side by side across the room, top edges level.
+    function partOffsets(index) {
+      const parts = roomTableParts(index);
+      const offsets = [];
+      let x = 0;
+      parts.forEach((part) => {
+        offsets.push({ x, y: 0 });
+        x += part.geo.width + TABLE_PART_GAP;
+      });
+      return { offsets, width: Math.max(0, x - TABLE_PART_GAP), height: Math.max(...parts.map((part) => part.geo.height)) };
+    }
+
+    // Everything something new must stand clear of: every table of every
+    // group (bar the one named) and each piece of furniture with floor to it.
+    function roomObstacles(skip) {
+      const out = [];
+      state.tableGroups.forEach((group, index) => {
+        roomTableParts(index).forEach((part) => {
+          if (skip && skip.index === index && skip.k === part.k) return;
+          if (!Number.isFinite(part.table.x) || !Number.isFinite(part.table.y)) return;
+          out.push({ x: part.table.x, y: part.table.y, w: part.geo.width, h: part.geo.height });
+        });
+      });
+      (state.classroomLayout.fixtures || []).forEach((fixture) => {
+        const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+        if (meta.under || meta.preset) return;
+        if (skip && skip.fixtureId && skip.fixtureId === fixture.id) return;
+        const foot = fixtureFootprint(fixture);
+        out.push({ x: fixture.x, y: fixture.y, w: foot.width, h: foot.height });
+      });
+      return out;
+    }
+
+    // Whether a box this size, with its top left corner here, stands clear of
+    // every obstacle by a hand's breadth.
+    function boxIsClear(obstacles, x, y, width, height) {
+      const gap = 6;
+      return !obstacles.some((o) => x < o.x + o.w + gap && x + width + gap > o.x && y < o.y + o.h + gap && y + height + gap > o.y);
+    }
+
+    // The clear place nearest `near` for a box this size, on a 10 cm grid and
+    // inside the room, or the nearest place at all if the room has none.
+    function findFreeSpot(width, height, near, skip = null) {
+      const room = roomSize();
+      const obstacles = roomObstacles(skip);
+      const maxX = Math.max(0, room.width - width);
+      const maxY = Math.max(0, room.depth - height);
+      const aim = { x: clampBetween(finiteLayoutNumber(near && near.x), 0, maxX), y: clampBetween(finiteLayoutNumber(near && near.y), 0, maxY) };
+      let best = null;
+      let bestDistance = Infinity;
+      for (let y = 0; y <= maxY; y += 10) {
+        for (let x = 0; x <= maxX; x += 10) {
+          const distance = (x - aim.x) ** 2 + (y - aim.y) ** 2;
+          if (distance >= bestDistance) continue;
+          if (boxIsClear(obstacles, x, y, width, height)) {
+            best = { x, y };
+            bestDistance = distance;
+          }
+        }
+      }
+      return best || aim;
+    }
+
+    // Gives each of a group's tables its desks. The group's capacity is then
+    // exactly those desks, and the arrangement is the teacher's, so a later
+    // redraw keeps it.
+    function writeDeskCounts(index, counts) {
+      const tables = groupTableList(index);
+      tables.forEach((table, k) => { table.seats = counts[k]; });
+      if (tables.length === 1) delete tables[0].seats;
+      state.tableCapacities[index] = counts.reduce((sum, n) => sum + n, 0);
+      state.manualArrangement = true;
+    }
+
+    // A new table for the group, beside its last. The last table hands over
+    // half its desks, so the group keeps the desks it had and every student
+    // keeps their seat: the seats just carry on across the new table.
+    function addTableToGroup(index) {
+      if (!state.tableGroups[index]) return;
+      const main = roomTable(index);
+      const parts = roomTableParts(index);
+      if (parts.length >= MAX_GROUP_TABLES) {
+        announce(tableLabel(index) + " already sits at " + formatInteger(MAX_GROUP_TABLES) + " tables, the most one group can have.");
+        return;
+      }
+      pushRoomHistory();
+      const last = parts[parts.length - 1];
+      const counts = parts.map((part) => part.seats);
+      const give = Math.max(1, Math.floor(last.seats / 2));
+      counts[counts.length - 1] = Math.max(1, last.seats - give);
+      counts.push(give);
+      const extra = { x: NaN, y: NaN, shape: last.table.shape, rot: last.table.rot, seats: give };
+      main.more = (Array.isArray(main.more) ? main.more : []).concat(extra);
+      writeDeskCounts(index, counts);
+      const geo = tableGeometry(extra.shape, give, extra.rot);
+      const skip = { index, k: counts.length - 1 };
+      const spot = findFreeSpot(geo.width, geo.height, { x: last.table.x + last.geo.width + TABLE_PART_GAP, y: last.table.y }, skip);
+      Object.assign(extra, spot);
+      const clear = boxIsClear(roomObstacles(skip), spot.x, spot.y, geo.width, geo.height);
+      state.roomSelection = { kind: "table", index, part: counts.length - 1 };
+      settleAndRender((counts.length > 2 ? "Another" : "A second") + " table added to " + tableLabel(index) + ": " + tablePartLabel(index, counts.length - 1) + ", " +
+        formatInteger(give) + " desk" + (give === 1 ? "" : "s") + ". The seats carry on across it. " +
+        (clear ? "Drag it where you want it." : "The room had no clear floor left for it, so it sits on another table: drag it into a gap, or make the room bigger."));
+    }
+
+    // Takes one of a group's added tables away. Its desks go back to the
+    // table before it, so the group keeps every desk and every student.
+    function removeGroupTable(index, k) {
+      const main = roomTable(index);
+      const parts = roomTableParts(index);
+      if (!(k >= 1) || k >= parts.length) return;
+      pushRoomHistory();
+      const counts = parts.map((part) => part.seats);
+      counts[k - 1] += counts[k];
+      counts.splice(k, 1);
+      main.more.splice(k - 1, 1);
+      if (!main.more.length) delete main.more;
+      writeDeskCounts(index, counts);
+      state.roomSelection = { kind: "table", index, part: k - 1 };
+      settleAndRender(tablePartLabel(index, k) + " removed. Its desks went back to " + tablePartLabel(index, k - 1) + ", and nobody moved.");
+    }
+
+    // How many desks one of the group's tables has. A group's only table
+    // cannot have fewer than the students seated at it.
+    function setTableDesks(index, k, wanted) {
+      const parts = roomTableParts(index);
+      const part = parts[k];
+      if (!part) return false;
+      const counts = parts.map((entry) => entry.seats);
+      counts[k] = clampDeskCount(wanted, part.seats);
+      if (parts.length === 1) counts[0] = Math.max(counts[0], state.tableGroups[index] ? state.tableGroups[index].length : 1);
+      if (counts[k] === part.seats) return false;
+      pushRoomHistory();
+      writeDeskCounts(index, counts);
+      return true;
     }
 
     // The first row of tables starts clear of whatever stands along the front
@@ -18576,7 +18842,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const sizes = [];
       for (let index = 0; index < count; index += 1) {
         const table = state.classroomLayout.tables[index];
-        const geo = tableGeometry(table ? normalizeShape(table.shape) : "pod", tableSeatCount(index), table ? table.rot : 0);
+        // A group with several tables is laid out as one block, its tables
+        // side by side, so the grid leaves room for all of them.
+        if (table && Array.isArray(table.more) && table.more.length) {
+          const cluster = partOffsets(index);
+          sizes.push({ w: cluster.width, h: cluster.height });
+          continue;
+        }
+        const geo = tableGeometry(table ? normalizeShape(table.shape) : "pod", groupDeskNeed(index), table ? table.rot : 0);
         sizes.push({ w: geo.width, h: geo.height });
       }
       return sizes;
@@ -18661,11 +18934,22 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const existing = layout.tables[index];
         if (!existing || reset || !Number.isFinite(existing.x) || !Number.isFinite(existing.y)) {
           layout.tables[index] = { x: 0, y: 0, shape: normalizeShape(existing?.shape), rot: normalizeRotation(existing?.rot) };
+          // A group keeps the tables added to it; they are stood beside its first again.
+          if (existing && Array.isArray(existing.more) && existing.more.length) {
+            layout.tables[index].seats = existing.seats;
+            layout.tables[index].more = existing.more.map((extra) => ({ ...extra, x: NaN, y: NaN }));
+          }
           fresh.push(index);
         }
       }
       // With no plan yet (no data), a room's tables are kept for the plan to come.
       if (tableCount > 0) layout.tables = layout.tables.slice(0, tableCount);
+      // A group with several tables has exactly the desks they were given.
+      layout.tables.forEach((table, index) => {
+        if (index < state.tableGroups.length && Array.isArray(table.more) && table.more.length) {
+          state.tableCapacities[index] = groupTableList(index).reduce((sum, entry) => sum + clampDeskCount(entry.seats), 0);
+        }
+      });
       if (fresh.length) {
         const plan = defaultTablePlan(tableCount);
         fresh.forEach((index) => {
@@ -18675,25 +18959,39 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         });
         if (reset) layout.arranged = false;
       }
+      // A table that has no place yet (just added, or from a file that gave
+      // none) stands beside the group's first.
       layout.tables.forEach((table, index) => {
-        Object.assign(table, clampRoomBox(table, tableGeometryFor(index)));
+        if (!Array.isArray(table.more) || !table.more.some((extra) => !Number.isFinite(extra.x) || !Number.isFinite(extra.y))) return;
+        const cluster = partOffsets(index);
+        table.more.forEach((extra, k) => {
+          if (Number.isFinite(extra.x) && Number.isFinite(extra.y)) return;
+          extra.x = finiteLayoutNumber(table.x) + cluster.offsets[k + 1].x;
+          extra.y = finiteLayoutNumber(table.y) + cluster.offsets[k + 1].y;
+        });
+      });
+      layout.tables.forEach((table, index) => {
+        roomTableParts(index).forEach((part) => Object.assign(part.table, clampRoomBox(part.table, part.geo)));
       });
     }
 
     // Tables that share floor with another table or stand on furniture,
     // measured on the desks and chairs themselves, not their bounding boxes,
-    // so a small group inside a big U is not a clash.
+    // so a small group inside a big U is not a clash. Every table of every
+    // group counts, and two of one group's own tables can clash with each other.
     function roomClashes() {
       const count = state.tableGroups.length;
       const boxes = [];
       for (let index = 0; index < count; index += 1) {
-        const table = roomTable(index);
-        const geo = tableGeometryFor(index);
-        const parts = geo.seats.map((seat) => ({ x: table.x + seat.x, y: table.y + seat.y, w: seat.w, h: seat.h }));
-        // The name plate counts: a table drawn over another's plate hides it.
-        if (geo.tab) parts.push({ x: table.x + geo.tab.x, y: table.y + geo.tab.y, w: geo.tab.w, h: geo.tab.h });
-        if (geo.round) parts.push({ x: table.x + geo.round.x, y: table.y + geo.round.y, w: geo.round.w, h: geo.round.h });
-        boxes.push({ index, x: table.x, y: table.y, w: geo.width, h: geo.height, parts });
+        roomTableParts(index).forEach((part) => {
+          const table = part.table;
+          const geo = part.geo;
+          const parts = geo.seats.map((seat) => ({ x: table.x + seat.x, y: table.y + seat.y, w: seat.w, h: seat.h }));
+          // The name plate counts: a table drawn over another's plate hides it.
+          if (geo.tab) parts.push({ x: table.x + geo.tab.x, y: table.y + geo.tab.y, w: geo.tab.w, h: geo.tab.h });
+          if (geo.round) parts.push({ x: table.x + geo.round.x, y: table.y + geo.round.y, w: geo.round.w, h: geo.round.h });
+          boxes.push({ index, k: part.k, x: table.x, y: table.y, w: geo.width, h: geo.height, parts });
+        });
       }
       const hit = (a, b) => a.x < b.x + b.w - 1 && a.x + a.w > b.x + 1 && a.y < b.y + b.h - 1 && a.y + a.h > b.y + 1;
       const tables = new Set();
@@ -18715,10 +19013,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         const foot = fixtureFootprint(fixture);
         const rect = { x: fixture.x, y: fixture.y, w: foot.width, h: foot.height };
         boxes.forEach((box) => {
-          if (hit(box, rect) && box.parts.some((part) => hit(part, rect))) furniture.push({ table: box.index, fixture });
+          if (hit(box, rect) && box.parts.some((part) => hit(part, rect))) furniture.push({ table: box.index, k: box.k, fixture });
         });
       });
-      return { pairs, tables, furniture };
+      return { pairs, tables, furniture, boxes };
     }
 
     // Said above the room whenever tables overlap or stand on furniture,
@@ -18730,13 +19028,13 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const room = roomSize();
       const parts = [];
       if (clashes.tables.size) {
-        const names = Array.from(clashes.tables).sort((a, b) => a - b).map((index) => tableLabel(index));
+        const names = Array.from(clashes.tables).sort((a, b) => a - b).map((n) => tablePartLabel(clashes.boxes[n].index, clashes.boxes[n].k));
         parts.push(clashes.pairs.length === 1 ? names.join(" and ") + " overlap." : formatInteger(clashes.tables.size) + " tables overlap: " + names.join(", ") + ".");
       }
       if (clashes.furniture.length) {
         const first = clashes.furniture[0];
         const more = clashes.furniture.length - 1;
-        parts.push(tableLabel(first.table) + " stands on the " + fixtureLabel(first.fixture).toLowerCase() + (more ? ", and " + formatInteger(more) + " more table" + (more === 1 ? " stands" : "s stand") + " on furniture" : "") + ".");
+        parts.push(tablePartLabel(first.table, first.k) + " stands on the " + fixtureLabel(first.fixture).toLowerCase() + (more ? ", and " + formatInteger(more) + " more table" + (more === 1 ? " stands" : "s stand") + " on furniture" : "") + ".");
       }
       const fits = defaultTablePlan(state.tableGroups.length).fits;
       const advice = fits
@@ -19105,8 +19403,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         els.plannerLaunchHint.textContent = tables
           ? formatInteger(seated) + " students across " + formatInteger(tables) + " table" + (tables === 1 ? "" : "s") +
             (pool ? ", " + formatInteger(pool) + " waiting to be placed by hand" : "") +
-            ". Move students between desks, arrange and place the groups, add and size the furniture, then print the plan."
-          : "A full-screen, to-scale room where students sit at single desks pushed into groups you can move, turn and arrange around your furniture. Load data to build a plan.";
+            ". Move students between desks, arrange and place the groups, give a group another table, add assistant desks and size the furniture, then print the plan."
+          : "A full-screen, to-scale room where students sit at single desks pushed into groups you can move, turn and arrange around your furniture and your assistants' desks. Load data to build a plan.";
       }
       if (els.plannerContext) {
         els.plannerContext.textContent = tables
@@ -19192,7 +19490,24 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function fixtureDimensionsText(fixture) {
       const size = fixtureSize(fixture);
+      const meta = FIXTURE_KINDS[fixture.kind] || FIXTURE_KINDS.note;
+      // An assistant's desk is measured as a desk, and its chair is extra.
+      if (meta.chair) return formatInteger(size.w) + " by " + formatInteger(size.d - CHAIR_ZONE) + " cm, with its chair";
       return formatInteger(size.w) + " by " + formatInteger(size.d) + " cm";
+    }
+
+    // A chair kind (an assistant's desk) is a desk with its chair behind it,
+    // drawn like a student's place: the footprint holds both, and the turn
+    // says which side the chair is on (the adult faces the way a student does).
+    function chairFixtureParts(fixture) {
+      const foot = fixtureFootprint(fixture);
+      const face = { 0: "up", 90: "right", 180: "down", 270: "left" }[normalizeRotation(fixture.rot)] || "up";
+      let desk;
+      if (face === "up") desk = { x: 0, y: 0, w: foot.width, h: foot.height - CHAIR_ZONE };
+      else if (face === "down") desk = { x: 0, y: CHAIR_ZONE, w: foot.width, h: foot.height - CHAIR_ZONE };
+      else if (face === "left") desk = { x: 0, y: 0, w: foot.width - CHAIR_ZONE, h: foot.height };
+      else desk = { x: CHAIR_ZONE, y: 0, w: foot.width - CHAIR_ZONE, h: foot.height };
+      return { face, desk, chair: chairBox({ desk, face }) };
     }
 
     function renderFixture(fixture, mode) {
@@ -19212,7 +19527,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       // Thin wall pieces carry their name on a tab that may stand proud of
       // the wall; anything with floor to it carries it inside.
       const labelSize = Math.min(13, long * 0.9 / measureEm(label, roomFontFor(mode), 800), meta.wall ? 13 : Math.max(7, short * 0.7));
+      const chairParts = meta.chair ? chairFixtureParts(fixture) : null;
       const classes = "room-fixture kind-" + fixture.kind +
+        (chairParts ? " has-chair face-" + chairParts.face : "") +
         (meta.wall ? " on-wall wall-" + (WALL_NAMES[rot] || "front") : "") +
         (upright ? " is-upright" : "") +
         (meta.under ? " is-under" : "") +
@@ -19220,6 +19537,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         (selected ? " is-selected" : "");
       const swing = meta.swing ? `<i class="door-swing" aria-hidden="true" style="--swing:calc(var(--cm) * ${cmNumber(size.w)})"></i>` : "";
       const handle = selected ? fixtureGripMarkup(fixture) : "";
+      if (chairParts) {
+        // The name is set to the desk it sits on, whichever way the desk is turned.
+        const text = meta.short || label;
+        const nameSize = Math.min(11, chairParts.desk.w * 0.88 / measureEm(text, roomFontFor(mode), 800), chairParts.desk.h * 0.6);
+        return `<div class="${classes}"${attrs} style="${fixtureStyle(fixture)}">` +
+          `<i class="seat-desk is-assistant" aria-hidden="true" style="${boxStyle(chairParts.desk)}"></i>` +
+          `<i class="seat-chair" aria-hidden="true" style="${boxStyle(chairParts.chair)}"></i>` +
+          `<span class="assistant-name" style="${boxStyle(chairParts.desk)} font-size:calc(var(--cm) * ${nameSize.toFixed(2)})">${escapeHTML(text)}</span>${handle}</div>`;
+      }
       return `<div class="${classes}"${attrs} style="${fixtureStyle(fixture)}"><span class="fixture-label" style="font-size:calc(var(--cm) * ${labelSize.toFixed(2)})">${escapeHTML(label)}</span>${swing}${handle}</div>`;
     }
 
@@ -19229,42 +19555,54 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return `<i class="fixture-resize${meta.wall ? " is-length" : ""}" data-fixture-resize aria-hidden="true" title="${meta.wall ? "Drag to change its length" : "Drag to resize"}"></i>`;
     }
 
+    // A group is drawn once per table it sits at. The first carries the group's
+    // name and totals; a table added to the group carries its own letter and
+    // count. Seat numbers carry on across them, so seat 4 at the second table
+    // is the group's fourth seat and the drop zones need no other idea.
     function renderRoomTable(group, index, mode, scoreMode, strategy) {
-      const table = roomTable(index);
-      const geo = tableGeometryFor(index);
+      const parts = roomTableParts(index);
+      return parts.map((part) => renderRoomTablePart(group, index, part, parts.length, mode, scoreMode)).join("");
+    }
+
+    function renderRoomTablePart(group, index, part, partCount, mode, scoreMode) {
+      const table = part.table;
+      const geo = part.geo;
       const capacity = state.tableCapacities[index] || null;
       // The wall copy is names alone: a red outline for a crowded table is a
       // data cue too, so it stays on the teacher's copy.
-      const overCapacity = mode !== "wall" && Boolean(capacity && group.length > capacity);
+      const overCapacity = mode !== "wall" && !part.extra && Boolean(capacity && group.length > capacity);
       const interactive = mode === "screen";
-      const selected = interactive && state.roomSelection && state.roomSelection.kind === "table" && state.roomSelection.index === index;
-      const label = tableLabel(index);
-      const seatCount = geo.seats.length;
+      const selection = state.roomSelection;
+      const selected = interactive && selection && selection.kind === "table" && selection.index === index && (selection.part || 0) === part.k;
+      const label = tablePartLabel(index, part.k);
+      const here = group.slice(part.offset, part.offset + part.seats);
       const attrs = interactive
-        ? ` data-layout-kind="table" data-layout-handle data-table-index="${escapeAttr(index)}" tabindex="0" role="group" aria-label="${escapeAttr(label + ", " + TABLE_SHAPES[table.shape].short + ", " + formatInteger(seatCount) + " desks, " + formatInteger(group.length) + " seated. Arrow keys move it, hold Shift for larger steps. R turns it, S changes how the desks are arranged, Enter opens its settings.")}"`
+        ? ` data-layout-kind="table" data-layout-handle data-table-index="${escapeAttr(index)}" data-table-part="${escapeAttr(part.k)}" tabindex="0" role="group" aria-label="${escapeAttr(label + (partCount > 1 ? ", table " + formatInteger(part.k + 1) + " of " + formatInteger(partCount) + " for this group" : "") + ", " + TABLE_SHAPES[table.shape].short + ", " + formatInteger(part.seats) + " desks, " + formatInteger(here.length) + " seated. Arrow keys move it, hold Shift for larger steps. R turns it, S changes how the desks are arranged, " + (part.extra ? "Delete takes this table away, " : "") + "Enter opens its settings.")}"`
         : "";
-      const seats = geo.seats.map((seat, seatIndex) => renderPlace(seat, group[seatIndex], { mode, index, seatIndex, capacity, interactive })).join("");
-      const plate = renderTablePlate(geo, group, index, mode, scoreMode, capacity, interactive, overCapacity);
-      return `<article class="room-table shape-${escapeAttr(table.shape)} rot-${table.rot}${overCapacity ? " is-over-capacity" : ""}${selected ? " is-selected" : ""}"${attrs} style="${layoutStyle(table)} width:calc(var(--cm) * ${cmNumber(geo.width)}); height:calc(var(--cm) * ${cmNumber(geo.height)});">${plate}${seats}</article>`;
+      const seats = geo.seats.map((seat, seatIndex) => renderPlace(seat, group[part.offset + seatIndex], { mode, index, seatIndex: part.offset + seatIndex, capacity, interactive })).join("");
+      const plate = renderTablePlate(geo, group, index, mode, scoreMode, capacity, interactive, overCapacity, part, here);
+      return `<article class="room-table shape-${escapeAttr(table.shape)} rot-${table.rot}${part.extra ? " is-added" : ""}${overCapacity ? " is-over-capacity" : ""}${selected ? " is-selected" : ""}"${attrs} style="${layoutStyle(table)} width:calc(var(--cm) * ${cmNumber(geo.width)}); height:calc(var(--cm) * ${cmNumber(geo.height)});">${plate}${seats}</article>`;
     }
 
     // The table's name plate above its desks, or its name on a round table:
     // the name always; the band mix and the counts when they fit. It is also
     // where a student is dropped to join the table at its next free desk.
-    function renderTablePlate(geo, group, index, mode, scoreMode, capacity, interactive, overCapacity) {
+    function renderTablePlate(geo, group, index, mode, scoreMode, capacity, interactive, overCapacity, part = null, here = null) {
       const round = Boolean(geo.round);
       const box = round ? geo.round : geo.tab;
       const family = roomFontFor(mode);
-      const label = tableLabel(index);
+      const added = Boolean(part && part.extra);
+      const label = part ? tablePartLabel(index, part.k) : tableLabel(index);
       const wall = mode === "wall";
       const inner = round ? box.w * 0.7 : box.w - 8;
       const labelEm = measureEm(label, family, 800);
       const labelSize = Math.min(round ? 15 : wall ? 14 : 12.5, (round ? box.h * 0.2 : box.h - 5) / 1.12, inner * 0.93 / labelEm);
-      const meta = wall ? "" : tableMetaText(group, capacity, scoreMode);
+      // The group's totals sit on its first table; a table added to it says how full it is.
+      const meta = wall ? "" : added ? formatInteger(here.length) + "/" + formatInteger(part.seats) : tableMetaText(group, capacity, scoreMode);
       const metaSize = 8.5;
       const metaWidth = meta ? measureEm(meta, family, 700) * metaSize : 0;
       const mixWidth = 26;
-      let showMix = !wall && group.length > 0;
+      let showMix = !wall && !added && group.length > 0;
       let showMeta = Boolean(meta);
       if (round) {
         showMeta = showMeta && metaWidth <= inner * 0.93;
@@ -19391,9 +19729,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const sizes = [];
       groups.forEach((group, index) => {
         if (!group.length) return;
-        const geo = tableGeometryFor(index);
+        // The seats of all the group's tables, in the order they fill.
+        const seats = roomTableParts(index).reduce((all, part) => all.concat(part.geo.seats), []);
         group.forEach((profile, seatIndex) => {
-          const seat = geo.seats[seatIndex];
+          const seat = seats[seatIndex];
           if (!seat) return;
           sizes.push(seatNameLayout(profile.studentName, "%ile 00", false, nameBoxes(seat, mode !== "wall"), mode, max).fit.size);
         });
@@ -19501,13 +19840,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       let body = "";
       if (selection && selection.kind === "table" && state.tableGroups[selection.index]) {
         const index = selection.index;
-        const table = roomTable(index);
+        const parts = roomTableParts(index);
+        const part = parts[selection.part || 0] || parts[0];
+        const table = part.table;
+        const total = tableSeatCount(index);
         const shapeOptions = TABLE_SHAPE_ORDER.map((shape) => `<option value="${shape}"${table.shape === shape ? " selected" : ""}>${escapeHTML(TABLE_SHAPES[shape].label)}</option>`).join("");
+        const where = `data-table-index="${escapeAttr(index)}" data-table-part="${escapeAttr(part.k)}"`;
+        const sub = parts.length > 1
+          ? formatInteger(part.seats) + " of the group's " + formatInteger(total) + " desks, at " + formatInteger(parts.length) + " tables"
+          : formatInteger(total) + " desks";
         body = `
-          <span class="inspector-title">${escapeHTML(tableLabel(index))} <small>${escapeHTML(formatInteger(tableSeatCount(index)) + " desks")}</small></span>
-          <label class="inspector-field">Name <input type="text" maxlength="24" value="${escapeAttr(state.tableLabels?.[index] || "")}" placeholder="${escapeAttr("Table " + formatInteger(index + 1))}" data-room-input="tableLabel" data-table-index="${escapeAttr(index)}" aria-label="Table name, shown on screen and in print, never remembered"></label>
-          <label class="inspector-field">Desks <select data-room-input="tableShape" data-table-index="${escapeAttr(index)}" aria-label="How the desks are pushed together">${shapeOptions}</select></label>
+          <span class="inspector-title">${escapeHTML(tablePartLabel(index, part.k))} <small>${escapeHTML(sub)}</small></span>
+          <label class="inspector-field">Name <input type="text" maxlength="24" value="${escapeAttr(state.tableLabels?.[index] || "")}" placeholder="${escapeAttr("Table " + formatInteger(index + 1))}" data-room-input="tableLabel" ${where} aria-label="${parts.length > 1 ? "Group name, shared by all its tables, " : "Table name, "}shown on screen and in print, never remembered"></label>
+          <label class="inspector-field">Arrangement <select data-room-input="tableShape" ${where} aria-label="How the desks at this table are pushed together">${shapeOptions}</select></label>
+          <label class="inspector-field">Desks <input type="number" inputmode="numeric" min="1" max="${MAX_TABLE_DESKS}" step="1" value="${escapeAttr(part.seats)}" data-room-change="tableDesks" ${where} aria-label="${escapeAttr("Desks at " + tablePartLabel(index, part.k) + (parts.length > 1 ? "; the group's desks are the total of its tables" : "; the group's desks"))}"></label>
           <button class="btn small ghost" type="button" data-room-action="rotate">Turn</button>
+          <button class="btn small ghost" type="button" data-room-action="add-table"${parts.length >= MAX_GROUP_TABLES ? " disabled" : ""} title="${escapeAttr(parts.length >= MAX_GROUP_TABLES ? "A group can sit at up to " + MAX_GROUP_TABLES + " tables" : "Give this group another table; its seats carry on across it")}">Add a table to this group</button>
+          ${part.extra ? `<button class="btn small ghost" type="button" data-room-action="remove-table" title="Take this table away; its desks go back to the table before it">Remove this table</button>` : ""}
           <button class="btn small ghost" type="button" data-room-action="shape-all">Same for all tables</button>
           <button class="btn small ghost" type="button" data-room-action="deselect">Done</button>
         `;
@@ -19519,13 +19868,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           const presetSelect = meta.preset
             ? `<label class="inspector-field">Says <select data-room-input="fixturePreset" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="Area label text">${NOTE_PRESETS.map((text, i) => `<option value="${i}"${(fixture.preset || 0) === i ? " selected" : ""}>${escapeHTML(text)}</option>`).join("")}</select></label>`
             : "";
-          const lengthName = meta.wall ? "Length" : "Width";
+          const lengthName = meta.wall ? "Length" : meta.chair ? "Desk width" : "Width";
+          const depthName = meta.chair ? "Depth with chair" : "Depth";
           const where = meta.wall ? "on the " + (WALL_NAMES[normalizeRotation(fixture.rot)] || "front") + " wall" : "";
           body = `
             <span class="inspector-title">${escapeHTML(fixtureLabel(fixture))}${where ? ` <small>${escapeHTML(where)}</small>` : ""}</span>
             ${presetSelect}
             <label class="inspector-field">${lengthName} <input type="number" inputmode="numeric" min="10" max="${ROOM_MAX_CM}" step="5" value="${escapeAttr(size.w)}" data-room-change="fixtureLength" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="${escapeAttr(lengthName + (meta.wall ? " along the wall" : "") + ", in centimetres")}"><span class="inspector-unit">cm</span></label>
-            <label class="inspector-field">Depth <input type="number" inputmode="numeric" min="2" max="600" step="5" value="${escapeAttr(size.d)}" data-room-change="fixtureDepth" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="${escapeAttr("Depth" + (meta.wall ? " out from the wall" : "") + ", in centimetres")}"><span class="inspector-unit">cm</span></label>
+            <label class="inspector-field">${depthName} <input type="number" inputmode="numeric" min="2" max="600" step="5" value="${escapeAttr(size.d)}" data-room-change="fixtureDepth" data-fixture-id="${escapeAttr(fixture.id)}" aria-label="${escapeAttr(depthName + (meta.wall ? " out from the wall" : "") + ", in centimetres")}"><span class="inspector-unit">cm</span></label>
             ${meta.swing ? `<button class="btn small ghost" type="button" data-room-action="flip">Hinge on the other side</button>` : ""}
             <button class="btn small ghost" type="button" data-room-action="rotate">${meta.wall ? "Next wall" : "Turn"}</button>
             <button class="btn small ghost" type="button" data-room-action="remove">Remove</button>
@@ -19534,12 +19884,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         }
       }
       if (!body) {
-        body = `<span class="inspector-hint">Drag a table or a piece of furniture to move it. Click one to name it, change how its desks are pushed together, turn it, resize it or remove it; selected furniture has a grip at its corner to drag. Drag a student to any desk; drop on a taken desk to swap.</span>`;
+        body = `<span class="inspector-hint">Drag a table or a piece of furniture to move it. Click one to name it, change how its desks are pushed together or how many it has, turn it, add another table to its group, resize it or remove it; selected furniture has a grip at its corner to drag. Drag a student to any desk; drop on a taken desk to swap. A group's seats fill its first table, then the next. Assistant desks are under Add to room.</span>`;
       }
       return `<div class="room-inspector" id="roomInspector">${body}</div>`;
     }
 
+    // The element for a selection: a table is one of its group's tables.
+    function selectionElement(selection) {
+      if (!selection) return null;
+      return selection.kind === "table"
+        ? document.querySelector(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(selection.index)}"][data-table-part="${escapeAttr(selection.part || 0)}"]`)
+        : document.querySelector(`[data-classroom-board] [data-layout-kind="fixture"][data-fixture-id="${cssEscape(selection.id)}"]`);
+    }
+
     function setRoomSelection(selection) {
+      if (selection && selection.kind === "table") selection = { kind: "table", index: selection.index, part: selection.part || 0 };
       const same = JSON.stringify(selection || null) === JSON.stringify(state.roomSelection || null);
       state.roomSelection = selection;
       if (same) return;
@@ -19547,9 +19906,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       // Only the selected piece of furniture carries a resize grip.
       document.querySelectorAll("[data-classroom-board] [data-fixture-resize]").forEach((el) => el.remove());
       if (selection) {
-        const el = selection.kind === "table"
-          ? document.querySelector(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(selection.index)}"]`)
-          : document.querySelector(`[data-classroom-board] [data-layout-kind="fixture"][data-fixture-id="${cssEscape(selection.id)}"]`);
+        const el = selectionElement(selection);
         if (el) el.classList.add("is-selected");
         const fixture = selection.kind === "fixture" && el ? state.classroomLayout.fixtures.find((item) => item.id === selection.id) : null;
         if (fixture) el.insertAdjacentHTML("beforeend", fixtureGripMarkup(fixture));
@@ -19560,16 +19917,14 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function selectionFromHandle(handle) {
       if (!handle) return null;
-      if (handle.dataset.layoutKind === "table") return { kind: "table", index: Number(handle.dataset.tableIndex) };
+      if (handle.dataset.layoutKind === "table") return { kind: "table", index: Number(handle.dataset.tableIndex), part: Number(handle.dataset.tablePart) || 0 };
       if (handle.dataset.layoutKind === "fixture") return { kind: "fixture", id: handle.dataset.fixtureId };
       return null;
     }
 
     function focusRoomSelection(selection = state.roomSelection) {
       if (!selection) return;
-      const el = selection.kind === "table"
-        ? document.querySelector(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(selection.index)}"]`)
-        : document.querySelector(`[data-classroom-board] [data-layout-kind="fixture"][data-fixture-id="${cssEscape(selection.id)}"]`);
+      const el = selectionElement(selection);
       if (el) el.focus({ preventScroll: true });
     }
 
@@ -19622,19 +19977,26 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const kind = input.dataset.roomInput;
       if (kind === "tableLabel") {
         const index = Number(input.dataset.tableIndex);
+        const k = Number(input.dataset.tablePart) || 0;
         if (!state.tableLabels) state.tableLabels = {};
         state.tableLabels[index] = cleanString(input.value).slice(0, 24);
-        const label = document.querySelector(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(index)}"] .room-table-label`);
-        if (label) label.textContent = tableLabel(index);
+        // The name is the group's, so every table it sits at wears it.
+        document.querySelectorAll(`[data-classroom-board] [data-layout-kind="table"][data-table-index="${escapeAttr(index)}"]`).forEach((el) => {
+          const label = el.querySelector(".room-table-label");
+          if (label) label.textContent = tablePartLabel(index, Number(el.dataset.tablePart) || 0);
+        });
         const title = input.closest(".room-inspector")?.querySelector(".inspector-title");
-        if (title && title.firstChild) title.firstChild.textContent = tableLabel(index) + " ";
+        if (title && title.firstChild) title.firstChild.textContent = tablePartLabel(index, k) + " ";
         return;
       }
       if (kind === "tableShape") {
         const index = Number(input.dataset.tableIndex);
+        const k = Number(input.dataset.tablePart) || 0;
+        const target = roomTablePart(index, k);
+        if (!target) return;
         pushRoomHistory();
-        roomTable(index).shape = normalizeShape(input.value);
-        settleAndRender(tableLabel(index) + " is now " + TABLE_SHAPES[roomTable(index).shape].short + ".", kind);
+        target.shape = normalizeShape(input.value);
+        settleAndRender(tablePartLabel(index, k) + " is now " + TABLE_SHAPES[target.shape].short + ".", kind);
         return;
       }
       if (kind === "fixturePreset") {
@@ -19652,6 +20014,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     function handleRoomChange(event) {
       const input = event.target.closest ? event.target.closest("[data-room-change]") : null;
       if (!input) return;
+      if (input.dataset.roomChange === "tableDesks") {
+        const index = Number(input.dataset.tableIndex);
+        const k = Number(input.dataset.tablePart) || 0;
+        const parts = state.tableGroups[index] ? roomTableParts(index) : [];
+        if (!parts[k]) return;
+        const wanted = Number(input.value);
+        if (!Number.isFinite(wanted) || wanted < 1) {
+          input.value = String(parts[k].seats);
+          return;
+        }
+        if (setTableDesks(index, k, wanted)) {
+          const after = roomTableParts(index);
+          settleAndRender(tablePartLabel(index, k) + " now has " + formatInteger(after[k].seats) + " desk" + (after[k].seats === 1 ? "" : "s") +
+            (after.length > 1 ? "; " + tableLabel(index) + " has " + formatInteger(tableSeatCount(index)) + " desks over " + formatInteger(after.length) + " tables" : "") + ".", "tableDesks");
+        } else {
+          // Not changed, or held at the students already seated there.
+          input.value = String(parts[k].seats);
+          if (wanted < parts[k].seats) announce(tablePartLabel(index, k) + " keeps " + formatInteger(parts[k].seats) + " desks: that many students sit at it.");
+        }
+        return;
+      }
       const fixture = state.classroomLayout.fixtures.find((item) => item.id === input.dataset.fixtureId);
       if (!fixture) return;
       const kind = input.dataset.roomChange;
@@ -19723,9 +20106,21 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       }
       if (action === "shape-all" && selection && selection.kind === "table") {
         pushRoomHistory();
-        const shape = roomTable(selection.index).shape;
-        state.classroomLayout.tables.forEach((table) => { table.shape = shape; });
+        const shape = (roomTablePart(selection.index, selection.part || 0) || roomTable(selection.index)).shape;
+        // Every table of every group, the ones added to a group included.
+        state.classroomLayout.tables.forEach((table) => {
+          table.shape = shape;
+          (Array.isArray(table.more) ? table.more : []).forEach((extra) => { extra.shape = shape; });
+        });
         settleAndRender("Every table is now " + TABLE_SHAPES[shape].short + ".");
+        return;
+      }
+      if (action === "add-table" && selection && selection.kind === "table") {
+        addTableToGroup(selection.index);
+        return;
+      }
+      if (action === "remove-table" && selection && selection.kind === "table") {
+        removeGroupTable(selection.index, selection.part || 0);
         return;
       }
       if (action === "zoom-in" || action === "zoom-out" || action === "zoom-fit") {
@@ -19778,9 +20173,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (!selection) return;
       pushRoomHistory();
       if (selection.kind === "table") {
-        const table = roomTable(selection.index);
+        const table = roomTablePart(selection.index, selection.part || 0) || roomTable(selection.index);
         table.rot = normalizeRotation(table.rot + 90);
-        settleAndRender(tableLabel(selection.index) + " turned.");
+        settleAndRender(tablePartLabel(selection.index, selection.part || 0) + " turned.");
         return;
       }
       const fixture = state.classroomLayout.fixtures.find((item) => item.id === selection.id);
@@ -19829,11 +20224,22 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const room = roomSize();
       const meta = FIXTURE_KINDS[kind];
       const fixture = { id: newFixtureId(), kind, x: 0, y: 0, rot: 0, w: meta.w, d: meta.d, flip: meta.swing ? false : undefined, preset: meta.preset ? 0 : undefined };
+      // An assistant's desk is the size of the room's single desks, with its chair.
+      if (meta.chair) {
+        const desk = deskSize();
+        fixture.w = desk.width;
+        fixture.d = desk.depth + CHAIR_ZONE;
+      }
       // Where each kind usually goes: boards at the front, a second board to
       // one side of the first, doors and display boards at the back, windows
       // and fittings down the right; anything free-standing mid-floor.
       let start;
-      if (!meta.wall) start = { x: (room.width - meta.w) / 2, y: (room.depth - meta.d) / 2 };
+      let crowded = false;
+      if (meta.chair) {
+        // The clear floor nearest the middle of the room, not on top of a table.
+        start = findFreeSpot(fixture.w, fixture.d, { x: (room.width - fixture.w) / 2, y: (room.depth - fixture.d) / 2 }, null);
+        crowded = !boxIsClear(roomObstacles(null), start.x, start.y, fixture.w, fixture.d);
+      } else if (!meta.wall) start = { x: (room.width - meta.w) / 2, y: (room.depth - meta.d) / 2 };
       else if (kind === "board" || kind === "screen") start = { x: (room.width - meta.w) / 2, y: 0 };
       else if (kind === "whiteboard") start = { x: room.width - meta.w - 60, y: 0 };
       else if (kind === "door" || kind === "display") { fixture.rot = 180; start = { x: kind === "door" ? room.width * 0.7 : (room.width - meta.w) / 2, y: room.depth }; }
@@ -19841,7 +20247,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       Object.assign(fixture, placeFixture(fixture, start));
       state.classroomLayout.fixtures.push(fixture);
       state.roomSelection = { kind: "fixture", id: fixture.id };
-      settleAndRender(fixtureLabel(fixture) + " added to the room, " + fixtureDimensionsText(fixture) + ". It is selected; drag it, or drag its grip to resize it.");
+      settleAndRender(fixtureLabel(fixture) + " added to the room, " + fixtureDimensionsText(fixture) + ". " +
+        (crowded ? "The room had no clear floor left for it, so it sits on something else: drag it into a gap, or make the room bigger." : "It is selected; drag it, or drag its grip to resize it."));
     }
 
     // ---- The seat move menu ------------------------------------------------
@@ -20128,15 +20535,20 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         event.preventDefault();
         setRoomSelection(selection);
         pushRoomHistory();
-        const table = roomTable(selection.index);
-        table.shape = TABLE_SHAPE_ORDER[(TABLE_SHAPE_ORDER.indexOf(table.shape) + 1) % TABLE_SHAPE_ORDER.length];
-        settleAndRender(tableLabel(selection.index) + " is now " + TABLE_SHAPES[table.shape].short + ".");
+        const table = roomTablePart(selection.index, selection.part || 0) || roomTable(selection.index);
+        table.shape = TABLE_SHAPE_ORDER[(TABLE_SHAPE_ORDER.indexOf(normalizeShape(table.shape)) + 1) % TABLE_SHAPE_ORDER.length];
+        settleAndRender(tablePartLabel(selection.index, selection.part || 0) + " is now " + TABLE_SHAPES[table.shape].short + ".");
         return;
       }
       if ((key === "Delete" || key === "Backspace") && selection && selection.kind === "fixture") {
         event.preventDefault();
         setRoomSelection(selection);
         removeSelectedFixture();
+        return;
+      }
+      if ((key === "Delete" || key === "Backspace") && selection && selection.kind === "table" && selection.part > 0) {
+        event.preventDefault();
+        removeGroupTable(selection.index, selection.part);
         return;
       }
       if (["+", "=", "-", "_"].includes(key) && selection && selection.kind === "fixture") {
@@ -20190,7 +20602,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     function layoutPositionFor(handle) {
       const kind = handle.dataset.layoutKind;
-      if (kind === "table") return roomTable(Number(handle.dataset.tableIndex));
+      if (kind === "table") return roomTablePart(Number(handle.dataset.tableIndex), Number(handle.dataset.tablePart) || 0);
       if (kind === "fixture") return state.classroomLayout.fixtures.find((item) => item.id === handle.dataset.fixtureId) || null;
       return null;
     }
@@ -20199,7 +20611,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const kind = handle.dataset.layoutKind;
       if (kind === "table") {
         const index = Number(handle.dataset.tableIndex);
-        Object.assign(roomTable(index), clampRoomBox(next, tableGeometryFor(index)));
+        const k = Number(handle.dataset.tablePart) || 0;
+        const target = roomTablePart(index, k);
+        if (!target) return;
+        Object.assign(target, clampRoomBox(next, tableGeometryFor(index, k)));
         // A room the teacher has arranged keeps its arrangement when the room
         // or desk size changes; an untouched one is laid out afresh.
         state.classroomLayout.arranged = true;
@@ -20248,6 +20663,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.layoutDrag = {
         kind: element.dataset.layoutKind,
         index: element.dataset.layoutKind === "table" ? Number(element.dataset.tableIndex) : null,
+        part: element.dataset.layoutKind === "table" ? Number(element.dataset.tablePart) || 0 : 0,
         id: element.dataset.fixtureId || null,
         offsetX: event.clientX - elementRect.left,
         offsetY: event.clientY - elementRect.top,
@@ -20301,8 +20717,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const x = toCmX(event.clientX - drag.offsetX);
       const y = toCmY(event.clientY - drag.offsetY);
       if (drag.kind === "table" && Number.isFinite(drag.index)) {
-        const position = clampRoomBox({ x, y }, tableGeometryFor(drag.index));
-        Object.assign(roomTable(drag.index), position);
+        const target = roomTablePart(drag.index, drag.part);
+        if (!target) return;
+        const position = clampRoomBox({ x, y }, tableGeometryFor(drag.index, drag.part));
+        Object.assign(target, position);
         state.classroomLayout.arranged = true;
         drag.element.style.left = "calc(var(--cm) * " + cmNumber(position.x) + ")";
         drag.element.style.top = "calc(var(--cm) * " + cmNumber(position.y) + ")";
@@ -20378,7 +20796,9 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       } else {
         how = `ranked by ${score}, then dealt round the ${formatInteger(tables)} tables in a snake (1 to ${formatInteger(tables)}, then ${formatInteger(tables)} back to 1) so each table gets a spread of higher, middle and lower profiles`;
       }
+      const split = (state.classroomLayout.tables || []).slice(0, tables).filter((table) => table && Array.isArray(table.more) && table.more.length).length;
       const counts = `${formatInteger(seated)} of ${formatInteger(seated + pool)} students seated at ${formatInteger(tables)} table${tables === 1 ? "" : "s"} (${escapeHTML(state.tableGroupPlanLabel)})` +
+        (split ? `; ${formatInteger(split)} group${split === 1 ? " sits" : "s sit"} at more than one table` : "") +
         (pool ? `; ${formatInteger(pool)} without a usable score wait in Unplaced` : "") +
         (moved ? `; ${formatInteger(moved)} moved by hand since` : "") + ".";
       return `<strong>How this plan was made.</strong> Data: ${escapeHTML(subject)}. Students were ${how}. ${counts}`;
@@ -20405,7 +20825,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           <li><strong>Dealt into tables by the strategy.</strong>
             <span class="how-strategies">${strategies.map((item) => `<span class="how-strategy${item.key === strategy ? " is-active" : ""}"><b>${escapeHTML(item.title)}</b><i>${escapeHTML(item.diagram)}</i><span>${escapeHTML(item.text)}</span></span>`).join("")}</span>
           </li>
-          <li><strong>You have the last word.</strong> Drag anyone to any desk, choose how each group's desks are pushed together and where the group stands, add and size your furniture. Your arrangement stays until you change the pattern, strategy or score, or press Rebuild.</li>
+          <li><strong>You have the last word.</strong> Drag anyone to any desk, choose how each group's desks are pushed together and where the group stands, give a group a second table, add assistant desks and size your furniture. Your arrangement stays until you change the pattern, strategy or score, or press Rebuild.</li>
         </ol>
       `;
     }
@@ -21356,13 +21776,17 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const strategy = strategyLabel(els.groupStrategySelect.value || "mixed");
       const scoreMode = scoreModeLabel(els.groupScoreSelect.value || "endPercentile");
       const assignedRows = state.tableGroups.flatMap((group, groupIndex) => group.map((profile, profileIndex) => {
-        const table = roomTable(groupIndex);
+        // The group's seats fill its tables in order; this seat is at one of them.
+        const parts = roomTableParts(groupIndex);
+        const part = parts.find((entry) => profileIndex >= entry.offset && profileIndex < entry.offset + entry.seats) || parts[parts.length - 1];
+        const table = part.table;
         return {
           ...profile,
           tableNumber: groupIndex + 1,
           tableName: tableLabel(groupIndex),
           tableShape: TABLE_SHAPES[table.shape].label,
           tableRotation: table.rot,
+          tablePart: parts.length > 1 ? tablePartLetter(part.k) : "",
           tablePosition: profileIndex + 1,
           dealOrder: state.dealOrder && state.dealOrder.get(profile.key) || "",
           movedByHand: state.movedKeys && state.movedKeys.has(profile.key) ? "Yes" : "No",
@@ -21378,6 +21802,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         tableName: "Unplaced",
         tableShape: "",
         tableRotation: "",
+        tablePart: "",
         tablePosition: profileIndex + 1,
         dealOrder: "",
         movedByHand: state.movedKeys && state.movedKeys.has(profile.key) ? "Yes" : "No",
@@ -21523,6 +21948,10 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .room-fixture.kind-window { background: #dbeafe; color: #1e3a8a; border: 0.5mm double #60a5fa; }
   .room-fixture.kind-teacherDesk { background: #ead7b7; color: #4b2e16; border: 0.3mm solid #8b5e34; border-radius: 0.8mm; }
   .room-fixture.kind-table { background: #f1e6d3; color: #5b3a12; border: 0.3mm solid #a07a4f; border-radius: 0.8mm; }
+  .room-fixture.kind-assistantDesk { background: transparent; border: 0; }
+  .seat-desk.is-assistant { background: #eef1f6; border-color: #7c8798; }
+  .seat-desk.is-assistant::after { background: #64748b; }
+  .assistant-name { position: absolute; display: grid; place-items: center; font-weight: 800; line-height: 1.05; white-space: nowrap; color: #334155; }
   .room-fixture.kind-carpet { background: repeating-linear-gradient(45deg, #f3e8ff 0 1.2mm, #ede9fe 1.2mm 2.4mm); color: #5b21b6; border: 0.3mm dashed #a78bfa; border-radius: 1.5mm; }
   .room-fixture.kind-shelf, .room-fixture.kind-cupboard { background: #e5e7eb; color: #374151; border: 0.3mm solid #9ca3af; }
   .room-fixture.kind-sink { background: #e0f2fe; color: #0c4a6e; border: 0.3mm solid #7dd3fc; }
@@ -21672,6 +22101,7 @@ ${sheets.join("\n")}
           : { label: "vs norm", value: (profile) => formatSignedNumber(profile.avgUSNormDeltaRIT) };
       const blocks = state.tableGroups.map((group, index) => {
         const capacity = state.tableCapacities[index] || null;
+        const tableCount = roomTableParts(index).length;
         const rows = group.map((profile, seat) => {
           const flags = profile.priorityReasons && profile.priorityReasons.length ? profile.priorityReasons.slice(0, 2).join("; ") + (profile.priorityReasons.length > 2 ? " …" : "") : "";
           return '<tr><td class="num">' + formatInteger(seat + 1) + '</td><td>' + escapeHTML(profile.studentName) + '</td>' +
@@ -21684,6 +22114,7 @@ ${sheets.join("\n")}
           escapeHTML(group.length
             ? formatInteger(group.length) + (capacity ? " of " + formatInteger(capacity) : "") + " students · " + tableMetaText(group, null, scoreMode).replace(/^\S+\s·\s/, "")
             : "No students seated" + (capacity ? " · " + formatInteger(capacity) + " seats" : "")) +
+          (tableCount > 1 ? " · at " + formatInteger(tableCount) + " tables" : "") +
           '</small></div>' + bandMixStrip(group) + '</header>' +
           '<table><thead><tr><th>Seat</th><th>Student</th><th>Band</th><th>%ile</th><th>' + escapeHTML(score.label) + '</th><th>Planning group</th></tr></thead><tbody>' + rows + '</tbody></table></article>';
       });
@@ -22489,6 +22920,7 @@ ${sheets.join("\n")}
       ["Seat", (row) => row.tablePosition],
       ["Table shape", (row) => row.tableShape],
       ["Table turn", (row) => row.tableRotation],
+      ["Table of the group", (row) => row.tablePart],
       ["Placed by strategy (order)", (row) => row.dealOrder],
       ["Moved by hand", (row) => row.movedByHand],
       ["Strategy", (row) => row.strategy],
