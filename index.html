@@ -2934,9 +2934,11 @@
 
 
 
+    /* Sticky, as th is: a header that scrolls away with the rows leaves a long
+       table with no column names to read it by. */
     th.sortable {
       cursor: pointer;
-      position: relative;
+      position: sticky;
       transition: background var(--dur-fast) var(--ease-soft), color var(--dur-fast) var(--ease-soft);
     }
 
@@ -4161,6 +4163,62 @@
       .planner-stage { overflow: visible; }
     }
 
+    /* The planner on a laptop screen: wide, and 600 to 750px high. Above the
+       room sat a title, two rows of buttons, the grouping controls and any
+       warning, 375px of a 600px screen, and the room below them was 760px
+       deep, so most of the work was done through a window of 225px and a
+       scroll bar. Here the toolbar is a row or two, the grouping controls are
+       folded away until asked for, and the room is drawn to the height of the
+       stage, so the whole room is in view (Fit means fit). The warning, the
+       settings of whatever is selected, the unplaced students and the key
+       stand beside it rather than below it. Zoom in to read a small desk; the
+       stage scrolls then. */
+    @media screen and (min-width: 900px) and (max-height: 820px) {
+      .planner-backdrop { padding: 0; }
+
+      .planner {
+        display: grid;
+        grid-template-rows: auto auto auto minmax(0, 1fr);
+        border: 0;
+        border-radius: 0;
+        overflow: hidden;
+      }
+
+      .planner-head { flex-wrap: nowrap; align-items: center; gap: 12px; padding: 6px 12px; }
+      .planner-title { flex: none; max-width: 190px; }
+      .planner-title h3 { font-size: 15px; }
+      .planner-title p { font-size: 11px; margin-top: 1px; }
+      .planner-head > .btn-row { flex: 1 1 auto; justify-content: flex-end; gap: 6px; min-width: 0; }
+      .room-menu > summary { padding: 5px 11px; }
+
+      .planner-slot { max-height: 40vh; padding: 6px 12px; }
+      .planner-stage { overflow: auto; padding: 8px 12px 10px; }
+
+      /* The room is as tall as the stage: the screen less what is above it. */
+      body.planner-open .table-groups { min-width: 0; }
+      body.planner-open .classroom-board {
+        width: calc(min((100vh - var(--planner-chrome, 90px) - 26px) * var(--room-ratio), 100vw - 24px) * var(--room-zoom, 1));
+        min-width: calc(480px * var(--room-zoom, 1));
+      }
+    }
+
+    @media screen and (min-width: 1100px) and (max-height: 820px) {
+      body.planner-open:not(.planner-zoomed) .table-groups {
+        grid-template-columns: max-content minmax(300px, 1fr);
+        grid-template-rows: repeat(4, auto) minmax(0, 1fr);
+        column-gap: 14px;
+        align-content: start;
+      }
+
+      body.planner-open:not(.planner-zoomed) .table-groups > .classroom-board { grid-column: 1; grid-row: 1 / -1; }
+      body.planner-open:not(.planner-zoomed) .table-groups > :not(.classroom-board) { grid-column: 2; }
+
+      /* Beside the room there are 320px for what sits beside it. */
+      body.planner-open:not(.planner-zoomed) .classroom-board {
+        width: min((100vh - var(--planner-chrome, 90px) - 26px) * var(--room-ratio), 100vw - 24px - 14px - 320px);
+      }
+    }
+
     .spotlight-backdrop {
       position: fixed;
       inset: 0;
@@ -5124,6 +5182,133 @@
       .student-link::after { inset: -12px -6px; }
     }
 
+
+    /* Laptop screens. A 14-inch full-HD laptop runs at 125% or 150% display
+       scaling, which leaves a page 1280 to 1536px wide and only 600 to 750px
+       high: a lot of width and very little height. The page was set for a
+       tall monitor, so its first screen was all setup (a title, a file bar, a
+       banner, the filters, the jump bar) with no data on it, and below 700px
+       the jump bar scrolled away, so every move from one section to the next
+       began with a scroll back to the top. Here each piece of setup takes one
+       slim row, the filters scroll away, and the jump bar stays pinned as one
+       strip, so any section is a click away from wherever you are. */
+    .section-nav-filters { display: none; }
+
+    @media screen and (min-width: 900px) and (max-height: 820px) {
+      .app { padding-top: 12px; padding-bottom: 32px; }
+      .topbar,
+      body.has-data .topbar { margin-bottom: 10px; }
+
+      /* The name, the planning questions and the two switches share one row.
+         The switches keep their symbol and their tooltip; the words stay for
+         a screen reader, and for a roomier screen. */
+      body.has-data .brand-panel { padding: 8px 14px; gap: 10px; flex-wrap: nowrap; }
+      body.has-data .brand-panel h1 { font-size: 17px; white-space: nowrap; }
+      body.has-data .quick-questions { gap: 6px; flex: 1 1 0; min-width: 0; }
+      body.has-data .question-chip { padding: 4px 9px; font-size: 0.75rem; }
+      body.has-data .brand-tools { gap: 6px; flex: none; }
+      body.has-data .brand-tools .icon-toggle { padding: 5px 9px; position: relative; }
+      body.has-data .brand-tools .icon-toggle > span:not(.icon-toggle-glyph) {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+      }
+      body.has-data .upload-panel { padding: 5px 14px 6px; gap: 6px; }
+      body.has-data .change-file { padding-top: 3px; padding-bottom: 3px; font-size: 12px; }
+
+      .mode-banner { padding: 8px 14px; gap: 10px; margin-bottom: 10px; }
+      .mode-copy strong { font-size: 14px; }
+      .mode-copy span { font-size: 12px; line-height: 1.35; }
+      .mode-chip { padding: 3px 10px; }
+
+      /* The filters are one row, and scroll away with the page. */
+      .filter-bar {
+        position: static;
+        max-height: none;
+        overflow-y: visible;
+        padding: 8px 10px;
+        margin-bottom: 10px;
+        scroll-margin-top: 8px;
+      }
+
+      .filter-bar > .filters:first-child { grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(140px, 1fr)) auto auto; gap: 8px; }
+      .filters-more { margin-top: 8px; padding-top: 8px; }
+      .filter-bar .filters-more { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+      .filter-bar .field { gap: 2px; }
+      .filter-bar .field input,
+      .filter-bar .field select { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
+      .filter-bar .btn { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
+
+      /* The jump bar is pinned, and one strip high: the chips wrap onto a
+         second row only when the full analysis has too many to fit in one. */
+      .section-nav {
+        position: sticky;
+        top: 0;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 8px;
+        margin-bottom: 10px;
+        border-radius: 10px;
+      }
+
+      .section-nav-label { display: none; }
+      .section-nav-links { flex: 1 1 auto; gap: 4px; max-height: 64px; overflow-y: auto; }
+      .section-nav-links button { padding: 3px 10px; font-size: 0.78rem; }
+
+      /* The way back to the filters, and a sign that some are set. */
+      .section-nav-filters {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex: none;
+        margin-left: auto;
+        border: 1px solid var(--line-strong);
+        background: var(--panel-2);
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 3px 12px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .section-nav-filters:hover,
+      .section-nav-filters:focus-visible { background: var(--brand-soft); border-color: var(--line-accent); color: var(--brand); }
+      .section-nav-filters.is-active { background: var(--orange-soft); border-color: var(--orange-line); color: var(--orange-ink); }
+
+      /* A jump lands the heading just under the pinned strip. */
+      main > .section { scroll-margin-top: calc(var(--pinned-h, 0px) + 12px); }
+
+      .section { padding: 14px 16px; }
+      .section-header { margin-bottom: 12px; padding-bottom: 10px; }
+      .section-header p { margin-top: 3px; }
+
+      /* A table's window takes what the screen has left under the pinned strip
+         and the section's own heading, so the heading and the table are in
+         view together. It keeps its first column (who the row is about) in
+         view when it has to scroll sideways. */
+      .table-scroll { max-height: min(560px, max(280px, calc(100vh - var(--pinned-h, 0px) - 150px))); }
+      .table-scroll table th,
+      .table-scroll table td { padding: 6px 8px; }
+      .table-scroll table th:first-child,
+      .table-scroll table td:first-child { position: sticky; left: 0; }
+      .table-scroll table td:first-child { background: var(--panel); z-index: 2; box-shadow: 1px 0 0 var(--line); }
+      .table-scroll table th:first-child { z-index: 6; }
+      .table-scroll tbody tr:hover td:first-child { background: var(--bg-accent); }
+      .table-scroll tbody tr.target-in-reach td:first-child { background: var(--green-soft); }
+      .table-scroll tbody tr.target-in-reach:hover td:first-child { background: var(--green-soft); filter: brightness(0.97); }
+
+      /* A long note is read in columns across the page it has, not down a
+         narrow strip with half the width blank beside it. */
+      .method-note.is-long { max-width: none; column-width: 34em; column-gap: 28px; }
+
+      .back-to-top { right: 14px; bottom: 14px; padding: 7px 12px; }
+      .support-dock { left: 12px; bottom: 14px; }
+    }
+
   </style>
 </head>
 <body>
@@ -5344,6 +5529,7 @@
     <nav class="section-nav" id="sectionNav" aria-label="Jump to section" hidden>
       <span class="section-nav-label">Jump to</span>
       <div class="section-nav-links" id="sectionNavLinks"></div>
+      <button type="button" class="section-nav-filters" id="sectionNavFilters" title="Go to the filters">Filters</button>
     </nav>
 
     <main>
@@ -6661,7 +6847,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "printA4LayoutBtn", "printWallPlanBtn", "planSentence", "plannerUndo", "plannerOrderToggle",
         "plannerPrintWall", "plannerZoomIn", "plannerZoomOut", "plannerZoomValue", "roomPaperSelect", "roomLayoutFile", "roomControls",
         "dropZone", "helpBtn", "helpPanel", "onboarding", "onboardingClose",
-        "onboardSampleBtn", "onboardUploadBtn", "sectionNav", "backToTop"
+        "onboardSampleBtn", "onboardUploadBtn", "sectionNav", "sectionNavFilters", "backToTop"
       ].forEach((id) => {
         els[id] = document.getElementById(id);
       });
@@ -7060,8 +7246,18 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       if (els.backToTop) {
         els.backToTop.addEventListener("click", () => window.scrollTo({ top: 0, behavior: scrollBehavior() }));
       }
+      // On a short screen the filters scroll away and this chip is the way back.
+      if (els.sectionNavFilters) {
+        els.sectionNavFilters.addEventListener("click", () => {
+          const bar = document.querySelector(".filter-bar");
+          if (!bar) return;
+          bar.scrollIntoView({ behavior: scrollBehavior(), block: "start" });
+          if (els.searchInput) els.searchInput.focus({ preventScroll: true });
+        });
+      }
       window.addEventListener("scroll", handleWindowScroll, { passive: true });
       window.addEventListener("resize", updateStickyOffsets, { passive: true });
+      window.addEventListener("resize", updatePlannerFit, { passive: true });
       // The pinned bars also change height with no resize: an opened "More
       // filters" panel, a jump bar that wraps differently in the other view.
       // Jumps and the jump bar's own offset follow the bars' real heights.
@@ -7102,14 +7298,23 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       };
     }
 
+    // The jump bar marks the section being read. The chips are drawn again
+    // whenever the data or the view changes, so the spy is set up again with
+    // them: set up once, before they existed, it watched nothing.
+    let sectionSpy = null;
+
     function setupSectionSpy() {
+      if (sectionSpy) {
+        sectionSpy.disconnect();
+        sectionSpy = null;
+      }
       if (!("IntersectionObserver" in window)) return;
       const navButtons = new Map();
       document.querySelectorAll(".section-nav-links [data-jump]").forEach((btn) => {
         navButtons.set(btn.dataset.jump, btn);
       });
       if (!navButtons.size) return;
-      const observer = new IntersectionObserver((entries) => {
+      sectionSpy = new IntersectionObserver((entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           navButtons.forEach((btn) => btn.classList.remove("active"));
@@ -7119,7 +7324,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }, { rootMargin: "-45% 0px -50% 0px", threshold: 0 });
       navButtons.forEach((_, id) => {
         const section = document.getElementById(id);
-        if (section) observer.observe(section);
+        if (section && !section.hidden) sectionSpy.observe(section);
       });
     }
 
@@ -7132,6 +7337,11 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       const root = document.documentElement.style;
       root.setProperty("--stick-top", (filterH + 6) + "px");
       root.setProperty("--scroll-offset", (filterH + navH + 28) + "px");
+      // What is pinned at the top of the screen at this size, however it is
+      // sized: both bars on a tall screen, the jump bar alone on a laptop,
+      // nothing on a phone. A jump leaves room for exactly that.
+      const pinned = (bar) => Boolean(bar) && !bar.hidden && getComputedStyle(bar).position === "sticky";
+      root.setProperty("--pinned-h", ((pinned(filterBar) ? filterH : 0) + (pinned(els.sectionNav) ? navH : 0)) + "px");
     }
 
     function jumpToSection(id) {
@@ -9423,8 +9633,14 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       renderPosters();
       renderTables();
       renderDataCheck();
+      markLongNotes();
       refreshSpotlight();
       observeReveals();
+    }
+
+    // A note long enough to be set in columns on a wide, short screen.
+    function markLongNotes() {
+      document.querySelectorAll(".method-note").forEach((note) => note.classList.toggle("is-long", note.textContent.length > 600));
     }
 
     // ---------------------------------------------------------------------
@@ -9642,6 +9858,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       container.innerHTML = visibleSections()
         .map((section) => '<button type="button" data-jump="' + escapeAttr(section.id) + '">' + escapeHTML(navLabel(section)) + "</button>")
         .join("") + viewChip;
+      setupSectionSpy();
     }
 
     function navLabel(section) {
@@ -9707,7 +9924,21 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       }
     }
 
+    // The chip in the pinned jump bar: the filters have scrolled out of sight
+    // on a short screen, and every number below only makes sense under them.
+    function renderNavFilters() {
+      const chip = els.sectionNavFilters;
+      if (!chip) return;
+      const filters = getFilters();
+      const set = ["search", "subject", "teacher", "className", "grade", "band", "met", "group", "gap", "tier"]
+        .filter((key) => filters[key]).length + (filters.includeInvalid ? 1 : 0);
+      chip.classList.toggle("is-active", set > 0);
+      chip.textContent = set ? "Filters \u00b7 " + formatInteger(set) : "Filters";
+      chip.title = (set ? formatInteger(state.filteredRows.length) + " of " + formatInteger(state.allRows.length) + " records shown. " : "") + "Go to the filters";
+    }
+
     function renderFilterContext() {
+      renderNavFilters();
       renderActiveFilterNote();
       const total = state.allRows.length;
       const filtered = state.filteredRows.length;
@@ -19494,10 +19725,24 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.plannerReturnFocus = document.activeElement;
       els.plannerBackdrop.hidden = false;
       document.body.classList.add("modal-open", "planner-open");
+      document.body.classList.toggle("planner-zoomed", (state.roomZoom || 1) > 1);
+      // On a laptop the room gets the screen; the grouping controls are one click away.
+      if (plannerIsLaptop()) setPlannerControlsFolded(true);
+      else updatePlannerFit();
+      watchPlannerFit();
       requestAnimationFrame(() => els.plannerBackdrop.classList.add("is-open"));
       renderPlannerChrome();
       updateUndoButton();
       if (els.plannerClose) els.plannerClose.focus();
+    }
+
+    // The toolbar wraps differently as the window changes; keep the room's fit true.
+    let plannerFitWatch = null;
+
+    function watchPlannerFit() {
+      if (plannerFitWatch || !("ResizeObserver" in window) || !els.plannerBackdrop) return;
+      plannerFitWatch = new ResizeObserver(() => updatePlannerFit());
+      [els.plannerBackdrop.querySelector(".planner-head"), els.plannerControlSlot].forEach((node) => node && plannerFitWatch.observe(node));
     }
 
     function closePlanner() {
@@ -19515,7 +19760,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       if (state.classroomLayout) writeRoomLayoutNow();
       state.plannerOpen = false;
       els.plannerBackdrop.classList.remove("is-open");
-      document.body.classList.remove("modal-open", "planner-open");
+      document.body.classList.remove("modal-open", "planner-open", "planner-zoomed");
       const hide = () => { els.plannerBackdrop.hidden = true; };
       if (prefersReducedMotion()) hide();
       else setTimeout(hide, 180);
@@ -19527,11 +19772,37 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       renderPlannerChrome();
     }
 
-    function togglePlannerControls() {
+    function setPlannerControlsFolded(collapsed) {
       if (!els.plannerControlSlot || !els.plannerToggleControls) return;
-      const collapsed = els.plannerControlSlot.classList.toggle("is-collapsed");
+      els.plannerControlSlot.classList.toggle("is-collapsed", collapsed);
       els.plannerToggleControls.textContent = collapsed ? "Show grouping controls" : "Hide grouping controls";
       els.plannerToggleControls.setAttribute("aria-expanded", collapsed ? "false" : "true");
+      updatePlannerFit();
+    }
+
+    function togglePlannerControls() {
+      if (!els.plannerControlSlot || !els.plannerToggleControls) return;
+      setPlannerControlsFolded(!els.plannerControlSlot.classList.contains("is-collapsed"));
+    }
+
+    // A laptop screen: wide, and short. The planner is laid out for it in CSS
+    // (the same query), and opens with the grouping controls folded away.
+    const PLANNER_LAPTOP_QUERY = "screen and (min-width: 900px) and (max-height: 820px)";
+
+    function plannerIsLaptop() {
+      return typeof window.matchMedia === "function" && window.matchMedia(PLANNER_LAPTOP_QUERY).matches;
+    }
+
+    // The room is drawn to the height of the stage, which is the screen less
+    // what stands above it. CSS cannot ask how tall the toolbar and the
+    // grouping controls came out, so it is told here, whenever they change.
+    function updatePlannerFit() {
+      const planner = els.plannerBackdrop && els.plannerBackdrop.querySelector(".planner");
+      if (!planner || els.plannerBackdrop.hidden) return;
+      const above = [planner.querySelector(".planner-head"), planner.querySelector(".planner-rotate"), els.plannerControlSlot]
+        .filter((node) => node && getComputedStyle(node).display !== "none")
+        .reduce((sum, node) => sum + node.getBoundingClientRect().height, 0);
+      planner.style.setProperty("--planner-chrome", Math.round(above) + "px");
     }
 
     // The launcher and the picture of the room that stand in for the planner
@@ -20213,6 +20484,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     // big enough to read on a small screen, and the stage scrolls.
     function setRoomZoom(zoom) {
       state.roomZoom = clampBetween(finiteLayoutNumber(zoom, 1), 1, 3);
+      // A zoomed room is wider than the stage, so what stood beside it goes under it.
+      document.body.classList.toggle("planner-zoomed", state.roomZoom > 1);
       const board = document.querySelector("#tableGroups [data-classroom-board]");
       if (board) board.style.setProperty("--room-zoom", String(state.roomZoom));
       if (els.plannerZoomValue) els.plannerZoomValue.textContent = state.roomZoom === 1 ? "Fit" : Math.round(state.roomZoom * 100) + "%";

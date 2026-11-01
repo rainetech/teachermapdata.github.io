@@ -31,7 +31,14 @@
 //     only that students are grouped by data and behaviour patterns;
 //   - a saved plan file brings back the room, the table names and who sits
 //     where;
-//   - the CSV has one row per seat.
+//   - the CSV has one row per seat;
+//   - on a laptop screen (a 14-inch full-HD laptop at 150% display scaling is a
+//     page 1280 x 600): the jump bar is pinned and one strip high, the filters
+//     scroll away, a jump lands its heading under the strip and the strip marks
+//     the section being read, the Filters chip counts and leads back to the
+//     filters, table headers and first columns stay in view, and the planner
+//     shows the whole room at once with its settings beside it. A tall screen
+//     keeps both bars pinned as before.
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -622,6 +629,134 @@ const expectedParts = Array.from({ length: splitSeats }, (_, i) => (i < 2 ? "A" 
 check(ofFirstGroup.map((row) => row[partColumn]).join("") === expectedParts && ofOthers.every((row) => row[partColumn] === ""), "CSV says which table of its group each seat is at: " + expectedParts + " for the split group, blank for groups with one table");
 const lefts = new Set(ofFirstGroup.map((row, i) => (i < 2 ? "A" : "B") + row[leftColumn]));
 check(splitSeats < 3 || (lefts.size === 2 && ofFirstGroup[0][leftColumn] !== ofFirstGroup[2][leftColumn]), "and each seat carries the place of the table it is at, not the group's first");
+
+console.log("Laptop screen");
+// A 14-inch full-HD laptop at 150% display scaling: a page 1280 wide and 600 high.
+async function openLaptop(width, height) {
+  const view = await browser.newPage({ viewport: { width, height } });
+  view.on("pageerror", (error) => errors.push(error.message));
+  await view.addInitScript(() => {
+    try {
+      localStorage.clear();
+      localStorage.setItem("asg-dashboard-preferences", JSON.stringify({ reducedMotion: true, supportPromptOff: true, supportPromptLastShown: Date.now(), view: "full" }));
+    } catch (error) { /* storage may be unavailable */ }
+  });
+  await view.goto(pathToFileURL(TARGET).href);
+  if (FIXTURES.length) await view.setInputFiles("#csvInput", FIXTURES);
+  else await view.click("#sampleBtn");
+  await view.waitForTimeout(2500);
+  await view.evaluate(() => { const toasts = document.getElementById("toastStack"); if (toasts) toasts.remove(); });
+  return view;
+}
+const lap = await openLaptop(1280, 600);
+const lapTop = await lap.evaluate(() => {
+  const nav = document.getElementById("sectionNav");
+  const first = document.querySelector("main > section.section:not([hidden])");
+  return {
+    navPos: getComputedStyle(nav).position,
+    filterPos: getComputedStyle(document.querySelector(".filter-bar")).position,
+    navH: Math.round(nav.getBoundingClientRect().height),
+    firstTop: Math.round(first.getBoundingClientRect().top + window.scrollY)
+  };
+});
+check(lapTop.navPos === "sticky" && lapTop.filterPos !== "sticky", "on a laptop screen the jump bar is pinned and the filters scroll away (" + lapTop.navPos + ", " + lapTop.filterPos + ")");
+check(lapTop.navH <= 72, "the pinned jump bar is a strip of one or two rows of chips (" + lapTop.navH + "px of 600)");
+check(lapTop.firstTop < 480, "the first section starts in the top 480px, so the data is on the first screen (" + lapTop.firstTop + "px)");
+await lap.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+await lap.waitForTimeout(200);
+check(await lap.evaluate(() => Math.round(document.getElementById("sectionNav").getBoundingClientRect().top) === 0), "scrolled to the very foot of the page, the jump bar is still at the top of the screen");
+const jumpIds = await lap.evaluate(() => [...document.querySelectorAll("#sectionNav [data-jump]")].map((button) => button.dataset.jump).slice(0, 8));
+const landed = [];
+for (const id of jumpIds) {
+  await lap.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await lap.click('#sectionNav [data-jump="' + id + '"]');
+  await lap.waitForTimeout(350);
+  landed.push(await lap.evaluate((target) => {
+    const nav = document.getElementById("sectionNav").getBoundingClientRect();
+    const box = document.getElementById(target).getBoundingClientRect();
+    return { id: target, gap: Math.round(box.top - nav.bottom), tall: box.height >= 320, active: [...document.querySelectorAll("#sectionNav button.active")].map((button) => button.dataset.jump) };
+  }, id));
+}
+check(landed.length > 0 && landed.every((entry) => entry.gap >= 0 && entry.gap <= 40), "every jump from the foot of the page lands its heading just under the jump bar (" + landed.map((entry) => entry.gap).join(", ") + ")");
+check(landed.filter((entry) => entry.tall).every((entry) => entry.active.length === 1 && entry.active[0] === entry.id), "and the jump bar marks the section being read");
+
+// The filters have scrolled away; the chip in the strip says some are set and leads back.
+const chipBefore = await lap.evaluate(() => document.getElementById("sectionNavFilters").textContent.trim());
+await lap.selectOption("#subjectFilter", { index: 1 });
+await lap.waitForTimeout(400);
+const chipAfter = await lap.evaluate(() => ({ text: document.getElementById("sectionNavFilters").textContent.trim(), active: document.getElementById("sectionNavFilters").classList.contains("is-active") }));
+check(chipBefore === "Filters" && /\b1\b/.test(chipAfter.text) && chipAfter.active, "the Filters chip counts the filters that are set (" + chipBefore + ", then " + chipAfter.text + ")");
+await lap.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+await lap.click("#sectionNavFilters");
+await lap.waitForTimeout(300);
+check(await lap.evaluate(() => document.activeElement && document.activeElement.id === "searchInput" && document.querySelector(".filter-bar").getBoundingClientRect().top >= 0), "and the chip leads back to the filters with the search box ready");
+await lap.click("#resetFiltersBtn");
+await lap.waitForTimeout(300);
+check(await lap.evaluate(() => document.getElementById("sectionNavFilters").textContent.trim() === "Filters"), "resetting the filters clears the count");
+
+// A table's headers and its first column stay in view as it scrolls.
+const tableHold = await lap.evaluate(() => {
+  const boxes = [...document.querySelectorAll(".table-scroll")].filter((el) => el.querySelector("tbody tr") && el.getBoundingClientRect().height > 0);
+  const tall = boxes.find((el) => el.scrollHeight > el.clientHeight + 100);
+  const wide = boxes.find((el) => el.scrollWidth > el.clientWidth + 100);
+  const out = { tall: Boolean(tall), wide: Boolean(wide) };
+  if (tall) {
+    tall.scrollTop = 150;
+    out.header = Math.round(tall.querySelector("thead th:not(:first-child)").getBoundingClientRect().top - tall.getBoundingClientRect().top);
+  }
+  if (wide) {
+    wide.scrollLeft = 300;
+    out.first = Math.round(wide.querySelector("tbody td:first-child").getBoundingClientRect().left - wide.getBoundingClientRect().left);
+  }
+  return out;
+});
+check(tableHold.tall && Math.abs(tableHold.header) <= 1, "a long table keeps its column names at the top as the rows scroll (" + tableHold.header + ")");
+check(tableHold.wide && Math.abs(tableHold.first) <= 1, "a wide table keeps its first column in view as it scrolls sideways (" + tableHold.first + ")");
+
+// The planner: the whole room at once, the controls folded, the settings beside it.
+await lap.click("#plannerLaunch");
+await lap.waitForTimeout(600);
+const lapPlanner = await lap.evaluate(() => {
+  const board = document.querySelector("[data-classroom-board]").getBoundingClientRect();
+  const stage = document.getElementById("plannerStage");
+  return {
+    folded: document.getElementById("plannerControlSlot").classList.contains("is-collapsed"),
+    toggle: document.getElementById("plannerToggleControls").textContent.trim(),
+    boardTop: Math.round(board.top),
+    boardBottom: Math.round(board.bottom),
+    boardWidth: Math.round(board.width),
+    boardRight: Math.round(board.right),
+    inspectorLeft: Math.round(document.getElementById("roomInspector").getBoundingClientRect().left),
+    overflow: stage.scrollHeight - stage.clientHeight,
+    headH: Math.round(document.querySelector(".planner-head").getBoundingClientRect().height),
+    vh: window.innerHeight
+  };
+});
+check(lapPlanner.folded && lapPlanner.toggle === "Show grouping controls", "the planner opens with the grouping controls folded away, one click from view");
+check(lapPlanner.headH <= 100, "the toolbar is a row or two (" + lapPlanner.headH + "px of 600)");
+check(lapPlanner.boardTop >= 0 && lapPlanner.boardBottom <= lapPlanner.vh && lapPlanner.overflow <= 1, "the whole room is in view at once with nothing to scroll (room " + lapPlanner.boardTop + " to " + lapPlanner.boardBottom + " of " + lapPlanner.vh + ")");
+check(lapPlanner.inspectorLeft >= lapPlanner.boardRight, "the settings, the unplaced students and the key stand beside the room, not under it");
+await lap.click("#plannerZoomIn");
+await lap.waitForTimeout(250);
+const lapZoom = await lap.evaluate(() => {
+  const board = document.querySelector("[data-classroom-board]").getBoundingClientRect();
+  const stage = document.getElementById("plannerStage");
+  return { under: document.getElementById("roomInspector").getBoundingClientRect().top >= board.bottom - 1, scrolls: stage.scrollHeight > stage.clientHeight + 10 };
+});
+check(lapZoom.under && lapZoom.scrolls, "zoomed in to read a small desk, the settings go under the room and the stage scrolls");
+await lap.click("#plannerZoomValue");
+await lap.waitForTimeout(250);
+check(await lap.evaluate(() => { const stage = document.getElementById("plannerStage"); return stage.scrollHeight - stage.clientHeight <= 1 && document.getElementById("roomInspector").getBoundingClientRect().left >= document.querySelector("[data-classroom-board]").getBoundingClientRect().right; }), "Fit puts the whole room back in view with the settings beside it");
+await lap.click("#plannerToggleControls");
+await lap.waitForTimeout(300);
+const lapOpen = await lap.evaluate(() => ({ shown: !document.getElementById("plannerControlSlot").classList.contains("is-collapsed"), width: Math.round(document.querySelector("[data-classroom-board]").getBoundingClientRect().width) }));
+check(lapOpen.shown && lapOpen.width >= 479, "with the grouping controls opened the room gives way but stays a readable size (" + lapOpen.width + "px wide)");
+await lap.close();
+
+// A tall screen is unchanged: both bars stay pinned.
+const tall = await openLaptop(1440, 900);
+check(await tall.evaluate(() => getComputedStyle(document.querySelector(".filter-bar")).position === "sticky" && getComputedStyle(document.getElementById("sectionNav")).position === "sticky"), "a tall screen still pins both the filters and the jump bar");
+await tall.close();
 
 check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
 await browser.close();
