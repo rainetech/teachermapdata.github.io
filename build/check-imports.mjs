@@ -32,6 +32,11 @@
 //     rather than naming a weakest subject on a few points, one test left open
 //     does not flatten the test-length chart, and the poster copy makes no
 //     claim the figures cannot carry;
+//   - the support list's columns can be chosen: a Columns button once the list
+//     has rows, tick-boxes for every column with the first always shown, a
+//     Key columns and an All columns preset, the choice remembered as column
+//     keys only (a hostile stored value is dropped), a CSV export that keeps
+//     every column whatever is shown, and Escape to close;
 //   - the page still carries its copyright and licence notice, and the open
 //     site shows the credit line in a footer (CREDIT_FOOTER=absent holds a
 //     build that carries none to the opposite).
@@ -233,6 +238,95 @@ console.log("Grade level in the Grouping table");
     "mid-band students are grouped as Watch only when behind beyond measurement error");
   check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
   await page.close();
+}
+
+console.log("Choosing columns");
+{
+  const files = [
+    ["projection.csv", projectionASG()],
+    ["CP_Math_Fall2026.csv", classProfile("Mathematics", "Math K-12", math, "09/21/26", "Fall 2026-2027 (Most Recent)", false)],
+    ["CP_Reading_Fall2026.csv", classProfile("Language Arts", "Reading", read, "09/22/26", "Fall 2026-2027 (Most Recent)", true)]
+  ];
+  async function support(prefs) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+    const errors = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.addInitScript((stored) => {
+      try {
+        localStorage.clear();
+        localStorage.setItem("asg-dashboard-preferences", JSON.stringify(Object.assign({ reducedMotion: true, supportPromptOff: true, supportPromptLastShown: Date.now(), view: "full" }, stored)));
+      } catch (error) { /* storage may be unavailable */ }
+    }, prefs || {});
+    await page.goto(pathToFileURL(TARGET).href);
+    await page.setInputFiles("#csvInput", files.map(([name, text]) => ({ name, mimeType: "text/csv", buffer: Buffer.from(text) })));
+    await page.waitForTimeout(2500);
+    return { page, errors };
+  }
+  const heads = (page) => page.evaluate(() => [...document.querySelectorAll("#priorityTable thead th")].map((th) => th.textContent.trim()));
+  const csvOf = (page) => page.evaluate(() => {
+    let out = "";
+    const original = window.downloadText;
+    window.downloadText = (name, text) => { out = text; };
+    exportPriority();
+    window.downloadText = original;
+    return out;
+  });
+
+  const { page, errors } = await support();
+  const all = await heads(page);
+  const start = await page.evaluate(() => ({ hidden: document.getElementById("priorityColumnsBtn").hidden, text: document.getElementById("priorityColumnsBtn").textContent, open: document.getElementById("priorityColumns").hidden === false, expanded: document.getElementById("priorityColumnsBtn").getAttribute("aria-expanded"), rows: document.querySelectorAll("#priorityTable tbody tr").length }));
+  check(start.rows > 0 && !start.hidden && start.text === "Columns" && !start.open && start.expanded === "false", "the support list has a Columns button, closed, with every column on to begin with (" + all.length + " columns)");
+  const csvAll = await csvOf(page);
+  await page.click("#priorityColumnsBtn");
+  const panel = await page.evaluate(() => ({ open: !document.getElementById("priorityColumns").hidden, expanded: document.getElementById("priorityColumnsBtn").getAttribute("aria-expanded"), boxes: document.querySelectorAll("#priorityColumns input[data-col-key]").length, firstFixed: (() => { const first = document.querySelector("#priorityColumns input[data-col-key]"); return first.checked && first.disabled; })() }));
+  check(panel.open && panel.expanded === "true" && panel.boxes === all.length && panel.firstFixed, "it opens a tick-box for every column, and the first column is ticked and cannot be switched off (" + panel.boxes + ")");
+
+  const target = await page.evaluate(() => [...document.querySelectorAll("#priorityColumns input[data-col-key]")].map((box) => box.dataset.colKey).find((key) => key === "studentID"));
+  await page.uncheck('#priorityColumns input[data-col-key="studentID"]');
+  await page.waitForTimeout(200);
+  const afterOne = await heads(page);
+  const buttonOne = await page.evaluate(() => document.getElementById("priorityColumnsBtn").textContent);
+  check(target === "studentID" && afterOne.length === all.length - 1 && !afterOne.includes("Student ID") && buttonOne === "Columns \u00b7 " + (all.length - 1) + " of " + all.length, "unticking Student ID takes that column out of the table, and the button says how many are shown (" + buttonOne + ")");
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
+  const names = await page.evaluate(() => Array.from(new Set(state.allRows.map((row) => row.studentName.split(/\s+/)[0]).filter((name) => name.length > 2))));
+  check(JSON.stringify(stored.columns) === JSON.stringify({ priority: ["studentID"] }) && !names.some((name) => JSON.stringify(stored).includes(name)), "the choice is remembered as column keys only, with no name in it (" + JSON.stringify(stored.columns) + ")");
+  check((await csvOf(page)) === csvAll, "an export still carries every column and every row");
+
+  await page.click('#priorityColumns [data-col-preset="key"]');
+  await page.waitForTimeout(200);
+  const key = await heads(page);
+  const keyExpected = await page.evaluate(() => {
+    const keys = new Set(COLUMN_CHOICES.priority.key);
+    return columnLists.priority.filter((column, index) => index === 0 || keys.has(column[1])).map((column) => column[0]);
+  });
+  check(key.length < all.length && JSON.stringify(key) === JSON.stringify(keyExpected) && key[0] === all[0], "Key columns keeps the student and the columns that matter at a glance (" + key.join(", ") + ")");
+  check((await csvOf(page)) === csvAll, "and an export still carries every column");
+  const widths = await page.evaluate(() => { const box = document.getElementById("priorityTable"); return { content: box.scrollWidth, shown: box.clientWidth }; });
+  check(widths.content <= widths.shown + 1, "with the key columns the table fits the page and does not scroll sideways (" + widths.content + " in " + widths.shown + ")");
+
+  await page.click('#priorityColumns [data-col-preset="all"]');
+  await page.waitForTimeout(200);
+  const restored = await heads(page);
+  const storedAfter = await page.evaluate(() => JSON.parse(localStorage.getItem("asg-dashboard-preferences")));
+  check(JSON.stringify(restored) === JSON.stringify(all) && !storedAfter.columns.priority && (await page.evaluate(() => document.getElementById("priorityColumnsBtn").textContent)) === "Columns", "All columns brings every column back and forgets the choice");
+
+  await page.focus('#priorityColumns input[data-col-key="subject"]');
+  await page.keyboard.press("Escape");
+  check(await page.evaluate(() => document.getElementById("priorityColumns").hidden && document.activeElement === document.getElementById("priorityColumnsBtn") && document.getElementById("priorityColumnsBtn").getAttribute("aria-expanded") === "false"), "Escape closes the list of columns and returns to the button");
+  check(errors.length === 0, "no page errors" + (errors.length ? ": " + errors.join(" | ") : ""));
+  await page.close();
+
+  // A stored choice is honoured, and a hand-edited one cannot do harm.
+  const kept = await support({ columns: { priority: ["studentID", "className"] } });
+  const keptHeads = await heads(kept.page);
+  check(keptHeads.length === all.length - 2 && !keptHeads.includes("Student ID") && !keptHeads.includes("Class"), "a remembered choice is there when the page opens (" + keptHeads.length + " of " + all.length + " columns)");
+  await kept.page.close();
+  const hostile = await support({ columns: { priority: ["studentName", "<img src=x onerror=alert(1)>", 5, null, "a".repeat(80), "subject"], nothing: ["subject"], __proto__: { polluted: true } } });
+  const hostileHeads = await heads(hostile.page);
+  const hostileStored = await hostile.page.evaluate(() => state.prefs.columns);
+  check(hostileHeads[0] === all[0] && !hostileHeads.includes("Subject") && hostileHeads.length === all.length - 1 && JSON.stringify(hostileStored) === JSON.stringify({ priority: ["studentName", "subject"] }), "a hand-edited choice is cleaned: odd keys and other tables dropped, and the first column cannot be switched off (" + JSON.stringify(hostileStored) + ")");
+  check(hostile.errors.length === 0 && (await hostile.page.evaluate(() => ({}).polluted === undefined)), "and does no harm");
+  await hostile.page.close();
 }
 
 console.log("Goal sheets");

@@ -2137,6 +2137,55 @@
       font-size: 0.92rem;
     }
 
+    /* Choosing a long table's columns: a button in the tools bar, and under it
+       the columns as tick-boxes. In the page's flow, not floating over it, so a
+       short table cannot clip it. */
+    .col-toggle[hidden],
+    .col-panel[hidden] { display: none; }
+    .col-toggle.is-active { border-color: var(--brand); color: var(--brand-ink); background: var(--brand-soft); }
+
+    .col-panel {
+      display: grid;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      background: var(--panel);
+    }
+
+    .col-panel-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .col-panel-head strong { color: var(--text); font-size: 0.86rem; }
+    .col-panel-head .btn-row { margin-left: auto; gap: 6px; }
+
+    .col-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .col-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 11px;
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .col-chip input { margin: 0; accent-color: var(--brand); }
+    .col-chip.is-on { background: var(--brand-soft); border-color: var(--line-accent); color: var(--brand-ink); }
+    .col-chip.is-fixed { cursor: default; opacity: 0.75; }
+    .col-chip:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+
     .table-scroll {
       overflow: auto;
       /* Never taller than the screen can show, or the wheel gets stuck inside
@@ -4369,6 +4418,8 @@
       .spotlight-backdrop,
       .btn-row,
       .group-controls,
+      .col-toggle,
+      .col-panel,
       #sec-tables,
       #sec-quiz,
       .table-tools .status-line {
@@ -5168,6 +5219,7 @@
       .filter-check,
       .room-menu-grid button { min-height: 44px; }
       .section-nav-links button { min-height: 40px; }
+      .col-chip { min-height: 40px; }
       th.sortable { padding-top: 14px; padding-bottom: 14px; }
 
       /* The visible control keeps its size; its hit area grows (the border
@@ -5933,7 +5985,9 @@
         <div class="table-shell">
           <div class="table-tools">
             <strong id="priorityCount">0 students</strong>
+            <button class="btn small ghost col-toggle" id="priorityColumnsBtn" type="button" data-columns-for="priority" aria-expanded="false" aria-controls="priorityColumns" hidden>Columns</button>
           </div>
+          <div class="col-panel" id="priorityColumns" data-columns-for="priority" hidden></div>
           <div class="table-scroll" id="priorityTable"></div>
         </div>
       </section>
@@ -6741,7 +6795,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       groupSignature: "",
       spotlightKey: "",
       quiz: null,
-      prefs: { theme: "auto", reducedMotion: false, supportPromptOff: false, view: "essentials" },
+      prefs: { theme: "auto", reducedMotion: false, supportPromptOff: false, view: "essentials", columns: {} },
       supportPromptTimer: null,
       // Set by any non-permanent dismissal; lives for this page only.
       supportPromptSnoozed: false,
@@ -7202,6 +7256,30 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         els.moreFiltersBtn.setAttribute("aria-expanded", open ? "true" : "false");
         els.moreFiltersBtn.textContent = open ? "Fewer filters" : "More filters";
         renderActiveFilterNote();
+      });
+      // The columns of a long table.
+      document.addEventListener("click", (event) => {
+        const target = event.target.closest ? event.target : null;
+        if (!target) return;
+        const toggle = target.closest(".col-toggle");
+        if (toggle) {
+          setColumnPanel(toggle.dataset.columnsFor, toggle.getAttribute("aria-expanded") !== "true");
+          return;
+        }
+        const preset = target.closest("[data-col-preset]");
+        if (preset) applyColumnPreset(preset.dataset.colTable, preset.dataset.colPreset);
+      });
+      document.addEventListener("change", (event) => {
+        const box = event.target.closest ? event.target.closest("input[data-col-key]") : null;
+        if (box && !box.disabled) setColumnShown(box.dataset.colTable, box.dataset.colKey, box.checked);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || !event.target.closest) return;
+        const panel = event.target.closest(".col-panel");
+        if (!panel || panel.hidden) return;
+        setColumnPanel(panel.dataset.columnsFor, false);
+        const { button } = columnPanelParts(panel.dataset.columnsFor);
+        if (button) button.focus();
       });
       if (els.changeFileBtn) els.changeFileBtn.addEventListener("click", () => {
         const open = document.body.classList.toggle("upload-open");
@@ -13510,7 +13588,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       "sec-priority": {
         what: "Records that need attention first, each with the reasons: missed growth, a dropped band, a missing end score, negative growth, finishing below the 21st percentile, secure regression or a widened gap.",
         read: "A record can be listed for a reason other than low achievement, so the reason column matters more than the tier. A met-growth call within measurement error is marked too close to call.",
-        act: "This is where the first small groups come from. Name three students and what changes for them this week, before anyone asks.",
+        act: "This is where the first small groups come from. Name three students and what changes for them this week, before anyone asks. The table has a column for everything, so use Columns to show only the ones you need; an export keeps them all.",
         baseline: {
           what: "Records that need attention from the start of the year, each with the reasons: starting below the 41st percentile, testing a grade or more below placement, sitting well below the norm, needing above-typical growth to reach grade level, or a score that needs confirming.",
           read: "A record can be listed for a reason other than low achievement, so the reason column matters more than the tier."
@@ -21729,6 +21807,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const columns = isBaselineMode() ? baselineColumnsWithProjection(BASELINE_PRIORITY_COLUMNS, "priority") : PRIORITY_COLUMNS;
       const rows = sortRows(state.filteredRows.filter((row) => focusReasons(row).length), state.sort.priority);
       els.priorityCount.textContent = `${formatInteger(rows.length)} records`;
+      renderColumnChooser("priority", columns, rows.length > 0);
       els.priorityTable.innerHTML = renderTable("priority", columns, rows);
     }
 
@@ -21764,10 +21843,127 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       return state.tableLimits[tableName] || TABLE_PAGE_SIZE;
     }
 
+    // A teacher chooses which columns a long table shows. Every column is on to
+    // begin with; what is chosen is remembered on this device as column keys,
+    // never a name or a score. The first column (who the row is about) is
+    // always shown, and a CSV export carries every column whatever is shown.
+    // "key" is the short list: the columns that make the table useful at a
+    // glance, named for both versions of the table (a file with two windows,
+    // and a single window).
+    const COLUMN_CHOICES = {
+      priority: {
+        key: ["subject", "endPercentile", "gapStatus", "currentPercentile", "currentTier.name", "usNormDeltaRIT", "priorityReasons", "suggestedAction", "baselineAction"],
+        render: () => renderPriorityTable()
+      }
+    };
+
+    // Every column a table has in this file, as the chooser last saw them.
+    const columnLists = {};
+
+    function hiddenColumns(tableName) {
+      const list = state.prefs && state.prefs.columns && state.prefs.columns[tableName];
+      return new Set(Array.isArray(list) ? list : []);
+    }
+
+    function shownColumns(tableName, columns) {
+      if (!COLUMN_CHOICES[tableName]) return columns;
+      const hidden = hiddenColumns(tableName);
+      return columns.filter((column, index) => index === 0 || !hidden.has(column[1]));
+    }
+
+    function columnPanelParts(tableName) {
+      const name = String(tableName).replace(/["\\]/g, "");
+      return {
+        button: document.querySelector('.col-toggle[data-columns-for="' + name + '"]'),
+        panel: document.querySelector('.col-panel[data-columns-for="' + name + '"]')
+      };
+    }
+
+    function renderColumnChooser(tableName, columns, hasRows) {
+      if (!COLUMN_CHOICES[tableName]) return;
+      columnLists[tableName] = columns;
+      const { button, panel } = columnPanelParts(tableName);
+      if (!button || !panel) return;
+      button.hidden = !hasRows;
+      if (!hasRows) {
+        panel.hidden = true;
+        button.setAttribute("aria-expanded", "false");
+        return;
+      }
+      const table = escapeAttr(tableName);
+      const signature = columns.map((column) => column[1]).join("|");
+      if (panel.dataset.signature !== signature) {
+        panel.dataset.signature = signature;
+        panel.innerHTML =
+          '<div class="col-panel-head"><strong>Columns shown</strong>' +
+          "<span>The first column is always shown. Exports keep every column.</span>" +
+          '<span class="btn-row">' +
+          '<button class="btn small ghost" type="button" data-col-table="' + table + '" data-col-preset="key">Key columns</button>' +
+          '<button class="btn small ghost" type="button" data-col-table="' + table + '" data-col-preset="all">All columns</button>' +
+          "</span></div>" +
+          '<div class="col-chips" role="group" aria-label="Columns shown in this table">' +
+          columns.map((column, index) => '<label class="col-chip' + (index === 0 ? " is-fixed" : "") + '">' +
+            '<input type="checkbox" data-col-table="' + table + '" data-col-key="' + escapeAttr(column[1]) + '"' + (index === 0 ? " checked disabled" : "") + ">" +
+            "<span>" + escapeHTML(column[0]) + "</span></label>").join("") +
+          "</div>";
+      }
+      const hidden = hiddenColumns(tableName);
+      panel.querySelectorAll("input[data-col-key]").forEach((input, index) => {
+        if (index > 0) input.checked = !hidden.has(input.dataset.colKey);
+        input.closest("label").classList.toggle("is-on", input.checked);
+      });
+      const shown = shownColumns(tableName, columns).length;
+      button.textContent = shown === columns.length ? "Columns" : "Columns \u00b7 " + shown + " of " + columns.length;
+      button.classList.toggle("is-active", shown !== columns.length);
+    }
+
+    function setColumnPanel(tableName, open) {
+      const { button, panel } = columnPanelParts(tableName);
+      if (!button || !panel) return;
+      panel.hidden = !open;
+      button.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function saveColumnChoice(tableName, hiddenKeys) {
+      if (!COLUMN_CHOICES[tableName]) return;
+      if (!state.prefs.columns) state.prefs.columns = {};
+      if (hiddenKeys.length) state.prefs.columns[tableName] = hiddenKeys;
+      else delete state.prefs.columns[tableName];
+      writePreferences();
+      COLUMN_CHOICES[tableName].render();
+    }
+
+    function announceColumns(tableName, lead) {
+      const all = columnLists[tableName] || [];
+      announce(lead + shownColumns(tableName, all).length + " of " + all.length + " columns shown.");
+    }
+
+    function setColumnShown(tableName, key, shown) {
+      if (!COLUMN_CHOICES[tableName]) return;
+      const hidden = hiddenColumns(tableName);
+      if (shown) hidden.delete(key);
+      else hidden.add(key);
+      saveColumnChoice(tableName, Array.from(hidden));
+      const column = (columnLists[tableName] || []).find((entry) => entry[1] === key);
+      announceColumns(tableName, (column ? column[0] : "Column") + (shown ? " shown. " : " hidden. "));
+    }
+
+    function applyColumnPreset(tableName, preset) {
+      const choice = COLUMN_CHOICES[tableName];
+      if (!choice) return;
+      const columns = columnLists[tableName] || [];
+      const hidden = preset === "key"
+        ? columns.filter((column, index) => index > 0 && !choice.key.includes(column[1])).map((column) => column[1])
+        : [];
+      saveColumnChoice(tableName, hidden);
+      announceColumns(tableName, preset === "key" ? "Key columns. " : "All columns. ");
+    }
+
     function renderTable(tableName, columns, rows) {
       if (!rows.length) {
         return `<div class="empty-state">No records match the current view.</div>`;
       }
+      columns = shownColumns(tableName, columns);
       const limit = tableLimitFor(tableName);
       const visible = rows.length > limit ? rows.slice(0, limit) : rows;
       const sort = state.sort[tableName] || {};
@@ -22263,6 +22459,15 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
     };
     const SEATING_PRINT_MARGIN = 8;
     const SEATING_PRINT_HEAD = 16;
+    // Some print paths lay a page out smaller than the paper and enlarge it to
+    // fit (WebKit's GTK path does: a 100mm box prints 106.7mm), and every
+    // printer has its own idea of the printable area, so the roster leaves this
+    // much of a page's height unused rather than meet the edge exactly.
+    const SEATING_PAGE_SLACK = 0.065;
+    // A flag line this short fits one line of a roster column, with room to spare.
+    const SEATING_FLAGS_ONE_LINE = 30;
+    // Names to a block of unplaced students on the roster.
+    const SEATING_UNPLACED_BLOCK = 12;
 
     // The room is fitted into the page below the masthead, keeping its ratio,
     // and one unit is set in millimetres from that: every size in the sheet is
@@ -22272,19 +22477,27 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const size = PAPER_SIZES[paper] || PAPER_SIZES.A4;
       const room = roomSize();
       const footer = audience === "wall" ? 9 : 14;
-      // Whichever way round the sheet draws the room larger; a near-square
-      // room is bigger on a portrait page. unit is millimetres per centimetre.
-      const fit = (landscape) => {
+      // How large the room draws on a sheet held one way or the other, given
+      // what is left below the footer (the page's bottom margin). unit is
+      // millimetres per centimetre.
+      const fit = (landscape, bottom) => {
         const pageW = landscape ? size.height : size.width;
         const pageH = landscape ? size.width : size.height;
         const innerW = pageW - SEATING_PRINT_MARGIN * 2;
-        const innerH = pageH - SEATING_PRINT_MARGIN * 2 - SEATING_PRINT_HEAD - footer - 6;
-        return { landscape, pageW, pageH, innerW, innerH, unit: Math.min(innerW / room.width, innerH / room.depth) };
+        const innerH = pageH - SEATING_PRINT_HEAD - 3 - footer - bottom;
+        return { pageW, pageH, innerW, innerH, unit: Math.min(innerW / room.width, innerH / room.depth) };
       };
-      const wide = fit(true);
-      const tall = fit(false);
-      const best = tall.unit > wide.unit + 0.00001 ? tall : wide;
-      const { landscape, pageW, pageH, innerW, innerH, unit } = best;
+      // The sheet is held whichever way draws the room larger (a near-square
+      // room is bigger on a portrait page), judged on the plain margin so that
+      // a near tie never turns a sheet on its side.
+      const plain = 19;
+      const landscape = !(fit(false, plain).unit > fit(true, plain).unit + 0.00001);
+      // The room is then sized with a bottom margin of no less than the share
+      // of the page's height that a print path may take back (see
+      // SEATING_PAGE_SLACK), so a tall room on a big sheet cannot push the
+      // footer line onto a page of its own.
+      const bottom = Math.max(plain, (landscape ? size.width : size.height) * SEATING_PAGE_SLACK + 4);
+      const { pageW, pageH, innerW, innerH, unit } = fit(landscape, bottom);
       return {
         paper: paper === "A3" ? "A3" : "A4",
         orientation: landscape ? "landscape" : "portrait",
@@ -22422,13 +22635,28 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
   .sp-roster-cols { display: flex; gap: 6mm; align-items: flex-start; }
   .sp-roster-col { flex: 1 1 0; min-width: 0; }
   .sp-roster-table { break-inside: avoid; page-break-inside: avoid; margin-bottom: 4mm; border: 0.3mm solid #d9dee8; border-radius: 1.5mm; overflow: hidden; }
-  .sp-roster-table header { display: flex; align-items: center; justify-content: space-between; gap: 3mm; padding: 1.8mm 3mm; background: #f1f5fb; border-bottom: 0.3mm solid #d9dee8; }
+  .sp-roster-table header { display: flex; align-items: center; justify-content: space-between; gap: 3mm; padding: 1.4mm 3mm; background: #f1f5fb; border-bottom: 0.3mm solid #d9dee8; }
   .sp-roster-table h2 { margin: 0; font-size: 10.5pt; }
   .sp-roster-table header small { font-size: 7.5pt; color: #4a5568; }
   .sp-roster-table header .room-mix { width: 22mm; height: 2.4mm; border-radius: 0.8mm; }
   .sp-roster-table table { width: 100%; border-collapse: collapse; font-size: 8pt; }
-  .sp-roster-table th { text-align: left; font-size: 6.8pt; letter-spacing: .06em; text-transform: uppercase; color: #4a5568; padding: 1mm 2mm; border-bottom: 0.3mm solid #d9dee8; }
+  .sp-roster-table th { text-align: left; font-size: 6.8pt; letter-spacing: .06em; text-transform: uppercase; color: #4a5568; padding: 0.8mm 2mm; border-bottom: 0.3mm solid #d9dee8; }
   .sp-roster-table td { padding: 1.1mm 2mm; border-bottom: 0.2mm solid #edf0f5; vertical-align: top; }
+  /* A table's height is its rows' heights, and a row's height must not hang on
+     where a line happens to wrap: the pages are cut from heights measured on
+     screen, and a printer lays the same text out a little differently. So the
+     columns have set widths, a name has room for two lines whatever it takes,
+     and the reasons have a box of exactly one or two lines. */
+  .sp-roster-grid { table-layout: fixed; }
+  .sp-roster-grid th:nth-child(1) { width: 8mm; }
+  .sp-roster-grid th:nth-child(2) { width: 25%; }
+  .sp-roster-grid th:nth-child(3) { width: 14mm; }
+  .sp-roster-grid th:nth-child(4) { width: 10mm; }
+  .sp-roster-grid th:nth-child(5) { width: 13mm; }
+  .sp-roster-grid td { padding: 0.7mm 2mm; line-height: 1.2; overflow-wrap: anywhere; }
+  .sp-roster-grid tbody tr { height: 8.4mm; }
+  .sp-roster-grid .sp-flags { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.2; min-height: 2.4em; }
+  .sp-roster-grid .sp-flags.is-short { -webkit-line-clamp: 1; min-height: 1.2em; }
   .sp-roster-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .sp-roster-table tr:last-child td { border-bottom: 0; }
   .sp-chip { display: inline-block; padding: 0.4mm 1.8mm; border-radius: 3mm; font-size: 7pt; font-weight: 800; white-space: nowrap; }
@@ -22522,7 +22750,7 @@ ${sheets.join("\n")}
             '<td><span class="sp-chip ' + profile.endBand.className + '">' + escapeHTML(profile.endBand.name) + '</span></td>' +
             '<td class="num">' + escapeHTML(formatNumber(profile.avgEndPercentile, 0)) + '</td>' +
             '<td class="num">' + escapeHTML(score.value(profile)) + '</td>' +
-            '<td>' + escapeHTML(profile.suggestedGroup || "") + (flags ? '<div class="sp-flags">' + escapeHTML(flags) + '</div>' : "") + '</td></tr>';
+            '<td>' + escapeHTML(profile.suggestedGroup || "") + (flags ? '<div class="sp-flags' + (flags.length > SEATING_FLAGS_ONE_LINE ? "" : " is-short") + '">' + escapeHTML(flags) + '</div>' : "") + '</td></tr>';
         }).join("");
         return '<article class="sp-roster-table"><header><div><h2>' + escapeHTML(tableLabel(index)) + '</h2><small>' +
           escapeHTML(group.length
@@ -22530,11 +22758,16 @@ ${sheets.join("\n")}
             : "No students seated" + (capacity ? " · " + formatInteger(capacity) + " seats" : "")) +
           (tableCount > 1 ? " · at " + formatInteger(tableCount) + " tables" : "") +
           '</small></div>' + bandMixStrip(group) + '</header>' +
-          '<table><thead><tr><th>Seat</th><th>Student</th><th>Band</th><th>%ile</th><th>' + escapeHTML(score.label) + '</th><th>Planning group</th></tr></thead><tbody>' + rows + '</tbody></table></article>';
+          '<table class="sp-roster-grid"><thead><tr><th>Seat</th><th>Student</th><th>Band</th><th>%ile</th><th>' + escapeHTML(score.label) + '</th><th>Planning group</th></tr></thead><tbody>' + rows + '</tbody></table></article>';
       });
-      if (state.tableManualPool.length) {
-        blocks.push('<article class="sp-roster-table"><header><div><h2>Unplaced</h2><small>' + escapeHTML(formatInteger(state.tableManualPool.length) + " to seat by hand") + '</small></div></header><table><tbody>' +
-          state.tableManualPool.map((profile) => '<tr><td>' + escapeHTML(profile.studentName) + '</td><td class="sp-flags">' + escapeHTML((profile.missingDataReasons || []).join("; ") || "No usable score") + '</td></tr>').join("") +
+      // Students with no usable score, a dozen to a block: a score setting a
+      // file cannot support leaves most of a class here, and a block taller
+      // than a page could not be printed whole.
+      for (let from = 0; from < state.tableManualPool.length; from += SEATING_UNPLACED_BLOCK) {
+        const part = state.tableManualPool.slice(from, from + SEATING_UNPLACED_BLOCK);
+        blocks.push('<article class="sp-roster-table"><header><div><h2>Unplaced' + (from ? " (continued)" : "") + '</h2><small>' +
+          escapeHTML(from ? formatInteger(from + 1) + " to " + formatInteger(from + part.length) + " of " + formatInteger(state.tableManualPool.length) : formatInteger(state.tableManualPool.length) + " to seat by hand") + '</small></div></header><table><tbody>' +
+          part.map((profile) => '<tr><td>' + escapeHTML(profile.studentName) + '</td><td class="sp-flags">' + escapeHTML((profile.missingDataReasons || []).join("; ") || "No usable score") + '</td></tr>').join("") +
           '</tbody></table></article>');
       }
       const note = '<p class="sp-note">' + escapeHTML(SEATING_PRINT_NOTE) + '</p>';
@@ -22546,7 +22779,7 @@ ${sheets.join("\n")}
       const noteHeight = measureSeatingBlocks([note], innerW)[0];
       // The sheet below its masthead: the roster's top padding, the bottom
       // margin, and a little to spare for rounding in the printer's layout.
-      const pageRoom = metrics.pageH - SEATING_PRINT_HEAD - 4 - SEATING_PRINT_MARGIN - 4;
+      const pageRoom = metrics.pageH * (1 - SEATING_PAGE_SLACK) - SEATING_PRINT_HEAD - SEATING_PRINT_MARGIN - 8;
       const pages = [];
       let page = null;
       let column = 0;
@@ -23579,11 +23812,25 @@ ${sheets.join("\n")}
           supportPromptOff: stored.supportPromptOff === true,
           // Which sections the page opens on. Anything but an explicit "full"
           // is the essentials, so a stale or hand-edited value cannot widen it.
-          view: stored.view === "full" ? "full" : "essentials"
+          view: stored.view === "full" ? "full" : "essentials",
+          // Which columns of a long table are switched off: column keys only,
+          // for the tables that offer the choice. Anything else is dropped.
+          columns: readColumnPreferences(stored.columns)
         };
       } catch (error) {
-        return { theme: "auto", reducedMotion: false, supportPromptOff: false, view: "essentials" };
+        return { theme: "auto", reducedMotion: false, supportPromptOff: false, view: "essentials", columns: {} };
       }
+    }
+
+    function readColumnPreferences(stored) {
+      const out = {};
+      if (!stored || typeof stored !== "object") return out;
+      Object.keys(COLUMN_CHOICES).forEach((table) => {
+        const list = Array.isArray(stored[table]) ? stored[table] : [];
+        const keys = Array.from(new Set(list.filter((key) => typeof key === "string" && /^[A-Za-z][A-Za-z0-9.]{0,39}$/.test(key)))).slice(0, 40);
+        if (keys.length) out[table] = keys;
+      });
+      return out;
     }
 
     function writePreferences() {

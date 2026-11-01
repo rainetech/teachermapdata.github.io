@@ -29,6 +29,11 @@
 //     teacher print carries them all;
 //   - the teacher copy's roster never splits a table across pages, and says
 //     only that students are grouped by data and behaviour patterns;
+//   - and it holds when a printer lays pages out smaller than the paper (WebKit's
+//     GTK print path prints a page at 94% and enlarges it): a table's height
+//     does not hang on where its text wraps, and a class of 48 at eight tables,
+//     some with very long names, still prints one page to a sheet at the paper's
+//     size and at 6.7% smaller;
 //   - a saved plan file brings back the room, the table names and who sits
 //     where;
 //   - the CSV has one row per seat;
@@ -629,6 +634,93 @@ const expectedParts = Array.from({ length: splitSeats }, (_, i) => (i < 2 ? "A" 
 check(ofFirstGroup.map((row) => row[partColumn]).join("") === expectedParts && ofOthers.every((row) => row[partColumn] === ""), "CSV says which table of its group each seat is at: " + expectedParts + " for the split group, blank for groups with one table");
 const lefts = new Set(ofFirstGroup.map((row, i) => (i < 2 ? "A" : "B") + row[leftColumn]));
 check(splitSeats < 3 || (lefts.size === 2 && ofFirstGroup[0][leftColumn] !== ofFirstGroup[2][leftColumn]), "and each seat carries the place of the table it is at, not the group's first");
+
+console.log("Roster pages");
+{
+  // Forty-eight students at eight tables, one in five with a very long name.
+  const heavy = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+  heavy.on("pageerror", (error) => errors.push(error.message));
+  await heavy.addInitScript(() => {
+    try {
+      localStorage.clear();
+      localStorage.setItem("asg-dashboard-preferences", JSON.stringify({ reducedMotion: true, supportPromptOff: true, supportPromptLastShown: Date.now(), view: "full" }));
+    } catch (error) { /* storage may be unavailable */ }
+  });
+  await heavy.goto(pathToFileURL(TARGET).href);
+  if (FIXTURES.length) await heavy.setInputFiles("#csvInput", FIXTURES);
+  else await heavy.click("#sampleBtn");
+  await heavy.waitForTimeout(2500);
+  await heavy.evaluate(() => {
+    const base = state.allRows.slice();
+    const rows = [];
+    for (let copy = 0; copy < 6; copy += 1) {
+      base.forEach((row, index) => rows.push(Object.assign({}, row, {
+        studentID: row.studentID + "-" + copy,
+        studentName: (index + copy) % 5 === 0 ? "Abdulrahman Mohammed Al Nahyan Al Mazrouei " + copy : row.studentName + " " + copy
+      })));
+    }
+    state.allRows = rows;
+    els.roomSizeInput.value = "12 x 9";
+    els.roomSizeInput.dispatchEvent(new Event("change", { bubbles: true }));
+    els.groupSizeInput.value = "6";
+    renderAll();
+    renderTableGroups();
+  });
+  const classInfo = await heavy.evaluate(() => ({ tables: state.tableGroups.length, students: state.tableGroups.reduce((n, g) => n + g.length, 0) }));
+  check(classInfo.students >= 40 && classInfo.tables >= 7, "a class of " + classInfo.students + " at " + classInfo.tables + " tables, some with very long names");
+
+  // A table's height must not hang on where its text wraps: the same tables laid
+  // out 15% narrower (more than any printer does) are no more than 10% taller.
+  // Before the rows were given set heights they grew by 19% or more here.
+  const wrapped = await heavy.evaluate(() => {
+    const seen = [];
+    const original = window.measureSeatingBlocks;
+    window.measureSeatingBlocks = function (list, widthMm) {
+      const heights = original(list, widthMm);
+      if (list.length > 1) seen.push({ list, widthMm, heights });
+      return heights;
+    };
+    buildSeatingPrintHTML({ audience: "teacher", paper: "A4" });
+    window.measureSeatingBlocks = original;
+    const first = seen[0];
+    const narrow = original(first.list, first.widthMm * 0.85);
+    return { wide: first.heights, narrow };
+  });
+  const growth = wrapped.wide.map((height, index) => wrapped.narrow[index] / height);
+  check(growth.every((ratio) => ratio <= 1.1), "a roster table is no more than 10% taller laid out 15% narrower, so it does not hang on where text wraps (worst " + Math.max(...growth).toFixed(3) + "x)");
+
+  // One page to a sheet, at the paper's size and on a printer that lays the page
+  // out at 94% (WebKit's GTK print path does).
+  for (const paper of ["A4", "A3"]) {
+    const html = await heavy.evaluate((size) => buildSeatingPrintHTML({ audience: "teacher", paper: size }), paper);
+    const sheetPage = await browser.newPage();
+    await sheetPage.setContent(html);
+    await sheetPage.emulateMedia({ media: "print" });
+    const sheets = await sheetPage.evaluate(() => ({ sheets: document.querySelectorAll(".sp-sheet").length, tables: document.querySelectorAll(".sp-roster-table").length }));
+    const wide = (await sheetPage.pdf({ preferCSSPageSize: true, printBackground: true })).toString("latin1").match(/\/Type\s*\/Page[^s]/g) || [];
+    const size = paper === "A3" ? ["420mm", "297mm"] : ["297mm", "210mm"];
+    const shrunk = (await sheetPage.pdf({ width: (parseFloat(size[0]) * 0.9375) + "mm", height: (parseFloat(size[1]) * 0.9375) + "mm", printBackground: true })).toString("latin1").match(/\/Type\s*\/Page[^s]/g) || [];
+    check(wide.length === sheets.sheets && sheets.tables === classInfo.tables, "the teacher copy on " + paper + " prints one page to a sheet, every table whole (" + wide.length + " pages, " + sheets.sheets + " sheets, " + sheets.tables + " tables)");
+    check(shrunk.length === sheets.sheets, "and one page to a sheet when the printer lays the page out 6.7% smaller (" + shrunk.length + " pages)");
+    await sheetPage.close();
+  }
+  // Thirty students with no usable score: the Unplaced list is cut into blocks of a dozen, each whole on a page.
+  await heavy.evaluate(() => { state.tableManualPool = state.tableGroups.flat().slice(0, 30); });
+  const pooled = await heavy.evaluate(() => buildSeatingPrintHTML({ audience: "teacher", paper: "A4" }));
+  const poolPage = await browser.newPage();
+  await poolPage.setContent(pooled);
+  await poolPage.emulateMedia({ media: "print" });
+  const pool = await poolPage.evaluate(() => ({
+    blocks: [...document.querySelectorAll(".sp-roster-table h2")].map((el) => el.textContent).filter((text) => /^Unplaced/.test(text)),
+    rows: [...document.querySelectorAll(".sp-roster-table")].filter((el) => /^Unplaced/.test(el.querySelector("h2").textContent)).map((el) => el.querySelectorAll("tbody tr").length),
+    sheets: document.querySelectorAll(".sp-sheet").length
+  }));
+  const poolPages = ((await poolPage.pdf({ preferCSSPageSize: true, printBackground: true })).toString("latin1").match(/\/Type\s*\/Page[^s]/g) || []).length;
+  check(pool.blocks.length === 3 && pool.blocks[0] === "Unplaced" && /continued/.test(pool.blocks[1]) && pool.rows.join(",") === "12,12,6", "a long Unplaced list is cut into blocks of a dozen (" + pool.rows.join(", ") + " names)");
+  check(poolPages === pool.sheets, "and every sheet is still one page (" + poolPages + " pages, " + pool.sheets + " sheets)");
+  await poolPage.close();
+  await heavy.close();
+}
 
 console.log("Laptop screen");
 // A 14-inch full-HD laptop at 150% display scaling: a page 1280 wide and 600 high.
