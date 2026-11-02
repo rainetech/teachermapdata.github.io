@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<title>MAP results</title>
+<style>
+  :root { --ink: #1c2433; --muted: #5a6478; --line: #d9dfeb; --bg: #f4f6fb; --card: #ffffff; --brand: #1d4ed8; --soft: #e8efff; --good: #0f7a3d; --warn: #8a5a00; }
+  @media (prefers-color-scheme: dark) { :root { --ink: #e8ecf5; --muted: #a9b3c8; --line: #2b3448; --bg: #0f1420; --card: #171e2e; --brand: #8fb0ff; --soft: #1e2a47; --good: #6fd39a; --warn: #f1c46b; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif; }
+  #app { max-width: 42rem; margin: 0 auto; padding: 1rem 1rem 3rem; }
+  .top { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  h1 { font-size: 1.5rem; line-height: 1.25; margin: .5rem 0; }
+  h2 { font-size: 1.25rem; margin: 0 0 .5rem; }
+  h3 { font-size: 1.1rem; margin: 1rem 0 .25rem; }
+  h4 { font-size: 1.05rem; margin: 1rem 0 .25rem; }
+  h5 { font-size: .95rem; margin: .9rem 0 .25rem; color: var(--muted); }
+  .meta { margin: 0 0 .75rem; color: var(--muted); font-weight: 600; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 1rem; margin: .85rem 0; }
+  .note { border: 1px solid var(--line); border-inline-start: 5px solid var(--warn); background: var(--card); border-radius: 10px; padding: .75rem 1rem; margin: .75rem 0; }
+  .note.warn { border-inline-start-color: #b42318; }
+  .btn { font: inherit; font-weight: 700; min-height: 44px; padding: .5rem 1rem; border-radius: 10px; border: 1px solid var(--brand); background: var(--soft); color: var(--brand); cursor: pointer; }
+  .btn.lang { white-space: nowrap; }
+  .glance { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+  .g-card { font: inherit; text-align: start; display: flex; flex-wrap: wrap; gap: .25rem .9rem; align-items: baseline; padding: .7rem .8rem; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); cursor: pointer; min-height: 44px; }
+  .g-subject { flex-basis: 100%; font-weight: 700; }
+  .g-num b { font-size: 1.4rem; margin-inline-end: .25rem; }
+  .g-num i { font-style: normal; font-size: .8rem; color: var(--muted); }
+  .track { position: relative; height: 3.4rem; margin: 1.2rem .5rem 1rem; }
+  .track::before { content: ""; position: absolute; left: 0; right: 0; top: 1rem; height: 6px; border-radius: 3px; background: var(--line); }
+  .track .fill { position: absolute; top: 1rem; height: 6px; border-radius: 3px; background: var(--brand); }
+  .track .mk { position: absolute; top: .55rem; transform: translateX(-50%); text-align: center; line-height: 1.15; }
+  .track .mk::before { content: ""; display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--card); border: 3px solid var(--brand); margin: 0 auto .15rem; }
+  .track .m-target::before { border-color: var(--good); }
+  .track .mk b { display: block; font-size: .95rem; }
+  .track .mk i { font-style: normal; font-size: .72rem; color: var(--muted); }
+  ul, ol { padding-inline-start: 1.3rem; margin: .4rem 0; }
+  li { margin: .35rem 0; }
+  details { border-top: 1px solid var(--line); padding: .5rem 0; }
+  summary { font-weight: 700; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+  .focus { border-top: 1px dashed var(--line); margin-top: .9rem; padding-top: .2rem; }
+  .example { background: var(--bg); border-radius: 10px; padding: .5rem .9rem .7rem; margin: .8rem 0; }
+  .example .q { font-weight: 700; margin: .3rem 0; }
+  a { color: var(--brand); }
+  footer { color: var(--muted); font-size: .9rem; margin-top: 1.5rem; }
+  #sheets { display: none; }
+  .line { display: inline-block; min-width: 6rem; border-bottom: 1px solid currentColor; margin-inline-start: .5rem; }
+  .line.wide { min-width: 12rem; }
+  @media print {
+    body { background: #fff; color: #000; font-size: 13pt; }
+    body[data-printing] #app > :not(#sheets) { display: none !important; }
+    body[data-printing] #sheets { display: block; }
+    body[data-printing] .sheet:not(.is-printing) { display: none; }
+    .sheet li { margin: 1.1rem 0; }
+    .sheet .line { min-width: 8rem; }
+    .answers { break-before: page; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// The Family Plan's shared rules: what goes into a family link, how the page
+// reads it back, which goal area a child is pointed to, and which areas and
+// grade bands there are. No page, no storage, no network: build/check-family.mjs
+// runs it in Node, and build/build-family.mjs copies it into the dashboard
+// (where the link is made) and into the family page (where it is read).
+//
+// A link is  <page>#v=1&t=T1-2627&g=4&d=ma.205.62.55.198.213.num~rd.190.48...188.voc
+//   v  format version        t  term: T1 fall, T2 winter, T3 spring, then the school year
+//   g  grade, 0 for kindergarten
+//   d  one record per subject, joined by ~, fields joined by . and left empty when
+//      there is nothing to say:  subject . RIT . achievement percentile .
+//      growth percentile . RIT at the start of the window . target RIT . goal area
+// No name, no ID, no school: nothing that says who the child is.
+const FamilyCore = (function () {
+  const FORMAT_VERSION = 1;
+
+  // How far below the overall RIT a goal area must sit before it is named. An
+  // area RIT comes from far fewer questions than the overall score, so inside
+  // this the profile is called balanced. One value, here.
+  const AREA_GAP_RIT = 3;
+  // Within this many RIT of the target, below it, is "close": a different day
+  // could have gone either way. At or above it by this many is "above".
+  const CLOSE_RIT = 3;
+  const ABOVE_RIT = 3;
+
+  const SUBJECTS = {
+    ma: { en: "Mathematics", ar: "الرياضيات" },
+    rd: { en: "Reading", ar: "القراءة" },
+    lu: { en: "Language Usage", ar: "استخدام اللغة" },
+    sc: { en: "Science", ar: "العلوم" }
+  };
+
+  // Grade bands, and the subjects each is offered in. Language Usage starts at
+  // Grade 2 and Science at Grade 3 (NWEA's own tests start at Grade 2; a school's
+  // data decides, and a record outside this still gets a page, just without
+  // an activity set).
+  const BAND_ORDER = ["k", "12", "35", "68", "911"];
+  const BANDS = {
+    k: { en: "KG2", ar: "رياض الأطفال", subjects: ["ma", "rd"] },
+    "12": { en: "Grades 1 to 2", ar: "الصفان الأول والثاني", subjects: ["ma", "rd", "lu"] },
+    "35": { en: "Grades 3 to 5", ar: "الصفوف من الثالث إلى الخامس", subjects: ["ma", "rd", "lu", "sc"] },
+    "68": { en: "Grades 6 to 8", ar: "الصفوف من السادس إلى الثامن", subjects: ["ma", "rd", "lu", "sc"] },
+    "911": { en: "Grades 9 to 11", ar: "الصفوف من التاسع إلى الحادي عشر", subjects: ["ma", "rd", "lu", "sc"] }
+  };
+
+  // The goal areas, grouped into the themes NWEA's own areas fall under across
+  // its test versions (2015, 2017 and 2025 names all appear in exports). "match"
+  // is tried in order against the name in the file. "bands" lists where an
+  // activity set is wanted. "nwea" is NWEA's own 2025 wording, for the slot list.
+  const AREAS = {
+    ma: [
+      { code: "alg", en: "Patterns, equations and algebra thinking", ar: "الأنماط والمعادلات والتفكير الجبري", match: /algebra|equations|functions|patterns/i, bands: ["k", "12", "35", "68", "911"], nwea: "Algebra" },
+      { code: "geo", en: "Shapes, measuring and space", ar: "الأشكال والقياس والفراغ", match: /geometry|measurement/i, bands: ["k", "12", "35", "68", "911"], nwea: "Geometry; Measurement" },
+      { code: "dat", en: "Data, graphs and chance", ar: "البيانات والرسوم البيانية والاحتمالات", match: /statistic|probability|data/i, bands: ["k", "12", "35", "68", "911"], nwea: "Probability & Statistics" },
+      { code: "num", en: "Numbers and calculating", ar: "الأعداد والحساب", match: /number|computation|operations|numeric/i, bands: ["k", "12", "35", "68", "911"], nwea: "Number (Computation, Number Sense)" }
+    ],
+    rd: [
+      { code: "fnd", en: "Sounds, letters and decoding", ar: "الأصوات والحروف وفك الرموز", match: /foundation|phonolog|phonic|concepts of print/i, bands: ["k", "12"], nwea: "Reading Foundations (K-2)" },
+      { code: "cmp", en: "Understanding what you read", ar: "فهم المقروء", match: /comprehension/i, bands: ["k", "12"], nwea: "Reading Comprehension (K-2)" },
+      { code: "voc", en: "Word meanings and how writers use words", ar: "معاني الكلمات وكيف يستخدمها الكتّاب", match: /vocab|word/i, bands: ["k", "12", "35", "68", "911"], nwea: "Vocabulary and Literary Devices" },
+      { code: "inf", en: "Reading nonfiction", ar: "قراءة النصوص المعلوماتية", match: /nonfiction|non-fiction|informational/i, bands: ["35", "68", "911"], nwea: "Nonfiction" },
+      { code: "lit", en: "Stories, poems and plays", ar: "القصص والقصائد والمسرحيات", match: /fiction|literar|poetry|literature/i, bands: ["35", "68", "911"], nwea: "Fiction, Poetry, and Drama" },
+      { code: "wl", en: "Writing and language", ar: "الكتابة واللغة", match: /writing|language/i, bands: ["k", "12"], nwea: "Writing and Language (K-2)" }
+    ],
+    lu: [
+      { code: "cps", en: "Capital letters, punctuation and spelling", ar: "الأحرف الكبيرة وعلامات الترقيم والهجاء", match: /capital|punctuation|spelling|mechanics/i, bands: ["12", "35", "68", "911"], nwea: "Capitalization, Punctuation, and Spelling" },
+      { code: "gru", en: "Grammar and word usage", ar: "القواعد واستخدام الكلمات", match: /grammar|parts of speech|usage/i, bands: ["12", "35", "68", "911"], nwea: "Grammar and Usage" },
+      { code: "wri", en: "Writing", ar: "الكتابة", match: /writing|composition|research|narrative|process/i, bands: ["12", "35", "68", "911"], nwea: "Narrative, Expository, and Argumentative Writing" }
+    ],
+    sc: [
+      { code: "bio", en: "Living things", ar: "الكائنات الحية", match: /biolog|life|organism|ecosystem|heredity|inheritance/i, bands: ["35", "68", "911"], nwea: "Biology" },
+      { code: "ear", en: "Earth and space", ar: "الأرض والفضاء", match: /earth|space/i, bands: ["35", "68", "911"], nwea: "Earth and Space Science" },
+      { code: "phy", en: "Matter, forces and energy", ar: "المادة والقوى والطاقة", match: /physic|chemistry|matter|forces|energy/i, bands: ["35", "68", "911"], nwea: "Chemistry and Physics" }
+    ]
+  };
+
+  function gradeBand(grade) {
+    const text = String(grade === undefined || grade === null ? "" : grade).trim().toUpperCase();
+    if (["K", "KG", "KG2", "KINDERGARTEN"].includes(text)) return "k";
+    if (!/^\d{1,2}$/.test(text)) return null;
+    const number = Number(text);
+    if (number === 0) return "k";
+    if (number <= 2) return "12";
+    if (number <= 5) return "35";
+    if (number <= 8) return "68";
+    if (number <= 12) return "911";
+    return null;
+  }
+
+  // The dashboard's subject names (Mathematics, Reading, Language, Science).
+  function subjectCode(name) {
+    const lower = String(name || "").toLowerCase();
+    if (lower.includes("math")) return "ma";
+    if (lower.includes("reading")) return "rd";
+    if (lower.includes("language")) return "lu";
+    if (lower.includes("science")) return "sc";
+    return null;
+  }
+
+  // The theme a goal-area name from a file belongs to, or null.
+  function areaCode(subject, name) {
+    const list = AREAS[subject];
+    const text = String(name || "").trim();
+    if (!list || !text) return null;
+    const found = list.find((area) => area.match.test(text));
+    return found ? found.code : null;
+  }
+
+  function slotExists(subject, band, code) {
+    if (code === "bal") return Boolean(BANDS[band] && BANDS[band].subjects.includes(subject));
+    const found = (AREAS[subject] || []).find((area) => area.code === code);
+    return Boolean(found && found.bands.includes(band));
+  }
+
+  // Which goal area to point to. areas: [{ name, rit }]. Returns
+  //   null                        no area scores at all
+  //   { balanced: true }          nothing sits more than gap below the overall RIT
+  //   { balanced: false, code, name, delta }   the weakest; code is null when its
+  //                               name is not one this knows
+  function pickFocusArea(areas, overall, gap) {
+    const limit = typeof gap === "number" ? gap : AREA_GAP_RIT;
+    if (!Number.isFinite(overall)) return null;
+    const scored = (areas || []).filter((area) => area && Number.isFinite(area.rit));
+    if (!scored.length) return null;
+    const weakest = scored.map((area) => ({ area, delta: area.rit - overall })).sort((a, b) => a.delta - b.delta)[0];
+    if (!(weakest.delta < -limit)) return { balanced: true };
+    return { balanced: false, name: weakest.area.name, delta: weakest.delta, code: weakest.area.code || null };
+  }
+
+  const SEASON_NUMBER = { fall: 1, winter: 2, spring: 3 };
+
+  // "Fall" and the year the school year began (2026) -> "T1-2627".
+  function termCode(season, startYear) {
+    const number = SEASON_NUMBER[String(season || "").toLowerCase()];
+    if (!number || !Number.isFinite(startYear)) return "";
+    const first = String(Math.round(startYear) % 100).padStart(2, "0");
+    const second = String((Math.round(startYear) + 1) % 100).padStart(2, "0");
+    return "T" + number + "-" + first + second;
+  }
+
+  // A number that sorts terms in the order they happen, or null.
+  function termOrder(code) {
+    const match = /^T([123])-(\d{2})(\d{2})$/.exec(String(code || ""));
+    if (!match) return null;
+    if ((Number(match[2]) + 1) % 100 !== Number(match[3])) return null;
+    return Number(match[2]) * 10 + Number(match[1]);
+  }
+
+  // How a result stands against its target.
+  //   "above"   at or past the target by ABOVE_RIT or more
+  //   "met"     at or past the target
+  //   "close"   short of it by CLOSE_RIT or less
+  //   "below"   short of it by more
+  //   "target"  only a target for the next test exists (no result to judge yet)
+  //   "none"    nothing to compare
+  function progress(subject) {
+    const rit = subject && subject.rit;
+    const target = subject && subject.target;
+    if (!Number.isFinite(target)) return "none";
+    if (!Number.isFinite(subject.base) || !Number.isFinite(rit)) return "target";
+    if (rit >= target + ABOVE_RIT) return "above";
+    if (rit >= target) return "met";
+    if (target - rit <= CLOSE_RIT) return "close";
+    return "below";
+  }
+
+  const clean = (value) => (Number.isFinite(value) ? String(Math.round(value)) : "");
+
+  // student: { term, grade, subjects: [{ subject, rit, ach, growthPct, base, target, area }] }
+  function encode(student) {
+    const records = (student.subjects || [])
+      .filter((entry) => entry && SUBJECTS[entry.subject] && Number.isFinite(entry.rit))
+      .map((entry) => {
+        const fields = [entry.subject, clean(entry.rit), clean(entry.ach), clean(entry.growthPct), clean(entry.base), clean(entry.target), /^[a-z]{2,3}$/.test(entry.area || "") ? entry.area : ""];
+        while (fields.length > 2 && fields[fields.length - 1] === "") fields.pop();
+        return fields.join(".");
+      });
+    if (!records.length) return "";
+    const grade = gradeBand(student.grade) === "k" ? "0" : String(student.grade).replace(/\D/g, "");
+    return "v=" + FORMAT_VERSION + "&t=" + (student.term || "") + "&g=" + grade + "&d=" + records.join("~");
+  }
+
+  function whole(text, low, high) {
+    if (text === "" || text === undefined) return null;
+    if (!/^\d{1,3}$/.test(text)) return undefined;
+    const value = Number(text);
+    return value >= low && value <= high ? value : undefined;
+  }
+
+  // The fragment (with or without the #) -> what the page shows. Never throws.
+  // { ok, reason, term, termOrder, grade, band, subjects: [...], warnings: [...] }
+  function decode(fragment) {
+    const result = { ok: false, reason: "", term: "", termOrder: null, grade: null, band: null, subjects: [], warnings: [] };
+    const text = String(fragment || "").replace(/^#/, "");
+    if (!text) { result.reason = "empty"; return result; }
+    const pairs = {};
+    text.split("&").forEach((part) => {
+      const at = part.indexOf("=");
+      if (at > 0) pairs[part.slice(0, at)] = part.slice(at + 1);
+    });
+    if (pairs.v !== String(FORMAT_VERSION)) { result.reason = "version"; return result; }
+    result.term = /^T[123]-\d{4}$/.test(pairs.t || "") && termOrder(pairs.t) !== null ? pairs.t : "";
+    result.termOrder = termOrder(result.term);
+    if (!result.term) result.warnings.push("term");
+    const grade = /^\d{1,2}$/.test(pairs.g || "") ? Number(pairs.g) : null;
+    result.grade = grade;
+    result.band = grade === null ? null : gradeBand(grade);
+    if (result.band === null) result.warnings.push("grade");
+    String(pairs.d || "").split("~").forEach((record) => {
+      if (!record) return;
+      const f = record.split(".");
+      const subject = f[0];
+      if (!SUBJECTS[subject]) { result.warnings.push("subject"); return; }
+      const rit = whole(f[1], 100, 350);
+      if (rit === null || rit === undefined) { result.warnings.push("rit:" + subject); return; }
+      const read = (index, low, high) => { const value = whole(f[index], low, high); return value === undefined ? null : value; };
+      let area = f[6] || "";
+      if (area && area !== "bal" && !(AREAS[subject] || []).some((entry) => entry.code === area)) area = "";
+      const entry = { subject, rit, ach: read(2, 1, 99), growthPct: read(3, 1, 99), base: read(4, 100, 350), target: read(5, 100, 350), area };
+      entry.progress = progress(entry);
+      result.subjects.push(entry);
+    });
+    result.ok = result.subjects.length > 0;
+    if (!result.ok) result.reason = "nodata";
+    return result;
+  }
+
+  // The slots an activity set is wanted for: every area in every band it is
+  // offered in, and one balanced set for each subject in each band.
+  function allSlots() {
+    const slots = [];
+    BAND_ORDER.forEach((band) => {
+      BANDS[band].subjects.forEach((subject) => {
+        (AREAS[subject] || []).filter((area) => area.bands.includes(band)).forEach((area) => {
+          slots.push({ key: subject + "." + band + "." + area.code, subject, band, code: area.code, kind: "area" });
+        });
+        slots.push({ key: subject + "." + band + ".bal", subject, band, code: "bal", kind: "balanced" });
+      });
+    });
+    return slots;
+  }
+
+  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, allSlots };
+})();
+
+// Everything the family page says that is not an activity, in English and
+// Arabic. {name} is filled in from the child's numbers. No em dashes anywhere
+// (build/check-family.mjs checks), nothing that blames, and every hard thing
+// points back to the teacher. Arabic is a first draft for a native reader to
+// review before it goes to families.
+const FamilyStrings = {
+  en: {
+    dir: "ltr",
+    langName: "English",
+    switchTo: "العربية",
+    pageTitle: "Your child's MAP results",
+    heading: "Your child's MAP results",
+    grade: "Grade {g}",
+    kindergarten: "KG2",
+    seasons: { 1: "Fall", 2: "Winter", 3: "Spring" },
+    stale: "These are earlier results. Ask the teacher for the latest goal sheet.",
+    unreadable: "This link could not be read. Please scan the code on the goal sheet again, or ask the teacher for a new sheet.",
+    unreadableVersion: "This link was made for a different version of this page. Please ask the teacher for a new goal sheet.",
+    mapHeading: "What is MAP?",
+    map: [
+      "MAP Growth is a computer test your child takes in school, usually twice a year, in the fall (start of the year) and the spring (towards the end of the year), and sometimes also in the winter.",
+      "It adapts as your child answers: questions get harder after correct answers and easier after incorrect ones, so it finds the level where your child is learning now.",
+      "It is not a pass or fail exam and it does not affect report card grades. Teachers use it to see what each child is ready to learn next and how much they have grown.",
+      "The results below are a starting point for a conversation with your child's teacher."
+    ],
+    readMore: "Read more in NWEA's family guide",
+    glanceHeading: "Results at a glance",
+    now: "Now",
+    start: "Start",
+    target: "Target",
+    percentile: "Percentile",
+    rit: "RIT",
+    howHeading: "How to read these numbers",
+    ritHeading: "RIT: a learning level",
+    ritText: "RIT is a score on a scale that estimates where your child is learning now. Your child's {subject} RIT is {n}. It is not a percentage, not a mark out of 100 and not a reading age. A {subject} RIT and a RIT in another subject cannot be compared with each other.",
+    pctHeading: "Achievement percentile: a comparison",
+    pctText: "The achievement percentile compares your child with students in the NWEA US norm group in the same grade, subject and time of year. In {subject} it is {n}, which means your child scored the same as or higher than about {n} out of 100 students in that group. It is not the percentage of questions answered correctly and it is not a class ranking.",
+    growthHeading: "Growth: a different measure",
+    growthText: "Growth is about change, not level. The target is the number of RIT points NWEA projects a student like your child to gain between the fall test and the latest test (winter or spring). Achievement says where your child is. Growth says how far they have moved. They are different, and a number that is blank means it is not available, not that it is zero.",
+    pctBandLow: "Below the 41st percentile. Your child is working below the typical range for the grade in {subject}. That tells us where extra help is likely to make the biggest difference. It is a starting point, not a verdict.",
+    pctBandMid: "Between the 41st and 60th percentile. Your child is working within the typical range for the grade in {subject}. Steady practice at home helps keep that going.",
+    pctBandHigh: "At or above the 61st percentile. Your child is working above the typical range for the grade in {subject}. Keep them curious and give them harder questions to enjoy.",
+    pctMissing: "The achievement percentile is not available for {subject}.",
+    progressAbove: "Your child scored {r}. The target was {t}. That is above the target. Well done to your child.",
+    progressMet: "Your child scored {r}. The target was {t}. That meets the target, so progress is as expected.",
+    progressClose: "Your child scored {r}. The target was {t}, so the result is {d} short of it. A gap this small is within normal variation from one test day to another.",
+    progressBelow: "Your child scored {r}. The target was {t}, so the result is {d} short of it. This is a good reason to talk with the teacher about what would help. It is not a reason to worry.",
+    progressTarget: "This is your child's first result in {subject} for this school year: {r}. NWEA's target for the next test is {t}, which is {d} points of growth. Growth will be shown after the next test.",
+    progressNone: "Growth will be shown after the next test.",
+    growthPct: "Growth percentile: {n}. This compares your child's growth with students who started at a similar score. It is not the same as the achievement percentile.",
+    focusHeading: "One thing to practise at home: {area}",
+    focusWhy: "This is the part of {subject} where your child's score was lowest compared with their overall score. Each part of the test has fewer questions than the whole, so treat it as a guide and not a verdict.",
+    balancedHeading: "A balanced profile",
+    balancedWhy: "Your child's scores across the parts of {subject} are close together, so no one area stands out. These parts of the test are short and carry a wide margin of error, so we are not naming a weakness. Here is a general activity instead.",
+    noAreaHeading: "A general activity",
+    noAreaWhy: "We do not have a breakdown by area for {subject}, so here is a general activity instead.",
+    activitiesHeading: "Try these",
+    exampleHeading: "A worked example",
+    sheetButton: "Print a practice sheet",
+    sheetTitle: "Practice sheet",
+    sheetFor: "For {subject}",
+    sheetAnswers: "Answer guide for parents",
+    sheetName: "Name",
+    sheetEnglishNote: "The reading in this sheet is in English because the test is in English.",
+    fallbackActivity: "Ask your child's teacher which activity to try first in {subject}. A good starting point is to read, count or talk about {subject} together for ten minutes and ask your child to explain what they are doing.",
+    planHeading: "A small-step plan",
+    plan: [
+      "About 10 minutes at a time, 3 days a week.",
+      "Keep it light and friendly. Stop while it is still enjoyable.",
+      "After two weeks, check in with the teacher about how it is going."
+    ],
+    askHeading: "Questions to ask the teacher",
+    ask: [
+      "What is my child doing well, and what should we build on?",
+      "Which skill matters most for the next few weeks?",
+      "How is the classroom helping, and what can we do at home to match it?",
+      "When is the next test, and what growth should we expect?",
+      "Is there anything in these results that does not match what you see in class?"
+    ],
+    faqHeading: "Common questions",
+    faq: [
+      ["Is this a pass or fail test?", "No. MAP Growth does not pass or fail anyone and it does not affect report card grades. It shows what your child is ready to learn next."],
+      ["Can the RIT go up while the percentile goes down?", "Yes. The percentile compares your child with other students. If other students grew faster, the percentile can fall even though your child's RIT rose. Both numbers are true."],
+      ["My child's score changed a little. Is that a problem?", "Small changes are normal. Any test has some variation from day to day, such as sleep, mood and focus. Look for the pattern over several tests, and ask the teacher."],
+      ["Why is the practice area only a guide?", "Each area of the test has fewer questions than the whole test, so its score is less certain. The activity is a helpful place to start, not a diagnosis."],
+      ["Is my child's information stored?", "No. The numbers are inside the link you scanned. This page does not send them anywhere, save them or track anything. Your phone may keep the link in its own history, like any other page you open."]
+    ],
+    footer: "This page was made from the link on your child's goal sheet. It is a starting point for a conversation with your child's teacher."
+  },
+  ar: {
+    dir: "rtl",
+    langName: "العربية",
+    switchTo: "English",
+    pageTitle: "نتائج طفلك في اختبار MAP",
+    heading: "نتائج طفلك في اختبار MAP",
+    grade: "الصف {g}",
+    kindergarten: "رياض الأطفال",
+    seasons: { 1: "الخريف", 2: "الشتاء", 3: "الربيع" },
+    stale: "هذه نتائج سابقة. اطلب من المعلم أحدث ورقة أهداف.",
+    unreadable: "تعذّرت قراءة هذا الرابط. يرجى مسح الرمز على ورقة الأهداف مرة أخرى، أو اطلب من المعلم ورقة جديدة.",
+    unreadableVersion: "تم إنشاء هذا الرابط لإصدار مختلف من هذه الصفحة. يرجى طلب ورقة أهداف جديدة من المعلم.",
+    mapHeading: "ما هو اختبار MAP؟",
+    map: [
+      "اختبار MAP Growth اختبار حاسوبي يؤديه طفلك في المدرسة، عادةً مرتين في السنة: في الخريف (بداية العام) وفي الربيع (قرب نهاية العام)، وأحيانًا في الشتاء أيضًا.",
+      "يتكيّف الاختبار مع إجابات طفلك: تصبح الأسئلة أصعب بعد الإجابة الصحيحة وأسهل بعد الإجابة الخاطئة، فيصل إلى المستوى الذي يتعلّم عنده طفلك الآن.",
+      "ليس اختبار نجاح أو رسوب ولا يؤثر في درجات الشهادة. يستخدمه المعلمون لمعرفة ما يكون كل طفل مستعدًا لتعلّمه بعد ذلك وقدر ما نما.",
+      "النتائج أدناه نقطة بداية لحوار مع معلم طفلك."
+    ],
+    readMore: "اقرأ المزيد في دليل NWEA للأسر",
+    glanceHeading: "النتائج بنظرة سريعة",
+    now: "الآن",
+    start: "البداية",
+    target: "الهدف",
+    percentile: "الرتبة المئينية",
+    rit: "RIT",
+    howHeading: "كيف تقرأ هذه الأرقام",
+    ritHeading: "RIT: مستوى التعلّم",
+    ritText: "RIT درجة على مقياس تقدّر المستوى الذي يتعلّم عنده طفلك الآن. درجة RIT لطفلك في {subject} هي {n}. وهي ليست نسبة مئوية ولا درجة من 100 ولا عمرًا قرائيًا. ولا يمكن مقارنة درجة RIT في {subject} بدرجتها في مادة أخرى.",
+    pctHeading: "الرتبة المئينية للتحصيل: مقارنة",
+    pctText: "تقارن الرتبة المئينية طفلك بطلاب المجموعة المرجعية الأمريكية لـ NWEA في الصف نفسه والمادة نفسها ووقت السنة نفسه. في {subject} هي {n}، أي أن طفلك حصل على درجة تساوي أو تفوق درجات نحو {n} من كل 100 طالب في تلك المجموعة. وهي ليست نسبة الأسئلة المجاب عنها بشكل صحيح ولا ترتيبًا داخل الصف.",
+    growthHeading: "النمو: مقياس مختلف",
+    growthText: "النمو يتعلق بالتغيّر وليس بالمستوى. الهدف هو عدد نقاط RIT التي تتوقع NWEA أن يكسبها طالب مثل طفلك بين اختبار الخريف وآخر اختبار (الشتاء أو الربيع). التحصيل يبيّن أين طفلك الآن، والنمو يبيّن إلى أي مدى تقدّم. هما مختلفان، والرقم الفارغ يعني أنه غير متاح وليس أنه صفر.",
+    pctBandLow: "أقل من الرتبة المئينية 41. يعمل طفلك في {subject} دون النطاق المعتاد لصفه. وهذا يدلّنا على أين يُحتمل أن تصنع المساعدة الإضافية أكبر فرق. إنها نقطة بداية وليست حكمًا.",
+    pctBandMid: "بين الرتبة المئينية 41 و60. يعمل طفلك في {subject} ضمن النطاق المعتاد لصفه. والتدريب المنتظم في البيت يساعد على استمرار ذلك.",
+    pctBandHigh: "عند الرتبة المئينية 61 أو أعلى. يعمل طفلك في {subject} فوق النطاق المعتاد لصفه. حافظ على فضوله وامنحه أسئلة أصعب يستمتع بها.",
+    pctMissing: "الرتبة المئينية للتحصيل غير متاحة في {subject}.",
+    progressAbove: "حصل طفلك على {r}. وكان الهدف {t}. وهذا أعلى من الهدف. أحسن طفلك.",
+    progressMet: "حصل طفلك على {r}. وكان الهدف {t}. وهذا يحقق الهدف، فالتقدّم كما هو متوقع.",
+    progressClose: "حصل طفلك على {r}. وكان الهدف {t}، فالنتيجة أقل منه بمقدار {d}. وفرق صغير كهذا يقع ضمن التفاوت الطبيعي من يوم اختبار إلى آخر.",
+    progressBelow: "حصل طفلك على {r}. وكان الهدف {t}، فالنتيجة أقل منه بمقدار {d}. هذا سبب وجيه للحديث مع المعلم عمّا قد يساعد. وليس سببًا للقلق.",
+    progressTarget: "هذه أول نتيجة لطفلك في {subject} لهذا العام الدراسي: {r}. وهدف NWEA للاختبار القادم هو {t}، أي نمو بمقدار {d} نقطة. سيظهر النمو بعد الاختبار القادم.",
+    progressNone: "سيظهر النمو بعد الاختبار القادم.",
+    growthPct: "الرتبة المئينية للنمو: {n}. تقارن هذه نمو طفلك بنمو الطلاب الذين بدأوا من درجة مشابهة. وهي ليست الرتبة المئينية للتحصيل نفسها.",
+    focusHeading: "أمر واحد للتدرّب عليه في البيت: {area}",
+    focusWhy: "هذا هو الجزء من {subject} الذي كانت درجة طفلك فيه الأدنى مقارنةً بدرجته الإجمالية. ولكل جزء من الاختبار أسئلة أقل من الاختبار كله، فاعتبره إرشادًا وليس حكمًا.",
+    balancedHeading: "مستوى متوازن",
+    balancedWhy: "درجات طفلك في أجزاء {subject} متقاربة، فلا يبرز جزء واحد. وهذه الأجزاء قصيرة وهامش الخطأ فيها واسع، لذلك لا نحدد نقطة ضعف. وإليك نشاطًا عامًا بدلًا من ذلك.",
+    noAreaHeading: "نشاط عام",
+    noAreaWhy: "ليس لدينا تفصيل بحسب الأجزاء في {subject}، لذلك إليك نشاطًا عامًا.",
+    activitiesHeading: "جرّب هذه الأنشطة",
+    exampleHeading: "مثال محلول",
+    sheetButton: "اطبع ورقة تدريب",
+    sheetTitle: "ورقة تدريب",
+    sheetFor: "في {subject}",
+    sheetAnswers: "دليل الإجابات لولي الأمر",
+    sheetName: "الاسم",
+    sheetEnglishNote: "نص القراءة في هذه الورقة بالإنجليزية لأن الاختبار بالإنجليزية.",
+    fallbackActivity: "اسأل معلم طفلك عن النشاط الذي يُفضّل البدء به في {subject}. ومن البدايات الجيدة أن تقرآ معًا أو تعدّا أو تتحدثا عن {subject} لمدة عشر دقائق، وأن تطلب من طفلك أن يشرح ما يفعله.",
+    planHeading: "خطة بخطوات صغيرة",
+    plan: [
+      "نحو 10 دقائق في كل مرة، 3 أيام في الأسبوع.",
+      "اجعل الأمر خفيفًا وودودًا. وتوقف وهو ما زال ممتعًا.",
+      "بعد أسبوعين، تواصل مع المعلم لتسأله عن سير الأمر."
+    ],
+    askHeading: "أسئلة يمكنك طرحها على المعلم",
+    ask: [
+      "ما الذي يجيده طفلي، وعلى ماذا نبني؟",
+      "ما المهارة الأهم خلال الأسابيع القادمة؟",
+      "كيف يساعده الصف، وماذا نفعل في البيت ليتوافق مع ذلك؟",
+      "متى الاختبار القادم، وما النمو الذي ينبغي أن نتوقعه؟",
+      "هل في هذه النتائج ما لا يتوافق مع ما ترونه في الصف؟"
+    ],
+    faqHeading: "أسئلة شائعة",
+    faq: [
+      ["هل هذا اختبار نجاح أو رسوب؟", "لا. اختبار MAP Growth لا يُنجح أحدًا ولا يُرسبه ولا يؤثر في درجات الشهادة. إنه يبيّن ما يكون طفلك مستعدًا لتعلّمه بعد ذلك."],
+      ["هل يمكن أن ترتفع RIT بينما تنخفض الرتبة المئينية؟", "نعم. تقارن الرتبة المئينية طفلك بطلاب آخرين. فإذا نما الآخرون أسرع، قد تنخفض الرتبة المئينية مع أن RIT لطفلك ارتفعت. والرقمان صحيحان."],
+      ["تغيّرت درجة طفلي قليلًا. هل هذه مشكلة؟", "التغيّرات الصغيرة طبيعية. فأي اختبار فيه تفاوت من يوم إلى آخر، بسبب النوم والمزاج والتركيز مثلًا. انظر إلى النمط عبر عدة اختبارات واسأل المعلم."],
+      ["لماذا مجال التدرّب مجرد إرشاد؟", "لكل مجال في الاختبار أسئلة أقل من الاختبار كله، فدرجته أقل يقينًا. والنشاط مكان مفيد للبدء وليس تشخيصًا."],
+      ["هل تُحفظ معلومات طفلي؟", "لا. الأرقام داخل الرابط الذي مسحته. هذه الصفحة لا ترسلها إلى أي مكان ولا تحفظها ولا تتتبع شيئًا. وقد يحتفظ هاتفك بالرابط في سجله الخاص، كأي صفحة أخرى تفتحها."]
+    ],
+    footer: "أُنشئت هذه الصفحة من الرابط الموجود على ورقة أهداف طفلك. وهي نقطة بداية لحوار مع معلم طفلك."
+  }
+};
+
+// Home activities, one set for each grade band x subject x goal area, plus one
+// "balanced profile" set for each band and subject. The key is
+//   <subject>.<band>.<area>      for example  ma.35.num   or   rd.35.bal
+// (subject ma rd lu sc, band k 12 35 68 911, areas as in family/core.js). A slot
+// that has no entry here is a placeholder: the page shows a gentle "ask the
+// teacher" line, and build/build-family.mjs lists it in family/SLOTS.md.
+//
+// To fill a slot, copy one entry and change it. Each needs:
+//   activities  2 or 3 short things to try, each { title, text } in en and ar
+//   example     one worked example: { question, steps: [...], answer }
+//   sheet       a printable practice sheet: items [{ q, a }] with the answers
+//               for the parent; set englishOnly for reading and grammar text
+//               that must stay in English (the instructions stay bilingual)
+// Rules: original wording only (nothing copied from NWEA's Learning Continuum or
+// test items), no pigs, pork, alcohol or anything else sensitive in the UAE, no
+// em dashes, warm and calm, no test pressure. Mark reviewed.ar true only after a
+// native reader has read the Arabic.
+const FamilyActivities = {
+  "ma.35.num": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      {
+        en: { title: "Shop and total", text: "Set out three or four things from the kitchen with price tags, in dirhams. Ask your child to add three prices, then work out the change from AED 50. Let them say each step aloud." },
+        ar: { title: "نلعب لعبة المتجر", text: "ضع ثلاثة أو أربعة أشياء من المطبخ وعليها أسعار بالدرهم. اطلب من طفلك جمع ثلاثة أسعار ثم حساب الباقي من 50 درهمًا. ودعه يقول كل خطوة بصوت عالٍ." }
+      },
+      {
+        en: { title: "Ten more, a hundred less", text: "Write a four-digit number on paper. Ask: what is 10 more? 100 more? 1,000 less? Change one digit at a time and say how the number changed. This builds a feel for place value." },
+        ar: { title: "عشرة أكثر، ومئة أقل", text: "اكتب عددًا من أربعة أرقام على ورقة. اسأل: ما العدد الذي يزيد عنه بعشرة؟ وبمئة؟ وما العدد الذي ينقص عنه بألف؟ غيّر رقمًا واحدًا في كل مرة واسأل كيف تغيّر العدد. هذا ينمّي الإحساس بالقيمة المكانية." }
+      },
+      {
+        en: { title: "Share it fairly", text: "Count out 24 dates or pebbles and share them between 4 people. Then try 26. What is left over? Talk about what a quarter of the pile looks like." },
+        ar: { title: "نقتسم بالعدل", text: "عُدّ 24 تمرة أو حصاة ووزّعها على 4 أشخاص. ثم جرّب 26. ماذا يتبقى؟ وتحدّثا عن شكل ربع الكومة." }
+      }
+    ],
+    example: {
+      en: { question: "36 x 4", steps: ["Split 36 into 30 and 6.", "30 x 4 = 120.", "6 x 4 = 24.", "Add the parts: 120 + 24 = 144."], answer: "144" },
+      ar: { question: "36 × 4", steps: ["قسّم 36 إلى 30 و6.", "30 × 4 = 120.", "6 × 4 = 24.", "اجمع الجزأين: 120 + 24 = 144."], answer: "144" }
+    },
+    sheet: {
+      title: { en: "Numbers and calculating", ar: "الأعداد والحساب" },
+      instructions: { en: "Take your time. Say each step aloud. Use paper if it helps.", ar: "خذ وقتك. قل كل خطوة بصوت عالٍ. استخدم ورقة إن ساعدك ذلك." },
+      items: [
+        { q: { en: "48 + 27 = ?", ar: "48 + 27 = ؟" }, a: { en: "75", ar: "75" } },
+        { q: { en: "100 - 36 = ?", ar: "100 - 36 = ؟" }, a: { en: "64", ar: "64" } },
+        { q: { en: "7 x 8 = ?", ar: "7 × 8 = ؟" }, a: { en: "56", ar: "56" } },
+        { q: { en: "What is 10 more than 3,460?", ar: "ما العدد الذي يزيد بعشرة عن 3,460؟" }, a: { en: "3,470", ar: "3,470" } },
+        { q: { en: "72 / 8 = ?", ar: "72 ÷ 8 = ؟" }, a: { en: "9", ar: "9" } },
+        { q: { en: "Maya buys a book for AED 23 and a pen for AED 8. She pays with AED 50. How much change does she get?", ar: "اشترت مايا كتابًا بـ 23 درهمًا وقلمًا بـ 8 دراهم، ودفعت 50 درهمًا. كم الباقي لها؟" }, a: { en: "AED 19 (23 + 8 = 31, then 50 - 31 = 19)", ar: "19 درهمًا (23 + 8 = 31 ثم 50 - 31 = 19)" } }
+      ]
+    }
+  },
+
+  "rd.35.voc": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      {
+        en: { title: "A new word each day", text: "Pick one word your child met in their reading. Ask them to guess its meaning from the sentence, then check it together. Use the word in a sentence at dinner." },
+        ar: { title: "كلمة جديدة كل يوم", text: "اختر كلمة واحدة صادفها طفلك في قراءته. اطلب منه أن يخمّن معناها من الجملة، ثم تحقّقا منه معًا. واستعملا الكلمة في جملة على العشاء." }
+      },
+      {
+        en: { title: "Clues in the sentence", text: "Cover a hard word with your thumb and read the sentence. What word would fit? Then uncover it and compare. The words around it are often the clue." },
+        ar: { title: "أدلّة في الجملة", text: "غطِّ كلمة صعبة بإصبعك واقرأ الجملة. ما الكلمة التي تناسبها؟ ثم اكشفها وقارن. فالكلمات المحيطة بها غالبًا هي الدليل." }
+      },
+      {
+        en: { title: "A ladder of words", text: "Choose a plain word such as big. Together, list stronger words on a ladder: large, huge, enormous. Do the same with a word that means the opposite. Which rung fits best?" },
+        ar: { title: "سلّم الكلمات", text: "اختر كلمة بسيطة مثل big. اكتبا معًا كلمات أقوى على درجات سلّم: large و huge و enormous. وافعلا الشيء نفسه مع كلمة معناها العكس. أي درجة تناسب أكثر؟" }
+      }
+    ],
+    example: {
+      en: { question: "Layla was reluctant to jump into the pool, so she stood at the edge and waited. What does reluctant mean?", steps: ["Look at what Layla did: she stood at the edge and waited.", "She did not jump straight away.", "So reluctant means not wanting to do something yet, or feeling unsure."], answer: "Not wanting to do something yet" },
+      ar: { question: "Layla was reluctant to jump into the pool, so she stood at the edge and waited. What does reluctant mean?", steps: ["انظر إلى ما فعلته ليلى: وقفت عند الحافة وانتظرت.", "لم تقفز فورًا.", "إذًا reluctant تعني لا ترغب في فعل شيء بعد، أو تشعر بالتردد."], answer: "لا ترغب في فعل شيء بعد" }
+    },
+    sheet: {
+      englishOnly: true,
+      title: { en: "Word meanings", ar: "معاني الكلمات" },
+      instructions: { en: "Read each sentence. Circle the best answer.", ar: "اقرأ كل جملة. ضع دائرة حول أفضل إجابة." },
+      items: [
+        { q: { en: "The path was narrow, so we walked in a single line. Narrow means: (a) wide (b) not wide (c) very long", ar: "The path was narrow, so we walked in a single line. Narrow means: (a) wide (b) not wide (c) very long" }, a: { en: "(b) not wide", ar: "(b) not wide" } },
+        { q: { en: "Which word means almost the same as enormous? (a) tiny (b) huge (c) quiet", ar: "Which word means almost the same as enormous? (a) tiny (b) huge (c) quiet" }, a: { en: "(b) huge", ar: "(b) huge" } },
+        { q: { en: "Which word means the opposite of ancient? (a) old (b) new (c) broken", ar: "Which word means the opposite of ancient? (a) old (b) new (c) broken" }, a: { en: "(b) new", ar: "(b) new" } },
+        { q: { en: "Omar was exhausted after the long race, so he sat down to rest. Exhausted means: (a) very tired (b) very happy (c) very hungry", ar: "Omar was exhausted after the long race, so he sat down to rest. Exhausted means: (a) very tired (b) very happy (c) very hungry" }, a: { en: "(a) very tired", ar: "(a) very tired" } },
+        { q: { en: "The recipe said to add a pinch of salt. A pinch is: (a) a very small amount (b) a full cup (c) a spoon of sugar", ar: "The recipe said to add a pinch of salt. A pinch is: (a) a very small amount (b) a full cup (c) a spoon of sugar" }, a: { en: "(a) a very small amount", ar: "(a) a very small amount" } },
+        { q: { en: "The sun was so ______ that we needed sunglasses. (a) bright (b) dim (c) cold", ar: "The sun was so ______ that we needed sunglasses. (a) bright (b) dim (c) cold" }, a: { en: "(a) bright", ar: "(a) bright" } }
+      ]
+    }
+  },
+
+  "ma.35.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      {
+        en: { title: "Maths on the way", text: "While walking or driving, ask a quick question about what you see: how many windows on that building? If each floor has 6, how many floors? Which is longer, that bus or two cars?" },
+        ar: { title: "رياضيات في الطريق", text: "أثناء المشي أو السفر بالسيارة، اطرح سؤالًا سريعًا عمّا ترى: كم نافذة في ذلك المبنى؟ وإذا كان في كل طابق 6 نوافذ فكم طابقًا؟ أيهما أطول، تلك الحافلة أم سيارتان؟" }
+      },
+      {
+        en: { title: "Cook and measure", text: "Let your child measure ingredients for a simple recipe, then double it or halve it. Ask them to explain how they worked out the new amounts." },
+        ar: { title: "نطبخ ونقيس", text: "دع طفلك يقيس مقادير وصفة بسيطة، ثم يضاعفها أو ينصّفها. واطلب منه أن يشرح كيف حسب المقادير الجديدة." }
+      },
+      {
+        en: { title: "Explain it to me", text: "Pick one maths problem from homework. Ask your child to teach it to you as if you were the student. Explaining out loud shows what is secure and what needs a second look." },
+        ar: { title: "اشرح لي", text: "اختر مسألة رياضيات من الواجب. اطلب من طفلك أن يعلّمك إياها كأنك أنت الطالب. فالشرح بصوت عالٍ يُظهر ما هو راسخ وما يحتاج إلى نظرة ثانية." }
+      }
+    ],
+    example: {
+      en: { question: "A garden is 6 metres long and 4 metres wide. What is its area? How far is it around the edge?", steps: ["Area is length x width: 6 x 4 = 24 square metres.", "Around the edge: 6 + 4 + 6 + 4 = 20 metres."], answer: "Area 24 square metres, edge 20 metres" },
+      ar: { question: "حديقة طولها 6 أمتار وعرضها 4 أمتار. ما مساحتها؟ وكم طول محيطها؟", steps: ["المساحة = الطول × العرض: 6 × 4 = 24 مترًا مربعًا.", "المحيط: 6 + 4 + 6 + 4 = 20 مترًا."], answer: "المساحة 24 مترًا مربعًا والمحيط 20 مترًا" }
+    },
+    sheet: {
+      title: { en: "A little of everything", ar: "قليل من كل شيء" },
+      instructions: { en: "Take your time. Say each step aloud. Use paper if it helps.", ar: "خذ وقتك. قل كل خطوة بصوت عالٍ. استخدم ورقة إن ساعدك ذلك." },
+      items: [
+        { q: { en: "What is 3/4 of 20?", ar: "ما قيمة ثلاثة أرباع العدد 20؟" }, a: { en: "15 (20 / 4 = 5, then 5 x 3 = 15)", ar: "15 (20 ÷ 4 = 5 ثم 5 × 3 = 15)" } },
+        { q: { en: "A rectangle is 9 cm long and 5 cm wide. What is its area?", ar: "مستطيل طوله 9 سم وعرضه 5 سم. ما مساحته؟" }, a: { en: "45 square centimetres", ar: "45 سنتيمترًا مربعًا" } },
+        { q: { en: "Complete the pattern: 4, 8, 12, 16, __", ar: "أكمل النمط: 4، 8، 12، 16، __" }, a: { en: "20 (add 4 each time)", ar: "20 (نضيف 4 في كل مرة)" } },
+        { q: { en: "A bar chart shows 12 books read in week 1 and 17 in week 2. How many more were read in week 2?", ar: "يُظهر مخطط الأعمدة قراءة 12 كتابًا في الأسبوع الأول و17 في الثاني. كم كتابًا زيادة قُرئ في الأسبوع الثاني؟" }, a: { en: "5", ar: "5" } },
+        { q: { en: "Which is greater: 0.6 or 0.58?", ar: "أيهما أكبر: 0.6 أم 0.58؟" }, a: { en: "0.6 (it is 0.60, and 60 hundredths is more than 58)", ar: "0.6 (فهو 0.60، و60 من مئة أكبر من 58)" } },
+        { q: { en: "What is 5 x 30?", ar: "ما ناتج 5 × 30؟" }, a: { en: "150", ar: "150" } }
+      ]
+    }
+  }
+};
+
+// The family page: reads the link's fragment, fills the sentences in, shows
+// them in English or Arabic. Nothing is stored, sent or tracked; the numbers
+// are only ever in this page's own memory. FAMILY_LATEST_TERM is filled in by
+// build/build-family.mjs from family/config.json.
+(function () {
+  "use strict";
+  const Core = FamilyCore;
+  const Strings = FamilyStrings;
+  const Activities = FamilyActivities;
+  const LATEST_TERM = "T1-2627";
+  const NWEA_FAMILY_URL = "https://www.nwea.org/resource-center/topic/family-toolkit/";
+
+  const decoded = Core.decode(window.location.hash);
+  let lang = /^ar/i.test(navigator.language || "") ? "ar" : "en";
+
+  const esc = (value) => String(value).replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+  const say = (key, params) => String(Strings[lang][key]).replace(/\{(\w+)\}/g, (all, name) => (params && params[name] !== undefined ? params[name] : all));
+  const subjectName = (code) => Core.SUBJECTS[code][lang];
+
+  function termLabel(code) {
+    const match = /^T([123])-(\d{2})(\d{2})$/.exec(code || "");
+    if (!match) return "";
+    const year = 2000 + Number(match[2]) + (match[1] === "1" ? 0 : 1);
+    return Strings[lang].seasons[Number(match[1])] + " " + year;
+  }
+
+  function gradeLabel() {
+    if (decoded.grade === null) return "";
+    return decoded.grade === 0 ? Strings[lang].kindergarten : say("grade", { g: decoded.grade });
+  }
+
+  function areaOf(subject, code) {
+    return (Core.AREAS[subject] || []).find((area) => area.code === code) || null;
+  }
+
+  // What to show for one subject's activity: the set, and which heading and why.
+  function slotFor(entry) {
+    const band = decoded.band;
+    let code = entry.area;
+    if (!band) return { kind: "none", set: null };
+    if (code && code !== "bal" && !Core.slotExists(entry.subject, band, code)) code = "";
+    if (code && code !== "bal") {
+      return { kind: "area", code, set: Activities[entry.subject + "." + band + "." + code] || null };
+    }
+    const balancedSet = Activities[entry.subject + "." + band + ".bal"] || null;
+    return { kind: code === "bal" ? "balanced" : "general", code: "bal", set: balancedSet };
+  }
+
+  function pctBand(entry) {
+    if (entry.ach === null) return say("pctMissing", { subject: subjectName(entry.subject) });
+    const key = entry.ach < 41 ? "pctBandLow" : entry.ach < 61 ? "pctBandMid" : "pctBandHigh";
+    return say(key, { subject: subjectName(entry.subject) });
+  }
+
+  function progressText(entry) {
+    const subject = subjectName(entry.subject);
+    const gap = Number.isFinite(entry.target) && Number.isFinite(entry.rit) ? Math.abs(entry.target - entry.rit) : 0;
+    const params = { subject, r: entry.rit, t: entry.target, d: gap };
+    if (entry.progress === "above") return say("progressAbove", params);
+    if (entry.progress === "met") return say("progressMet", params);
+    if (entry.progress === "close") return say("progressClose", params);
+    if (entry.progress === "below") return say("progressBelow", params);
+    if (entry.progress === "target") return say("progressTarget", Object.assign(params, { d: entry.target - entry.rit }));
+    return say("progressNone", params);
+  }
+
+  function meter(entry) {
+    if (!Number.isFinite(entry.base) || !Number.isFinite(entry.target)) return "";
+    const values = [entry.base, entry.rit, entry.target];
+    const low = Math.min(...values) - 3;
+    const high = Math.max(...values) + 3;
+    const at = (value) => Math.round(((value - low) / (high - low)) * 100);
+    const mark = (cls, value, label) => '<span class="mk ' + cls + '" style="left:' + at(value) + '%"><b>' + esc(value) + "</b><i>" + esc(label) + "</i></span>";
+    return '<div class="track" dir="ltr" aria-hidden="true"><span class="fill" style="left:' + at(entry.base) + "%;width:" + Math.max(0, at(entry.rit) - at(entry.base)) + '%"></span>' +
+      mark("m-start", entry.base, Strings[lang].start) + mark("m-now", entry.rit, Strings[lang].now) + mark("m-target", entry.target, Strings[lang].target) + "</div>";
+  }
+
+  function pick(value) {
+    return value && typeof value === "object" && (value[lang] !== undefined) ? value[lang] : value;
+  }
+
+  function activityBlock(entry, slot) {
+    const name = subjectName(entry.subject);
+    const set = slot.set;
+    const area = slot.kind === "area" ? areaOf(entry.subject, slot.code) : null;
+    let heading;
+    let why;
+    if (slot.kind === "area") { heading = say("focusHeading", { area: area ? area[lang] : "" }); why = say("focusWhy", { subject: name }); }
+    else if (slot.kind === "balanced") { heading = say("balancedHeading"); why = say("balancedWhy", { subject: name }); }
+    else { heading = say("noAreaHeading"); why = say("noAreaWhy", { subject: name }); }
+    let html = '<div class="focus"><h4>' + esc(heading) + "</h4><p>" + esc(why) + "</p>";
+    if (!set) return html + "<p>" + esc(say("fallbackActivity", { subject: name })) + "</p></div>";
+    html += "<h5>" + esc(say("activitiesHeading")) + "</h5><ul>" + set.activities.map((item) => {
+      const text = item[lang];
+      return "<li><b>" + esc(text.title) + ".</b> " + esc(text.text) + "</li>";
+    }).join("") + "</ul>";
+    const example = set.example[lang];
+    const exampleEnglish = set.sheet && set.sheet.englishOnly;
+    html += '<div class="example"><h5>' + esc(say("exampleHeading")) + "</h5>" +
+      '<p class="q"' + (exampleEnglish ? ' dir="ltr" lang="en"' : "") + ">" + esc(example.question) + "</p><ol>" +
+      example.steps.map((step) => "<li>" + esc(step) + "</li>").join("") + "</ol><p><b>" + esc(example.answer) + "</b></p></div>";
+    html += '<button type="button" class="btn" data-sheet="' + esc(entry.subject) + '">' + esc(say("sheetButton")) + "</button></div>";
+    return html;
+  }
+
+  function sheetBlock(entry, slot) {
+    const set = slot.set;
+    if (!set || !set.sheet) return "";
+    const sheet = set.sheet;
+    const english = Boolean(sheet.englishOnly);
+    const text = (value) => (english ? value.en : value[lang]);
+    const wrap = english ? ' dir="ltr" lang="en"' : "";
+    const items = sheet.items.map((item) => "<li" + wrap + ">" + esc(text(item.q)) + '<span class="line"></span></li>').join("");
+    const answers = sheet.items.map((item) => "<li" + wrap + ">" + esc(text(item.a)) + "</li>").join("");
+    return '<section class="sheet" id="sheet-' + esc(entry.subject) + '"><h2>' + esc(say("sheetTitle")) + ": " + esc(sheet.title[lang]) + "</h2><p>" + esc(say("sheetFor", { subject: subjectName(entry.subject) })) + " &middot; " +
+      esc(say("sheetName")) + ': <span class="line wide"></span></p><p>' + esc(sheet.instructions[lang]) + "</p>" +
+      (english && lang === "ar" ? "<p>" + esc(say("sheetEnglishNote")) + "</p>" : "") + "<ol>" + items + '</ol><div class="answers"><h3>' + esc(say("sheetAnswers")) + "</h3><ol>" + answers + "</ol></div></section>";
+  }
+
+  function subjectSection(entry) {
+    const name = subjectName(entry.subject);
+    const slot = slotFor(entry);
+    let html = '<section class="card subject" id="subject-' + esc(entry.subject) + '"><h3>' + esc(name) + "</h3>";
+    html += "<p>" + esc(pctBand(entry)) + "</p>";
+    html += meter(entry) + "<p>" + esc(progressText(entry)) + "</p>";
+    if (entry.growthPct !== null) html += "<p>" + esc(say("growthPct", { n: entry.growthPct })) + "</p>";
+    html += activityBlock(entry, slot) + "</section>";
+    return { html, sheet: sheetBlock(entry, slot) };
+  }
+
+  function glance(entry) {
+    const parts = ['<div class="g-subject">' + esc(subjectName(entry.subject)) + "</div>", '<div class="g-num"><b>' + esc(entry.rit) + "</b><i>" + esc(say("rit")) + " " + esc(say("now")) + "</i></div>"];
+    if (Number.isFinite(entry.target)) parts.push('<div class="g-num"><b>' + esc(entry.target) + "</b><i>" + esc(say("target")) + "</i></div>");
+    if (entry.ach !== null) parts.push('<div class="g-num"><b>' + esc(entry.ach) + "</b><i>" + esc(say("percentile")) + "</i></div>");
+    return '<button type="button" class="g-card" data-go="subject-' + esc(entry.subject) + '">' + parts.join("") + "</button>";
+  }
+
+  function render() {
+    const root = document.getElementById("app");
+    const text = Strings[lang];
+    document.documentElement.lang = lang;
+    document.documentElement.dir = text.dir;
+    document.title = text.pageTitle;
+    const toggle = '<button type="button" class="btn lang" id="langToggle">' + esc(text.switchTo) + "</button>";
+    let html = '<header class="top"><h1>' + esc(text.heading) + "</h1>" + toggle + "</header>";
+
+    if (!decoded.ok) {
+      html += '<div class="note warn" role="alert">' + esc(decoded.reason === "version" ? text.unreadableVersion : text.unreadable) + "</div>";
+      html += mapSection() + '<footer>' + esc(text.footer) + "</footer>";
+      root.innerHTML = html;
+      return;
+    }
+
+    const bits = [gradeLabel(), termLabel(decoded.term)].filter(Boolean);
+    html += '<p class="meta">' + esc(bits.join(" · ")) + "</p>";
+    const stale = decoded.termOrder !== null && Core.termOrder(LATEST_TERM) !== null && decoded.termOrder < Core.termOrder(LATEST_TERM);
+    if (stale) html += '<div class="note" role="note">' + esc(text.stale) + "</div>";
+    html += mapSection();
+
+    html += '<section class="card"><h2>' + esc(text.glanceHeading) + '</h2><div class="glance">' + decoded.subjects.map(glance).join("") + "</div></section>";
+
+    const first = decoded.subjects[0];
+    const firstName = subjectName(first.subject);
+    html += '<section class="card"><h2>' + esc(text.howHeading) + "</h2>" +
+      "<h3>" + esc(text.ritHeading) + "</h3><p>" + esc(say("ritText", { subject: firstName, n: first.rit })) + "</p>" +
+      "<h3>" + esc(text.pctHeading) + "</h3><p>" + esc(first.ach !== null ? say("pctText", { subject: firstName, n: first.ach }) : say("pctMissing", { subject: firstName })) + "</p>" +
+      "<h3>" + esc(text.growthHeading) + "</h3><p>" + esc(text.growthText) + "</p></section>";
+
+    const sheets = [];
+    decoded.subjects.forEach((entry) => {
+      const built = subjectSection(entry);
+      html += built.html;
+      if (built.sheet) sheets.push(built.sheet);
+    });
+
+    html += '<section class="card"><h2>' + esc(text.planHeading) + "</h2><ul>" + text.plan.map((line) => "<li>" + esc(line) + "</li>").join("") + "</ul></section>";
+    html += '<section class="card"><h2>' + esc(text.askHeading) + "</h2><ul>" + text.ask.map((line) => "<li>" + esc(line) + "</li>").join("") + "</ul></section>";
+    html += '<section class="card"><h2>' + esc(text.faqHeading) + "</h2>" + text.faq.map((pair) => "<details><summary>" + esc(pair[0]) + "</summary><p>" + esc(pair[1]) + "</p></details>").join("") + "</section>";
+    html += "<footer>" + esc(text.footer) + "</footer>";
+    html += '<div id="sheets">' + sheets.join("") + "</div>";
+    root.innerHTML = html;
+  }
+
+  function mapSection() {
+    const text = Strings[lang];
+    return '<section class="card map"><h2>' + esc(text.mapHeading) + "</h2>" + text.map.map((line) => "<p>" + esc(line) + "</p>").join("") +
+      '<p><a href="' + NWEA_FAMILY_URL + '" rel="noopener noreferrer">' + esc(text.readMore) + "</a></p></section>";
+  }
+
+  document.addEventListener("click", (event) => {
+    const target = event.target.closest ? event.target.closest("button, a") : null;
+    if (!target) return;
+    if (target.id === "langToggle") { lang = lang === "en" ? "ar" : "en"; render(); return; }
+    if (target.dataset && target.dataset.sheet) {
+      const sheet = document.getElementById("sheet-" + target.dataset.sheet);
+      if (!sheet) return;
+      document.body.setAttribute("data-printing", target.dataset.sheet);
+      sheet.classList.add("is-printing");
+      window.print();
+      sheet.classList.remove("is-printing");
+      document.body.removeAttribute("data-printing");
+      return;
+    }
+    if (target.dataset && target.dataset.go) {
+      event.preventDefault();
+      const node = document.getElementById(target.dataset.go);
+      if (node) node.scrollIntoView();
+    }
+  });
+
+  window.addEventListener("hashchange", () => window.location.reload());
+  render();
+})();
+</script>
+</body>
+</html>
