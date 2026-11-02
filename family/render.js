@@ -145,7 +145,8 @@
     let html = '<header class="top"><h1>' + esc(text.heading) + "</h1>" + toggle + "</header>";
 
     if (!decoded.ok) {
-      html += '<div class="note warn" role="alert">' + esc(decoded.reason === "version" ? text.unreadableVersion : text.unreadable) + "</div>";
+      if (decoded.reason === "empty") html += '<div class="note" role="note">' + esc(text.noLink) + "</div>";
+      else html += '<div class="note warn" role="alert">' + esc(decoded.reason === "version" ? text.unreadableVersion : text.unreadable) + "</div>";
       html += mapSection() + '<footer>' + esc(text.footer) + "</footer>";
       root.innerHTML = html;
       return;

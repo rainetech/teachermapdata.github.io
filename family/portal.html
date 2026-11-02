@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta http-equiv="Content-Security-Policy" content="@CSP@">
+<title>Family portal</title>
+<style>
+  :root { --page-bg: #12306b; --page-ink: #ffffff; --tile-bg: #ffffff; --tile-ink: #14213d; --tile-muted: #4a5670; --accent: #12306b; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; background: var(--page-bg); color: var(--page-ink); font: 17px/1.55 system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif; }
+  main { max-width: 56rem; margin: 0 auto; padding: 3rem 1rem 2rem; }
+  header { text-align: center; margin-bottom: 2rem; }
+  h1 { font-size: 1.9rem; margin: 0 0 .5rem; }
+  header p { margin: .15rem 0; opacity: .92; }
+  ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+  .tile { display: block; background: var(--tile-bg); color: var(--tile-ink); border-radius: 18px; padding: 1.25rem; text-decoration: none; min-height: 44px; box-shadow: 0 6px 20px rgba(0, 0, 0, .18); }
+  .tile:hover, .tile:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+  .icon { display: inline-flex; width: 3rem; height: 3rem; border-radius: 14px; background: var(--accent); color: #fff; align-items: center; justify-content: center; margin-bottom: .6rem; }
+  .icon svg { width: 1.6rem; height: 1.6rem; }
+  .tile b { display: block; font-size: 1.15rem; }
+  .tile span.d { display: block; color: var(--tile-muted); font-size: .95rem; margin-top: .15rem; }
+  .tile span[lang] { display: block; }
+  .tile .ar { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid #d9dfeb; }
+  footer { text-align: center; margin-top: 2.5rem; font-size: .9rem; opacity: .85; }
+  footer p { margin: .2rem 0; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Family portal</h1>
+    <p lang="en">Results and guidance for families. No sign-in needed.</p>
+    <p lang="ar" dir="rtl">نتائج وإرشادات للأسر. لا حاجة إلى تسجيل الدخول.</p>
+  </header>
+  <ul>
+    <li>
+      <a class="tile" href="nwea">
+        <span class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M6 20V10"/><path d="M12 20V4"/><path d="M18 20v-7"/></svg></span>
+        <span lang="en"><b>MAP testing</b><span class="d">Scan the QR code on your child's goal sheet to see their MAP results explained.</span></span>
+        <span class="ar" lang="ar" dir="rtl"><b>اختبار MAP</b><span class="d">امسح الرمز على ورقة أهداف طفلك لتشاهد نتائجه في MAP مشروحة.</span></span>
+      </a>
+    </li>
+  </ul>
+  <footer>
+    <p lang="en">This site does not ask you to sign in, store anything about you, or track you.</p>
+    <p lang="ar" dir="rtl">لا يطلب هذا الموقع تسجيل الدخول ولا يحفظ أي شيء عنك ولا يتتبعك.</p>
+  </footer>
+</main>
+</body>
+</html>

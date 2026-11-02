@@ -38,12 +38,19 @@ const styleText = /<style>([\s\S]*?)<\/style>/.exec(template)[1];
 const policy = ["default-src 'none'", "script-src " + hash(scriptText), "style-src " + hash(styleText), "style-src-attr 'unsafe-inline'", "img-src data:", "base-uri 'none'", "form-action 'none'"].join("; ");
 const page = template.replace("@CSP@", policy);
 
-// The headers a host must send for the page: the same policy plus what a meta
-// tag cannot say (no framing), and no referrer, no sharing of windows or
-// resources, no sniffing, no features, no indexing. A static host with no
-// functions, no environment variables and no cookies.
-const headers = [
-  ["Content-Security-Policy", policy + "; frame-ancestors 'none'"],
+// The portal: a static page of tiles with no script at all, so its policy lets
+// no script run and names only its one stylesheet.
+const portalTemplate = read("family/portal.html");
+const portalStyle = /<style>([\s\S]*?)<\/style>/.exec(portalTemplate)[1];
+const portalPolicy = ["default-src 'none'", "script-src 'none'", "style-src " + hash(portalStyle), "img-src data:", "base-uri 'none'", "form-action 'none'"].join("; ");
+const portal = portalTemplate.replace("@CSP@", portalPolicy);
+
+// The headers a host must send: the same policy plus what a meta tag cannot say
+// (no framing), and no referrer, no sharing of windows or resources, no
+// sniffing, no features, no indexing, https only. A static host with no
+// functions, no environment variables and no cookies. Two routes: the portal
+// (/) and the MAP page (/nwea).
+const common = [
   ["Strict-Transport-Security", "max-age=63072000; includeSubDomains"],
   ["X-Content-Type-Options", "nosniff"],
   ["X-Frame-Options", "DENY"],
@@ -54,14 +61,14 @@ const headers = [
   ["X-Robots-Tag", "noindex, nofollow"],
   ["Cache-Control", "public, max-age=300"]
 ];
+const rule = (source, csp) => ({ source, headers: [["Content-Security-Policy", csp + "; frame-ancestors 'none'"], ...common].map(([key, value]) => ({ key, value })) });
 const hosting = JSON.stringify({
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
   "framework": null,
   "buildCommand": null,
-  "headers": [{ "source": "/(.*)", "headers": headers.map(([key, value]) => ({ key, value })) }],
-  "rewrites": [{ "source": "/family", "destination": "/family.html" }]
+  "headers": [rule("/", portalPolicy), rule("/nwea", policy)]
 }, null, 2) + "\n";
 
 // 2. the block in the dashboard
@@ -98,7 +105,10 @@ Object.keys(core.SUBJECTS).forEach((subject) => {
 });
 const report = lines.join("\n");
 
-const targets = [["family.html", page], ["index.html", nextIndex], ["family/SLOTS.md", report], ["family/hosting/vercel.json", hosting], ["family/hosting/robots.txt", "User-agent: *\nDisallow: /\n"]];
+// family.html is the page on its own (for the open dashboard's own host); family/site/
+// is what a family portal publishes: the portal at /, the same page at /nwea.
+const targets = [["family.html", page], ["index.html", nextIndex], ["family/SLOTS.md", report],
+  ["family/site/index.html", portal], ["family/site/nwea.html", page], ["family/site/vercel.json", hosting], ["family/site/robots.txt", "User-agent: *\nDisallow: /\n"]];
 let stale = 0;
 targets.forEach(([file, content]) => {
   const current = fs.existsSync(path.join(root, file)) ? read(file) : "";

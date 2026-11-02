@@ -16,6 +16,7 @@ const FamilyStrings = {
     stale: "These are earlier results. Ask the teacher for the latest goal sheet.",
     unreadable: "This link could not be read. Please scan the code on the goal sheet again, or ask the teacher for a new sheet.",
     unreadableVersion: "This link was made for a different version of this page. Please ask the teacher for a new goal sheet.",
+    noLink: "Scan the QR code on your child's goal sheet to see their MAP results here.",
     mapHeading: "What is MAP?",
     map: [
       "MAP Growth is a computer test your child takes in school, usually twice a year, in the fall (start of the year) and the spring (towards the end of the year), and sometimes also in the winter.",
@@ -99,6 +100,7 @@ const FamilyStrings = {
     stale: "هذه نتائج سابقة. اطلب من المعلم أحدث ورقة أهداف.",
     unreadable: "تعذّرت قراءة هذا الرابط. يرجى مسح الرمز على ورقة الأهداف مرة أخرى، أو اطلب من المعلم ورقة جديدة.",
     unreadableVersion: "تم إنشاء هذا الرابط لإصدار مختلف من هذه الصفحة. يرجى طلب ورقة أهداف جديدة من المعلم.",
+    noLink: "امسح الرمز الموجود على ورقة أهداف طفلك لتشاهد نتائجه في MAP هنا.",
     mapHeading: "ما هو اختبار MAP؟",
     map: [
       "اختبار MAP Growth اختبار حاسوبي يؤديه طفلك في المدرسة، عادةً مرتين في السنة: في الخريف (بداية العام) وفي الربيع (قرب نهاية العام)، وأحيانًا في الشتاء أيضًا.",

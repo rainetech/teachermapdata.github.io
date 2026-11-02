@@ -239,17 +239,25 @@ section("Hosting and the page's own defences");
   const meta = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)[1];
   check(meta.includes("script-src " + sha(script) + ";") && meta.includes("style-src " + sha(style) + ";") && !/script-src[^;]*unsafe/.test(meta), "the page's policy lets exactly its one script and one stylesheet run, by hash: nothing injected could");
   check(/default-src 'none'/.test(meta) && !/connect-src|https?:|\*/.test(meta) && /form-action 'none'/.test(meta) && /base-uri 'none'/.test(meta), "and allows no network, no form post and no base tag");
-  const hosting = JSON.parse(fs.readFileSync(path.join(root, "family/hosting/vercel.json"), "utf8"));
-  const sent = Object.fromEntries(hosting.headers[0].headers.map((h) => [h.key, h.value]));
-  check(sent["Content-Security-Policy"] === meta + "; frame-ancestors 'none'", "the host sends the same policy as a header, and forbids framing");
+  const site = (file) => fs.readFileSync(path.join(root, "family/site/" + file), "utf8");
+  const hosting = JSON.parse(site("vercel.json"));
+  const rules = Object.fromEntries(hosting.headers.map((rule) => [rule.source, Object.fromEntries(rule.headers.map((h) => [h.key, h.value]))]));
+  check(Object.keys(rules).sort().join() === "/,/nwea" && site("nwea.html") === html, "the site is two routes: the portal at / and the MAP page at /nwea, which is the page itself");
+  const sent = rules["/nwea"];
+  check(sent["Content-Security-Policy"] === meta + "; frame-ancestors 'none'", "the host sends the page's policy as a header too, and forbids framing");
   const wanted = { "X-Content-Type-Options": /nosniff/, "X-Frame-Options": /DENY/, "Referrer-Policy": /^no-referrer$/, "Cross-Origin-Opener-Policy": /same-origin/, "Cross-Origin-Resource-Policy": /same-origin/, "Strict-Transport-Security": /max-age=\d{8,}/, "Permissions-Policy": /camera=\(\)/, "X-Robots-Tag": /noindex/ };
-  const missing = Object.keys(wanted).filter((key) => !wanted[key].test(sent[key] || ""));
-  check(!missing.length, "and no sniffing, no referrer, no shared window or resources, no features, no indexing, https only" + (missing.length ? ": missing " + missing.join(", ") : ""));
-  check(!("functions" in hosting) && !("env" in hosting) && !("crons" in hosting) && !("redirects" in hosting) && hosting.rewrites.length === 1 && fs.readFileSync(path.join(root, "family/hosting/robots.txt"), "utf8").includes("Disallow: /"), "the host config has no function, no environment variable and no route but the page");
+  const missing = ["/", "/nwea"].flatMap((route) => Object.keys(wanted).filter((key) => !wanted[key].test(rules[route][key] || "")).map((key) => route + " " + key));
+  check(!missing.length, "and on both routes: no sniffing, no referrer, no shared window or resources, no features, no indexing, https only" + (missing.length ? ": missing " + missing.join(", ") : ""));
+  check(!("functions" in hosting) && !("env" in hosting) && !("crons" in hosting) && !("redirects" in hosting) && !("rewrites" in hosting) && site("robots.txt").includes("Disallow: /"), "the host config has no function, environment variable, redirect or route but the two pages");
+  const portal = site("index.html");
+  const portalMeta = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(portal)[1];
+  const portalStyle = /<style>([\s\S]*?)<\/style>/.exec(portal)[1];
+  check(!/<script/i.test(portal) && /script-src 'none'/.test(portalMeta) && portalMeta.includes("style-src " + sha(portalStyle) + ";") && rules["/"]["Content-Security-Policy"] === portalMeta + "; frame-ancestors 'none'", "the portal has no script at all and a policy that lets none run, by the same policy as a header");
+  check(/href="nwea"/.test(portal) && /MAP testing/.test(portal) && /اختبار MAP/.test(portal) && /No sign-in needed/.test(portal) && /dir="rtl"/.test(portal) && !/(<form|<input|<img|<iframe|\bsrc=|\bhttps?:)/i.test(portal.replace(/xmlns="[^"]*"/g, "")), "it offers MAP testing as a tile that opens /nwea, in English and Arabic, and loads nothing and asks for nothing");
   const forbidden = /document\s*\.\s*cookie|localStorage|sessionStorage|indexedDB|\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|postMessage|\beval\s*\(|new\s+Function|\bimport\s*\(|document\s*\.\s*write|window\.name|navigator\.(serviceWorker|clipboard)/;
   check(!forbidden.test(script), "the page's code never touches cookies or storage, never makes a request, and never evaluates text");
   check(!/<(img|iframe|object|embed|link|form|input)\b|\bsrc=|\bonclick=|javascript:/i.test(html.replace(/<script>[\s\S]*?<\/script>/, "")), "the page's markup loads nothing and has no inline handler");
-  check(!/ensdashboards|\.xyz|ens\b/i.test(html + JSON.stringify(hosting)) && !/vercel/i.test(html), "and names no school, host or domain (the public copy stays generic)");
+  check(!/ensdashboards|\.xyz|\bens\b/i.test(html + portal + JSON.stringify(hosting)) && !/vercel/i.test(html + portal), "and names no school, host or domain (the public copy stays generic)");
 }
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
@@ -355,7 +363,7 @@ section("Older and odd links");
   const noTerm = await textOf((await open("#" + link.replace("t=T1-2627&", ""))).page);
   check(!/earlier results/.test(noTerm) && /Mathematics/.test(noTerm), "a link with no term shows the results without a term or a note");
   await old.context.close();
-  for (const [fragment, pattern, label] of [["", /could not be read/, "no link at all"], ["#v=1&t=T1-2627&g=4&d=", /could not be read/, "a link with no results"], ["#v=2&t=T1-2627&g=4&d=ma.205", /different version/, "another version"], ["#v=1&t=T1-2627&g=4&d=ma.abc", /could not be read/, "a broken record"]]) {
+  for (const [fragment, pattern, label] of [["", /Scan the QR code on your child's goal sheet/, "no link at all"], ["#v=1&t=T1-2627&g=4&d=", /could not be read/, "a link with no results"], ["#v=2&t=T1-2627&g=4&d=ma.205", /different version/, "another version"], ["#v=1&t=T1-2627&g=4&d=ma.abc", /could not be read/, "a broken record"]]) {
     const odd = await open(fragment);
     const oddText = await textOf(odd.page);
     check(pattern.test(oddText) && /What is MAP\?/.test(oddText) && odd.errors.length === 0, label + " gets a kind message and what MAP is, and no error");

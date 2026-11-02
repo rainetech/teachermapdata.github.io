@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-WxXVq88UTtSuitDokVwIjv5AopqU6LtCj2inDwdVtpw='; style-src 'sha256-ElcvG7c46g6xl8248MfL3NSHQtwwEoD0jjIWH+j7wcQ='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-wd86H++9JOiX3+XgVRImHSvI/ckQtA3D70bpjbUWt1w='; style-src 'sha256-ElcvG7c46g6xl8248MfL3NSHQtwwEoD0jjIWH+j7wcQ='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>MAP results</title>
 <style>
   :root { --ink: #1c2433; --muted: #5a6478; --line: #d9dfeb; --bg: #f4f6fb; --card: #ffffff; --brand: #1d4ed8; --soft: #e8efff; --good: #0f7a3d; --warn: #8a5a00; }
@@ -328,6 +328,7 @@ const FamilyStrings = {
     stale: "These are earlier results. Ask the teacher for the latest goal sheet.",
     unreadable: "This link could not be read. Please scan the code on the goal sheet again, or ask the teacher for a new sheet.",
     unreadableVersion: "This link was made for a different version of this page. Please ask the teacher for a new goal sheet.",
+    noLink: "Scan the QR code on your child's goal sheet to see their MAP results here.",
     mapHeading: "What is MAP?",
     map: [
       "MAP Growth is a computer test your child takes in school, usually twice a year, in the fall (start of the year) and the spring (towards the end of the year), and sometimes also in the winter.",
@@ -411,6 +412,7 @@ const FamilyStrings = {
     stale: "هذه نتائج سابقة. اطلب من المعلم أحدث ورقة أهداف.",
     unreadable: "تعذّرت قراءة هذا الرابط. يرجى مسح الرمز على ورقة الأهداف مرة أخرى، أو اطلب من المعلم ورقة جديدة.",
     unreadableVersion: "تم إنشاء هذا الرابط لإصدار مختلف من هذه الصفحة. يرجى طلب ورقة أهداف جديدة من المعلم.",
+    noLink: "امسح الرمز الموجود على ورقة أهداف طفلك لتشاهد نتائجه في MAP هنا.",
     mapHeading: "ما هو اختبار MAP؟",
     map: [
       "اختبار MAP Growth اختبار حاسوبي يؤديه طفلك في المدرسة، عادةً مرتين في السنة: في الخريف (بداية العام) وفي الربيع (قرب نهاية العام)، وأحيانًا في الشتاء أيضًا.",
@@ -753,7 +755,8 @@ const FamilyActivities = {
     let html = '<header class="top"><h1>' + esc(text.heading) + "</h1>" + toggle + "</header>";
 
     if (!decoded.ok) {
-      html += '<div class="note warn" role="alert">' + esc(decoded.reason === "version" ? text.unreadableVersion : text.unreadable) + "</div>";
+      if (decoded.reason === "empty") html += '<div class="note" role="note">' + esc(text.noLink) + "</div>";
+      else html += '<div class="note warn" role="alert">' + esc(decoded.reason === "version" ? text.unreadableVersion : text.unreadable) + "</div>";
       html += mapSection() + '<footer>' + esc(text.footer) + "</footer>";
       root.innerHTML = html;
       return;
