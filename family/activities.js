@@ -15,6 +15,18 @@
 // test items), no pigs, pork, alcohol or anything else sensitive in the UAE, no
 // em dashes, warm and calm, no test pressure. Mark reviewed.ar true only after a
 // native reader has read the Arabic.
+// Short builders, so a set reads as its content and not as its brackets.
+//   T(en, ar)                         a text in both languages
+//   act(titleEn, textEn, titleAr, textAr)   one activity
+//   ex(questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr)   the worked example
+//   it(questionEn, answerEn, questionAr, answerAr)   one practice question and its answer
+//   en(question, answer)              a question that stays in English (reading, grammar)
+const T = (en, ar) => ({ en, ar });
+const act = (titleEn, textEn, titleAr, textAr) => ({ en: { title: titleEn, text: textEn }, ar: { title: titleAr, text: textAr } });
+const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
+const en = (question, answer) => it(question, answer, question, answer);
+
 const FamilyActivities = {
   "ma.35.num": {
     reviewed: { en: false, ar: false },
@@ -616,6 +628,596 @@ const FamilyActivities = {
         { q: { en: "Name one animal that lives in the desert and one body part that helps it there.", ar: "اذكر حيوانًا يعيش في الصحراء وجزءًا من جسمه يساعده هناك." }, a: { en: "Any sensible pair, such as a camel and its wide feet.", ar: "أي زوج منطقي، مثل الجمل وأقدامه العريضة." } }
       ]
     }
+  },
+
+  "ma.12.num": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Count the coins", "Put a small pile of AED 1 coins and a few AED 5 and AED 10 notes on the table. Ask your child to count them in ones, then in fives and tens. Ask: can you make AED 10 in three different ways? Let them play shopkeeper and give change from AED 10 for something that costs AED 6.", "نعدّ النقود", "ضع كومة صغيرة من عملات الدرهم الواحد وبعض أوراق الخمسة والعشرة دراهم على الطاولة. اطلب من طفلك عدّها بالآحاد ثم بالخمسات والعشرات. اسأل: هل تستطيع تكوين 10 دراهم بثلاث طرق مختلفة؟ ودعه يلعب دور البائع ويعطيك الباقي من 10 دراهم لشيء ثمنه 6 دراهم."),
+      act("Tens and ones", "Collect 30 date stones, pebbles or buttons. Help your child put them in bags of ten, with a few left over, and say the number: 3 tens and 4 ones is 34. Ask them to make 46, then 58. Then ask what number is 10 more than 34, and 10 less. The pattern in the tens digit is the secret.", "عشرات وآحاد", "اجمع 30 نواة تمر أو حصاة أو زرًّا. ساعد طفلك على وضعها في أكياس من عشرة مع بقاء بعضها، وقل العدد: 3 عشرات و4 آحاد هي 34. اطلب منه تكوين 46 ثم 58. ثم اسأل: ما العدد الذي يزيد عن 34 بعشرة؟ وما الذي ينقص عنه بعشرة؟ سرّ الأمر في تغيّر رقم العشرات."),
+      act("Number line hops", "Draw a long number line from 0 to 20 on the ground with chalk. Your child stands on 6, then hops forward 5 and says where they land. Hop back 3. Ask them to say the number sentence aloud: 6 plus 5 is 11. Switch, and let them give you the hops.", "قفزات على خط الأعداد", "ارسم بالطباشير على الأرض خط أعداد طويلًا من 0 إلى 20. يقف طفلك عند 6 ثم يقفز 5 خطوات إلى الأمام ويقول أين هبط. ثم يقفز 3 إلى الخلف. اطلب منه أن يقول الجملة العددية بصوت عالٍ: 6 زائد 5 يساوي 11. ثم بدّلا الأدوار ودعه يعطيك القفزات.")
+    ],
+    example: ex("What is 34 + 20?", ["Split 34 into 3 tens and 4 ones.", "Add 2 more tens: 3 tens + 2 tens = 5 tens.", "The ones stay the same: 4 ones.", "So 5 tens and 4 ones is 54."], "54", "ما ناتج 34 + 20؟", ["نقسم 34 إلى 3 عشرات و4 آحاد.", "نضيف عشرتين: 3 عشرات + عشرتان = 5 عشرات.", "تبقى الآحاد كما هي: 4 آحاد.", "إذن 5 عشرات و4 آحاد تساوي 54."], "54"),
+    sheet: { title: T("Numbers to 100", "الأعداد حتى 100"), instructions: T("Use objects, fingers or a number line if you like. Say each answer aloud.", "استعن بأشياء أو بأصابعك أو بخط الأعداد إن شئت. وقل كل جواب بصوت عالٍ."), items: [
+      it("What is 8 + 7?", "15", "ما ناتج 8 + 7؟", "15"),
+      it("What is 20 - 6?", "14", "ما ناتج 20 - 6؟", "14"),
+      it("How many tens and ones are in 47?", "4 tens and 7 ones", "كم عشرة وكم واحدًا في العدد 47؟", "4 عشرات و7 آحاد"),
+      it("What number is 10 more than 52?", "62", "ما العدد الذي يزيد بعشرة عن 52؟", "62"),
+      it("Which is greater: 38 or 83?", "83", "أيهما أكبر: 38 أم 83؟", "83"),
+      it("Mariam has AED 10. She buys a banana for AED 4. How much does she have left?", "AED 6", "مع مريم 10 دراهم. اشترت موزة بـ 4 دراهم. كم بقي معها؟", "6 دراهم"),
+      it("Count in fives: 5, 10, 15, __, __", "20 and 25", "عدّ بالخمسات: 5، 10، 15، __، __", "20 و25")
+    ] }
+  },
+
+  "ma.12.alg": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Bead patterns", "Thread beads or lay out coloured pieces in a pattern, such as red, blue, blue, red, blue, blue. Ask your child to say the repeating part (the core) and to carry on for the next six. Then they make a pattern for you to continue. Describe it in words: two blue after every red.", "أنماط الخرز", "نظّم حبات خرز أو قطعًا ملونة في نمط، مثل أحمر، أزرق، أزرق، أحمر، أزرق، أزرق. اطلب من طفلك أن يقول الجزء المتكرر وأن يكمل الست التالية. ثم يصنع نمطًا لتكمله أنت. وصِفاه بالكلمات: أزرقان بعد كل أحمر."),
+      act("The missing number", "Write number sentences with a gap and let your child fill it with a small drawing or a number: 5 + __ = 9, __ + 3 = 10, 12 - __ = 7. Use real things to help, such as dates in a bowl. Ask: how did you work it out? There are always several ways.", "العدد المفقود", "اكتب جملًا عددية فيها فراغ ودع طفلك يملؤه برسم صغير أو بعدد: 5 + __ = 9، و__ + 3 = 10، و12 - __ = 7. واستعن بأشياء حقيقية مثل تمر في وعاء. اسأل: كيف توصلت إلى الجواب؟ فهناك دائمًا أكثر من طريقة."),
+      act("The seesaw", "Draw a seesaw on paper. Put 4 + 3 on one side and ask what number to put on the other side to make it balance. Try 10 on one side and 6 + __ on the other. The equals sign means both sides are the same amount, not just the answer comes next.", "الأرجوحة المتوازنة", "ارسم أرجوحة على ورقة. ضع 4 + 3 في أحد الجانبين واسأل: ما العدد الذي نضعه في الجانب الآخر ليتوازن؟ جرّب 10 في جانب و6 + __ في الجانب الآخر. فعلامة يساوي تعني أن الجانبين بالمقدار نفسه، وليست فقط أن الجواب يأتي بعدها.")
+    ],
+    example: ex("What comes next? 2, 4, 6, 8, __. And find the missing number: 5 + __ = 9.", ["Look at the jumps: 2 to 4 is 2 more, 4 to 6 is 2 more.", "The rule is add 2, so the next number is 8 + 2 = 10.", "For 5 + __ = 9, count up from 5 to 9: 6, 7, 8, 9. That is 4 steps.", "Check: 5 + 4 = 9."], "10, and the missing number is 4", "ما العدد التالي؟ 2، 4، 6، 8، __. وأوجد العدد المفقود: 5 + __ = 9.", ["ننظر إلى القفزات: من 2 إلى 4 زيادة 2، ومن 4 إلى 6 زيادة 2.", "القاعدة أضف 2، فالعدد التالي 8 + 2 = 10.", "في 5 + __ = 9 نعدّ من 5 إلى 9: 6، 7، 8، 9. أي 4 خطوات.", "نتحقق: 5 + 4 = 9."], "10 والعدد المفقود 4"),
+    sheet: { title: T("Patterns and missing numbers", "الأنماط والأعداد المفقودة"), instructions: T("Say the rule before you answer.", "قل القاعدة قبل أن تجيب."), items: [
+      it("Continue: 5, 10, 15, 20, __", "25 (add 5)", "أكمل: 5، 10، 15، 20، __", "25 (نضيف 5)"),
+      it("Continue: 20, 18, 16, 14, __", "12 (take away 2)", "أكمل: 20، 18، 16، 14، __", "12 (ننقص 2)"),
+      it("Find the missing number: 6 + __ = 10", "4", "أوجد العدد المفقود: 6 + __ = 10", "4"),
+      it("Find the missing number: __ - 3 = 5", "8", "أوجد العدد المفقود: __ - 3 = 5", "8"),
+      it("True or false: 4 + 5 = 5 + 4", "True", "صح أم خطأ: 4 + 5 = 5 + 4", "صح"),
+      it("A pattern goes camel, palm, palm, camel, palm, palm. What comes next?", "camel", "نمط: جمل، نخلة، نخلة، جمل، نخلة، نخلة. ما التالي؟", "جمل"),
+      it("Which is even: 7, 12 or 15?", "12", "أي هذه الأعداد زوجي: 7 أم 12 أم 15؟", "12")
+    ] }
+  },
+
+  "ma.12.geo": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Shape detectives", "Look for flat shapes (circle, square, rectangle, triangle) and solid shapes (cube, ball, tin, box) at home and on a walk. A clock is a circle, a door is a rectangle, a tin is a cylinder. Ask your child to count the sides and corners of each flat shape and to tell you how they know.", "محققو الأشكال", "ابحثا عن أشكال مسطحة (دائرة ومربع ومستطيل ومثلث) وأشكال مجسمة (مكعب وكرة وعلبة وصندوق) في البيت وفي المشي. الساعة دائرة، والباب مستطيل، والعلبة أسطوانة. اطلب من طفلك عدّ أضلاع كل شكل مسطح وزواياه وأن يخبرك كيف عرف."),
+      act("Measure with hands", "Measure a table or a sofa with hand spans, then with paper clips, then with a ruler in centimetres. Ask: why do we get different numbers? Talk about why a ruler is better for telling someone else the length. Predict first, measure second.", "نقيس بالأيدي", "قيسا طاولة أو أريكة بعدد الأشبار ثم بمشابك الورق ثم بمسطرة بالسنتيمتر. اسأل: لماذا حصلنا على أعداد مختلفة؟ وتحدثا عن سبب كون المسطرة أفضل لإخبار شخص آخر بالطول. توقعا أولًا ثم قيسا."),
+      act("What time is it?", "Use a real clock or draw one. Show an o'clock time and a half past time each day, such as when school starts or when dinner is ready. Ask your child to put the short hand and the long hand in the right place. Ask them what they usually do at half past four.", "كم الساعة؟", "استخدما ساعة حقيقية أو ارسما واحدة. اعرض كل يوم وقتًا تامًّا ووقتًا ونصفًا، مثل بدء المدرسة أو موعد العشاء. اطلب من طفلك وضع العقرب القصير والطويل في مكانهما الصحيح. واسأله ماذا يفعل عادة عند الرابعة والنصف.")
+    ],
+    example: ex("A rectangle has how many sides and corners? And what time is it when the short hand points to 3 and the long hand to 12?", ["Count the sides of a rectangle: 4 sides.", "Count its corners: 4 corners.", "The long hand on 12 means o'clock.", "The short hand on 3 gives the hour: 3 o'clock."], "4 sides, 4 corners, and 3 o'clock", "كم ضلعًا وكم زاوية في المستطيل؟ وكم الساعة عندما يشير العقرب القصير إلى 3 والطويل إلى 12؟", ["نعدّ أضلاع المستطيل: 4 أضلاع.", "نعدّ زواياه: 4 زوايا.", "العقرب الطويل عند 12 يعني ساعة تامة.", "والعقرب القصير عند 3 يحدد الساعة: الثالثة تمامًا."], "4 أضلاع و4 زوايا والساعة الثالثة تمامًا"),
+    sheet: { title: T("Shapes, measuring and time", "الأشكال والقياس والوقت"), instructions: T("Look carefully and draw if it helps.", "انظر بعناية وارسم إن ساعدك ذلك."), items: [
+      it("How many sides does a triangle have?", "3", "كم ضلعًا للمثلث؟", "3"),
+      it("Which shape is round like a ball: a cube or a sphere?", "A sphere", "أي شكل مستدير كالكرة: المكعب أم الكرة؟", "الكرة"),
+      it("A tin of beans is the shape of a: cylinder, cube or cone?", "Cylinder", "علبة الفول على شكل: أسطوانة أم مكعب أم مخروط؟", "أسطوانة"),
+      it("Which is longer: a pencil or a classroom?", "A classroom", "أيهما أطول: قلم رصاص أم غرفة صف؟", "غرفة الصف"),
+      it("What time is it when the long hand is on 6 and the short hand is between 4 and 5?", "Half past 4", "كم الساعة عندما يكون العقرب الطويل على 6 والقصير بين 4 و5؟", "الرابعة والنصف"),
+      it("The table is 9 paper clips long. A second table is 5 paper clips long. How much longer is the first?", "4 paper clips", "الطاولة طولها 9 مشابك ورق. وطاولة ثانية 5 مشابك. بكم تزيد الأولى؟", "4 مشابك"),
+      it("Which comes first in the day: morning or evening?", "Morning", "أيهما يأتي أولًا في اليوم: الصباح أم المساء؟", "الصباح")
+    ] }
+  },
+
+  "ma.12.dat": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Sort and count", "Give your child a mixed handful of buttons, shells or coloured pencils. Ask them to sort them by colour or size, then count each group and say which has the most and which has the least. Ask: how many more red than blue? Sorting is the first step of every graph.", "نفرز ونعد", "أعطِ طفلك حفنة مختلطة من الأزرار أو الأصداف أو الأقلام الملونة. اطلب منه فرزها حسب اللون أو الحجم ثم عدّ كل مجموعة وقول أيها الأكثر وأيها الأقل. اسأل: كم أحمر زيادة عن الأزرق؟ فالفرز هو الخطوة الأولى في كل رسم بياني."),
+      act("A picture graph of us", "Ask five family members or friends which they like best: dates, grapes or watermelon. Draw a small picture for each answer in a column on paper. Read the graph together: which has the most, and how many people were asked altogether?", "رسم بياني بالصور لنا", "اسأل خمسة من أفراد الأسرة أو الأصدقاء عمّا يحبونه أكثر: التمر أو العنب أو البطيخ. ارسم صورة صغيرة لكل إجابة في عمود على الورقة. واقرآ الرسم معًا: أيها الأكثر؟ وكم شخصًا سُئل في المجموع؟"),
+      act("Tally the cars", "Sit at a window or on a bench for five minutes and make a tally mark for every white car, then every silver car, then every other colour. Count the groups of five. Which colour was most common? Would it be the same tomorrow?", "نعدّ السيارات بالعلامات", "اجلسا عند نافذة أو على مقعد خمس دقائق وضعا علامة عدّ لكل سيارة بيضاء ثم لكل سيارة فضية ثم لكل لون آخر. عدّا مجموعات الخمس. أي لون كان الأكثر؟ وهل سيكون هو نفسه غدًا؟")
+    ],
+    example: ex("A picture graph shows dates 6, grapes 3, watermelon 5. Which is most popular? How many more chose dates than grapes?", ["Find the longest column: dates, with 6.", "Compare dates and grapes: 6 and 3.", "6 take away 3 is 3."], "Dates, and 3 more", "يُظهر رسم بياني: التمر 6، والعنب 3، والبطيخ 5. أيها الأكثر شعبية؟ وكم شخصًا زيادة اختار التمر على العنب؟", ["نبحث عن أطول عمود: التمر وفيه 6.", "نقارن التمر والعنب: 6 و3.", "6 ناقص 3 يساوي 3."], "التمر، و3 زيادة"),
+    sheet: { title: T("Sorting, counting and graphs", "الفرز والعد والرسوم البيانية"), instructions: T("Use the tally and the graph to answer.", "استعن بجدول العدّ والرسم البياني للإجابة."), items: [
+      it("A tally shows |||| |||. How many is that?", "8", "جدول عدّ يُظهر |||| |||. كم يساوي؟", "8"),
+      it("In a graph, 7 children like mango and 4 like banana. Which is more popular?", "Mango", "في رسم بياني أحب 7 أطفال المانجو و4 الموز. أيهما أكثر شعبية؟", "المانجو"),
+      it("How many more like mango than banana?", "3", "كم طفلًا زيادة أحب المانجو على الموز؟", "3"),
+      it("How many children were asked in all?", "11", "كم طفلًا سُئلوا في المجموع؟", "11"),
+      it("Sort these into two groups: camel, falcon, oryx, parrot. Which are birds?", "Falcon and parrot", "صنّف في مجموعتين: جمل، صقر، مها، ببغاء. أيها طيور؟", "الصقر والببغاء"),
+      it("There are 5 red shells, 8 white shells and 2 pink shells. Which colour has the fewest?", "Pink", "5 أصداف حمراء و8 بيضاء و2 وردية. أي لون الأقل؟", "الوردي"),
+      it("Is it certain, possible or impossible that it will be dark at night?", "Certain", "هل مؤكد أم ممكن أم مستحيل أن يكون الليل مظلمًا؟", "مؤكد")
+    ] }
+  },
+
+  "ma.12.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Maths all day", "Look for small chances to use numbers during the day: how many plates for dinner, which shelf is higher, what time we leave, how many steps to the door. Ask your child a question at each one and let them answer out loud. Maths feels natural when it belongs to real life.", "رياضيات طوال اليوم", "ابحثا عن فرص صغيرة لاستخدام الأعداد خلال اليوم: كم طبقًا للعشاء؟ وأي رف أعلى؟ ومتى نخرج؟ وكم خطوة إلى الباب؟ اسأل طفلك سؤالًا في كل منها ودعه يجيب بصوت عالٍ. فتبدو الرياضيات طبيعية حين تكون جزءًا من الحياة."),
+      act("Tell me how", "After your child answers any maths question, ask: how did you know? Listen to their method without correcting it at once. Then ask whether there is another way to find the same answer. Explaining out loud builds understanding.", "أخبرني كيف", "بعد أن يجيب طفلك عن أي سؤال رياضي اسأله: كيف عرفت؟ واستمع إلى طريقته دون أن تصحّحها فورًا. ثم اسأل: هل هناك طريقة أخرى للوصول إلى الجواب نفسه؟ فالشرح بصوت عالٍ ينمّي الفهم."),
+      act("Number stories", "Make up short number stories using your child's favourite things: Three falcons sat on a branch and two more came. How many now? Take turns telling the stories, and let your child draw a picture to solve each.", "حكايات الأعداد", "اخترعا حكايات عددية قصيرة بأشياء يحبها طفلك: جلست ثلاثة صقور على غصن وجاء صقران آخران. كم صارت؟ وتناوبا على رواية الحكايات ودع طفلك يرسم صورة لحل كل واحدة.")
+    ],
+    example: ex("Three falcons sat on a branch and 2 more came. Then 1 flew away. How many are on the branch?", ["Start with 3.", "2 more came: 3 + 2 = 5.", "1 flew away: 5 - 1 = 4."], "4 falcons", "جلست ثلاثة صقور على غصن وجاء صقران آخران. ثم طار صقر واحد. كم بقي على الغصن؟", ["نبدأ بـ 3.", "جاء 2 آخران: 3 + 2 = 5.", "طار واحد: 5 - 1 = 4."], "4 صقور"),
+    sheet: { title: T("A little of everything", "قليل من كل شيء"), instructions: T("Take your time and say your steps aloud.", "خذ وقتك وقل خطواتك بصوت عالٍ."), items: [
+      it("What is 9 + 6?", "15", "ما ناتج 9 + 6؟", "15"),
+      it("What is 17 - 8?", "9", "ما ناتج 17 - 8؟", "9"),
+      it("Continue: 10, 20, 30, __", "40", "أكمل: 10، 20، 30، __", "40"),
+      it("How many sides does a square have?", "4", "كم ضلعًا للمربع؟", "4"),
+      it("There are 5 dates in one bowl and 7 in another. How many altogether?", "12", "5 تمرات في وعاء و7 في وعاء آخر. كم المجموع؟", "12"),
+      it("What time is it when both hands point to 12?", "12 o'clock", "كم الساعة عندما يشير العقربان إلى 12؟", "الثانية عشرة تمامًا")
+    ] }
+  }
+,
+
+  "rd.12.fnd": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Sound hunt", "Play I spy with sounds, not letters: I spy something that starts with the sound /s/. Take turns. Then say a word slowly, such as sun, and ask your child to tell you each sound (s, u, n) and how many sounds there are. Listening for sounds is the base of reading.", "لعبة البحث عن الأصوات", "العبا لعبة أرى بعينيّ الصغيرتين، لكن بالأصوات لا بالحروف: أرى شيئًا يبدأ بصوت /s/. وتناوبا. ثم انطق كلمة ببطء مثل sun واطلب من طفلك أن يخبرك بكل صوت (s, u, n) وكم صوتًا فيها. فالإصغاء إلى الأصوات أساس القراءة."),
+      act("Change one sound", "Write cat on paper or with letter tiles. Ask your child to read it, then change just one letter to make hat, then hot, then hop. Each time they say the new word and write it. Changing one sound at a time teaches how letters stand for sounds.", "نغيّر صوتًا واحدًا", "اكتب cat على ورقة أو بحروف مفكّكة. اطلب من طفلك قراءتها ثم تغيير حرف واحد فقط لتصبح hat ثم hot ثم hop. وفي كل مرة ينطق الكلمة الجديدة ويكتبها. فتغيير صوت واحد في كل مرة يعلّم كيف تمثّل الحروف الأصوات."),
+      act("Finger-point reading", "Choose a very short book or sentence your child can almost read. Let them point at each word with a finger while they read, and sound out any tricky word by blending the sounds. Praise effort, then read the page again smoothly. Ten calm minutes daily works better than a long session.", "قراءة بالإصبع", "اختر كتابًا أو جملة قصيرة جدًا يكاد طفلك يقرؤها. دعه يشير بإصبعه إلى كل كلمة وهو يقرأ، ويقرأ الكلمة الصعبة بدمج أصواتها. امدح المجهود ثم اقرآ الصفحة مرة أخرى بانسيابية. فعشر دقائق هادئة كل يوم أفضل من جلسة طويلة.")
+    ],
+    example: ex("Read this word by blending the sounds: ship. How many sounds does it have?", ["Look for sounds that go together: sh is one sound made by two letters.", "The sounds are sh, i, p.", "Blend them: sh, i, p, ship.", "It has three sounds but four letters."], "3 sounds", "Read this word by blending the sounds: ship. How many sounds does it have?", ["ابحث عن حروف تُنطق معًا: sh صوت واحد من حرفين.", "الأصوات هي sh وi وp.", "ادمجها: sh, i, p, ship.", "فيها ثلاثة أصوات لكن أربعة حروف."], "3 sounds (ثلاثة أصوات)"),
+    sheet: { englishOnly: true, title: T("Sounds, letters and reading", "الأصوات والحروف والقراءة"), instructions: T("Read each word or sentence aloud. A grown-up can help with the instructions.", "اقرأ كل كلمة أو جملة بصوت عالٍ. يمكن لشخص بالغ المساعدة في التعليمات."), items: [
+      en("Which word starts with the sound /s/? sun, hat, pen", "sun"),
+      en("Which word rhymes with cat? hat, log, sun", "hat"),
+      en("How many sounds are in the word log? (l, o, g)", "3"),
+      en("Read: The camel can sit on the sand.", "The camel can sit on the sand. (The child reads it aloud.)"),
+      en("Change one letter in pin to make pan. Which letter changes?", "The i changes to an a."),
+      en("Which word has the sound /sh/? fish, fist, fit", "fish"),
+      en("Which word names a round fruit? apple, bus, hat", "apple")
+    ] }
+  },
+
+  "rd.12.cmp": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Who, where, what happened?", "After reading a short story or page together, ask three easy questions: who was in it, where did it happen, and what happened? Ask your child to answer in a whole sentence. Then ask one why question, such as why was she happy? Showing you where the answer is on the page is part of the skill.", "من؟ أين؟ ماذا حدث؟", "بعد أن تقرآ قصة قصيرة أو صفحة معًا اسأل ثلاثة أسئلة سهلة: من كان فيها؟ وأين حدث ذلك؟ وماذا حدث؟ واطلب من طفلك أن يجيب بجملة كاملة. ثم اسأل سؤال لماذا واحدًا، مثل: لماذا كانت سعيدة؟ وإشارته إلى موضع الجواب في الصفحة جزء من المهارة."),
+      act("Beginning, middle, end", "Fold a paper into three parts. After reading, your child draws what happened first, then next, then last, and says a sentence for each. Use first, next and last. This teaches how stories are put in order.", "بداية ووسط ونهاية", "اطوِ ورقة إلى ثلاثة أجزاء. بعد القراءة يرسم طفلك ما حدث أولًا ثم بعد ذلك ثم أخيرًا، ويقول جملة لكل جزء. استخدما كلمات أولًا ثم أخيرًا. فهذا يعلّم كيف تُرتّب أحداث القصة."),
+      act("Read it like a picture", "Read a page aloud without showing the picture. Ask your child to close their eyes and imagine the picture the words make, then to draw it. Compare it with the real picture. Good readers make pictures in their minds as they read.", "نقرأ كأنها صورة", "اقرأ صفحة بصوت عالٍ دون إظهار الصورة. اطلب من طفلك أن يغمض عينيه ويتخيل الصورة التي ترسمها الكلمات ثم يرسمها. وقارنا بين رسمه والصورة الحقيقية. فالقارئ الجيد يكوّن صورًا في ذهنه وهو يقرأ.")
+    ],
+    example: ex("Hamda found a shell on the beach. She picked it up and held it to her ear. She smiled because she could hear the sea. Why did Hamda smile?", ["Find the sentence with because: She smiled because she could hear the sea.", "The sentence tells us the reason.", "She smiled because she heard the sea in the shell."], "She could hear the sea", "Hamda found a shell on the beach. She picked it up and held it to her ear. She smiled because she could hear the sea. Why did Hamda smile?", ["ابحث عن الجملة التي فيها because: She smiled because she could hear the sea.", "الجملة تعطينا السبب.", "ابتسمت لأنها سمعت صوت البحر في الصدفة."], "She could hear the sea (سمعت صوت البحر)"),
+    sheet: { englishOnly: true, title: T("Understanding a story: Hamda and the shell", "فهم القصة: حمدة والصدفة"), instructions: T("Read the story twice, then answer.", "اقرأ القصة مرتين ثم أجب."), items: [
+      en("STORY. Hamda went to the beach with her father. She found a small pink shell. She held it to her ear and heard the sea. She put it in her bag to show her teacher. At school, everyone wanted a turn to listen.", "(Read the story. Questions follow.)"),
+      en("1. Who went to the beach?", "Hamda and her father"),
+      en("2. What did Hamda find?", "A small pink shell"),
+      en("3. What did she hear?", "The sea"),
+      en("4. Where did she put the shell?", "In her bag"),
+      en("5. What happened at school?", "Everyone wanted a turn to listen."),
+      en("6. What do you think Hamda felt when she found the shell? Why?", "Any sensible answer, such as happy or excited, because she found something special.")
+    ] }
+  },
+
+  "rd.12.voc": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Word sorting", "Write ten words on slips of paper, such as apple, camel, date, falcon, banana, oryx, mango, goat, grape and horse. Ask your child to sort them into two groups, fruit and animals, and then name another group you could make. Sorting words by meaning helps them stay in memory.", "نفرز الكلمات", "اكتب عشر كلمات على قصاصات، مثل apple وcamel وdate وfalcon وbanana وoryx وmango وgoat وgrape وhorse. اطلب من طفلك فرزها في مجموعتين، فواكه وحيوانات، ثم تسمية مجموعة أخرى يمكن تكوينها. فتصنيف الكلمات بحسب المعنى يساعدها على البقاء في الذاكرة."),
+      act("Opposites", "Say a word and ask for its opposite: hot, cold; big, small; up, down; open, closed. Then turn it into a game where your child says the opposite as fast as they can. Ask them to use each pair in a sentence: The tea is hot but the juice is cold.", "الأضداد", "قل كلمة واطلب ضدها: hot وcold، وbig وsmall، وup وdown، وopen وclosed. ثم حوّلها إلى لعبة يقول فيها طفلك الضد بأسرع ما يمكن. واطلب منه استخدام كل زوج في جملة: The tea is hot but the juice is cold."),
+      act("A new word each day", "Choose one new word from a book, such as enormous. Say it, show or act its meaning, and use it in a sentence. Put it on the fridge and use it again at dinner. Aim for one new word a day, five in a week.", "كلمة جديدة كل يوم", "اختر كلمة جديدة واحدة من كتاب، مثل enormous. انطقها وأظهر معناها أو مثّله واستعملها في جملة. علّقها على الثلاجة واستعملها مرة أخرى على العشاء. والهدف كلمة جديدة كل يوم، خمس كلمات في الأسبوع.")
+    ],
+    example: ex("Which word means the opposite of big? And which word does not belong: apple, banana, camel, mango?", ["The opposite of big is small.", "Apple, banana and mango are fruits.", "A camel is an animal, so it does not belong."], "small, and camel", "Which word means the opposite of big? And which word does not belong: apple, banana, camel, mango?", ["ضد big هو small.", "apple وbanana وmango فواكه.", "camel حيوان فلا ينتمي إليها."], "small, and camel (small وcamel)"),
+    sheet: { englishOnly: true, title: T("Word meanings", "معاني الكلمات"), instructions: T("Read each question aloud and choose the best word.", "اقرأ كل سؤال بصوت عالٍ واختر أفضل كلمة."), items: [
+      en("What is the opposite of hot? cold, warm, red", "cold"),
+      en("What is the opposite of open? shut, wide, tall", "shut"),
+      en("Which word does not belong? sun, moon, star, shoe", "shoe"),
+      en("Which word means very, very big? tiny, enormous, quiet", "enormous"),
+      en("Finish the sentence: The soup is too ____ to drink. (hot, tall, soft)", "hot"),
+      en("Which two words mean about the same? big, large, small", "big and large"),
+      en("Write one word for something you can eat.", "Any food word, such as date or bread.")
+    ] }
+  },
+
+  "rd.12.wl": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("One good sentence", "Ask your child to say a sentence about their day aloud first, then write it. Check the three things every sentence needs: a capital letter at the start, spaces between words, and a full stop at the end. Read it back together. Then add one more word to make it more interesting, such as big, red or happy.", "جملة واحدة جيدة", "اطلب من طفلك أن يقول جملة عن يومه بصوت عالٍ أولًا ثم يكتبها. افحصا الأمور الثلاثة التي تحتاجها كل جملة: حرف كبير في البداية، ومسافات بين الكلمات، ونقطة في النهاية. اقرآها معًا. ثم أضف كلمة واحدة لتصبح أشد إثارة، مثل big أو red أو happy."),
+      act("My weekend in three sentences", "At the weekend ask your child to write three sentences: what I did, who I was with, and how I felt. Help with spelling when they ask, and let them draw a picture. Keep these in a folder and enjoy how the writing grows.", "عطلتي في ثلاث جمل", "في نهاية الأسبوع اطلب من طفلك أن يكتب ثلاث جمل: ماذا فعلت، ومع من كنت، وكيف شعرت. ساعده في الإملاء حين يطلب، ودعه يرسم صورة. واحتفظا بها في مجلد واستمتعا برؤية الكتابة تنمو."),
+      act("Name it, then describe it", "Choose an object, such as a date, a kite or a shell. Together, write its name, then three describing words (small, brown, sweet), then a sentence using them. Nouns are naming words and adjectives are describing words. You can play it as a guessing game.", "نسمّي ثم نصف", "اختر شيئًا مثل تمرة أو طائرة ورقية أو صدفة. اكتبا معًا اسمه ثم ثلاث كلمات تصفه (small وbrown وsweet) ثم جملة تستخدمها. الأسماء كلمات تسمّي والصفات كلمات تصف. ويمكنكما لعبها كلعبة تخمين.")
+    ],
+    example: ex("Fix this sentence: my brother has a red kite", ["Start with a capital letter: My.", "Check the words are spaced and make sense.", "Finish with a full stop."], "My brother has a red kite.", "Fix this sentence: my brother has a red kite", ["نبدأ بحرف كبير: My.", "نتأكد أن الكلمات متباعدة ولها معنى.", "ننهي الجملة بنقطة."], "My brother has a red kite."),
+    sheet: { englishOnly: true, title: T("Writing sentences", "كتابة الجمل"), instructions: T("Write neatly. Say each sentence aloud before you write it.", "اكتب بخط مرتب. وقل كل جملة بصوت عالٍ قبل أن تكتبها."), items: [
+      en("Fix: the camel is big", "The camel is big."),
+      en("Fix: we went to the beach on friday", "We went to the beach on Friday."),
+      en("Put the words in order: sat the falcon on branch the", "The falcon sat on the branch."),
+      en("Add a describing word: I have a ____ ball.", "Any adjective, such as red or big."),
+      en("Which is a naming word (noun)? run, camel, happy", "camel"),
+      en("Write one sentence about your favourite food.", "Any sentence with a capital letter and a full stop."),
+      en("What does a question end with? a full stop or a question mark?", "A question mark")
+    ] }
+  },
+
+  "rd.12.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Read together every day", "Spend ten minutes reading together every day. Take turns: you read a page, then your child reads a page. Let them pick books about things they love. Stop and talk about the story, the pictures and any new word.", "نقرأ معًا كل يوم", "اقضيا عشر دقائق في القراءة معًا كل يوم. وتناوبا: تقرأ أنت صفحة ثم يقرأ طفلك صفحة. دعه يختار كتبًا عن أشياء يحبها. وتوقفا للحديث عن القصة والصور وأي كلمة جديدة."),
+      act("Library trip", "Visit a library or the school library once a week and let your child choose two books, one they can read and one to be read to them. Having books at home that they chose themselves builds a love of reading.", "رحلة إلى المكتبة", "زورا مكتبة أو مكتبة المدرسة مرة في الأسبوع ودع طفلك يختار كتابين: واحدًا يستطيع قراءته وآخر يُقرأ له. فوجود كتب في البيت اختارها بنفسه ينمّي حب القراءة."),
+      act("Retell it", "After a story, ask your child to tell it back to you in their own words, from the beginning. Ask what they liked best and why. Retelling shows how much they understood and builds speaking skills too.", "نعيد الحكاية", "بعد القصة اطلب من طفلك أن يرويها لك بكلماته من البداية. واسأله عمّا أعجبه أكثر ولماذا. فإعادة الحكاية تُظهر مقدار فهمه وتنمّي مهارات التحدث أيضًا.")
+    ],
+    example: ex("Omar ate a sweet date. He wanted another one. Why did Omar want another date?", ["Look for the reason in the story.", "It says the date was sweet.", "He liked it, so he wanted another."], "Because the date was sweet", "Omar ate a sweet date. He wanted another one. Why did Omar want another date?", ["ابحث عن السبب في القصة.", "تقول إن التمرة كانت حلوة.", "أعجبته فأراد أخرى."], "Because the date was sweet (لأن التمرة كانت حلوة)"),
+    sheet: { englishOnly: true, title: T("A little of every kind of reading", "قليل من كل أنواع القراءة"), instructions: T("Read, then answer.", "اقرأ ثم أجب."), items: [
+      en("TEXT. Layla has a little kite. It is blue and yellow. On a windy day she runs on the sand and the kite flies high in the sky.", "(Read the text. Questions follow.)"),
+      en("1. What colour is the kite?", "Blue and yellow"),
+      en("2. Where does Layla run?", "On the sand"),
+      en("3. What weather does she need to fly the kite?", "A windy day"),
+      en("4. Which word means the opposite of low? high, tall, kite", "high"),
+      en("5. Write the naming word (noun) from this sentence: Layla has a kite.", "Layla or kite")
+    ] }
+  }
+,
+
+  "lu.12.cps": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Capital letter check", "Write four short sentences without capitals or full stops. Ask your child to be the checker: put a capital letter at the start of each sentence, on every name, and the word I. Add a full stop or question mark at the end. Cross-check each other's work.", "فحص الأحرف الكبيرة", "اكتب أربع جمل قصيرة بلا أحرف كبيرة ولا نقاط. اطلب من طفلك أن يكون المدقّق: يضع حرفًا كبيرًا في بداية كل جملة وعلى كل اسم وعلى كلمة I. ثم يضيف نقطة أو علامة استفهام في النهاية. وراجعا عمل بعضكما."),
+      act("Spelling in the sand", "Put a little sand or flour on a tray. Your child writes each spelling word with a finger, says the letters, wipes it, and writes it again. Choose five words per week, such as the, said, was, they and because. Practise a few minutes each day.", "الإملاء في الرمل", "ضع قليلًا من الرمل أو الدقيق في صينية. يكتب طفلك كل كلمة إملاء بإصبعه ويقول حروفها ثم يمسحها ويكتبها مرة أخرى. اختر خمس كلمات في الأسبوع، مثل the وsaid وwas وthey وbecause. وتدرّبا بضع دقائق كل يوم."),
+      act("Sign spotting", "Out and about, read signs, shop names and food packets. Look for capital letters and full stops, and ask which letters you can read. Real writing makes the rules feel useful.", "نكتشف اللافتات", "وأنتما في الخارج اقرآ اللافتات وأسماء المحال وعلب الطعام. ابحثا عن الأحرف الكبيرة والنقاط، واسأل عن الحروف التي يستطيع قراءتها. فالكتابة الحقيقية تجعل القواعد مفيدة.")
+    ],
+    example: ex("Fix: today is saturday we go to the park", ["Capital letter for the first word: Today.", "Capital letter for the day: Saturday.", "Full stop after Saturday, then a capital letter: We.", "Full stop at the end."], "Today is Saturday. We go to the park.", "Fix: today is saturday we go to the park", ["حرف كبير للكلمة الأولى: Today.", "حرف كبير لليوم: Saturday.", "نقطة بعد Saturday ثم حرف كبير: We.", "نقطة في النهاية."], "Today is Saturday. We go to the park."),
+    sheet: { englishOnly: true, title: T("Capital letters, full stops and spelling", "الأحرف الكبيرة والنقاط والإملاء"), instructions: T("Write the sentence again correctly.", "أعد كتابة الجملة بشكل صحيح."), items: [
+      en("Fix: my name is salma", "My name is Salma."),
+      en("Fix: we live in dubai", "We live in Dubai."),
+      en("Fix: can i have a drink", "Can I have a drink?"),
+      en("Which is spelled correctly? (a) becuase (b) because", "(b) because"),
+      en("Which is spelled correctly? (a) frend (b) friend", "(b) friend"),
+      en("Fix: the cat and the hen sat down", "The cat and the hen sat down."),
+      en("Write the word: s_id (said)", "said")
+    ] }
+  },
+
+  "lu.12.gru": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Naming and doing words", "Read a short sentence together, such as The camel walks. Ask your child which word names something (camel, a noun) and which word shows what it does (walks, a verb). Make a list of ten nouns and ten verbs from the room you are in, and match them up to build new sentences.", "كلمات التسمية وكلمات الفعل", "اقرآ جملة قصيرة معًا، مثل The camel walks. اسأل طفلك: أي كلمة تسمّي شيئًا (camel، اسم)؟ وأي كلمة تدل على ما يفعله (walks، فعل)؟ اصنعا قائمة بعشرة أسماء وعشرة أفعال من الغرفة التي أنتما فيها وطابقاها لتكوين جمل جديدة."),
+      act("One or many?", "Show one object and then several: one date, two dates; one box, three boxes. Ask your child to say and write the word for many. Look for words that change in surprising ways, such as man and men, or child and children.", "واحد أم كثير؟", "أظهر شيئًا واحدًا ثم عدة أشياء: تمرة واحدة وتمرتان؛ صندوق واحد وثلاثة صناديق. اطلب من طفلك أن يقول ويكتب كلمة الجمع. وابحثا عن كلمات تتغير بطرق مفاجئة، مثل man وmen أو child وchildren."),
+      act("Yesterday and today", "Say what you do today (I walk) and what you did yesterday (I walked). Practise with five actions. Notice that many past words end in ed, but some change, such as go and went.", "أمس واليوم", "قل ما تفعله اليوم (I walk) وما فعلته أمس (I walked). تدرّبا على خمسة أفعال. ولاحظا أن كثيرًا من كلمات الماضي تنتهي بـ ed لكن بعضها يتغير مثل go وwent.")
+    ],
+    example: ex("Pick the right word: One date, two (date / dates).", ["One means just one, so no change.", "Two means more than one, so add s.", "Two dates."], "dates", "Pick the right word: One date, two (date / dates).", ["واحدة تعني شيئًا واحدًا فلا تغيير.", "اثنتان تعني أكثر من واحد فنضيف s.", "Two dates."], "dates"),
+    sheet: { englishOnly: true, title: T("Words and how they work", "الكلمات وكيف تعمل"), instructions: T("Circle or write the best word.", "ضع دائرة أو اكتب أفضل كلمة."), items: [
+      en("Which word is a noun (a naming word)? run, camel, big", "camel"),
+      en("Which word is a verb (a doing word)? jump, blue, table", "jump"),
+      en("One boat, two ____", "boats"),
+      en("Yesterday I (walk / walked) to school.", "walked"),
+      en("The birds (is / are) flying.", "are"),
+      en("Which word describes: a ____ cat? soft, run, on", "soft"),
+      en("The girl (have / has) a book.", "has")
+    ] }
+  },
+
+  "lu.12.wri": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Draw, talk, write", "Ask your child to draw a picture of something that happened to them, then tell you about it, then write a sentence under it. Talking first makes writing easier. Encourage sentences that start in different ways, not always I went.", "نرسم ونتحدث ونكتب", "اطلب من طفلك أن يرسم شيئًا حدث له، ثم يخبرك عنه، ثم يكتب جملة تحت الرسم. فالحديث أولًا يسهّل الكتابة. وشجّعه على جمل تبدأ بطرق مختلفة، لا I went دائمًا."),
+      act("First, next, last", "Choose a simple activity, such as making a sandwich or planting a seed. Write three sentences with the words first, next and last. Check each sentence has a capital letter and a full stop. This teaches order in writing.", "أولًا، ثم، أخيرًا", "اختر نشاطًا بسيطًا، مثل تحضير شطيرة أو زراعة بذرة. اكتب ثلاث جمل بالكلمات first وnext وlast. وتحقق أن لكل جملة حرفًا كبيرًا ونقطة. فهذا يعلّم الترتيب في الكتابة."),
+      act("A letter to someone", "Write a short letter to a grandparent: Dear ..., two sentences about your week, and Love from ... Draw a picture to go with it. A real reader makes writing matter.", "رسالة إلى شخص ما", "اكتب رسالة قصيرة إلى جد أو جدة: عزيزي ...، وجملتان عن أسبوعك، ثم مع محبتي ... وارسم صورة معها. فالقارئ الحقيقي يجعل للكتابة معنى.")
+    ],
+    example: ex("Put in order and write: (a) Last, I ate it. (b) First, I spread jam on bread. (c) Next, I cut it in half.", ["First comes b, then next comes c, and last comes a.", "Write them in that order."], "First, I spread jam on bread. Next, I cut it in half. Last, I ate it.", "Put in order and write: (a) Last, I ate it. (b) First, I spread jam on bread. (c) Next, I cut it in half.", ["الأولى هي b ثم c ثم a.", "اكتبها بهذا الترتيب."], "First, I spread jam on bread. Next, I cut it in half. Last, I ate it."),
+    sheet: { englishOnly: true, title: T("Writing", "الكتابة"), instructions: T("Write full sentences. Check the capital letters and full stops.", "اكتب جملًا كاملة. وراجع الأحرف الكبيرة والنقاط."), items: [
+      en("Write one sentence about a place you like.", "Any complete sentence."),
+      en("Put in order: Last, we went home. First, we got to the beach. Next, we built a sandcastle.", "First, we got to the beach. Next, we built a sandcastle. Last, we went home."),
+      en("Add a describing word: I saw a ____ falcon.", "Any adjective."),
+      en("Which sentence is better? (a) I saw a bird. (b) I saw a tiny green bird.", "(b)"),
+      en("Write a question you would like to ask your teacher.", "Any question ending with ?."),
+      en("Write two sentences about your weekend.", "Any two complete sentences."),
+      en("What do you start a name with: a capital letter or a small letter?", "A capital letter")
+    ] }
+  },
+
+  "lu.12.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Little notes", "Leave each other short notes during the week: a lunchbox note, a bedtime note, a thank-you note. Writing for a real person is the best practice. Check together for a capital letter, a full stop and spelling.", "رسائل صغيرة", "اتركا لبعضكما رسائل قصيرة خلال الأسبوع: رسالة في علبة الغداء أو عند النوم أو رسالة شكر. فالكتابة لشخص حقيقي أفضل تدريب. وافحصا معًا الحرف الكبير والنقطة والإملاء."),
+      act("Spot the mistake", "Write a sentence with one mistake, and ask your child to find it: the camel are big. Take turns to make mistakes and spot them. Talk about the rule each time.", "اكتشف الخطأ", "اكتب جملة فيها خطأ واحد واطلب من طفلك أن يجده: the camel are big. وتناوبا على صنع الأخطاء واكتشافها. وتحدثا عن القاعدة في كل مرة."),
+      act("Tell me more", "When your child writes a short sentence, ask: tell me more. Where? When? How? Add one detail each time. The sentence I saw a bird becomes I saw a green bird in the palm tree this morning.", "أخبرني أكثر", "عندما يكتب طفلك جملة قصيرة اسأله: أخبرني أكثر. أين؟ ومتى؟ وكيف؟ وأضف تفصيلة في كل مرة. فتصبح جملة I saw a bird: I saw a green bird in the palm tree this morning.")
+    ],
+    example: ex("Fix and improve: i saw a bird", ["Capital letter: I.", "Add a full stop.", "Add a detail: a green bird.", "I saw a green bird."], "I saw a green bird.", "Fix and improve: i saw a bird", ["حرف كبير: I.", "أضف نقطة.", "أضف تفصيلة: a green bird.", "I saw a green bird."], "I saw a green bird."),
+    sheet: { englishOnly: true, title: T("A little of every kind of language", "قليل من كل أنواع اللغة"), instructions: T("Write each answer.", "اكتب كل جواب."), items: [
+      en("Fix: we play in the garden", "We play in the garden."),
+      en("Choose: The boys (is / are) happy.", "are"),
+      en("Which is spelled correctly? (a) wich (b) which", "(b)"),
+      en("Add a describing word: a ____ date", "Any adjective such as sweet."),
+      en("Write one sentence about your day.", "Any complete sentence."),
+      en("One bird, two ____", "birds")
+    ] }
+  }
+,
+
+  "ma.68.num": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("The sale is on", "At a shop or from a sales leaflet, choose three items with a percentage discount. Ask your child to work out the sale price in dirhams without a calculator: 25 percent off AED 240 is a quarter off, so AED 60 off and AED 180 to pay. Then ask which is the better deal: 30 percent off AED 200 or AED 50 off AED 180? Compare by finding the final price each time.", "التخفيضات", "من أحد المتاجر أو من نشرة التخفيضات اختر ثلاث سلع عليها خصم بنسبة مئوية. اطلب من طفلك حساب سعر البيع بالدرهم دون آلة حاسبة: خصم 25 بالمئة من 240 درهمًا هو ربع المبلغ، أي 60 درهمًا خصمًا ويدفع 180. ثم اسأل: أيهما أفضل: خصم 30 بالمئة من 200 درهم أم خصم 50 درهمًا من 180؟ قارنا بإيجاد السعر النهائي في كل مرة."),
+      act("Ratio in the kitchen", "Choose a recipe, such as a rice recipe that uses 2 cups of water for every 1 cup of rice. Ask your child to scale it for 3 cups, then for 5 cups, then for a small portion of half a cup. Make a ratio table with the amounts and look for the pattern that stays the same, which is the constant of proportion.", "النسبة في المطبخ", "اختر وصفة، مثل وصفة أرز تستخدم كوبين من الماء لكل كوب من الأرز. اطلب من طفلك تكبيرها لـ 3 أكواب ثم لـ 5 أكواب ثم تصغيرها لنصف كوب. اصنعا جدول نسبة بالمقادير وابحثا عن الشيء الذي يبقى ثابتًا، وهو ثابت التناسب."),
+      act("Up and down the building", "Use a tall building or a car park with underground levels as a number line: ground is 0, the floors above are positive, the basements are negative. Ask: if the lift goes from level -3 to level 5, how many floors does it travel? Then add and subtract negative numbers with the lift: start at 2 and go down 6. Where do you finish?", "صعودًا ونزولًا في المبنى", "استخدما مبنى عاليًا أو موقف سيارات تحت الأرض كخط أعداد: الأرضي صفر، والطوابق العليا موجبة، والطوابق السفلية سالبة. اسأل: إذا انتقل المصعد من الطابق -3 إلى الطابق 5 فكم طابقًا يقطع؟ ثم اجمعا واطرحا أعدادًا سالبة بالمصعد: ابدأ من 2 وانزل 6. أين تنتهي؟")
+    ],
+    example: ex("A watch costs AED 240 and is on sale for 25 percent off. What is the sale price?", ["25 percent is one quarter.", "A quarter of 240 is 240 / 4 = 60.", "Take it off: 240 - 60 = 180."], "AED 180", "ساعة سعرها 240 درهمًا عليها خصم 25 بالمئة. كم سعر البيع؟", ["25 بالمئة هي الربع.", "ربع 240 هو 240 ÷ 4 = 60.", "نطرحه: 240 - 60 = 180."], "180 درهمًا"),
+    sheet: { title: T("Fractions, percentages, ratio and integers", "الكسور والنسب المئوية والنسبة والأعداد الصحيحة"), instructions: T("Show your working. Check each answer is sensible.", "اكتب خطوات الحل. وتأكد أن كل جواب منطقي."), items: [
+      it("What is 20 percent of 150?", "30", "ما قيمة 20 بالمئة من 150؟", "30"),
+      it("Write 3/8 as a decimal.", "0.375", "اكتب 3/8 على شكل عدد عشري.", "0.375"),
+      it("A shirt costs AED 80 and is reduced by 15 percent. What is the new price?", "AED 68", "قميص سعره 80 درهمًا وخُفّض 15 بالمئة. كم سعره الجديد؟", "68 درهمًا"),
+      it("Simplify the ratio 18 : 24.", "3 : 4", "بسّط النسبة 18 : 24.", "3 : 4"),
+      it("Paint is mixed 2 parts blue to 3 parts white. How much white is needed for 10 litres of blue?", "15 litres", "يُخلط الطلاء بنسبة جزأين أزرق إلى 3 أجزاء أبيض. كم لترًا أبيض يلزم لـ 10 لترات أزرق؟", "15 لترًا"),
+      it("Work out: -4 + 9", "5", "احسب: -4 + 9", "5"),
+      it("The temperature falls from 6 degrees to -3 degrees. By how many degrees did it fall?", "9 degrees", "انخفضت الحرارة من 6 درجات إلى -3 درجات. بكم درجة انخفضت؟", "9 درجات")
+    ] }
+  },
+
+  "ma.68.alg": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Equation detective", "Write a balance puzzle such as 3x + 5 = 29. Ask your child to say what two steps undo the equation: take away 5 from both sides, then divide both sides by 3. Check the answer by putting it back in. Make them write each step on a new line, always doing the same to both sides.", "محقق المعادلات", "اكتب لغز ميزان مثل 3x + 5 = 29. اطلب من طفلك أن يقول الخطوتين اللتين تفكّان المعادلة: نطرح 5 من الجانبين ثم نقسم الجانبين على 3. ثم يتحقق من الجواب بتعويضه. واطلب منه كتابة كل خطوة في سطر جديد مع فعل الشيء نفسه بالجانبين."),
+      act("The taxi fare", "A taxi charges AED 12 to start plus AED 2 for each kilometre. Make a table for 1, 2, 5 and 10 km, find the rule in words, and then write it as an expression: 12 + 2k. Ask how far you can go for AED 40. This shows how a rule can be written with letters.", "أجرة التاكسي", "يتقاضى تاكسي 12 درهمًا عند البدء و2 درهم لكل كيلومتر. اصنعا جدولًا لـ 1 و2 و5 و10 كم، وجدا القاعدة بالكلمات ثم اكتباها على شكل تعبير: 12 + 2k. واسأل: كم كيلومترًا نقطع بـ 40 درهمًا؟ فهذا يبيّن كيف تُكتب القاعدة بالحروف."),
+      act("Substitute and see", "Choose an expression such as 4n - 3. Ask your child to find its value for n = 1, 2, 5 and 10, then to find which n gives 37. Next, give a number machine and ask them to write the expression for it. Moving between tables, words and letters is the heart of algebra.", "نعوّض ونرى", "اختر تعبيرًا مثل 4n - 3. اطلب من طفلك إيجاد قيمته عندما n = 1 و2 و5 و10 ثم إيجاد قيمة n التي تعطي 37. ثم أعطه آلة أعداد واطلب كتابة التعبير لها. فالانتقال بين الجداول والكلمات والحروف هو جوهر الجبر.")
+    ],
+    example: ex("Solve 3x + 5 = 29.", ["Undo the + 5 by taking 5 from both sides: 3x = 24.", "Undo the times 3 by dividing both sides by 3: x = 8.", "Check: 3 x 8 + 5 = 29. Yes."], "x = 8", "حلّ المعادلة 3x + 5 = 29.", ["نفكّ + 5 بطرح 5 من الجانبين: 3x = 24.", "نفكّ الضرب في 3 بقسمة الجانبين على 3: x = 8.", "نتحقق: 3 × 8 + 5 = 29. صحيح."], "x = 8"),
+    sheet: { title: T("Expressions and equations", "التعابير والمعادلات"), instructions: T("Do the same to both sides. Check by substituting.", "افعل الشيء نفسه بالجانبين. وتحقق بالتعويض."), items: [
+      it("Solve: x + 14 = 31", "x = 17", "حلّ: x + 14 = 31", "x = 17"),
+      it("Solve: 5x = 45", "x = 9", "حلّ: 5x = 45", "x = 9"),
+      it("Solve: 2x - 7 = 15", "x = 11", "حلّ: 2x - 7 = 15", "x = 11"),
+      it("Find the value of 3n + 2 when n = 6.", "20", "أوجد قيمة 3n + 2 عندما n = 6.", "20"),
+      it("A taxi costs AED 12 plus AED 2 per km. Write the cost for k km.", "12 + 2k", "تتقاضى سيارة أجرة 12 درهمًا و2 درهم لكل كم. اكتب الكلفة لـ k كم.", "12 + 2k"),
+      it("How far can you go for AED 40 with that taxi?", "14 km (12 + 2k = 40, so k = 14)", "كم كيلومترًا تقطع بـ 40 درهمًا في تلك السيارة؟", "14 كم (12 + 2k = 40 إذن k = 14)"),
+      it("Simplify: 4a + 3a - 2a", "5a", "بسّط: 4a + 3a - 2a", "5a")
+    ] }
+  },
+
+  "ma.68.geo": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Area and perimeter at home", "Measure a room, a rug or a balcony. Work out the perimeter and the area, then a triangle-shaped corner by using half of base times height. Ask your child to draw the shape to scale on squared paper (1 cm for 1 m) and compare the plan with the real room. Talk about when you need area (floor tiles) and when you need perimeter (skirting board).", "المساحة والمحيط في البيت", "قيسا غرفة أو سجادة أو شرفة. احسبا المحيط والمساحة، ثم ركنًا مثلثيًا باستخدام نصف القاعدة في الارتفاع. اطلب من طفلك رسم الشكل بمقياس على ورق مربعات (1 سم لكل متر) ومقارنة المخطط بالغرفة الحقيقية. وتحدثا عن متى نحتاج المساحة (بلاط الأرضية) ومتى نحتاج المحيط (إفريز الجدار)."),
+      act("Circles around us", "Find circles: a plate, a coin, a round table, a clock. Measure the distance across (diameter) and round (circumference) with a string, and divide the second by the first. You will always get a number close to 3.14, which is pi. Then find the area of a circle with radius 7 cm by using pi times radius squared.", "الدوائر من حولنا", "ابحثا عن دوائر: طبق وعملة وطاولة مستديرة وساعة. قيسا المسافة عبرها (القطر) وحولها (المحيط) بخيط، وقسّما الثاني على الأول. ستحصلان دائمًا على عدد قريب من 3.14 وهو الثابت باي. ثم أوجدا مساحة دائرة نصف قطرها 7 سم بحساب باي × نصف القطر²."),
+      act("Pack the box", "Take a box and fill it with sugar cubes or small blocks to find its volume by counting: layers times rows times columns. Then use length times width times height. Ask which of two boxes holds more, and how you could tell without filling them.", "نملأ الصندوق", "خذ صندوقًا واملأه بمكعبات سكر أو قطع صغيرة لتجد حجمه بالعدّ: عدد الطبقات × الصفوف × الأعمدة. ثم استخدم الطول × العرض × الارتفاع. واسأل: أي الصندوقين يتسع لأكثر؟ وكيف نعرف دون ملئهما؟")
+    ],
+    example: ex("A triangle has a base of 10 m and a height of 6 m. What is its area? And what is the area of a circle with radius 7 cm (use 22/7 for pi)?", ["Triangle: half x base x height = 1/2 x 10 x 6 = 30 square metres.", "Circle: pi x r x r = 22/7 x 7 x 7.", "7 x 7 = 49, and 22/7 x 49 = 22 x 7 = 154."], "Triangle 30 square metres, circle 154 square cm", "مثلث قاعدته 10 م وارتفاعه 6 م. ما مساحته؟ وما مساحة دائرة نصف قطرها 7 سم (استخدم 22/7 لـ باي)؟", ["المثلث: نصف × القاعدة × الارتفاع = 1/2 × 10 × 6 = 30 مترًا مربعًا.", "الدائرة: باي × نق × نق = 22/7 × 7 × 7.", "7 × 7 = 49 و22/7 × 49 = 22 × 7 = 154."], "المثلث 30 مترًا مربعًا والدائرة 154 سنتيمترًا مربعًا"),
+    sheet: { title: T("Area, circles, volume and angles", "المساحة والدوائر والحجم والزوايا"), instructions: T("Write the formula, then the working, then the unit.", "اكتب القانون ثم الحل ثم الوحدة."), items: [
+      it("Find the area of a rectangle 14 m by 9 m.", "126 square metres", "أوجد مساحة مستطيل 14 م في 9 م.", "126 مترًا مربعًا"),
+      it("Find the area of a triangle with base 12 cm and height 5 cm.", "30 square cm", "أوجد مساحة مثلث قاعدته 12 سم وارتفاعه 5 سم.", "30 سنتيمترًا مربعًا"),
+      it("A circle has radius 10 cm. Find its circumference (use 3.14).", "62.8 cm (2 x 3.14 x 10)", "دائرة نصف قطرها 10 سم. أوجد محيطها (استخدم 3.14).", "62.8 سم (2 × 3.14 × 10)"),
+      it("Find the volume of a box 5 cm by 4 cm by 3 cm.", "60 cubic cm", "أوجد حجم صندوق 5 سم × 4 سم × 3 سم.", "60 سنتيمترًا مكعبًا"),
+      it("Two angles in a triangle are 50 and 60 degrees. What is the third?", "70 degrees", "زاويتان في مثلث 50 و60 درجة. ما الثالثة؟", "70 درجة"),
+      it("What is the sum of the angles on a straight line?", "180 degrees", "ما مجموع الزوايا على خط مستقيم؟", "180 درجة"),
+      it("A swimming pool is 25 m long, 10 m wide and 2 m deep. How much water does it hold when full?", "500 cubic metres", "مسبح طوله 25 م وعرضه 10 م وعمقه 2 م. كم يتسع من الماء عندما يمتلئ؟", "500 متر مكعب")
+    ] }
+  },
+
+  "ma.68.dat": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Collect your own data", "Choose a question you can measure, such as how long it takes to walk to the shop on five different days, or the number of steps in a day. Collect at least ten values in a table. Find the mean (add up, divide by how many), the median (the middle value when ordered), the mode (the most common) and the range (biggest minus smallest). Say what each one tells you.", "نجمع بياناتنا بأنفسنا", "اختر سؤالًا يمكن قياسه، مثل الزمن الذي يستغرقه المشي إلى المتجر في خمسة أيام مختلفة أو عدد الخطوات في اليوم. اجمع عشر قيم على الأقل في جدول. أوجد المتوسط (نجمع ونقسم على العدد) والوسيط (القيمة الوسطى بعد الترتيب) والمنوال (الأكثر تكرارًا) والمدى (الأكبر ناقص الأصغر). وقل ما يخبرك به كل منها."),
+      act("Draw it two ways", "Draw the same data as a bar chart and as a line graph. Ask which one is better for comparing groups and which one is better for showing a change over time, such as daily temperature through the week. Check both have a title, labelled axes and an even scale.", "نرسمها بطريقتين", "ارسم البيانات نفسها بمخطط أعمدة وبمخطط خطي. اسأل: أيهما أفضل لمقارنة المجموعات وأيهما أفضل لإظهار تغيّر مع الزمن، مثل درجة الحرارة اليومية خلال الأسبوع؟ وتأكدا أن لكل منهما عنوانًا ومحورين مسمّيين ومقياسًا منتظمًا."),
+      act("Is it fair? Chance experiments", "Use a spinner made from paper with a pencil and a paper clip, with four equal coloured sections. Spin 40 times and tally the results. Compare with what you expected (one in four each). Ask: why are the results close to, but not the same as, the expected ones? What would happen with 400 spins?", "هل هو عادل؟ تجارب الحظ", "استخدم دوّارة من الورق بقلم رصاص ومشبك ورق وفيها أربعة أقسام متساوية ملونة. أدرها 40 مرة وسجّل النتائج بالعدّ. قارنها بما توقعته (واحد من أربعة لكل لون). اسأل: لماذا النتائج قريبة من المتوقع لكنها ليست مطابقة له؟ وماذا يحدث بعد 400 دورة؟")
+    ],
+    example: ex("Walking times in minutes: 12, 15, 15, 18, 40. Find the mean and the median. Which is a better description of a typical time?", ["Mean: add them 12 + 15 + 15 + 18 + 40 = 100, then divide by 5 = 20.", "Median: the middle value in order is 15.", "The 40 is much bigger than the rest, so it pulls the mean up. The median 15 is a better picture of a typical time."], "Mean 20, median 15; the median is better here", "أزمنة المشي بالدقائق: 12، 15، 15، 18، 40. أوجد المتوسط والوسيط. أيهما أفضل لوصف الزمن المعتاد؟", ["المتوسط: نجمع 12 + 15 + 15 + 18 + 40 = 100 ثم نقسم على 5 = 20.", "الوسيط: القيمة الوسطى بعد الترتيب هي 15.", "العدد 40 أكبر بكثير من الباقي فيرفع المتوسط. والوسيط 15 أصدق في وصف الزمن المعتاد."], "المتوسط 20 والوسيط 15، والوسيط أفضل هنا"),
+    sheet: { title: T("Averages, graphs and chance", "المتوسطات والرسوم البيانية والاحتمالات"), instructions: T("Show your working. Say what the answer tells you.", "اكتب خطوات الحل. وقل ماذا يخبرك الجواب."), items: [
+      it("Find the mean of 4, 7, 9, 10, 15.", "9", "أوجد المتوسط للأعداد 4، 7، 9، 10، 15.", "9"),
+      it("Find the median of 3, 8, 5, 12, 9.", "8 (in order: 3, 5, 8, 9, 12)", "أوجد الوسيط للأعداد 3، 8، 5، 12، 9.", "8 (بعد الترتيب: 3، 5، 8، 9، 12)"),
+      it("Find the mode of 2, 5, 5, 6, 7, 5, 9.", "5", "أوجد المنوال للأعداد 2، 5، 5، 6، 7، 5، 9.", "5"),
+      it("Find the range of 14, 22, 9, 30, 18.", "21 (30 - 9)", "أوجد المدى للأعداد 14، 22، 9، 30، 18.", "21 (30 - 9)"),
+      it("A bag has 4 red and 6 blue counters. What is the chance of picking red? Give it as a fraction and a percentage.", "4/10 = 2/5 = 40 percent", "في كيس 4 قطع حمراء و6 زرقاء. ما احتمال سحب قطعة حمراء؟ اكتبه ككسر ونسبة مئوية.", "4/10 = 2/5 = 40 بالمئة"),
+      it("Which graph best shows how the temperature changes through a day: a bar chart or a line graph?", "A line graph", "أي مخطط أفضل لإظهار تغيّر الحرارة خلال اليوم: الأعمدة أم الخطي؟", "المخطط الخطي"),
+      it("The mean of five numbers is 12. Four of them are 10, 11, 13 and 14. What is the fifth?", "12 (60 - 48)", "متوسط خمسة أعداد 12. أربعة منها 10 و11 و13 و14. ما الخامس؟", "12 (60 - 48)")
+    ] }
+  },
+
+  "ma.68.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Estimate first", "Before using a calculator or paper, ask your child to estimate: about how much will the shopping cost, how long is the journey if we travel at this speed, how many tiles for the floor? Compare the estimate with the real answer and talk about how close it was. Good estimating protects against mistakes.", "نقدّر أولًا", "قبل استخدام الآلة الحاسبة أو الورق اطلب من طفلك أن يقدّر: كم تقريبًا ستكلف المشتريات؟ وكم تستغرق الرحلة بهذه السرعة؟ وكم بلاطة تلزم للأرضية؟ قارنا التقدير بالجواب الحقيقي وتحدثا عن مدى قربه. فالتقدير الجيد يحمي من الأخطاء."),
+      act("Maths in the news", "Find a number in a news story, such as the height of a tower, a percentage rise or a distance. Ask your child to say what the number means, to check if it is believable, and to make up a question from it. Maths in real contexts makes the ideas stick.", "رياضيات في الأخبار", "ابحثا عن رقم في خبر، مثل ارتفاع برج أو نسبة ارتفاع أو مسافة. اطلب من طفلك أن يقول ماذا يعني الرقم، وهل هو معقول، وأن يصوغ سؤالًا منه. فالرياضيات في سياقات حقيقية تجعل الأفكار راسخة."),
+      act("Teach me", "Ask your child to teach you one topic they have done in maths this week as if you were the student, using a drawing and an example. If they get stuck, that is where to practise. Teaching is the best test of understanding.", "علّمني", "اطلب من طفلك أن يعلّمك موضوعًا واحدًا درسه في الرياضيات هذا الأسبوع كأنك الطالب، بالرسم وبمثال. فإذا تعثّر فهنا موضع التدرب. والتعليم أفضل اختبار للفهم.")
+    ],
+    example: ex("A train covers 240 km in 3 hours. How far will it go in 5 hours at the same speed?", ["Find the speed: 240 / 3 = 80 km per hour.", "Multiply by 5 hours: 80 x 5 = 400.", "Check it is sensible: more time means more distance."], "400 km", "يقطع قطار 240 كم في 3 ساعات. كم يقطع في 5 ساعات بالسرعة نفسها؟", ["نجد السرعة: 240 ÷ 3 = 80 كم في الساعة.", "نضرب في 5 ساعات: 80 × 5 = 400.", "نتأكد أن الجواب منطقي: زمن أطول يعني مسافة أكبر."], "400 كم"),
+    sheet: { title: T("A little of every kind of maths", "قليل من كل أنواع الرياضيات"), instructions: T("Estimate first, then work it out.", "قدّر أولًا ثم احسب."), items: [
+      it("What is 35 percent of 80?", "28", "ما قيمة 35 بالمئة من 80؟", "28"),
+      it("Solve: 4x = 36", "x = 9", "حلّ: 4x = 36", "x = 9"),
+      it("Find the area of a rectangle 12 m by 7 m.", "84 square metres", "أوجد مساحة مستطيل 12 م في 7 م.", "84 مترًا مربعًا"),
+      it("Find the mean of 6, 8, 10, 12.", "9", "أوجد المتوسط للأعداد 6، 8، 10، 12.", "9"),
+      it("Simplify the ratio 20 : 35.", "4 : 7", "بسّط النسبة 20 : 35.", "4 : 7"),
+      it("What is -7 + 3?", "-4", "ما ناتج -7 + 3؟", "-4"),
+      it("A car travels at 90 km per hour for 2.5 hours. How far does it go?", "225 km", "تسير سيارة بسرعة 90 كم في الساعة مدة 2.5 ساعة. كم تقطع؟", "225 كم")
+    ] }
+  }
+,
+
+  "rd.68.voc": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Roots, prefixes and suffixes", "Choose a word part and hunt for it: un- (not), re- (again), -able (can be), bio- (life), graph (write). Write ten words that use it and guess the meaning of an unfamiliar one by breaking it up: unbreakable means not able to be broken. Keep a small word-part notebook, because one root can unlock dozens of words.", "الجذور والبادئات واللواحق", "اختر جزءًا من الكلمة وابحثا عنه: un- (ليس) وre- (مرة أخرى) و-able (يمكن) وbio- (حياة) وgraph (كتابة). اكتبا عشر كلمات تستخدمه وخمّنا معنى كلمة غير مألوفة بتفكيكها: unbreakable تعني لا يمكن كسره. واحتفظا بدفتر صغير لأجزاء الكلمات، فجذر واحد يفتح عشرات الكلمات."),
+      act("Context detective", "When your child meets a hard word in a book or article, ask them not to look it up at once. First, read the sentences before and after for clues, such as a definition, an example, an opposite or a description. Make a guess, then check it in a dictionary. Which clue helped most?", "محقق السياق", "عندما يصادف طفلك كلمة صعبة في كتاب أو مقال اطلب منه ألا يبحث عنها فورًا. أولًا يقرأ الجمل قبلها وبعدها بحثًا عن أدلة، مثل تعريف أو مثال أو ضد أو وصف. ثم يخمّن ويتحقق في المعجم. أي دليل ساعد أكثر؟"),
+      act("Shades of meaning", "Choose a plain word, such as walk, and list stronger words that are close in meaning: stroll, march, stride, trudge, wander. Discuss how each feels different. Ask which one you would use for a tired traveller, and which for a proud soldier. Word choice changes the picture the reader sees.", "درجات المعنى", "اختر كلمة بسيطة مثل walk وسجّل كلمات أقوى قريبة منها في المعنى: stroll وmarch وstride وtrudge وwander. وناقشا كيف يختلف إحساس كل منها. اسأل: أيها تستخدم لمسافر متعب؟ وأيها لجندي فخور؟ فاختيار الكلمة يغيّر الصورة التي يراها القارئ.")
+    ],
+    example: ex("Use the clues to find the meaning of reluctant: The reluctant camel stopped at the edge of the water and would not move, even though its rider pulled the rope.", ["The camel stopped and would not move.", "The rider pulled the rope, but it still would not go.", "So reluctant means unwilling or hesitant."], "Unwilling or hesitant", "Use the clues to find the meaning of reluctant: The reluctant camel stopped at the edge of the water and would not move, even though its rider pulled the rope.", ["الجمل توقف ولم يتحرك.", "الراكب شدّ الحبل ومع ذلك لم يمضِ.", "إذن reluctant تعني غير راغب أو متردد."], "Unwilling or hesitant (غير راغب أو متردد)"),
+    sheet: { englishOnly: true, title: T("Vocabulary in context", "المفردات في السياق"), instructions: T("Use the context to work out each answer. Write your reasoning in a few words.", "استعن بالسياق لتجد كل جواب. واكتب تفسيرك في كلمات قليلة."), items: [
+      en("The scientist gave a lucid explanation, so everyone understood at once. Lucid means: (a) confusing (b) clear (c) long", "(b) clear"),
+      en("Because the desert is so arid, almost nothing grows there. Arid means: (a) very dry (b) very cold (c) very large", "(a) very dry"),
+      en("Benevolent comes from bene (good) and vol (wish). A benevolent donor is: (a) greedy (b) kind and generous (c) tired", "(b)"),
+      en("Which prefix means not? (a) re- (b) un- (c) pre-", "(b) un-"),
+      en("Choose the stronger word: The cheetah ____ across the plain. (a) went (b) sprinted (c) moved", "(b) sprinted"),
+      en("The word mediocre means just ordinary, neither very good nor very bad. Which word means almost the same? (a) outstanding (b) average (c) terrible", "(b) average"),
+      en("Write a sentence using the word persistent in a way that shows its meaning.", "Any sentence where the word clearly means keeps trying, for example: The persistent student practised until the speech was perfect.")
+    ] }
+  },
+
+  "rd.68.inf": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Central idea and evidence", "Read an article together, such as a science news piece or a report about a UAE project. Ask your child to write the central idea in one sentence, then to find two pieces of evidence (facts, numbers, quotations) that the writer uses to support it. If evidence does not match the idea, the idea needs changing.", "الفكرة المحورية والدليل", "اقرآ معًا مقالًا، مثل خبر علمي أو تقرير عن مشروع في الإمارات. اطلب من طفلك كتابة الفكرة المحورية في جملة ثم إيجاد دليلين (حقائق أو أرقام أو اقتباسات) استخدمهما الكاتب لدعمها. فإذا لم يطابق الدليلُ الفكرةَ وجب تغيير الفكرة."),
+      act("Why did the writer write this?", "For three short texts (a news item, an advert and a recipe), ask: what is the writer's purpose: to inform, persuade or instruct? How can you tell? Look at the words chosen, the headline and the pictures. Ask who would gain if you believed it.", "لماذا كتب الكاتب هذا؟", "لثلاثة نصوص قصيرة (خبر وإعلان ووصفة) اسأل: ما هدف الكاتب: الإعلام أم الإقناع أم التوجيه؟ وكيف عرفت؟ انظر إلى الكلمات المختارة والعنوان والصور. واسأل: من يستفيد إن صدّقت ذلك؟"),
+      act("Fact, opinion and strong words", "Highlight facts in one colour and opinions in another in a short article. Then circle strong or loaded words, such as shocking, amazing or disaster, and ask what feeling they aim to create. Rewrite one sentence in a neutral way. Spotting these helps with careful reading of any news.", "حقيقة ورأي وكلمات قوية", "ظلّل الحقائق بلون والآراء بلون آخر في مقال قصير. ثم ضع دائرة حول الكلمات القوية أو المشحونة، مثل صادم ومذهل وكارثة، واسأل: أي شعور تريد خلقه؟ ثم أعد كتابة جملة بأسلوب محايد. فرصد ذلك يعين على القراءة الحذرة لأي خبر.")
+    ],
+    example: ex("A text says: Solar parks in the desert give clean electricity during the day. They are the best idea for any country. Which sentence is a fact and which is an opinion?", ["A fact can be checked: Solar parks give clean electricity during the day.", "An opinion is a judgement: the best idea for any country.", "The words best and any show an opinion."], "The first is a fact and the second is an opinion", "A text says: Solar parks in the desert give clean electricity during the day. They are the best idea for any country. Which sentence is a fact and which is an opinion?", ["الحقيقة يمكن التحقق منها: محطات الطاقة الشمسية توفر كهرباء نظيفة نهارًا.", "الرأي حكم شخصي: أفضل فكرة لأي بلد.", "كلمتا best وany تدلان على رأي."], "The first is a fact and the second is an opinion (الأولى حقيقة والثانية رأي)"),
+    sheet: { englishOnly: true, title: T("Reading nonfiction: turning seawater into drinking water", "قراءة المعلومات: تحويل ماء البحر إلى ماء للشرب"), instructions: T("Read the text twice. Underline the central idea. Then answer, using evidence from the text.", "اقرأ النص مرتين. ضع خطًا تحت الفكرة المحورية. ثم أجب مستعينًا بدليل من النص."), items: [
+      en("TEXT. In a country with little rain and no large rivers, finding fresh water is a challenge. Many coastal cities solve it by desalination: removing salt from seawater. In one common method, called reverse osmosis, seawater is pushed under high pressure through a very fine filter that lets water through but holds the salt back. The method uses a lot of energy, so engineers are working to make plants more efficient, and some now use solar power. The fresh water is then stored and carried to homes, farms and schools. Desalination is therefore not a perfect solution, but it is an essential one for dry places.", "(Read the text. Questions follow.)"),
+      en("1. What is the central idea of the text? (a) Seawater is dangerous (b) Desalination gives dry places the fresh water they need, though it has costs (c) Reverse osmosis uses no energy", "(b)"),
+      en("2. What does reverse osmosis do? Use evidence from the text.", "It pushes seawater under high pressure through a fine filter that lets water through but holds the salt back."),
+      en("3. What is one problem with desalination?", "It uses a lot of energy."),
+      en("4. What is being done about that problem?", "Engineers are making plants more efficient and some now use solar power."),
+      en("5. The word essential means: (a) very important (b) expensive (c) new", "(a)"),
+      en("6. What is the writer's purpose: to inform, to persuade or to instruct? Explain.", "To inform. The text explains how desalination works and gives balanced facts, including a drawback.")
+    ] }
+  },
+
+  "rd.68.lit": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Theme and evidence", "After a story, a film or a chapter, ask your child to state the theme in a full sentence, such as courage grows when we face what we fear. A theme is a message about life, not just a topic like courage. Then ask for two moments in the story that prove it. If there is no evidence, the theme needs to change.", "الفكرة والدليل", "بعد قصة أو فيلم أو فصل اطلب من طفلك أن يذكر الفكرة (العبرة) في جملة كاملة، مثل: الشجاعة تنمو حين نواجه ما نخاف. فالعبرة رسالة عن الحياة وليست مجرد موضوع كالشجاعة. ثم اطلب لحظتين في القصة تثبتانها. فإن لم يوجد دليل وجب تغيير العبرة."),
+      act("How a character changes", "Pick one main character and draw a two-column chart: at the beginning and at the end. Fill in what they thought, felt and did. Then find the event that changed them, and the sentence where you could see it. Characters who change are the heart of most stories.", "كيف تتغير الشخصية", "اختر شخصية رئيسة وارسم جدولًا من عمودين: في البداية وفي النهاية. املأ ما فكرت فيه وشعرت به وفعلته. ثم جد الحدث الذي غيّرها والجملة التي ظهر فيها ذلك. فالشخصيات المتغيرة قلب أغلب القصص."),
+      act("Whose eyes?", "Retell a short scene from two different characters' points of view, such as the owner of a lost kite and the child who found it. How do the descriptions change? Then ask whether the narrator is inside the story (I) or outside it (he, she). The point of view decides what we know and what we are hidden from.", "بعيني من؟", "أعيدا رواية مشهد قصير من وجهتي نظر شخصيتين مختلفتين، مثل صاحب طائرة ورقية ضائعة والطفل الذي وجدها. كيف تتغير الأوصاف؟ ثم اسأل: هل الراوي داخل القصة (أنا) أم خارجها (هو، هي)؟ فوجهة النظر تحدد ما نعرفه وما يُخفى عنا.")
+    ],
+    example: ex("Hamdan was afraid to speak in class. After his teacher asked him gently, he stood and read his poem, though his voice shook. His classmates clapped. What is a possible theme?", ["Look at what changes: he starts afraid and ends by reading aloud.", "His voice shook, but he did it anyway.", "A theme: courage means acting even when you are afraid."], "Courage means acting even when you are afraid", "Hamdan was afraid to speak in class. After his teacher asked him gently, he stood and read his poem, though his voice shook. His classmates clapped. What is a possible theme?", ["انظر إلى ما تغيّر: يبدأ خائفًا وينتهي بقراءة بصوت عالٍ.", "ارتجف صوته لكنه فعل ذلك رغم الخوف.", "العبرة: الشجاعة أن تتصرف حتى وأنت خائف."], "Courage means acting even when you are afraid (الشجاعة أن تتصرف رغم الخوف)"),
+    sheet: { englishOnly: true, title: T("Reading a story: The pearl and the sea", "قراءة قصة: اللؤلؤة والبحر"), instructions: T("Read the story slowly. Use quotations from it when you answer.", "اقرأ القصة ببطء. واستعن بعبارات منها عند الإجابة."), items: [
+      en("STORY. Khalid had heard his grandfather's stories about the days when men dived for pearls, holding their breath, with only a stone and a rope. He had always thought it sounded like an adventure. Then, one afternoon, his grandfather took him to a museum on the Creek. In a glass case lay a tiny, scratched stone and a coil of worn rope. Khalid read the words beside them: Each dive lasted about a minute. A season could last for months. He stood quiet for a long time. When he looked up, his grandfather was smiling, but his eyes were wet. They were not stories, Khalid whispered. They were lives. The old man nodded. Now you know why I tell them.", "(Read the story. Questions follow.)"),
+      en("1. How did Khalid feel about the stories at the start? Use a quotation.", "He thought they were an adventure: it sounded like an adventure."),
+      en("2. What changed his view?", "Seeing the stone and rope in the museum and reading how hard the dives were."),
+      en("3. What does the sentence He stood quiet for a long time show?", "That he was thinking deeply and was moved."),
+      en("4. Why were the grandfather's eyes wet although he was smiling?", "He felt proud and sad together: Khalid finally understood what the past was like."),
+      en("5. State the theme of the story in one sentence.", "Something like: Understanding the past helps us respect the people who lived it."),
+      en("6. From whose point of view is the story told, and how do you know?", "From outside the characters, mostly through Khalid. It uses he and his, not I.")
+    ] }
+  },
+
+  "rd.68.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Read for fifteen minutes", "Make fifteen minutes of reading a daily habit, with books your child has chosen: stories, biographies, science magazines. Ask one question each day that begins with why or how. Notice and praise the variety of reading, because strong readers read all kinds of texts.", "نقرأ خمس عشرة دقيقة", "اجعلا خمس عشرة دقيقة من القراءة عادة يومية، بكتب اختارها طفلك: قصص وسير ومجلات علمية. واسأل كل يوم سؤالًا واحدًا يبدأ بـ لماذا أو كيف. ولاحظ تنوع قراءته وامدحه، فالقارئون الأقوياء يقرؤون كل أنواع النصوص."),
+      act("Annotate as you read", "Give your child a pencil to underline the main idea, circle new words and write a question in the margin of an article or a photocopied page. Active readers talk back to the text. Look at their notes together after reading.", "نعلّق ونحن نقرأ", "أعطِ طفلك قلم رصاص ليضع خطًا تحت الفكرة الرئيسة ودائرة حول الكلمات الجديدة ويكتب سؤالًا في هامش مقال أو صفحة مصورة. فالقارئ النشط يحاور النص. وانظرا معًا في ملاحظاته بعد القراءة."),
+      act("Two minutes to summarise", "After reading anything, ask your child to summarise it in two minutes, or in three sentences: what it was about, the key points and what they thought. A good summary leaves out the small details and keeps the heart of the text.", "دقيقتان للتلخيص", "بعد قراءة أي شيء اطلب من طفلك أن يلخّصه في دقيقتين أو في ثلاث جمل: عمّ كان، وأهم النقاط، وما رأيه. والتلخيص الجيد يحذف التفاصيل الصغيرة ويُبقي جوهر النص.")
+    ],
+    example: ex("Summarise: The Arabian oryx nearly disappeared from the wild because of hunting. Breeding programmes and protected reserves helped it recover. Today it is once more seen in the wild.", ["Find the key points: nearly disappeared, programmes and reserves helped, now recovering.", "Leave out small details.", "Write one sentence joining them."], "The Arabian oryx nearly disappeared but breeding programmes and reserves have helped it return to the wild", "Summarise: The Arabian oryx nearly disappeared from the wild because of hunting. Breeding programmes and protected reserves helped it recover. Today it is once more seen in the wild.", ["ابحث عن النقاط الأساسية: كاد يختفي، البرامج والمحميات ساعدت، يتعافى الآن.", "اترك التفاصيل الصغيرة.", "اكتب جملة واحدة تجمعها."], "The Arabian oryx nearly disappeared but breeding programmes and reserves have helped it return to the wild"),
+    sheet: { englishOnly: true, title: T("A little of every kind of reading", "قليل من كل أنواع القراءة"), instructions: T("Read, then answer. Back each answer with the text.", "اقرأ ثم أجب. وادعم كل جواب بالنص."), items: [
+      en("TEXT. When Mariam first used a metro card, she tapped it on the gate and nothing happened. She tried again and again. The man waiting in the line sighed. Then she noticed the card was upside down. She turned it over, the gate opened, and she laughed at herself as she stepped through.", "(Read the text. Questions follow.)"),
+      en("1. What is the main idea? (a) Mariam is clumsy (b) Mariam solves a small problem and stays good-humoured (c) The metro is broken", "(b)"),
+      en("2. What caused the gate not to open?", "The card was upside down."),
+      en("3. What does she laughed at herself show about Mariam?", "She does not take herself too seriously."),
+      en("4. What does sighed suggest about the man in the line?", "He was impatient."),
+      en("5. Write a one-sentence summary.", "Mariam struggled to open the gate, then found her card was upside down and laughed at her mistake.")
+    ] }
+  }
+,
+
+  "lu.68.cps": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Comma and semicolon workshop", "Write five short pairs of related sentences about a trip, such as We arrived early. The museum was still closed. Ask your child to join each pair three ways: with a comma and and or but, with a semicolon, and with a full stop. Talk about which feels best. Then add commas after introductory phrases: After lunch, we went to the park.", "ورشة الفاصلة والفاصلة المنقوطة", "اكتب خمسة أزواج من الجمل القصيرة المترابطة عن رحلة، مثل We arrived early. The museum was still closed. اطلب من طفلك وصل كل زوج بثلاث طرق: بفاصلة مع and أو but، وبفاصلة منقوطة، وبنقطة. وتحدثا عن أيها أحسن وقعًا. ثم أضف فواصل بعد العبارات الافتتاحية: After lunch, we went to the park."),
+      act("Its and it's, your and you're", "Make a card for each confusing pair, such as its (belonging) and it's (it is), your and you're, their, there and they're. Write a sentence for each. Use the test: can I say it is? If yes, it is it's. Check a real text, such as a message or an advert, for any errors.", "its وit's، وyour وyou're", "اصنع بطاقة لكل زوج محيّر، مثل its (ملكية) وit's (it is) وyour وyou're وtheir وthere وthey're. واكتب جملة لكل واحدة. واستخدم الاختبار: هل أستطيع قول it is؟ فإن كان نعم فهي it's. وافحص نصًا حقيقيًا، كرسالة أو إعلان، بحثًا عن الأخطاء."),
+      act("Speech marks", "Read a short conversation from a story aloud and ask your child to write it with speech marks, a new line for each speaker and the right punctuation: Where are you going? asked Layla. Then they write their own short conversation between two people at a souq.", "علامات الاقتباس", "اقرأ حوارًا قصيرًا من قصة بصوت عالٍ واطلب من طفلك كتابته بعلامات الاقتباس وسطر جديد لكل متحدث وبالترقيم الصحيح: Where are you going? asked Layla. ثم يكتب حوارًا قصيرًا من تأليفه بين شخصين في السوق.")
+    ],
+    example: ex("Fix: its a lovely day lets go to the park after lunch we can have a picnic", ["Its a lovely day should be It's (it is) a lovely day.", "Lets should be Let's (let us).", "Add a full stop and a capital letter before After.", "Put a comma after the introductory phrase After lunch."], "It's a lovely day. Let's go to the park. After lunch, we can have a picnic.", "Fix: its a lovely day lets go to the park after lunch we can have a picnic", ["Its a lovely day تصبح It's (it is) a lovely day.", "Lets تصبح Let's (let us).", "نضيف نقطة وحرفًا كبيرًا قبل After.", "نضع فاصلة بعد العبارة الافتتاحية After lunch."], "It's a lovely day. Let's go to the park. After lunch, we can have a picnic."),
+    sheet: { englishOnly: true, title: T("Punctuation, capital letters and spelling", "الترقيم والأحرف الكبيرة والإملاء"), instructions: T("Rewrite each sentence correctly.", "أعد كتابة كل جملة بشكل صحيح."), items: [
+      en("Add commas: Before the match the players stretched their arms legs and backs.", "Before the match, the players stretched their arms, legs and backs."),
+      en("Choose: (Its / It's) a hot day, and the camel is resting in (its / it's) shade.", "It's ... its"),
+      en("Join with a semicolon: The tower is very tall. It can be seen from far away.", "The tower is very tall; it can be seen from far away."),
+      en("Add speech marks: Where is the station asked Noura.", "\"Where is the station?\" asked Noura."),
+      en("Add apostrophes: The childrens books are on the teachers desk.", "The children's books are on the teacher's desk."),
+      en("Which is spelled correctly? (a) definately (b) definitely", "(b) definitely"),
+      en("Fix: we visited abu dhabi dubai and sharjah in december", "We visited Abu Dhabi, Dubai and Sharjah in December.")
+    ] }
+  },
+
+  "lu.68.gru": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Build longer sentences", "Start with a short sentence, such as The falcon flew. Ask your child to expand it one step at a time: when, where, how, why, and with a describing clause. The majestic falcon, which had been resting all morning, flew swiftly over the dunes because it spotted its trainer. Read each version aloud and decide which is clearest.", "نبني جملًا أطول", "ابدأ بجملة قصيرة مثل The falcon flew. واطلب من طفلك توسيعها خطوة خطوة: متى وأين وكيف ولماذا، وبجملة وصفية. The majestic falcon, which had been resting all morning, flew swiftly over the dunes because it spotted its trainer. اقرآ كل صيغة بصوت عالٍ وقرّرا أيها الأوضح."),
+      act("Active and passive", "Take a sentence like The chef cooked the dinner and turn it into the passive: The dinner was cooked by the chef. Ask when each is better: the active is direct, the passive is useful when the doer is unknown or unimportant, as in The bridge was built in 1998. Find examples in a newspaper.", "المبني للمعلوم والمبني للمجهول", "خذ جملة مثل The chef cooked the dinner وحوّلها إلى المبني للمجهول: The dinner was cooked by the chef. واسأل: متى يكون كل منهما أفضل؟ فالمبني للمعلوم مباشر، والمبني للمجهول مفيد حين يكون الفاعل مجهولًا أو غير مهم، كما في The bridge was built in 1998. وابحثا عن أمثلة في صحيفة."),
+      act("Who is it about?", "Check pronouns in a short paragraph: does each he, she, it or they clearly point to one person or thing? Rewrite any that are unclear. Then check verbs agree with their subjects, especially in long sentences: The group of students (was / were) late. Fix with the rule: the subject is the group, so was.", "عن من نتحدث؟", "افحصا الضمائر في فقرة قصيرة: هل يشير كل he أو she أو it أو they بوضوح إلى شخص أو شيء واحد؟ أعيدا كتابة ما كان غامضًا. ثم افحصا اتفاق الأفعال مع فاعلها، خاصة في الجمل الطويلة: The group of students (was / were) late. والقاعدة: الفاعل هو المجموعة فنقول was.")
+    ],
+    example: ex("Change to the passive: The students planted the trees. Then choose: The group of players (is / are) ready.", ["Passive: the object becomes the subject: The trees were planted by the students.", "The subject is the group, which is one thing, so we use is.", "The group of players is ready."], "The trees were planted by the students. The group of players is ready.", "Change to the passive: The students planted the trees. Then choose: The group of players (is / are) ready.", ["في المبني للمجهول يصبح المفعول فاعلًا: The trees were planted by the students.", "الفاعل هو المجموعة، وهي شيء واحد، فنستخدم is.", "The group of players is ready."], "The trees were planted by the students. The group of players is ready."),
+    sheet: { englishOnly: true, title: T("Grammar and usage", "القواعد والاستخدام"), instructions: T("Choose or write the best answer. Read the sentence aloud to check.", "اختر أو اكتب أفضل جواب. واقرأ الجملة بصوت عالٍ للتحقق."), items: [
+      en("Choose: Neither the teacher nor the students (was / were) ready.", "were"),
+      en("Change to the passive: The council built a new park.", "A new park was built by the council."),
+      en("Choose the right pronoun: The winners were Layla and (I / me).", "I"),
+      en("Underline the clause that cannot stand alone: Although it was raining, we played outside.", "Although it was raining"),
+      en("Fix the tense: Yesterday we go to the museum and see the old boats.", "Yesterday we went to the museum and saw the old boats."),
+      en("Choose: Each of the boys (has / have) a book.", "has"),
+      en("Which sentence is a complete sentence? (a) Because the road was closed. (b) The road was closed.", "(b)")
+    ] }
+  },
+
+  "lu.68.wri": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Claim, evidence, reason", "Ask your child a real question with two sides, such as should school start later in the morning? Have them write a claim (their position), two pieces of evidence (a fact, an example or an expert) and a reason that explains how the evidence supports the claim. Then ask them to argue the other side in one sentence to show they have considered it.", "الادعاء والدليل والتعليل", "اطرح على طفلك سؤالًا حقيقيًا له وجهان، مثل: هل ينبغي أن يبدأ اليوم الدراسي متأخرًا؟ واطلب منه كتابة ادعاء (موقفه) ودليلين (حقيقة أو مثال أو رأي خبير) وتعليل يشرح كيف يدعم الدليل الادعاء. ثم اطلب منه عرض الجانب الآخر في جملة ليُظهر أنه فكّر فيه."),
+      act("Show, don't tell", "Take a flat sentence such as She was nervous. Rewrite it so that actions and details show the feeling: Her hands trembled as she gripped the edge of the stage. Do this with three more feelings (excited, tired, proud). The best writing lets the reader work the feeling out.", "نُري ولا نخبر", "خذ جملة مسطحة مثل She was nervous. وأعد كتابتها بحيث تُظهر الأفعال والتفاصيل الشعور: Her hands trembled as she gripped the edge of the stage. افعل ذلك مع ثلاثة مشاعر أخرى (متحمس ومتعب وفخور). فأفضل الكتابة تدع القارئ يستنتج الشعور."),
+      act("Draft, leave, improve", "Write a paragraph, then leave it for a few hours or a day. Come back and read it aloud as if it were someone else's. Mark one sentence to cut, one to strengthen and one transition word to add (however, for example, as a result). Revising is where good writing is made.", "مسودة وانتظار وتحسين", "اكتب فقرة ثم دعها بضع ساعات أو يومًا. وعد فاقرأها بصوت عالٍ كأنها لشخص آخر. ضع علامة على جملة للحذف وجملة للتقوية وكلمة ربط للإضافة (however وfor example وas a result). فالتنقيح هو موضع صنع الكتابة الجيدة.")
+    ],
+    example: ex("Strengthen this: I think we should recycle more because it is good.", ["Make the claim precise: schools should recycle more paper.", "Add evidence: a school can use about 2,000 sheets of paper a week.", "Add a reason: recycling saves trees and reduces waste."], "Schools should recycle more paper. A school can use about 2,000 sheets a week, so recycling saves trees and reduces waste.", "Strengthen this: I think we should recycle more because it is good.", ["اجعل الادعاء دقيقًا: على المدارس إعادة تدوير مزيد من الورق.", "أضف دليلًا: قد تستهلك المدرسة نحو 2,000 ورقة أسبوعيًا.", "أضف تعليلًا: إعادة التدوير توفر الأشجار وتقلل النفايات."], "Schools should recycle more paper. A school can use about 2,000 sheets a week, so recycling saves trees and reduces waste."),
+    sheet: { englishOnly: true, title: T("Writing well", "الكتابة الجيدة"), instructions: T("Choose the best answer or write your own. Read your writing aloud before you finish.", "اختر أفضل جواب أو اكتب جوابك. واقرأ ما كتبت بصوت عالٍ قبل أن تنتهي."), items: [
+      en("Which is the strongest claim? (a) Homework is bad. (b) Homework should be limited to thirty minutes a night because rest improves learning. (c) I do not like homework.", "(b)"),
+      en("Add a transition word: Bicycles are cheap to run. ____, they are good for health.", "Also, Moreover, In addition, or similar."),
+      en("Rewrite to show, not tell: He was tired.", "Any vivid sentence, such as: His eyelids drooped and he leaned on the wall."),
+      en("Which sentence does not belong in a paragraph about the benefits of reading? Reading builds vocabulary. It helps us understand others. Football is a popular sport. It improves concentration.", "Football is a popular sport."),
+      en("Write a topic sentence for a paragraph about why people should visit the desert.", "Any clear topic sentence."),
+      en("Write a formal version of: Hey, can you send me the stuff tomorrow?", "Good afternoon. Could you please send me the documents tomorrow?"),
+      en("Write a concluding sentence for a paragraph about the importance of sleep.", "Any sentence that sums up the point.")
+    ] }
+  },
+
+  "lu.68.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Edit one page a week", "Choose one piece of your child's real writing each week, such as a class essay or a message. Ask them to mark and fix two things: one spelling or punctuation point, and one sentence to make clearer. Keep the corrected pages in a folder and look back over the term.", "نحرّر صفحة كل أسبوع", "اختر كل أسبوع قطعة من كتابة طفلك الحقيقية، كمقال دراسي أو رسالة. واطلب منه أن يحدد ويصحح أمرين: نقطة في الإملاء أو الترقيم، وجملة يجعلها أوضح. واحتفظا بالصفحات المصححة في مجلد وراجعاها في نهاية الفصل."),
+      act("Read it out loud", "Reading writing aloud reveals what the eye misses: missing words, long sentences, repeated words. Ask your child to read their work aloud slowly, pen in hand, and mark every place they stumble. Those are the places to fix.", "نقرأ بصوت عالٍ", "قراءة الكتابة بصوت عالٍ تكشف ما تغفله العين: كلمات ناقصة وجملًا طويلة وكلمات مكررة. اطلب من طفلك قراءة عمله ببطء وفي يده قلم، ووضع علامة عند كل موضع يتعثر فيه. تلك المواضع هي ما يحتاج إصلاحًا."),
+      act("Say it two ways", "Take a sentence and rewrite it two ways: in a formal style for a teacher and in a casual style for a friend. Talk about what changes: word choice, length, tone. Knowing your reader is the first rule of good writing.", "نقولها بطريقتين", "خذ جملة وأعد كتابتها بطريقتين: بأسلوب رسمي لمعلم وبأسلوب غير رسمي لصديق. وتحدثا عمّا يتغير: اختيار الكلمات والطول والنبرة. فمعرفة القارئ أول قاعدة في الكتابة الجيدة.")
+    ],
+    example: ex("Fix and improve: me and my freinds goes to the library its very quiet there", ["Subject form: My friends and I.", "Verb agreement: go.", "Spelling: friends.", "Punctuation: full stop, and It's (it is) for it is."], "My friends and I go to the library. It's very quiet there.", "Fix and improve: me and my freinds goes to the library its very quiet there", ["صيغة الفاعل: My friends and I.", "اتفاق الفعل: go.", "الإملاء: friends.", "الترقيم: نقطة، وIt's بمعنى it is."], "My friends and I go to the library. It's very quiet there."),
+    sheet: { englishOnly: true, title: T("A little of every kind of language", "قليل من كل أنواع اللغة"), instructions: T("Do each task, then read your answer aloud.", "أنجز كل مهمة ثم اقرأ إجابتك بصوت عالٍ."), items: [
+      en("Fix the punctuation: its important to drink water especially in summer", "It's important to drink water, especially in summer."),
+      en("Choose: The team (is / are) training hard.", "is"),
+      en("Rewrite in the active: The match was won by the home team.", "The home team won the match."),
+      en("Which is spelled correctly? (a) accomodate (b) accommodate", "(b)"),
+      en("Combine into one sentence with a comma and a joining word: The sea was calm. We went sailing.", "The sea was calm, so we went sailing."),
+      en("Write a topic sentence about why reading is a good habit.", "Any clear topic sentence.")
+    ] }
+  }
+,
+
+  "sc.68.bio": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Look at a leaf", "Look at a leaf, with a magnifying glass if you have one. Find the veins, which carry water and food. Ask your child to explain photosynthesis in their own words: leaves take in carbon dioxide from the air and water from the roots, and use light energy from the Sun to make glucose (food) and oxygen. Draw the process as a diagram with arrows and write what goes in and what comes out.", "ننظر في ورقة شجر", "انظرا إلى ورقة شجر، بعدسة مكبّرة إن وجدت. اعثرا على العروق التي تنقل الماء والغذاء. اطلب من طفلك أن يشرح البناء الضوئي بكلماته: تأخذ الأوراق ثاني أكسيد الكربون من الهواء والماء من الجذور وتستخدم طاقة الضوء من الشمس لصنع الغلوكوز (الغذاء) والأكسجين. ارسما العملية في مخطط بالأسهم واكتبا ما يدخل وما يخرج."),
+      act("Mangroves and salt", "Mangrove trees grow in salty water along the creek, which would kill most plants. Find out how they cope: some have roots that filter out salt, and some leaves that push out extra salt, and stilt roots that hold the tree upright in soft mud. Ask your child to list three adaptations and how each helps the tree survive. Link adaptations to the habitat.", "القرم والملح", "تنمو أشجار القرم في الماء المالح على امتداد الخور، وهو ما يقتل أغلب النباتات. ابحثا كيف تتأقلم: بعضها له جذور ترشّح الملح، وبعضها أوراق تطرد الملح الزائد، وجذور داعمة تثبّت الشجرة في الطين الرخو. اطلب من طفلك ذكر ثلاثة تكيفات وكيف يفيد كل منها الشجرة. واربطا التكيفات بالموطن."),
+      act("A balanced ecosystem", "Choose an ecosystem, such as a date farm, the creek or the desert. Draw a food web with at least eight living things: producers, herbivores, carnivores and decomposers. Ask: what would happen if one animal disappeared? How would the others change? Use the idea that everything is connected.", "نظام بيئي متوازن", "اختر نظامًا بيئيًا، كمزرعة نخيل أو الخور أو الصحراء. ارسم شبكة غذائية فيها ثمانية كائنات حية على الأقل: منتجات وآكلات أعشاب وآكلات لحوم ومحلِّلات. اسأل: ماذا يحدث لو اختفى حيوان واحد؟ وكيف تتغير الكائنات الأخرى؟ واستخدم فكرة أن كل شيء مترابط.")
+    ],
+    example: ex("Write the word equation for photosynthesis, and say where it happens in the plant.", ["Reactants: carbon dioxide and water.", "Energy from sunlight is needed.", "Products: glucose and oxygen.", "It happens in the leaves, in the chloroplasts that contain chlorophyll."], "Carbon dioxide + water (with light) gives glucose + oxygen, in the chloroplasts of leaves", "اكتب معادلة البناء الضوئي بالكلمات وقل أين يحدث في النبات.", ["المتفاعلات: ثاني أكسيد الكربون والماء.", "تلزم طاقة ضوء الشمس.", "النواتج: الغلوكوز والأكسجين.", "يحدث في الأوراق، في البلاستيدات الخضراء التي تحتوي على الكلوروفيل."], "ثاني أكسيد الكربون + الماء (مع الضوء) ينتج غلوكوز + أكسجين، في البلاستيدات الخضراء في الأوراق"),
+    sheet: { title: T("Living things and their environment", "الكائنات الحية وبيئتها"), instructions: T("Use scientific words and give a reason with each answer.", "استخدم مصطلحات علمية واذكر سببًا مع كل جواب."), items: [
+      it("What is the job of chlorophyll?", "It absorbs light energy for photosynthesis.", "ما وظيفة الكلوروفيل؟", "يمتص طاقة الضوء للبناء الضوئي."),
+      it("Name the two things plants take in for photosynthesis.", "Carbon dioxide and water", "اذكر الشيئين اللذين تأخذهما النباتات للبناء الضوئي.", "ثاني أكسيد الكربون والماء"),
+      it("What is a producer in a food chain? Give an example.", "A living thing that makes its own food, such as a mangrove or a date palm.", "ما المنتِج في السلسلة الغذائية؟ أعطِ مثالًا.", "كائن حي يصنع غذاءه بنفسه، مثل القرم أو نخلة التمر."),
+      it("What does a decomposer do?", "It breaks down dead plants and animals and returns nutrients to the soil.", "ماذا تفعل المحلِّلات؟", "تفكك النباتات والحيوانات الميتة وتعيد العناصر الغذائية إلى التربة."),
+      it("How do mangrove roots help the tree live in salty mud?", "They filter out salt and hold the tree upright in soft mud.", "كيف تساعد جذور القرم الشجرة على العيش في الطين المالح؟", "ترشّح الملح وتثبّت الشجرة منتصبة في الطين الرخو."),
+      it("A camel stores fat in its hump. How does this help it survive in the desert?", "It is a store of energy for when food is hard to find.", "يخزّن الجمل الدهن في سنامه. كيف يساعده ذلك على البقاء في الصحراء؟", "هو مخزون للطاقة حين يصعب إيجاد الطعام."),
+      it("What is the smallest unit of life called?", "The cell", "ما اسم أصغر وحدة بنائية للحياة؟", "الخلية")
+    ] }
+  },
+
+  "sc.68.ear": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("The Hajar mountains and rocks", "Look at rocks from the garden, a mountain trip or the sea shore. Sort them by colour, hardness, grains and layers. Learn the three kinds: igneous (cooled from molten rock), sedimentary (made of layers of settled pieces), and metamorphic (changed by heat and pressure). Ask your child how a rock made in the sea could end up on a mountain top: the Earth's moving plates push the land up over millions of years.", "جبال الحجر والصخور", "افحصا صخورًا من الحديقة أو رحلة جبلية أو شاطئ البحر. صنّفاها بحسب اللون والصلابة والحبيبات والطبقات. وتعلّما الأنواع الثلاثة: نارية (تبرّدت من صخر منصهر) ورسوبية (من طبقات قطع مترسبة) ومتحولة (تغيّرت بالحرارة والضغط). واسأل طفلك: كيف يمكن لصخر تكوّن في البحر أن يصير على قمة جبل؟ ألواح الأرض المتحركة ترفع اليابسة على مدى ملايين السنين."),
+      act("Weather and climate", "Keep a weather log for two weeks with temperature, wind and cloud. Then compare it with the climate, which is the average weather over many years. Ask why the UAE has hot dry summers and little rain, and what causes rare heavy rain and fog. Explain the difference between weather (today) and climate (the long pattern).", "الطقس والمناخ", "سجّلا يوميات الطقس لأسبوعين: الحرارة والرياح والغيوم. ثم قارناها بالمناخ، وهو معدل الطقس على مدى سنوات كثيرة. اسأل: لماذا صيف الإمارات حار وجاف وقليل المطر؟ وما سبب المطر الغزير النادر والضباب؟ واشرحا الفرق بين الطقس (اليوم) والمناخ (النمط الطويل)."),
+      act("Our place in space", "Using a torch and a ball, show why we have day and night and the seasons: the Earth spins on a tilted axis while it travels around the Sun. Then talk about the planets: the UAE's Hope Probe studies the atmosphere of Mars. Make a scale model of the distances in a corridor or garden, with the Sun at one end.", "مكاننا في الفضاء", "باستخدام مصباح وكرة وضّحا سبب تعاقب الليل والنهار والفصول: تدور الأرض حول محور مائل بينما تسير حول الشمس. ثم تحدثا عن الكواكب: يدرس مسبار الأمل الإماراتي غلاف المريخ الجوي. واصنعا نموذجًا مصغرًا للمسافات في ممر أو حديقة، والشمس عند أحد الطرفين.")
+    ],
+    example: ex("Why does the UAE have warm weather all year, with the hottest weather in the middle of the year?", ["The UAE lies near the Tropic of Cancer, so the Sun is high in the sky for most of the year.", "The Earth's tilt means the northern half leans toward the Sun in June to August.", "So summer, when the Sun is highest and days are longest, is the hottest time."], "The Sun is high in the sky, and in summer the northern half is tilted toward it", "لماذا يكون طقس الإمارات دافئًا طوال العام وأشد حرارة في منتصفه؟", ["تقع الإمارات قرب مدار السرطان، فالشمس مرتفعة في السماء معظم العام.", "ميل الأرض يجعل نصفها الشمالي يميل نحو الشمس من يونيو إلى أغسطس.", "لذا يكون الصيف، حين تكون الشمس في أعلى ارتفاع وأيامها أطول، أحرّ وقت."], "الشمس مرتفعة في السماء، وفي الصيف يميل النصف الشمالي نحوها"),
+    sheet: { title: T("Earth, weather and space", "الأرض والطقس والفضاء"), instructions: T("Explain each answer in a sentence. Use scientific words.", "اشرح كل جواب في جملة. واستخدم المصطلحات العلمية."), items: [
+      it("Name the three types of rock.", "Igneous, sedimentary and metamorphic", "اذكر أنواع الصخور الثلاثة.", "نارية ورسوبية ومتحولة"),
+      it("What type of rock is made of layers of settled sand and shells?", "Sedimentary rock", "ما نوع الصخر المتكوّن من طبقات رمل وأصداف مترسبة؟", "صخر رسوبي"),
+      it("What is the difference between weather and climate?", "Weather is what it is like today. Climate is the average pattern over many years.", "ما الفرق بين الطقس والمناخ؟", "الطقس هو حالة الجو اليوم، والمناخ هو النمط المعتاد على مدى سنوات."),
+      it("What causes the seasons on Earth?", "The tilt of the Earth's axis as it travels around the Sun", "ما سبب الفصول على الأرض؟", "ميل محور الأرض أثناء دورانها حول الشمس"),
+      it("Name one way wind changes the land.", "It moves sand and forms dunes, or wears down rock (erosion).", "اذكر طريقة تغيّر بها الرياح اليابسة.", "تنقل الرمل وتكوّن الكثبان، أو تفتّت الصخور (التعرية)."),
+      it("What is the Hope Probe studying?", "The atmosphere of Mars", "ماذا يدرس مسبار الأمل؟", "الغلاف الجوي للمريخ"),
+      it("Why is it dark at night?", "Our side of the Earth faces away from the Sun as the Earth rotates.", "لماذا يكون الليل مظلمًا؟", "لأن جانبنا من الأرض يكون بعيدًا عن الشمس أثناء دوران الأرض.")
+    ] }
+  },
+
+  "sc.68.phy": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Speed, distance and time", "Time a family member walking a measured 20 metres, and then jogging it. Calculate speed as distance divided by time. Draw a distance-time graph for each: the steeper line is the faster one. Ask what a flat line on such a graph means (stopped). Repeat on a bicycle if you can.", "السرعة والمسافة والزمن", "قِس بالمؤقت زمن مشي أحد أفراد الأسرة مسافة 20 مترًا مقيسة، ثم هرولته للمسافة نفسها. احسب السرعة = المسافة ÷ الزمن. وارسم مخطط مسافة وزمن لكل منهما: الخط الأشدّ انحدارًا هو الأسرع. واسأل: ماذا يعني الخط الأفقي في هذا المخطط؟ (التوقف). وكرّر الأمر على دراجة إن أمكن."),
+      act("Sink or float", "Collect small objects and a bowl of water. Predict whether each will sink or float and why. Then relate it to density, which is how much mass is packed into a given volume. Ask why a huge steel ship floats but a steel nail sinks, and why it is easier to float in very salty water.", "يغرق أم يطفو؟", "اجمع أشياء صغيرة ووعاء ماء. توقع هل يغرق كل منها أم يطفو ولماذا. ثم اربط ذلك بالكثافة، أي مقدار الكتلة المضغوطة في حجم معين. اسأل: لماذا تطفو سفينة فولاذية ضخمة بينما يغرق مسمار فولاذي؟ ولماذا يسهل الطفو في الماء شديد الملوحة؟"),
+      act("Energy changes", "Follow the energy in a simple chain: sunlight shines on a solar panel, which gives electricity (electrical energy), which lights a bulb (light and heat). Draw an energy flow diagram for a solar car toy, a kettle or a fan. Ask where the energy goes, and why no machine is perfect: some energy always leaks out as heat.", "تحوّلات الطاقة", "تتبّع الطاقة في سلسلة بسيطة: ضوء الشمس يسطع على لوح شمسي فيعطي كهرباء (طاقة كهربائية) فتضيء مصباحًا (ضوء وحرارة). ارسم مخطط تدفق الطاقة لسيارة لعبة تعمل بالطاقة الشمسية أو غلاية أو مروحة. واسأل: أين تذهب الطاقة؟ ولماذا لا توجد آلة كاملة؟ فبعض الطاقة يتسرب دائمًا على شكل حرارة.")
+    ],
+    example: ex("A cyclist rides 30 km in 2 hours. What is the average speed? How far in 3 hours at that speed?", ["Speed = distance / time = 30 / 2 = 15 km per hour.", "In 3 hours: 15 x 3 = 45 km."], "15 km per hour, and 45 km", "يقطع راكب دراجة 30 كم في ساعتين. ما متوسط سرعته؟ وكم يقطع في 3 ساعات بالسرعة نفسها؟", ["السرعة = المسافة ÷ الزمن = 30 ÷ 2 = 15 كم في الساعة.", "في 3 ساعات: 15 × 3 = 45 كم."], "15 كم في الساعة، و45 كم"),
+    sheet: { title: T("Matter, forces and energy", "المادة والقوى والطاقة"), instructions: T("Write the formula, the working and the unit.", "اكتب القانون والحل والوحدة."), items: [
+      it("A car travels 120 km in 1.5 hours. What is its average speed?", "80 km per hour", "تقطع سيارة 120 كم في ساعة ونصف. ما متوسط سرعتها؟", "80 كم في الساعة"),
+      it("Which has a greater density: a block of iron or a block of wood of the same size?", "The iron", "أيهما أكبر كثافة: قطعة حديد أم قطعة خشب بالحجم نفسه؟", "الحديد"),
+      it("What energy change happens in a solar panel?", "Light energy changes into electrical energy.", "ما تحوّل الطاقة الذي يحدث في اللوح الشمسي؟", "تتحول طاقة الضوء إلى طاقة كهربائية."),
+      it("What happens to the particles of a solid when it is heated until it melts?", "They gain energy and move more, then break free of their fixed positions.", "ماذا يحدث لجسيمات مادة صلبة عندما تُسخَّن حتى تنصهر؟", "تكتسب طاقة وتتحرك أكثر ثم تتحرر من مواضعها الثابتة."),
+      it("Why does a ball rolling on grass stop sooner than on smooth tiles?", "There is more friction on the grass.", "لماذا تتوقف كرة تتدحرج على العشب أسرع منها على بلاط أملس؟", "لأن احتكاك العشب أكبر."),
+      it("What is the unit of force?", "The newton (N)", "ما وحدة القوة؟", "النيوتن (N)"),
+      it("Name a renewable energy source used in the UAE.", "Solar energy (the Sun)", "اذكر مصدر طاقة متجددة تستخدمه الإمارات.", "الطاقة الشمسية (الشمس)")
+    ] }
+  },
+
+  "sc.68.bal": {
+    reviewed: { en: false, ar: false },
+    activities: [
+      act("Design a fair test", "Pick a question you can test, such as does the temperature of water affect how fast sugar dissolves? Write the variable you change (temperature), the variable you measure (time to dissolve) and the variables you keep the same (amount of water, amount of sugar, stirring). Do the test, record results in a table and draw a graph. Say what you would improve next time.", "نصمم اختبارًا عادلًا", "اختر سؤالًا يمكن اختباره، مثل: هل تؤثر حرارة الماء في سرعة ذوبان السكر؟ اكتب المتغير الذي تغيّره (الحرارة) والمتغير الذي تقيسه (زمن الذوبان) والمتغيرات التي تُبقيها ثابتة (كمية الماء وكمية السكر والتحريك). نفّذ الاختبار وسجّل النتائج في جدول وارسم مخططًا. وقل ما الذي تحسّنه في المرة القادمة."),
+      act("Science in the news", "Find a news article about a science topic, such as a space mission, new energy or a medical advance. Ask your child to summarise it, to say what evidence is given, and to say what questions it leaves unanswered. Practise asking: how do they know?", "العلوم في الأخبار", "ابحثا عن خبر علمي، مثل مهمة فضائية أو طاقة جديدة أو تقدم طبي. اطلب من طفلك تلخيصه وذكر الأدلة المقدمة وما الأسئلة التي لم يجب عنها. وتدرّبا على سؤال: كيف يعرفون؟"),
+      act("Draw and label", "Draw a clear labelled diagram of something from this term: a plant cell, the water cycle or a circuit. Add a title, straight label lines and a short explanation. Drawing and explaining shows quickly what is and is not understood.", "نرسم ونسمّي", "ارسم مخططًا واضحًا مسمّى لشيء من هذا الفصل: خلية نباتية أو دورة الماء أو دارة كهربائية. أضف عنوانًا وخطوطًا مستقيمة للتسميات وشرحًا قصيرًا. فالرسم والشرح يكشفان بسرعة ما فُهم وما لم يُفهم.")
+    ],
+    example: ex("In an experiment on plant growth and light, three plants get 0, 4 and 8 hours of light a day. What should stay the same?", ["The independent variable is the hours of light, which we change.", "Keep the others fixed: type of plant, soil, amount of water, pot size, temperature.", "Then differences in growth can be put down to light."], "Plant type, soil, water, pot size and temperature", "في تجربة عن نمو النبات والضوء تتلقى ثلاث نباتات 0 و4 و8 ساعات ضوء يوميًا. ما الذي يجب أن يبقى ثابتًا؟", ["المتغير المستقل هو ساعات الضوء وهو ما نغيّره.", "نُبقي الباقي ثابتًا: نوع النبات والتربة وكمية الماء وحجم الوعاء والحرارة.", "عندئذٍ ننسب الفروق في النمو إلى الضوء."], "نوع النبات والتربة والماء وحجم الوعاء والحرارة"),
+    sheet: { title: T("A little of every kind of science", "قليل من كل أنواع العلوم"), instructions: T("Answer each question and explain how you know.", "أجب عن كل سؤال واشرح كيف عرفت."), items: [
+      it("What is a variable you keep the same in a fair test called?", "A control variable", "ما اسم المتغير الذي تُبقيه ثابتًا في الاختبار العادل؟", "متغير مضبوط"),
+      it("Name the gas plants release during photosynthesis.", "Oxygen", "اذكر الغاز الذي تطلقه النباتات أثناء البناء الضوئي.", "الأكسجين"),
+      it("Which type of rock forms from cooled lava?", "Igneous", "أي نوع من الصخور يتكوّن من اللابة المتبرّدة؟", "الصخر الناري"),
+      it("Work out the speed: 150 metres in 30 seconds.", "5 m/s", "احسب السرعة: 150 مترًا في 30 ثانية.", "5 م/ث"),
+      it("Which is a better conductor of electricity: copper or plastic?", "Copper", "أيهما موصل أفضل للكهرباء: النحاس أم البلاستيك؟", "النحاس"),
+      it("Why do scientists repeat experiments?", "To check the results are reliable and not just chance.", "لماذا يكرر العلماء التجارب؟", "ليتحققوا أن النتائج موثوقة وليست مصادفة."),
+      it("What does a food web show?", "How energy and food pass between living things in a habitat.", "ماذا تُظهر الشبكة الغذائية؟", "كيف تنتقل الطاقة والغذاء بين الكائنات الحية في الموطن.")
+    ] }
   }
 };
 
