@@ -296,10 +296,21 @@ section("The family page");
   check(/A balanced profile/.test(text) && /not naming a weakness/.test(text), "a balanced profile says so and names no weakness");
   check(/One thing to practise at home: Numbers and calculating/.test(text) && /Shop and total/.test(text) && /A worked example/.test(text) && /36 x 4/.test(text), "a named area shows its activities and a worked example (Mathematics, Numbers and calculating)");
   check(/One thing to practise at home: Grammar and word usage/.test(text) && /Try these/.test(text), "a Grades 3 to 5 area with an activity set shows its activities");
-  const gap = await open("#" + Core.encode({ term: "T1-2627", grade: 10, subjects: [{ subject: "lu", rit: 200, ach: 50, growthPct: null, base: null, target: null, area: "gru" }] }));
-  const gapText = await textOf(gap.page);
-  check(/One thing to practise at home: Grammar and word usage/.test(gapText) && /Ask your child's teacher which activity to try first in Language Usage/.test(gapText) && !/TODO|placeholder/i.test(gapText), "an area with no activity set yet (Grade 10) shows a gentle line pointing to the teacher, and no draft marker");
-  await gap.context.close();
+  // Every slot now has a set, so the gentle fallback is tested on a copy of the page with one set renamed away
+  // (and the CSP removed from the copy only, because the edit changes the script's hash).
+  const emptied = path.join(os.tmpdir(), "family-emptied.html");
+  const html0 = fs.readFileSync(path.join(root, "family.html"), "utf8");
+  const edited = html0.replace('"lu.911.gru": {', '"zz.removed": {').replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/, "");
+  check(edited !== html0, "the test copy of the page really lost one activity set");
+  fs.writeFileSync(emptied, edited);
+  const gapContext = await browser.newContext({ viewport: { width: 390, height: 800 }, locale: "en-US" });
+  const gapPage = await gapContext.newPage();
+  await gapPage.goto(pathToFileURL(emptied).href + "#" + Core.encode({ term: "T1-2627", grade: 10, subjects: [{ subject: "lu", rit: 200, ach: 50, growthPct: null, base: null, target: null, area: "gru" }] }));
+  await gapPage.waitForTimeout(150);
+  const gapText = await textOf(gapPage);
+  check(/One thing to practise at home: Grammar and word usage/.test(gapText) && /Ask your child's teacher which activity to try first in Language Usage/.test(gapText) && !/TODO|placeholder/i.test(gapText), "an area with no activity set shows a gentle line pointing to the teacher, and no draft marker");
+  await gapContext.close();
+  fs.rmSync(emptied, { force: true });
   check(/About 10 minutes at a time, 3 days a week/.test(text) && /check in with the teacher/.test(text) && /Questions to ask the teacher/.test(text) && /pass or fail test/.test(text) && /percentile goes down/.test(text) && /changed a little/.test(text), "the small-step plan, the questions for the teacher and the FAQ are there");
   check(!/—/.test(text), "no em dash on the page");
   check(!/These are earlier results/.test(text), "the latest term has no earlier-results note");
