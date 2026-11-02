@@ -18,9 +18,10 @@ projected target, with one practical thing to try at home.
   school.** Blank means not available, never zero. The format is described at the
   top of `core.js`.
 - The weakest goal area is the one furthest below the overall RIT, named only
-  if it is more than `AREA_GAP_RIT` (3) below; otherwise the profile is
-  balanced. The result is read against the target: above, met, close (within
-  3 RIT), or below; a fall result shows its target for the next test.
+  if it is more than `AREA_GAP_RIT` (8, the dashboard's own noise floor for goal
+  areas) below; otherwise the profile is balanced. The result is read against the
+  target: above, met, close (within 3 RIT), or below; a fall result shows its
+  target for the next test.
 
 ## The files
 
@@ -52,8 +53,25 @@ nothing from NWEA's Learning Continuum or test items, nothing a family in the UA
 should not meet, no em dashes. Set `reviewed.ar` to true only after a native
 reader has checked the Arabic. The tests check the rest.
 
-## Hosting
+## Hosting, and keeping it apart from anything signed in
 
-Publish `family.html` beside `index.html`. If the page is served at a different
-path, change `pagePath` in `config.json`. Send no referrer and allow no network
-(the page's own policy already says so).
+The page is three files: `family.html`, `family/hosting/vercel.json` (the headers
+and the one route, generated) and `family/hosting/robots.txt`. Publish exactly
+those as their own static project: no functions, no environment variables, no
+integrations, no cookies, nothing else in it.
+
+What the page and its host do: a policy that lets only the page's own script and
+stylesheet run (by hash) and allows no network; no framing; no referrer; no
+shared windows or resources; no sniffing; no features; no indexing; https only.
+The page's code never touches cookies or storage and never makes a request, and
+nothing in a link is ever inserted as markup. `build/check-family.mjs` holds all
+of it.
+
+**Where it is served matters more than any header.** Browsers share cookies
+across every subdomain of a registrable domain, so a page on the same domain as
+a signed-in application is in the same site as it: a cookie set for the whole
+domain is sent to it, and a page on it could set one back. Only a different
+registrable domain separates them. Serve the page from a domain no signed-in
+application uses, and give it a Vercel project of its own. A deployment sets the
+address in `pagePath` (a full `https://` address is accepted); the dashboard only
+ever prints an https link.

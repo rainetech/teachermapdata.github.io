@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-WxXVq88UTtSuitDokVwIjv5AopqU6LtCj2inDwdVtpw='; style-src 'sha256-ElcvG7c46g6xl8248MfL3NSHQtwwEoD0jjIWH+j7wcQ='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>MAP results</title>
 <style>
   :root { --ink: #1c2433; --muted: #5a6478; --line: #d9dfeb; --bg: #f4f6fb; --card: #ffffff; --brand: #1d4ed8; --soft: #e8efff; --good: #0f7a3d; --warn: #8a5a00; }
@@ -82,8 +82,9 @@ const FamilyCore = (function () {
 
   // How far below the overall RIT a goal area must sit before it is named. An
   // area RIT comes from far fewer questions than the overall score, so inside
-  // this the profile is called balanced. One value, here.
-  const AREA_GAP_RIT = 3;
+  // this the profile is called balanced. 8 is the dashboard's own noise floor
+  // for goal areas (AREA_MIN_FLOOR). One value, here.
+  const AREA_GAP_RIT = 8;
   // Within this many RIT of the target, below it, is "close": a different day
   // could have gone either way. At or above it by this many is "above".
   const CLOSE_RIT = 3;

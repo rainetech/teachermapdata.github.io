@@ -30,6 +30,7 @@
 //   - family.html, the dashboard's copy of the rules and family/SLOTS.md are in
 //     step with their sources.
 import fs from "node:fs";
+import crypto from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -128,14 +129,14 @@ section("Reading a bad link");
 section("The weakest goal area");
 {
   const a = (name, rit, code) => ({ name, rit, code });
-  check(Core.AREA_GAP_RIT === 3, "the threshold is one value, 3 RIT");
+  check(Core.AREA_GAP_RIT === 8, "the threshold is one value, 8 RIT, the dashboard's own noise floor for goal areas");
   const weak = Core.pickFocusArea([a("Geometry", 196, "geo"), a("Number", 205, "num"), a("Algebra", 210, "alg")], 205);
   check(weak && weak.balanced === false && weak.code === "geo" && weak.delta === -9, "the area furthest below the overall RIT is named (" + JSON.stringify(weak) + ")");
-  const edge = Core.pickFocusArea([a("Geometry", 202, "geo"), a("Number", 205, "num")], 205);
-  check(edge.balanced === true, "exactly 3 below is not more than 3 below: balanced");
-  const over = Core.pickFocusArea([a("Geometry", 201, "geo"), a("Number", 205, "num")], 205);
-  check(over.balanced === false && over.code === "geo", "4 below is named");
-  check(Core.pickFocusArea([a("Geometry", 204, "geo"), a("Number", 206, "num")], 205).balanced === true, "a spread within the threshold is a balanced profile");
+  const edge = Core.pickFocusArea([a("Geometry", 197, "geo"), a("Number", 205, "num")], 205);
+  check(edge.balanced === true, "exactly 8 below is not more than 8 below: balanced");
+  const over = Core.pickFocusArea([a("Geometry", 196, "geo"), a("Number", 205, "num")], 205);
+  check(over.balanced === false && over.code === "geo", "9 below is named");
+  check(Core.pickFocusArea([a("Geometry", 199, "geo"), a("Number", 206, "num")], 205).balanced === true, "a spread within the threshold is a balanced profile");
   check(Core.pickFocusArea([a("Geometry", 200, "geo")], 205, 5).balanced === true && Core.pickFocusArea([a("Geometry", 199, "geo")], 205, 5).balanced === false, "the threshold can be passed in, to test a change of the one config value");
   check(Core.pickFocusArea([], 205) === null && Core.pickFocusArea(undefined, 205) === null && Core.pickFocusArea([a("Geometry", NaN, "geo")], 205) === null && Core.pickFocusArea([a("Geometry", 190, "geo")], NaN) === null, "no areas, no scores or no overall RIT gives no area at all, not a balanced profile");
   const tie = Core.pickFocusArea([a("Geometry", 190, "geo"), a("Number", 190, "num")], 205);
@@ -229,6 +230,28 @@ section("The built files");
 }
 
 // ------------------------------------------------------------------ the page
+section("Hosting and the page's own defences");
+{
+  const html = fs.readFileSync(path.join(root, "family.html"), "utf8");
+  const script = /<script>([\s\S]*?)<\/script>/.exec(html)[1];
+  const style = /<style>([\s\S]*?)<\/style>/.exec(html)[1];
+  const sha = (text) => "'sha256-" + crypto.createHash("sha256").update(text, "utf8").digest("base64") + "'";
+  const meta = /http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(html)[1];
+  check(meta.includes("script-src " + sha(script) + ";") && meta.includes("style-src " + sha(style) + ";") && !/script-src[^;]*unsafe/.test(meta), "the page's policy lets exactly its one script and one stylesheet run, by hash: nothing injected could");
+  check(/default-src 'none'/.test(meta) && !/connect-src|https?:|\*/.test(meta) && /form-action 'none'/.test(meta) && /base-uri 'none'/.test(meta), "and allows no network, no form post and no base tag");
+  const hosting = JSON.parse(fs.readFileSync(path.join(root, "family/hosting/vercel.json"), "utf8"));
+  const sent = Object.fromEntries(hosting.headers[0].headers.map((h) => [h.key, h.value]));
+  check(sent["Content-Security-Policy"] === meta + "; frame-ancestors 'none'", "the host sends the same policy as a header, and forbids framing");
+  const wanted = { "X-Content-Type-Options": /nosniff/, "X-Frame-Options": /DENY/, "Referrer-Policy": /^no-referrer$/, "Cross-Origin-Opener-Policy": /same-origin/, "Cross-Origin-Resource-Policy": /same-origin/, "Strict-Transport-Security": /max-age=\d{8,}/, "Permissions-Policy": /camera=\(\)/, "X-Robots-Tag": /noindex/ };
+  const missing = Object.keys(wanted).filter((key) => !wanted[key].test(sent[key] || ""));
+  check(!missing.length, "and no sniffing, no referrer, no shared window or resources, no features, no indexing, https only" + (missing.length ? ": missing " + missing.join(", ") : ""));
+  check(!("functions" in hosting) && !("env" in hosting) && !("crons" in hosting) && !("redirects" in hosting) && hosting.rewrites.length === 1 && fs.readFileSync(path.join(root, "family/hosting/robots.txt"), "utf8").includes("Disallow: /"), "the host config has no function, no environment variable and no route but the page");
+  const forbidden = /document\s*\.\s*cookie|localStorage|sessionStorage|indexedDB|\bfetch\s*\(|XMLHttpRequest|sendBeacon|WebSocket|EventSource|postMessage|\beval\s*\(|new\s+Function|\bimport\s*\(|document\s*\.\s*write|window\.name|navigator\.(serviceWorker|clipboard)/;
+  check(!forbidden.test(script), "the page's code never touches cookies or storage, never makes a request, and never evaluates text");
+  check(!/<(img|iframe|object|embed|link|form|input)\b|\bsrc=|\bonclick=|javascript:/i.test(html.replace(/<script>[\s\S]*?<\/script>/, "")), "the page's markup loads nothing and has no inline handler");
+  check(!/ensdashboards|\.xyz|ens\b/i.test(html + JSON.stringify(hosting)) && !/vercel/i.test(html), "and names no school, host or domain (the public copy stays generic)");
+}
+
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || "playwright");
 const browser = await chromium.launch();
 const pageFile = pathToFileURL(path.join(root, "family.html")).href;
@@ -296,6 +319,31 @@ section("The family page");
   await page.waitForTimeout(100);
   check((await page.evaluate(() => document.documentElement.dir)) === "ltr", "and back to English");
   await context.close();
+}
+
+section("Hostile links on the page");
+{
+  const evil = "<img src=x onerror=window.__pwned=1>";
+  const attempts = ["#v=1&t=" + evil + "&g=4&d=ma.205.62.55.198.213." + encodeURIComponent(evil), "#v=1&t=T1-2627&g=" + encodeURIComponent(evil) + "&d=" + encodeURIComponent("ma.205~<script>window.__pwned=1</script>"), "#v=1&t=T1-2627&g=4&d=ma.205.62.55.198.213.num&x=" + encodeURIComponent(evil), "#v=1&t=T1-2627&g=4&d=ma.205.62.55.198.213.__proto__"];
+  let clean = 0;
+  let violations = 0;
+  for (const attempt of attempts) {
+    const hostile = await open(attempt);
+    hostile.page.on("console", (message) => { if (/Content Security Policy/i.test(message.text())) violations += 1; });
+    await hostile.page.reload();
+    await hostile.page.waitForTimeout(150);
+    const state = await hostile.page.evaluate(() => ({ pwned: window.__pwned === 1, injected: document.querySelectorAll("#app img, #app script, #app iframe, #app [onerror]").length, errors: 0 }));
+    if (!state.pwned && !state.injected && hostile.errors.length === 0) clean += 1;
+    await hostile.context.close();
+  }
+  check(clean === attempts.length, "script and markup in any part of a link are never run or inserted (" + clean + " of " + attempts.length + " hostile links left the page untouched)");
+  const calm = await open("#" + link);
+  const seen = [];
+  calm.page.on("console", (message) => seen.push(message.text()));
+  await calm.page.reload();
+  await calm.page.waitForTimeout(200);
+  check(!seen.some((text) => /Content Security Policy|Refused/i.test(text)), "a normal page runs under its own policy with no violation");
+  await calm.context.close();
 }
 
 section("Older and odd links");
@@ -408,7 +456,7 @@ const sheetsOf = (page) => page.evaluate(() => {
   const maRecord = decoded.subjects.find((s) => s.subject === "ma");
   check(maRecord.rit === 187 && maRecord.target === 196 && maRecord.area === "geo", "the first student's Mathematics is 187 with a target of 196 and Geometry as the area, nine below (" + JSON.stringify(maRecord) + ")");
   const balanced = await page.evaluate((link) => FamilyCore.decode(link.split("#")[1]), links[1].link);
-  check(balanced.subjects.every((s) => s.area === "bal"), "a student whose areas are all within 3 of the overall RIT is balanced");
+  check(balanced.subjects.every((s) => s.area === "bal"), "a student whose areas are all within 8 of the overall RIT is balanced");
   check(await page.evaluate((link) => /fragment|#/.test(link), links[0].link), "the data is after the #, so it never reaches a server");
   // Does the printed code really hold that link?
   const svg = await page.evaluate(() => { const oo = window.open; let html = ""; window.open = () => ({ document: { open() {}, write(h) { html += h; }, close() {} }, focus() {}, print() {} }); printGoalSheets(); window.open = oo; return (html.match(/<div class="gs-qr">(<svg[\s\S]*?<\/svg>)/) || [])[1] || ""; });
@@ -429,6 +477,12 @@ const sheetsOf = (page) => page.evaluate(() => {
   const { page, context } = await dashboard(null);
   const result = await sheetsOf(page);
   check(result.qrs === 0 && result.sheets === 6, "opened from a file, where there is no page to link to, the sheets carry no code and are still two pages each");
+  await context.close();
+}
+{
+  const { page, context } = await dashboard("http://dash.test");
+  const result = await sheetsOf(page);
+  check(result.qrs === 0 && result.sheets === 6, "a dashboard served over plain http gets no code: a link on paper is only ever https");
   await context.close();
 }
 await browser.close();

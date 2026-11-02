@@ -16,8 +16,9 @@ const FamilyCore = (function () {
 
   // How far below the overall RIT a goal area must sit before it is named. An
   // area RIT comes from far fewer questions than the overall score, so inside
-  // this the profile is called balanced. One value, here.
-  const AREA_GAP_RIT = 3;
+  // this the profile is called balanced. 8 is the dashboard's own noise floor
+  // for goal areas (AREA_MIN_FLOOR). One value, here.
+  const AREA_GAP_RIT = 8;
   // Within this many RIT of the target, below it, is "close": a different day
   // could have gone either way. At or above it by this many is "above".
   const CLOSE_RIT = 3;
