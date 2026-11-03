@@ -34,15 +34,9 @@ const booklets = fs.readdirSync(dir).filter((f) => /^[a-z]{2}-\d{1,2}\.js$/.test
   data.key = data.subject + "-" + data.grade;
   return data;
 });
+const { validateBooklet } = await import("./booklet-rules.mjs");
 const problems = [];
-booklets.forEach((b) => {
-  if (!Core.SUBJECTS[b.subject]) problems.push(b.key + ": unknown subject");
-  b.sections.forEach((s) => {
-    if (!(Core.AREAS[b.subject] || []).some((a) => a.code === s.area)) problems.push(b.key + ": unknown area " + s.area);
-    if (s.items.length < 10) problems.push(b.key + "/" + s.area + ": fewer than 10 questions");
-    if (!s.standards || !s.standards.length) problems.push(b.key + "/" + s.area + ": no standards named");
-  });
-});
+booklets.forEach((b) => problems.push(...validateBooklet(b, Core)));
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 
 // ---------------------------------------------------------------- the wording
@@ -98,8 +92,8 @@ const WORDS = {
     footer: "كراسة تدريب"
   }
 };
-const FRAMEWORK_NAME = { "CCSS.MATH": "Common Core State Standards for Mathematics" };
-const FRAMEWORK_NAME_AR = { "CCSS.MATH": "المعايير الأساسية المشتركة الأمريكية للرياضيات" };
+const FRAMEWORK_NAME = { "CCSS.MATH": "Common Core State Standards for Mathematics", "CCSS.ELA": "Common Core State Standards for English Language Arts", "NGSS": "Next Generation Science Standards" };
+const FRAMEWORK_NAME_AR = { "CCSS.MATH": "المعايير الأساسية المشتركة الأمريكية للرياضيات", "CCSS.ELA": "المعايير الأساسية المشتركة الأمريكية للغة الإنجليزية", "NGSS": "معايير العلوم للجيل القادم الأمريكية" };
 
 const rtlLang = (lang) => lang === "ar";
 const esc = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -115,6 +109,7 @@ h3 { font-size: 12.5pt; margin: .9rem 0 .25rem; color: #00504f; }
 .meta { color: #4a5670; margin: 0 0 1rem; }
 .name { margin: 1rem 0; }
 .name span { display: inline-block; border-bottom: 1px solid #14213d; min-width: 10rem; }
+.passage { break-inside: auto; }
 .box { border: 1px solid #c9d6d6; border-radius: 8px; padding: .5rem .9rem; margin: .8rem 0; background: #f4f9f9; break-inside: avoid; }
 .draft { font-size: 10pt; color: #8a5a00; margin-top: 1.5rem; }
 section { break-before: page; }
@@ -150,6 +145,7 @@ function html(b, lang) {
     body += "<section><h2>" + esc(w.section) + " " + (i + 1) + ": " + esc(areaName(b.subject, s.area, lang)) + "</h2>";
     body += '<p class="std">' + esc(w.standards) + ': <bdi dir="ltr">' + esc(s.standards.join(", ")) + "</bdi></p>";
     body += '<div class="box"' + wrap + "><h3>" + esc(w.example) + '</h3><p><b>' + t(e.question) + "</b></p><ol>" + e.steps.map((st) => "<li>" + t(st) + "</li>").join("") + "</ol><p><b>" + t(e.answer) + "</b></p></div>";
+    if (s.passage) body += '<div class="box passage" dir="ltr" lang="en"><h3>' + esc(s.passage.title) + "</h3>" + s.passage.text.split(/\n\n+/).map((para) => "<p>" + esc(para) + "</p>").join("") + "</div>";
     body += "<h3>" + esc(w.questions) + '</h3><ol class="q"' + wrap + ">" + s.items.map((item) => "<li>" + t(pick(item.q)) + '<span class="line"></span></li>').join("") + "</ol></section>";
   });
   body += '<div class="answers"><h2>' + esc(w.answers) + "</h2>";
