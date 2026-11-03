@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-shLtRPGDfiKLyh1PNsglxqh+5ufjD3BSJ+OypzNXwh8='; style-src 'sha256-1CqiGwD0yPtswLqarCcvY6ln2wqljJn96KDo3yuT36g='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-duPylj5U5ICHr+HxvmSXzZUyU8DVMsvhyrDWUDEGmVQ='; style-src 'sha256-D0RcZaTj2wEFyeLxX69PH2rbUKoy5De6UVfILbEa9kk='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
 <title>MAP results</title>
 <style>
   :root { --ink: #1c2433; --muted: #5a6478; --line: #d9dfeb; --bg: #f4f6fb; --card: #ffffff; --brand: #1d4ed8; --soft: #e8efff; --good: #0f7a3d; --warn: #8a5a00; }
@@ -43,6 +43,14 @@
   details { border-top: 1px solid var(--line); padding: .5rem 0; }
   summary { font-weight: 700; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
   .level { margin: .9rem 0 0; border-top: 1px dashed var(--line); padding-top: .2rem; }
+  .booklets { margin: 1rem 0 0; }
+  .bk-list { list-style: none; padding: 0; margin: .4rem 0; }
+  .bk { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem; padding: .6rem 0; border-top: 1px solid var(--line); }
+  .bk-name { flex: 1 1 12rem; font-weight: 600; }
+  .bk-name em { font-style: normal; font-weight: 700; font-size: .8rem; color: var(--brand); background: var(--soft); border-radius: 999px; padding: .05rem .5rem; margin-inline-start: .35rem; white-space: nowrap; }
+  .bk-links { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem; }
+  .btn { text-decoration: none; display: inline-flex; align-items: center; }
+  .bk-other { color: var(--brand); font-weight: 600; }
   .areas { margin: .9rem 0 0; }
   .ar-list { list-style: none; padding: 0; margin: .3rem 0; }
   .ar-row { display: grid; grid-template-columns: 1fr 2.6rem; gap: .15rem .6rem; align-items: center; margin: .6rem 0; }
@@ -245,6 +253,27 @@ const FamilyCore = (function () {
     return "below";
   }
 
+  // Arabic text with sums in it: "3 × 10 = 30" is read left to right even inside
+  // right-to-left text, but laid out in a right-to-left line it comes out
+  // mirrored. This wraps each such run (digits, letters and operators, at least
+  // one operator) in a left-to-right isolate. Returns HTML; the text is escaped
+  // here, so the caller must not escape it again.
+  function ltrRuns(text, rtl) {
+    const escape = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const source = String(text === undefined || text === null ? "" : text);
+    if (!rtl) return escape(source);
+    let out = "";
+    let at = 0;
+    const run = /[0-9A-Za-z(\[{](?:[0-9A-Za-z.,=+\-×÷\/<>*()\[\]{} ]*[0-9A-Za-z)\]}])?/g;
+    let match;
+    while ((match = run.exec(source))) {
+      if (!/[=+\-×÷\/<>*]/.test(match[0])) continue;
+      out += escape(source.slice(at, match.index)) + '<bdi dir="ltr">' + escape(match[0]) + "</bdi>";
+      at = match.index + match[0].length;
+    }
+    return out + escape(source.slice(at));
+  }
+
   const clean = (value) => (Number.isFinite(value) ? String(Math.round(value)) : "");
 
   // The goal-area scores of one subject, in the fixed order of AREAS[subject]
@@ -357,7 +386,7 @@ const FamilyCore = (function () {
     return slots;
   }
 
-  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, readLevel, levelCode, allSlots };
+  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, readLevel, levelCode, ltrRuns, allSlots };
 })();
 
 // Everything the family page says that is not an activity, in English and
@@ -436,6 +465,18 @@ const FamilyStrings = {
       "Sleep well and have breakfast on test days, and arrive ready to concentrate.",
       "Talk about the test as a chance to show real learning, and ask for full effort every time."
     ],
+    bookletHeading: "Practice booklets: {subject}",
+    bookletBelow: "These booklets are a step-by-step path from where this score sits today up to your child's own grade level. Start with the first one and move on when it feels comfortable. Each booklet is general practice written for that grade's expectations, not a copy of the MAP questions.",
+    bookletAt: "This score is at your child's grade level, so start with the first booklet, then try the next one as a stretch. Each booklet is general practice written for that grade's expectations, not a copy of the MAP questions.",
+    bookletPlain: "This booklet is general practice written for your child's grade level, not a copy of the MAP questions.",
+    bookletStart: "Start here",
+    bookletNext: "Next step",
+    bookletOwn: "Your child's grade level",
+    bookletStretch: "Stretch",
+    bookletName: "{subject}, {grade}",
+    bookletDownload: "Download PDF (English)",
+    bookletDownloadOther: "Download PDF (Arabic)",
+    bookletHow: "Save or print the PDF from your phone or computer. Each booklet has an example, ten questions for each area and an answer guide for you.",
     focusHeading: "One thing to practise at home: {area}",
     focusWhy: "This is the part of {subject} where your child's score was lowest compared with their overall score. Each part of the test has fewer questions than the whole, so treat it as a guide and not a verdict.",
     balancedHeading: "A balanced profile",
@@ -547,6 +588,18 @@ const FamilyStrings = {
       "نَم جيدًا وتناول الفطور في أيام الاختبار، واحضر مستعدًا للتركيز.",
       "تحدّثوا عن الاختبار بوصفه فرصة لإظهار التعلّم الحقيقي، واطلبوا بذل أقصى جهد في كل مرة."
     ],
+    bookletHeading: "كراسات التدريب: {subject}",
+    bookletBelow: "هذه الكراسات مسار خطوة بخطوة من موضع هذه الدرجة اليوم إلى مستوى صف طفلك. ابدأ بالأولى وانتقل حين يبدو الأمر مريحًا. وكل كراسة تدريبات عامة مكتوبة وفق توقعات ذلك الصف، وليست نسخة من أسئلة MAP.",
+    bookletAt: "هذه الدرجة عند مستوى صف طفلك، فابدأ بالكراسة الأولى ثم جرّب التالية للتحدّي. وكل كراسة تدريبات عامة مكتوبة وفق توقعات ذلك الصف، وليست نسخة من أسئلة MAP.",
+    bookletPlain: "هذه الكراسة تدريبات عامة مكتوبة لمستوى صف طفلك، وليست نسخة من أسئلة MAP.",
+    bookletStart: "ابدأ من هنا",
+    bookletNext: "الخطوة التالية",
+    bookletOwn: "مستوى صف طفلك",
+    bookletStretch: "تحدٍّ",
+    bookletName: "{subject}، {grade}",
+    bookletDownload: "تنزيل PDF (بالإنجليزية)",
+    bookletDownloadOther: "تنزيل PDF (بالعربية)",
+    bookletHow: "احفظ ملف PDF أو اطبعه من هاتفك أو حاسوبك. في كل كراسة مثال وعشرة أسئلة لكل جزء ودليل إجابات لك.",
     focusHeading: "أمر واحد للتدرّب عليه في البيت: {area}",
     focusWhy: "هذا هو الجزء من {subject} الذي كانت درجة طفلك فيه الأدنى مقارنةً بدرجته الإجمالية. ولكل جزء من الاختبار أسئلة أقل من الاختبار كله، فاعتبره إرشادًا وليس حكمًا.",
     balancedHeading: "مستوى متوازن",
@@ -2326,6 +2379,10 @@ const FamilyActivities = {
   }
 };
 
+// Generated by build/build-booklets.mjs. Do not edit by hand.
+// Which practice booklets exist, by subject, as the grade each is written for.
+const FamilyBookletIndex = {"ma":[3,4,5]};
+
 // The family page: reads the link's fragment, fills the sentences in, shows
 // them in English or Arabic. Nothing is stored, sent or tracked; the numbers
 // are only ever in this page's own memory. FAMILY_LATEST_TERM is filled in by
@@ -2403,8 +2460,42 @@ const FamilyActivities = {
       mark("m-start", entry.base, Strings[lang].start) + mark("m-now", entry.rit, Strings[lang].now) + mark("m-target", entry.target, Strings[lang].target) + "</div>";
   }
 
+  // Text with sums in it, safe to put in the page (escaped here) and laid out left to right inside Arabic.
+  const fx = (text, plain) => Core.ltrRuns(text, lang === "ar" && !plain);
+
   function pick(value) {
     return value && typeof value === "object" && (value[lang] !== undefined) ? value[lang] : value;
+  }
+
+  // The practice booklets: a step-by-step path from where the score sits to the
+  // child's own grade (or, at or above grade, that level and the next as a
+  // stretch). Each step is a PDF, in English and in Arabic, that can be saved and
+  // printed from any phone. Returns "" when no booklet exists for the subject,
+  // and the page then offers the single practice sheet instead.
+  function bookletBlock(entry) {
+    const have = (typeof FamilyBookletIndex !== "undefined" && FamilyBookletIndex[entry.subject]) || [];
+    const own = decoded.grade;
+    if (!have.length || own === null || own === undefined) return "";
+    const level = entry.level;
+    const placed = level ? (level.side === "above" ? 12 : level.side === "below" ? 0 : level.from) : null;
+    let steps;
+    if (placed === null) steps = [own];
+    else if (placed < own) steps = [placed, placed + 1, placed + 2].filter((g) => g <= own);
+    else steps = [placed, placed + 1];
+    steps = steps.filter((g) => have.includes(g));
+    if (!steps.length) return "";
+    const name = subjectName(entry.subject);
+    const other = lang === "ar" ? "en" : "ar";
+    const gradeText = (g) => (g === 0 ? say("levelKg") : say("levelGradeOne", { n: g }));
+    const intro = placed === null ? say("bookletPlain") : placed < own ? say("bookletBelow") : say("bookletAt");
+    const rows = steps.map((g, i) => {
+      const tag = i === 0 ? say("bookletStart") : g === own ? say("bookletOwn") : g > own ? say("bookletStretch") : say("bookletNext");
+      const file = "booklets/" + entry.subject + "-" + g + "-";
+      return '<li class="bk"><span class="bk-name">' + esc(say("bookletName", { subject: name, grade: gradeText(g) })) + " <em>" + esc(tag) + '</em></span>' +
+        '<span class="bk-links"><a class="btn" href="' + file + lang + '.pdf" download>' + esc(say(lang === "ar" ? "bookletDownloadOther" : "bookletDownload")) + "</a>" +
+        '<a class="bk-other" href="' + file + other + '.pdf" download>' + esc(say(lang === "ar" ? "bookletDownload" : "bookletDownloadOther")) + "</a></span></li>";
+    }).join("");
+    return '<div class="booklets"><h5>' + esc(say("bookletHeading", { subject: name })) + "</h5><p>" + esc(intro) + '</p><ul class="bk-list">' + rows + "</ul><p class=\"ar-note\">" + esc(say("bookletHow")) + "</p></div>";
   }
 
   function activityBlock(entry, slot) {
@@ -2425,9 +2516,10 @@ const FamilyActivities = {
     const example = set.example[lang];
     const exampleEnglish = set.sheet && set.sheet.englishOnly;
     html += '<div class="example"><h5>' + esc(say("exampleHeading")) + "</h5>" +
-      '<p class="q"' + (exampleEnglish ? ' dir="ltr" lang="en"' : "") + ">" + esc(example.question) + "</p><ol>" +
-      example.steps.map((step) => "<li>" + esc(step) + "</li>").join("") + "</ol><p><b>" + esc(example.answer) + "</b></p></div>";
-    html += '<button type="button" class="btn" data-sheet="' + esc(entry.subject) + '">' + esc(say("sheetButton")) + "</button></div>";
+      '<p class="q"' + (exampleEnglish ? ' dir="ltr" lang="en"' : "") + ">" + fx(example.question, exampleEnglish) + "</p><ol>" +
+      example.steps.map((step) => "<li>" + fx(step, exampleEnglish) + "</li>").join("") + "</ol><p><b>" + fx(example.answer, exampleEnglish) + "</b></p></div>";
+    const booklets = bookletBlock(entry);
+    html += booklets ? booklets + "</div>" : '<button type="button" class="btn" data-sheet="' + esc(entry.subject) + '">' + esc(say("sheetButton")) + "</button></div>";
     return html;
   }
 
@@ -2438,8 +2530,8 @@ const FamilyActivities = {
     const english = Boolean(sheet.englishOnly);
     const text = (value) => (english ? value.en : value[lang]);
     const wrap = english ? ' dir="ltr" lang="en"' : "";
-    const items = sheet.items.map((item) => "<li" + wrap + ">" + esc(text(item.q)) + '<span class="line"></span></li>').join("");
-    const answers = sheet.items.map((item) => "<li" + wrap + ">" + esc(text(item.a)) + "</li>").join("");
+    const items = sheet.items.map((item) => "<li" + wrap + ">" + fx(text(item.q), english) + '<span class="line"></span></li>').join("");
+    const answers = sheet.items.map((item) => "<li" + wrap + ">" + fx(text(item.a), english) + "</li>").join("");
     return '<section class="sheet" id="sheet-' + esc(entry.subject) + '"><h2>' + esc(say("sheetTitle")) + ": " + esc(sheet.title[lang]) + "</h2><p>" + esc(say("sheetFor", { subject: subjectName(entry.subject) })) + " &middot; " +
       esc(say("sheetName")) + ': <span class="line wide"></span></p><p>' + esc(sheet.instructions[lang]) + "</p>" +
       (english && lang === "ar" ? "<p>" + esc(say("sheetEnglishNote")) + "</p>" : "") + "<ol>" + items + '</ol><div class="answers"><h3>' + esc(say("sheetAnswers")) + "</h3><ol>" + answers + "</ol></div></section>";
@@ -2569,9 +2661,10 @@ const FamilyActivities = {
       if (!sheet) return;
       document.body.setAttribute("data-printing", target.dataset.sheet);
       sheet.classList.add("is-printing");
+      // Put the page back only after the print preview is done: on iOS, print() returns at once, before the page is captured.
+      const restore = () => { sheet.classList.remove("is-printing"); document.body.removeAttribute("data-printing"); window.removeEventListener("afterprint", restore); };
+      window.addEventListener("afterprint", restore);
       window.print();
-      sheet.classList.remove("is-printing");
-      document.body.removeAttribute("data-printing");
       return;
     }
     if (target.dataset && target.dataset.go) {

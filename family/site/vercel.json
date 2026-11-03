@@ -55,8 +55,49 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'none'; script-src 'sha256-shLtRPGDfiKLyh1PNsglxqh+5ufjD3BSJ+OypzNXwh8='; style-src 'sha256-1CqiGwD0yPtswLqarCcvY6ln2wqljJn96KDo3yuT36g='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+          "value": "default-src 'none'; script-src 'sha256-duPylj5U5ICHr+HxvmSXzZUyU8DVMsvhyrDWUDEGmVQ='; style-src 'sha256-D0RcZaTj2wEFyeLxX69PH2rbUKoy5De6UVfILbEa9kk='; style-src-attr 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
         },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        },
+        {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Cross-Origin-Resource-Policy",
+          "value": "same-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), microphone=(), payment=(), usb=(), interest-cohort=()"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300"
+        }
+      ]
+    },
+    {
+      "source": "/booklets/(.*)",
+      "headers": [
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=63072000; includeSubDomains"

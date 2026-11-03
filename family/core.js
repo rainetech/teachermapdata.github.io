@@ -167,6 +167,27 @@ const FamilyCore = (function () {
     return "below";
   }
 
+  // Arabic text with sums in it: "3 × 10 = 30" is read left to right even inside
+  // right-to-left text, but laid out in a right-to-left line it comes out
+  // mirrored. This wraps each such run (digits, letters and operators, at least
+  // one operator) in a left-to-right isolate. Returns HTML; the text is escaped
+  // here, so the caller must not escape it again.
+  function ltrRuns(text, rtl) {
+    const escape = (v) => String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const source = String(text === undefined || text === null ? "" : text);
+    if (!rtl) return escape(source);
+    let out = "";
+    let at = 0;
+    const run = /[0-9A-Za-z(\[{](?:[0-9A-Za-z.,=+\-×÷\/<>*()\[\]{} ]*[0-9A-Za-z)\]}])?/g;
+    let match;
+    while ((match = run.exec(source))) {
+      if (!/[=+\-×÷\/<>*]/.test(match[0])) continue;
+      out += escape(source.slice(at, match.index)) + '<bdi dir="ltr">' + escape(match[0]) + "</bdi>";
+      at = match.index + match[0].length;
+    }
+    return out + escape(source.slice(at));
+  }
+
   const clean = (value) => (Number.isFinite(value) ? String(Math.round(value)) : "");
 
   // The goal-area scores of one subject, in the fixed order of AREAS[subject]
@@ -279,7 +300,7 @@ const FamilyCore = (function () {
     return slots;
   }
 
-  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, readLevel, levelCode, allSlots };
+  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, readLevel, levelCode, ltrRuns, allSlots };
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = FamilyCore;

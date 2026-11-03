@@ -75,8 +75,42 @@
       mark("m-start", entry.base, Strings[lang].start) + mark("m-now", entry.rit, Strings[lang].now) + mark("m-target", entry.target, Strings[lang].target) + "</div>";
   }
 
+  // Text with sums in it, safe to put in the page (escaped here) and laid out left to right inside Arabic.
+  const fx = (text, plain) => Core.ltrRuns(text, lang === "ar" && !plain);
+
   function pick(value) {
     return value && typeof value === "object" && (value[lang] !== undefined) ? value[lang] : value;
+  }
+
+  // The practice booklets: a step-by-step path from where the score sits to the
+  // child's own grade (or, at or above grade, that level and the next as a
+  // stretch). Each step is a PDF, in English and in Arabic, that can be saved and
+  // printed from any phone. Returns "" when no booklet exists for the subject,
+  // and the page then offers the single practice sheet instead.
+  function bookletBlock(entry) {
+    const have = (typeof FamilyBookletIndex !== "undefined" && FamilyBookletIndex[entry.subject]) || [];
+    const own = decoded.grade;
+    if (!have.length || own === null || own === undefined) return "";
+    const level = entry.level;
+    const placed = level ? (level.side === "above" ? 12 : level.side === "below" ? 0 : level.from) : null;
+    let steps;
+    if (placed === null) steps = [own];
+    else if (placed < own) steps = [placed, placed + 1, placed + 2].filter((g) => g <= own);
+    else steps = [placed, placed + 1];
+    steps = steps.filter((g) => have.includes(g));
+    if (!steps.length) return "";
+    const name = subjectName(entry.subject);
+    const other = lang === "ar" ? "en" : "ar";
+    const gradeText = (g) => (g === 0 ? say("levelKg") : say("levelGradeOne", { n: g }));
+    const intro = placed === null ? say("bookletPlain") : placed < own ? say("bookletBelow") : say("bookletAt");
+    const rows = steps.map((g, i) => {
+      const tag = i === 0 ? say("bookletStart") : g === own ? say("bookletOwn") : g > own ? say("bookletStretch") : say("bookletNext");
+      const file = "booklets/" + entry.subject + "-" + g + "-";
+      return '<li class="bk"><span class="bk-name">' + esc(say("bookletName", { subject: name, grade: gradeText(g) })) + " <em>" + esc(tag) + '</em></span>' +
+        '<span class="bk-links"><a class="btn" href="' + file + lang + '.pdf" download>' + esc(say(lang === "ar" ? "bookletDownloadOther" : "bookletDownload")) + "</a>" +
+        '<a class="bk-other" href="' + file + other + '.pdf" download>' + esc(say(lang === "ar" ? "bookletDownload" : "bookletDownloadOther")) + "</a></span></li>";
+    }).join("");
+    return '<div class="booklets"><h5>' + esc(say("bookletHeading", { subject: name })) + "</h5><p>" + esc(intro) + '</p><ul class="bk-list">' + rows + "</ul><p class=\"ar-note\">" + esc(say("bookletHow")) + "</p></div>";
   }
 
   function activityBlock(entry, slot) {
@@ -97,9 +131,10 @@
     const example = set.example[lang];
     const exampleEnglish = set.sheet && set.sheet.englishOnly;
     html += '<div class="example"><h5>' + esc(say("exampleHeading")) + "</h5>" +
-      '<p class="q"' + (exampleEnglish ? ' dir="ltr" lang="en"' : "") + ">" + esc(example.question) + "</p><ol>" +
-      example.steps.map((step) => "<li>" + esc(step) + "</li>").join("") + "</ol><p><b>" + esc(example.answer) + "</b></p></div>";
-    html += '<button type="button" class="btn" data-sheet="' + esc(entry.subject) + '">' + esc(say("sheetButton")) + "</button></div>";
+      '<p class="q"' + (exampleEnglish ? ' dir="ltr" lang="en"' : "") + ">" + fx(example.question, exampleEnglish) + "</p><ol>" +
+      example.steps.map((step) => "<li>" + fx(step, exampleEnglish) + "</li>").join("") + "</ol><p><b>" + fx(example.answer, exampleEnglish) + "</b></p></div>";
+    const booklets = bookletBlock(entry);
+    html += booklets ? booklets + "</div>" : '<button type="button" class="btn" data-sheet="' + esc(entry.subject) + '">' + esc(say("sheetButton")) + "</button></div>";
     return html;
   }
 
@@ -110,8 +145,8 @@
     const english = Boolean(sheet.englishOnly);
     const text = (value) => (english ? value.en : value[lang]);
     const wrap = english ? ' dir="ltr" lang="en"' : "";
-    const items = sheet.items.map((item) => "<li" + wrap + ">" + esc(text(item.q)) + '<span class="line"></span></li>').join("");
-    const answers = sheet.items.map((item) => "<li" + wrap + ">" + esc(text(item.a)) + "</li>").join("");
+    const items = sheet.items.map((item) => "<li" + wrap + ">" + fx(text(item.q), english) + '<span class="line"></span></li>').join("");
+    const answers = sheet.items.map((item) => "<li" + wrap + ">" + fx(text(item.a), english) + "</li>").join("");
     return '<section class="sheet" id="sheet-' + esc(entry.subject) + '"><h2>' + esc(say("sheetTitle")) + ": " + esc(sheet.title[lang]) + "</h2><p>" + esc(say("sheetFor", { subject: subjectName(entry.subject) })) + " &middot; " +
       esc(say("sheetName")) + ': <span class="line wide"></span></p><p>' + esc(sheet.instructions[lang]) + "</p>" +
       (english && lang === "ar" ? "<p>" + esc(say("sheetEnglishNote")) + "</p>" : "") + "<ol>" + items + '</ol><div class="answers"><h3>' + esc(say("sheetAnswers")) + "</h3><ol>" + answers + "</ol></div></section>";
@@ -241,9 +276,10 @@
       if (!sheet) return;
       document.body.setAttribute("data-printing", target.dataset.sheet);
       sheet.classList.add("is-printing");
+      // Put the page back only after the print preview is done: on iOS, print() returns at once, before the page is captured.
+      const restore = () => { sheet.classList.remove("is-printing"); document.body.removeAttribute("data-printing"); window.removeEventListener("afterprint", restore); };
+      window.addEventListener("afterprint", restore);
       window.print();
-      sheet.classList.remove("is-printing");
-      document.body.removeAttribute("data-printing");
       return;
     }
     if (target.dataset && target.dataset.go) {

@@ -25,7 +25,7 @@ const config = JSON.parse(read("family/config.json"));
 const strip = (text) => text.replace(/\nif \(typeof module !== "undefined" && module\.exports\) module\.exports = \w+;\n?/, "\n").trimEnd();
 
 // 1. the page
-const scripts = ["family/core.js", "family/strings.js", "family/activities.js", "family/render.js"].map((file) => strip(read(file))).join("\n\n")
+const scripts = ["family/core.js", "family/strings.js", "family/activities.js", "family/booklet-index.js", "family/render.js"].map((file) => strip(read(file))).join("\n\n")
   .replace("@FAMILY_LATEST_TERM@", config.latestTerm);
 const template = read("family/page.html").replace("/*@SCRIPTS*/", () => scripts);
 // The page's own policy names its one script and one stylesheet by hash, so
@@ -48,8 +48,9 @@ const portal = portalTemplate.replace("@CSP@", portalPolicy);
 // The headers a host must send: the same policy plus what a meta tag cannot say
 // (no framing), and no referrer, no sharing of windows or resources, no
 // sniffing, no features, no indexing, https only. A static host with no
-// functions, no environment variables and no cookies. Two routes: the portal
-// (/) and the MAP page (/nwea).
+// functions, no environment variables and no cookies. Three routes: the portal
+// (/), the MAP page (/nwea) and the practice booklets, which are PDFs (no
+// content policy: a PDF viewer needs none, and one would only get in its way).
 const common = [
   ["Strict-Transport-Security", "max-age=63072000; includeSubDomains"],
   ["X-Content-Type-Options", "nosniff"],
@@ -68,7 +69,7 @@ const hosting = JSON.stringify({
   "trailingSlash": false,
   "framework": null,
   "buildCommand": null,
-  "headers": [rule("/", portalPolicy), rule("/nwea", policy)]
+  "headers": [rule("/", portalPolicy), rule("/nwea", policy), { source: "/booklets/(.*)", headers: common.map(([key, value]) => ({ key, value })) }]
 }, null, 2) + "\n";
 
 // 2. the block in the dashboard

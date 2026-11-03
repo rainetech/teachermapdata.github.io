@@ -261,7 +261,8 @@ section("Hosting and the page's own defences");
   const site = (file) => fs.readFileSync(path.join(root, "family/site/" + file), "utf8");
   const hosting = JSON.parse(site("vercel.json"));
   const rules = Object.fromEntries(hosting.headers.map((rule) => [rule.source, Object.fromEntries(rule.headers.map((h) => [h.key, h.value]))]));
-  check(Object.keys(rules).sort().join() === "/,/nwea" && site("nwea.html") === html, "the site is two routes: the portal at / and the MAP page at /nwea, which is the page itself");
+  check(Object.keys(rules).sort().join() === "/,/booklets/(.*),/nwea" && site("nwea.html") === html, "the site is three routes: the portal at /, the MAP page at /nwea (which is the page itself) and the booklets");
+  check(!rules["/booklets/(.*)"]["Content-Security-Policy"] && rules["/booklets/(.*)"]["X-Content-Type-Options"] === "nosniff" && rules["/booklets/(.*)"]["X-Robots-Tag"] === "noindex, nofollow" && rules["/booklets/(.*)"]["Referrer-Policy"] === "no-referrer", "the booklet PDFs get the same headers except the content policy, which a PDF viewer does not need");
   const sent = rules["/nwea"];
   check(sent["Content-Security-Policy"] === meta + "; frame-ancestors 'none'", "the host sends the page's policy as a header too, and forbids framing");
   const wanted = { "X-Content-Type-Options": /nosniff/, "X-Frame-Options": /DENY/, "Referrer-Policy": /^no-referrer$/, "Cross-Origin-Opener-Policy": /same-origin/, "Cross-Origin-Resource-Policy": /same-origin/, "Strict-Transport-Security": /max-age=\d{8,}/, "Permissions-Policy": /camera=\(\)/, "X-Robots-Tag": /noindex/ };
@@ -465,7 +466,17 @@ section("Older and odd links");
 
 section("The practice sheet");
 {
-  const { page, context } = await open("#" + link);
+  // Maths now has booklets (the sheet button is replaced there), so the single sheet is tested on a copy of
+  // the page with no booklets listed (and the CSP removed from the copy only, since the edit changes the script's hash).
+  const noBooks = path.join(os.tmpdir(), "family-no-booklets.html");
+  const original = fs.readFileSync(path.join(root, "family.html"), "utf8");
+  const changed = original.replace(/const FamilyBookletIndex = \{[^}]*\}\{0,1\};|const FamilyBookletIndex = \{[^;]*\};/, "const FamilyBookletIndex = {};").replace(/<meta http-equiv="Content-Security-Policy"[^>]*>/, "");
+  check(changed !== original, "the test copy of the page lists no booklets");
+  fs.writeFileSync(noBooks, changed);
+  const context = await browser.newContext({ viewport: { width: 390, height: 800 }, locale: "en-US" });
+  const page = await context.newPage();
+  await page.goto(pathToFileURL(noBooks).href + "#" + link);
+  await page.waitForTimeout(150);
   await page.evaluate(() => { window.print = () => { window.__printed = document.body.getAttribute("data-printing"); }; });
   await page.click('button[data-sheet="ma"]');
   check((await page.evaluate(() => window.__printed)) === "ma", "the button prints one subject's sheet");
@@ -474,6 +485,63 @@ section("The practice sheet");
   const printed = await page.evaluate(() => ({ visible: [...document.querySelectorAll("#app > *")].filter((el) => getComputedStyle(el).display !== "none").map((el) => el.id), text: document.getElementById("sheets").innerText, other: getComputedStyle(document.getElementById("sheet-rd")).display }));
   check(printed.visible.join() === "sheets" && printed.other === "none" && /Practice sheet: Numbers and calculating/.test(printed.text) && /Answer guide for parents/.test(printed.text) && /19 \(23|AED 19/.test(printed.text), "printing shows only that sheet, with the answer guide for the parent");
   await context.close();
+  fs.rmSync(noBooks, { force: true });
+}
+
+// ---------------------------------------------------------------- the practice booklets
+section("The practice booklets");
+{
+  const dir = path.join(root, "family/booklets");
+  const files = fs.readdirSync(dir).filter((f) => /^[a-z]{2}-\d{1,2}\.js$/.test(f));
+  const books = files.map((f) => require(path.join(dir, f)));
+  check(books.length >= 3, "the booklets are written (" + books.length + ": " + files.join(", ") + ")");
+  const shape = books.every((b) => b.sections.length === Core.AREAS[b.subject].filter((a) => a.bands.some((band) => Core.BANDS[band].subjects.includes(b.subject))).filter((a) => a.bands.includes(Core.gradeBand(b.grade))).length && b.sections.every((sec) => sec.items.length >= 10 && sec.example.en.steps.length >= 2 && sec.example.ar.steps.length >= 2));
+  check(shape, "each booklet has a section for every goal area of its grade band, a worked example with two steps or more, and ten questions or more");
+  check(books.every((b) => b.sections.every((sec) => sec.standards.every((code) => code.startsWith(b.grade + ".") && /^\d{1,2}\.[A-Z]{1,3}\.[A-Z]\.\d{1,2}$/.test(code)))), "every standard named is a Common Core code for the booklet's own grade (the grade, a domain, a cluster and a number)");
+  const strings = [];
+  const walk = (value) => { if (typeof value === "string") strings.push(value); else if (Array.isArray(value)) value.forEach(walk); else if (value && typeof value === "object") Object.values(value).forEach(walk); };
+  books.forEach((b) => walk(b.sections));
+  check(strings.every((t) => !/[\u2013\u2014]|--/.test(t)), "no dash used as punctuation in any booklet text");
+  const badWords = strings.filter((t) => /\b(pig|pigs|pork|bacon|ham|sausage|lard|alcohol|wine|beer|vodka|whisky|whiskey|liquor|cocktail|gambl\w*|casino|bet|betting|dating|boyfriend|girlfriend)\b|(?<![\u0600-\u06ff])(ال)?(خنزير|كحول|خمر|نبيذ|بيرة|ويسكي|قمار|رهان)/i.test(t) || /(?<!pass or )\b(fail(ed|ing|ure)?|behind|lazy|weak|poor|stupid|slow learner)\b/i.test(t));
+  check(!badWords.length, "nothing sensitive and nothing that labels the child in any booklet" + (badWords.length ? ": " + badWords.slice(0, 3).join(" | ") : ""));
+  const parity = books.every((b) => b.sections.every((sec) => sec.items.every((item) => item.q.en && item.q.ar && item.a.en && item.a.ar)));
+  check(parity, "every question and answer is in English and in Arabic");
+  const index = require(path.join(root, "family/booklet-index.js"));
+  check(books.every((b) => index[b.subject] && index[b.subject].includes(b.grade)), "the index the page reads lists every booklet");
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, "booklets/manifest.json"), "utf8"));
+  const pdfs = books.flatMap((b) => ["en", "ar"].map((l) => b.subject + "-" + b.grade + "-" + l));
+  check(pdfs.every((name) => manifest[name] && fs.existsSync(path.join(root, "booklets", name + ".pdf")) && fs.readFileSync(path.join(root, "booklets", name + ".pdf")).subarray(0, 5).toString() === "%PDF-" && fs.statSync(path.join(root, "booklets", name + ".pdf")).size > 20000), "every booklet is a real PDF in both languages (" + pdfs.length + ")");
+  const fresh = spawnSync(process.execPath, [path.join(root, "build/build-booklets.mjs"), "--check"], { encoding: "utf8" });
+  check(fresh.status === 0, "the PDFs are up to date with the booklet text" + (fresh.status === 0 ? "" : ": " + fresh.stdout + fresh.stderr));
+  check(Core.ltrRuns("3 × 10 = 30 و 6/8", true) === '<bdi dir="ltr">3 × 10 = 30</bdi> و <bdi dir="ltr">6/8</bdi>' && Core.ltrRuns("<b>1 + 1</b>", false) === "&lt;b&gt;1 + 1&lt;/b&gt;" && Core.ltrRuns("a < b & c", true).includes("&lt;") && !/<(?!\/?bdi)/.test(Core.ltrRuns("<script>3 + 4</script>", true)), "sums inside Arabic text are isolated left to right, and the text is escaped either way");
+
+  // The page: a path from where the score sits to the child's own grade.
+  const pathLink = (grade, subject, level) => "#" + Core.encode({ term: "T1-2627", grade, subjects: [{ subject, rit: 196, ach: 30, growthPct: null, base: null, target: 208, area: "bal", level }] });
+  const hrefs = (p) => p.evaluate(() => [...document.querySelectorAll("#subject-ma .bk-name")].map((n) => n.textContent.replace(/\s+/g, " ").trim()));
+  const below = await open(pathLink(5, "ma", { side: "", from: 3 }));
+  const belowList = await hrefs(below.page);
+  check(belowList.length === 3 && /Grade 3 Start here/.test(belowList[0]) && /Grade 4 Next step/.test(belowList[1]) && /Grade 5 Your child's grade level/.test(belowList[2]), "a Grade 5 child whose score sits at Grade 3 gets Grade 3, then Grade 4, then Grade 5: " + belowList.join(" | "));
+  const belowTxt = await textOf(below.page);
+  check(/step-by-step path from where this score sits today up to your child's own grade level/.test(belowTxt) && /not a copy of the MAP questions/.test(belowTxt), "and is told it is a path to their own grade, and general practice not MAP questions");
+  const linkOk = await below.page.evaluate(() => [...document.querySelectorAll("#subject-ma .bk a")].map((a) => [a.getAttribute("href"), a.hasAttribute("download")]));
+  check(linkOk.length === 6 && linkOk.every(([href, dl]) => dl && /^booklets\/ma-[345]-(en|ar)\.pdf$/.test(href) && fs.existsSync(path.join(root, href))), "each step links to a PDF in each language that exists, as a download");
+  check(!(await below.page.evaluate(() => document.querySelector('#subject-ma [data-sheet]'))), "the print button is gone where a booklet exists, since print does not work on iOS Safari");
+  await below.context.close();
+  const atOpen = await open(pathLink(4, "ma", { side: "", from: 4 }));
+  const atGrade = await hrefs(atOpen.page);
+  check(atGrade.length === 2 && /Grade 4 Start here/.test(atGrade[0]) && /Grade 5 Stretch/.test(atGrade[1]), "a child at grade level gets their grade, then the next as a stretch: " + atGrade.join(" | "));
+  await atOpen.context.close();
+  const plain = await open("#v=2&t=T1-2627&g=4&d=ma.205.62");
+  const plainList = await hrefs(plain.page);
+  check(plainList.length === 1 && /Grade 4/.test(plainList[0]) && /written for your child's grade level/.test(await textOf(plain.page)), "with no US grade level in the link a child gets the booklet for their own grade");
+  await plain.context.close();
+  const noBook = await open(pathLink(5, "rd", { side: "", from: 3 }));
+  check(await noBook.page.evaluate(() => !document.querySelector("#subject-rd .booklets") && !!document.querySelector("#subject-rd [data-sheet]")), "a subject with no booklet yet keeps the single practice sheet");
+  await noBook.context.close();
+  const arBook = await open(pathLink(5, "ma", { side: "", from: 3 }), { locale: "ar-AE" });
+  const arTxt = await textOf(arBook.page);
+  check(/كراسات التدريب/.test(arTxt) && /ابدأ من هنا/.test(arTxt) && (await arBook.page.evaluate(() => [...document.querySelectorAll("#subject-ma .bk a")][0].getAttribute("href"))) === "booklets/ma-3-ar.pdf", "in Arabic the first link is the Arabic PDF");
+  await arBook.context.close();
 }
 
 // --------------------------------------------------------- the goal sheet
