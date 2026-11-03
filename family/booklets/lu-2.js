@@ -38,7 +38,7 @@ module.exports = {
     },
     {
       area: "gru",
-      standards: ["L.2.1", "L.2.1a", "L.2.1b", "L.2.1c", "L.2.1d", "L.2.1e", "L.2.1f", "L.2.3a"],
+      standards: ["L.2.1", "L.2.1a", "L.2.1b", "L.2.1c", "L.2.1d", "L.2.1e", "L.2.1f", "L.2.3a", "L.2.4", "L.2.4a", "L.2.4b", "L.2.4c", "L.2.5", "L.2.5b", "L.2.6"],
       example: ex(
         "Choose the right word: Yesterday Maryam (goed / went) to the souq.",
         ["Yesterday tells us the action already happened, so we need a past tense verb.", "Go is an irregular verb: it does not add ed.", "The past tense of go is went."],
@@ -59,12 +59,16 @@ module.exports = {
         en("Join the two sentences into one sentence with the word but: Hamdan wanted to play outside. It was too hot.", "Hamdan wanted to play outside, but it was too hot. (But joins two ideas that go against each other.)"),
         en("Choose the best joining word: It was raining, (so / but) we stayed inside.", "so (staying inside is the result of the rain)."),
         en("Which is better to say to a teacher? A) Hey, gimme that book.  B) May I please borrow that book?", "B (careful, polite language is used with a teacher)."),
-        en("Write one sentence about a camel that uses an adjective and an adverb.", "A good answer is a full sentence with a describing word for the camel and a word that tells how it moves or acts. Model: The tall camel walked gently across the desert.")
+        en("Write one sentence about a camel that uses an adjective and an adverb.", "A good answer is a full sentence with a describing word for the camel and a word that tells how it moves or acts. Model: The tall camel walked gently across the desert."),
+        en("Read: Layla felt nervous before she spoke, but her friends smiled and she soon felt calm. What does the word nervous mean? A) a little afraid  B) very hungry  C) full of joy", "A, a little afraid. (The word but and the later word calm are clues that nervous is the opposite of calm.)"),
+        en("The prefix un means not. What does each word mean? unhappy, unlock. Then name the root word (the word left when the prefix is taken away) in unfair.", "unhappy means not happy; unlock means to open something that was locked (undo the lock). The root word in unfair is fair."),
+        en("Put these words in order from the quietest to the loudest: shout, whisper, talk. Then say which word is the loudest.", "whisper, talk, shout. Shout is the loudest. (Closely related words can have a weaker or stronger meaning.)"),
+        en("Your teacher read you a story about an enormous whale shark, and enormous means very, very big. Say or write a sentence about a camel, a mountain or a tower that uses the new word enormous.", "A good answer is a full sentence that uses enormous correctly for something very big. Model: The Hajar mountains are enormous.")
       ]
     },
     {
       area: "wri",
-      standards: ["W.2.1", "W.2.2", "W.2.3", "W.2.5"],
+      standards: ["W.2.1", "W.2.2", "W.2.3", "W.2.5", "W.2.6", "W.2.7", "W.2.8", "SL.2.1", "SL.2.2", "SL.2.3", "SL.2.4", "SL.2.5", "SL.2.6"],
       example: ex(
         "Put these sentences in the best order to make a short story: (A) At last he waved to the fishermen. (B) Then a wooden dhow sailed into view. (C) Khalid went to the creek at sunrise.",
         ["A story needs a beginning, a middle and an end.", "The beginning tells who and where: C, Khalid went to the creek.", "The middle tells what happens next (look for the word Then): B.", "The end finishes the story (look for At last): A."],
@@ -84,7 +88,12 @@ module.exports = {
         en("Add more detail to this sentence: The falcon flew.", "A good answer adds describing words, or tells where, when or how. Model: The brown falcon flew high over the desert at sunrise."),
         en("Write a sentence that tells how Salem felt when he lost his hat in the wind.", "A good answer says how Salem felt and may tell why. Model: Salem felt sad when the wind blew his hat away."),
         en("Which sentence does not belong, and why? Hind went to the souq. She bought some saffron. I like football. The saffron smelled sweet.", "I like football. It is not about Hind at the souq, so it should be taken out."),
-        en("Name two things to check when you read over your own writing.", "Any two of: a capital letter at the start of each sentence and for names, an end mark, spelling, and that every sentence makes sense.")
+        en("Name two things to check when you read over your own writing.", "Any two of: a capital letter at the start of each sentence and for names, an end mark, spelling, and that every sentence makes sense."),
+        en("Talking together, parent and child take turns. Parent: say clearly, Yesterday I saw a falcon at the park with my friend. Then say to your child: Ask me one question about what I said. Answer it. Then say: Now tell me something about falcons or parks.", "A good answer: the child waits until the parent has finished, then asks a question about the falcon that fits, such as Where was the falcon? or What colour was it? The child then listens to the reply and adds a related comment, taking turns without interrupting."),
+        en("The parent reads aloud this short story, twice if needed: Hamdan and his sister Noura planted a small date palm in their garden. Every day they gave it water. After a month a green leaf grew. They were proud. The child retells the story in their own words.", "A good retell tells who (Hamdan and Noura), what they did (planted a date palm and watered it), what happened (a green leaf grew) and how they felt (proud), in an order that makes sense and in complete sentences."),
+        en("Parent: show your child a picture or photo of a camel in the desert, or let them draw one first. Say: (1) Tell me about your picture in three complete sentences, speaking clearly. (2) Now tell me one more thing we could add to the picture to show more detail.", "A good answer is three full sentences with details such as colour, size, the sand, the sky or what the camel is doing, spoken clearly and not too fast, with an idea like adding a palm tree or the sun to the drawing."),
+        en("Parent and child read a book or page about camels together. Parent: say (1) Tell me two facts you learned, in your own words. (2) Now say the first sentence you would write to start a short report about camels.", "A good answer gives two true facts taken from the book, such as camels store fat in their humps or camels can go a long time without water, said in the child's own words, and a first sentence that names the topic, such as Camels are amazing desert animals."),
+        en("Optional, done with an adult beside you: if you have a tablet or computer, the adult helps you type three sentences about something you learned this week (or write them on paper if you prefer). Then read them aloud and say two things you learned.", "A good answer shows three sentences (typed or written) read aloud. The child names two things they learned and where the information came from, such as a book, a trip or a talk. The adult helps with typing and saving, but the ideas are the child's.")
       ]
     }
   ]

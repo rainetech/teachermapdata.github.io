@@ -70,7 +70,7 @@ export function validateBooklet(b, Core, fileName) {
     const need = (ok, text) => { if (!ok) problems.push(at + text); };
     need(Array.isArray(s.standards) && s.standards.length >= 1, "name at least one standard");
     (s.standards || []).forEach((code) => need(pattern.test(code), "standard " + code + " is not a " + b.framework + " code for grade " + b.grade + " (expected like " + pattern.source + ")"));
-    need(Array.isArray(s.items) && s.items.length >= 10 && s.items.length <= 16, "10 to 16 questions (found " + (s.items || []).length + ")");
+    need(Array.isArray(s.items) && s.items.length >= 10 && s.items.length <= 20, "10 to 20 questions (found " + (s.items || []).length + ")");
     const e = s.example;
     need(e && e.en && e.en.question && Array.isArray(e.en.steps) && e.en.steps.length >= 2 && e.en.answer, "a worked example with a question, two steps or more and an answer");
     if (!b.englishOnly) need(e && e.ar && e.ar.question && Array.isArray(e.ar.steps) && e.ar.steps.length >= 2 && e.ar.answer, "the worked example in Arabic too");

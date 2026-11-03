@@ -42,7 +42,7 @@ module.exports = {
   printed before the questions; the questions then refer to it.
 - `example`: one worked example, `ex(...)` as in `ma-5.js`: a question, two or
   more steps and an answer.
-- `items`: 10 to 16 questions, each `it(questionEn, answerEn, questionAr, answerAr)`.
+- `items`: 10 to 20 questions, each `it(questionEn, answerEn, questionAr, answerAr)`.
   The answer is what the parent sees in the answer guide: give the answer and, where
   useful, a short reason in brackets.
 
@@ -60,7 +60,7 @@ Arabic is modern standard Arabic, plain and natural, with the numbers as digits.
 - Written AT the grade's expectations: what a typical child of that grade is expected
   to know and do. Original wording and original passages; nothing copied from the
   standards, from textbooks or from NWEA items.
-- 10 to 16 questions a section, with a range of difficulty: begin with the core
+- 10 to 20 questions a section, with a range of difficulty: begin with the core
   skill, end with a question that makes the child explain or use it in a new way.
 - Answers must be CORRECT and unambiguous. For Mathematics work every answer out
   (run a line of node if in doubt). For Science be accurate and keep to what the

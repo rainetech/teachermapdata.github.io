@@ -14,7 +14,7 @@ module.exports = {
   sections: [
     {
       area: "fnd",
-      standards: ["RF.2.3a", "RF.2.3b", "RF.2.3d", "RF.2.3e", "RF.2.3f", "RF.2.4c"],
+      standards: ["RF.2.3a", "RF.2.3b", "RF.2.3c", "RF.2.3d", "RF.2.3e", "RF.2.3f", "RF.2.4c"],
       example: exEn(
         "Split the word \"basket\" into syllables.",
         ["Clap the word as you say it: bas-ket. You clap two times.", "Each clap is one syllable, and each syllable has a vowel sound."],
@@ -31,16 +31,34 @@ module.exports = {
         en("What is the suffix in the word \"helpful\"?", "-ful (it comes at the end of the word)."),
         en("Which common word does not follow the usual sound pattern: said, sad or sand?", "said (the ai in said makes a short e sound, not a long a)."),
         en("Which word ends in the sound /t/ when you say the -ed ending: jumped, wanted or played?", "jumped (wanted ends in the sound /id/ and played ends in /d/)."),
-        en("You read a sentence aloud and one word does not make sense. What should you do?", "Go back and reread the sentence, looking at the word again, until it makes sense.")
+        en("You read a sentence aloud and one word does not make sense. What should you do?", "Go back and reread the sentence, looking at the word again, until it makes sense."),
       ]
     },
     {
       area: "cmp",
-      standards: ["RL.2.1", "RL.2.2", "RL.2.3", "RL.2.5"],
-      passage: {
-        title: "Dates for Eid",
-        text: "On Friday morning, Maryam and her cousin Hamdan went with Grandmother to a date farm in Al Ain. The air was warm. The palm trees stood in long, straight rows. Grandmother wanted to pick dates to make sweets for Eid. Maryam carried a basket, and Hamdan held a small ladder.\n\n\"Pick only the soft, brown dates,\" said Grandmother. The children worked carefully and filled the basket. Soon it was heavy.\n\nThen Hamdan saw a tired little bird sitting in the shade. It looked thirsty. He did not touch it. Instead, he called Grandmother, and she poured some water into a small dish. The bird drank, rested, and flew away.\n\n\"That was kind and gentle,\" said Grandmother. \"When we help quietly, we make the world better.\"\n\nThe children carried the heavy basket home, smiling all the way."
-      },
+      standards: ["RL.2.1", "RL.2.2", "RL.2.3", "RL.2.5", "RI.2.1", "RI.2.2", "RI.2.3", "RL.2.6", "RL.2.7", "RL.2.9", "RI.2.7", "RI.2.8", "RI.2.9"],
+      passage: [
+        {
+          title: "Text A: Dates for Eid",
+          text: "On Friday morning, Maryam and her cousin Hamdan went with Grandmother to a date farm in Al Ain. The air was warm. The palm trees stood in long, straight rows. Grandmother wanted to pick dates to make sweets for Eid. Maryam carried a basket, and Hamdan held a small ladder.\n\n\"Pick only the soft, brown dates,\" said Grandmother. The children worked carefully and filled the basket. Soon it was heavy.\n\nThen Hamdan saw a tired little bird sitting in the shade. It looked thirsty. He did not touch it. Instead, he called Grandmother, and she poured some water into a small dish. The bird drank, rested, and flew away.\n\n\"That was kind and gentle,\" said Grandmother. \"When we help quietly, we make the world better.\"\n\nThe children carried the heavy basket home, smiling all the way."
+        },
+        {
+          title: "Text B: The Date Palm",
+          text: "The date palm is a tall tree that grows well in hot, dry places. Its long roots reach deep underground to find water.\n\nHow Dates Grow\nFirst, small flowers open on the tree in spring. Next, the flowers turn into green dates. Then the dates change colour as they get bigger. Last, they become soft and brown, and farmers harvest them.\n\nMany Uses\nFor many years, people in the Emirates have used every part of the palm. The fruit is food. The leaves can be woven into mats and fans. The trunk gives wood for building.\n\nGlossary\nharvest: to pick a crop when it is ready"
+        },
+        {
+          title: "Text C: The Lost Kite (Salem and Noura)",
+          text: "Salem and his sister Noura flew a red kite on the beach in Sharjah while Mother sat on a bench nearby. The wind was strong. It pulled the string out of Salem's hand, and the kite landed at the top of a tall palm tree.\n\n\"Oh no, my kite is lost!\" said Salem. He felt very worried.\n\n\"Don't worry,\" said Noura in a happy voice. \"We can get it back.\"\n\nMother found a long stick and reached up. The kite came down, and Salem held the string tight. \"Thank you,\" he said. \"Next time I will hold it with both hands.\""
+        },
+        {
+          title: "Text D: The Lost Kite (Hamdan and Layla)",
+          text: "Hamdan and his cousin Layla flew a green kite in the desert near Hatta while Grandfather sat in the shade of a ghaf tree. The wind was strong. It pulled the string out of Hamdan's hand, and the kite landed on a branch of the ghaf tree.\n\n\"I think it is too high,\" said Layla in a small voice.\n\n\"Let us try,\" said Hamdan in a brave voice. \"We will find a way.\"\n\nGrandfather found a long stick and reached up. The kite came down, and Hamdan held the string tight. \"Thank you,\" he said. \"Next time I will hold it with both hands.\""
+        },
+        {
+          title: "Text E: Solar Parks",
+          text: "A solar park is a large place filled with rows of solar panels. Solar panels catch sunlight and turn it into electricity. Homes, schools and shops use that electricity for lights and fans.\n\nThe UAE is a good place for solar parks because it has many sunny days. Solar panels use sunlight, so they make electricity without making smoke. This helps keep the air clean, so solar parks are a good choice for the country."
+        }
+      ],
       example: exEn(
         "Read: \"Noura put on her coat because the desert night was cold.\" Why did Noura put on her coat?",
         ["Find the word because. It tells us the reason.", "The reason comes after because: the desert night was cold."],
@@ -49,21 +67,39 @@ module.exports = {
       items: [
         en("Who went to the date farm with Grandmother?", "Maryam and her cousin Hamdan."),
         en("Where is the date farm?", "In Al Ain."),
-        en("When did they go to the farm?", "On a Friday morning."),
-        en("What did Grandmother want to make with the dates?", "Sweets for Eid."),
-        en("What did Hamdan hold while they worked?", "A small ladder."),
         en("What did Hamdan see in the shade?", "A tired, thirsty little bird."),
         en("Why did Grandmother pour water into a small dish?", "Because the bird looked thirsty."),
         en("How did the children pick the dates?", "Carefully (they picked only the soft, brown ones)."),
-        en("What happened after the bird drank?", "It rested and then flew away."),
         en("Which sentence tells the main idea of the story: (a) Dates grow in Al Ain. (b) Two cousins helped a thirsty bird while they picked dates. (c) Eid sweets are made with dates.", "(b) (it tells what the whole story is about, not just one detail)."),
         en("What lesson does Grandmother teach at the end of the story?", "When we help others quietly and kindly, we make the world better (be kind and helpful)."),
-        en("Put these in the order they happen: the bird drinks water; the children pick dates; the children carry the basket home.", "1. The children pick dates. 2. The bird drinks water. 3. The children carry the basket home.")
+        en("Put these in the order they happen: the bird drinks water; the children pick dates; the children carry the basket home.", "1. The children pick dates. 2. The bird drinks water. 3. The children carry the basket home."),
+        en("Read Text B. Why can the date palm grow well in hot, dry places?", "Its long roots reach deep underground to find water."),
+        en("What is the main topic of Text B: (a) how to bake Eid sweets, (b) the date palm, how it grows and how it is used, or (c) a trip to a farm in Al Ain?", "(b) (the whole text tells facts about the date palm)."),
+        en("In Text B, what happens right after the small flowers open?", "They turn into green dates (the word next shows the order)."),
+        en("Text A and Text B are both about dates. Which idea is in Text B but not in Text A: (a) Dates are soft and brown when ready. (b) Palm leaves can be woven into mats and fans. (c) Children can help pick dates.", "(b) (Text A tells about soft, brown dates and children picking them, but only Text B tells about using the leaves)."),
+        en("In Text C, who feels worried at first, and who feels sure the kite can be saved?", "Salem feels worried, and Noura feels sure (she says \"Don't worry\" in a happy voice)."),
+        en("In Text D, which character says the kite is too high, and which character wants to try?", "Layla says it is too high, and Hamdan wants to try (each character has a different point of view)."),
+        en("A picture next to Text C shows a red kite stuck at the top of a tall palm tree, with Salem pointing up and Mother holding a long stick. Which part of the story does the picture match best: (a) the kite landing in the tree and the plan to reach it, (b) Salem saying thank you, or (c) the children arriving at the beach?", "(a) (the picture shows the kite in the tree and the long stick, so it helps us see the problem and how it will be solved)."),
+        en("Text C and Text D are two versions of the same story. What happens to the kite in both of them?", "The wind pulls the string away and the kite lands in a tree, then a long stick is used to bring it down."),
+        en("Text C and Text D are two versions of the same story. Name one way Text D is different from Text C.", "Any one of these: it is set in the desert near Hatta, not on a beach in Sharjah; the children are Hamdan and Layla, not Salem and Noura; the kite is green, not red; Grandfather helps, not Mother."),
+        en("A diagram below Text E shows the sun at the top, an arrow down to a solar panel, and a second arrow from the panel to a light bulb. What does the second arrow show?", "The electricity made by the panel goes to the light bulb (it gives the bulb power)."),
+        en("A photo beside Text E shows many flat panels in long rows, all tilted to face the sun. Which part of the text does the photo match best: (a) the first sentence about rows of solar panels, or (b) the last sentence about clean air?", "(a) (the photo shows what a solar park looks like, with panels in rows)."),
+        en("What reason does the author give for the UAE being a good place for solar parks?", "It has many sunny days.")
       ]
     },
     {
       area: "voc",
-      standards: ["L.2.4a", "L.2.4b", "L.2.4d", "L.2.5b"],
+      standards: ["L.2.4a", "L.2.4b", "L.2.4d", "L.2.5b", "RL.2.4", "RI.2.4", "RI.2.5", "RI.2.6"],
+      passage: [
+        {
+          title: "Text A: Rain in the Desert",
+          text: "Drip, drip, drop, the rain comes down,\nOver the sand and the sleepy town.\nDrip, drip, drop, on the palm tree tall,\nThe thirsty ground drinks it all.\nSplash, splash, splash, the puddles play,\nThe sun comes out and we cheer, hooray!"
+        },
+        {
+          title: "Text B: The Hope Probe",
+          text: "A Journey to Mars\nThe Hope Probe is a spacecraft built in the United Arab Emirates. In 2021 it reached Mars and began to circle the planet. It is an orbiter, which means it travels around a planet instead of landing on it.\n\nWhat Hope Studies\nThe probe uses special tools to study the weather and the air of Mars. Scientists share what it finds so that people everywhere can learn about the red planet.\n\nGlossary\norbiter: a spacecraft that circles a planet"
+        }
+      ],
       example: exEn(
         "Read: \"The path was narrow, so only one camel could walk on it at a time.\" What does narrow mean?",
         ["Look for clues near the word. Only one camel could fit on the path.", "A path where only one fits is not wide."],
@@ -81,7 +117,11 @@ module.exports = {
         en("Which word is the opposite of \"empty\": full, open or small?", "full."),
         en("Put these words in order from least hot to most hot: boiling, warm, hot.", "warm, hot, boiling."),
         en("Which word shows the fastest way to move: stroll, hurry or wander?", "hurry (stroll and wander are relaxed ways of moving)."),
-        en("Explain why \"happy\" and \"unhappy\" are opposites. What does the prefix do?", "Un- means not, so unhappy means not happy, the opposite of happy.")
+        en("Explain why \"happy\" and \"unhappy\" are opposites. What does the prefix do?", "Un- means not, so unhappy means not happy, the opposite of happy."),
+        en("In the poem in Text A, which word at the end of line 2 rhymes with \"down\" at the end of line 1? What does the repeated \"drip, drip, drop\" help you hear?", "town rhymes with down. The repeated words give a steady beat and help you hear raindrops falling."),
+        en("In Text B, what does the word \"orbiter\" mean?", "A spacecraft that circles (travels around) a planet. The text and the glossary both say so."),
+        en("Which part of Text B would you read to find out what the Hope Probe studies: the heading \"A Journey to Mars\", the heading \"What Hope Studies\" or the Glossary?", "The heading \"What Hope Studies\" (headings tell what each part is about)."),
+        en("What is the main purpose of Text B: (a) to make you laugh, (b) to tell you facts about the Hope Probe, or (c) to ask you to buy something?", "(b) (the author wants to explain and describe the Hope Probe).")
       ]
     },
     {
@@ -104,7 +144,7 @@ module.exports = {
         en("Write the plural of \"tooth\".", "teeth."),
         en("Which is a complete sentence: (a) The big camel. (b) The camel drank water.", "(b) (it tells who and what happened; (a) is only part of a sentence)."),
         en("Which sentence is the best way to make \"The boy ran.\" longer: (a) The boy ran. (b) The happy boy ran quickly to the souq. (c) Ran quickly the.", "(b) (it adds a describing word, how he ran and where)."),
-        en("Put these sentences in order to tell a story: Finally he said thank you. First Salem washed his hands. Then Salem ate his lunch.", "First Salem washed his hands. Then Salem ate his lunch. Finally he said thank you.")
+        en("Put these sentences in order to tell a story: Finally he said thank you. First Salem washed his hands. Then Salem ate his lunch.", "First Salem washed his hands. Then Salem ate his lunch. Finally he said thank you."),
       ]
     }
   ]
