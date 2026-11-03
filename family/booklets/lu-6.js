@@ -31,7 +31,7 @@ module.exports = {
         en("Add commas: The souq I think opens at nine.", "The souq, I think, opens at nine. (a short aside inside a sentence is set off by commas)"),
         en("Only some of the students finished early, and only those students helped set up the science fair. Which sentence says this correctly? (a) The students, who finished early, helped set up the science fair. (b) The students who finished early helped set up the science fair.", "(b). The words who finished early are needed to tell which students helped, so no commas are used. In (a) the commas would suggest that all the students finished early."),
         en("Add commas: The Hope Probe which was built in the UAE reached Mars in 2021.", "The Hope Probe, which was built in the UAE, reached Mars in 2021. (the phrase gives extra information about a probe we already know)"),
-        mc("Which word is spelled correctly?", ["definately", "definitly", "definitely", "defanitely"], 2, "definitely has the letters i, t, e, l, y after the f, with an i in the middle."),
+        mc("Which word is spelled correctly?", ["definately", "definitly", "definitely", "defanitely"], 2, "definitely is spelled d-e-f-i-n-i-t-e-l-y, with an i after the f and another after the n."),
         en("Which spelling is correct: seperate, separate or separete?", "separate (remember: there is 'a rat' in separate)"),
         mc("Choose the word that completes the sentence: Everyone will join the trip to the oasis ____ Omar, who has a cold.", ["accept", "except", "expect", "excepts"], 1, "except means but not. Accept means to receive or agree to."),
         en("Which spelling is correct: neccessary, necesary or necessary?", "necessary (one c and two s's)"),

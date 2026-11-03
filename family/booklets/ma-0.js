@@ -85,7 +85,7 @@ module.exports = {
         mc("Count by tens: 10, 20, 30. What number comes next?", ["31", "40", "50"], 1, "Counting by tens, 30 and ten more is 40.", "عدّ بالعشرات: 10، 20، 30. ما العدد التالي؟", ["31", "40", "50"], "بالعدّ بالعشرات، 30 وعشرة أخرى تصبح 40."),
         mc("Which one is the number fifteen written with digits?", ["50", "51", "15"], 2, "Fifteen is a 1 for the ten and a 5 for the ones: 15.", "أي عدد هو خمسة عشر مكتوبًا بالأرقام؟", ["50", "51", "15"], "خمسة عشر هو 1 للعشرة و 5 للآحاد: 15."),
         it("Salem has 8 stones and Noura has 6 stones. Which number is greater?", "8", "مع سالم 8 حصوات ومع نورة 6 حصوات. أي العددين أكبر؟", "8"),
-        it("Hamdan has 17 dates and Layla has 15 dates. Which number is smaller?", "15", "مع حمدان 17 تمرة ومع ليلى 15 تمرة. أي العددين أصغر؟", "15"),
+        it("Hamdan has 9 dates and Layla has 7 dates. Which number is smaller?", "7", "مع حمدان 9 تمرات ومع ليلى 7 تمرات. أي العددين أصغر؟", "7"),
         mc("13 is ten and how many ones?", ["3", "1", "13"], 0, "13 is ten and 3 ones.", "العدد 13 هو عشرة وكم من الآحاد؟", ["3", "1", "13"], "13 هو عشرة و 3 آحاد."),
         it("Ten buttons and 4 more buttons make what number? Which number comes just before 20?", "14; the number before 20 is 19.", "عشرة أزرار و 4 أزرار أخرى تصنع أي عدد؟ وما العدد الذي يأتي قبل 20 مباشرة؟", "14؛ والعدد الذي يسبق 20 هو 19.")
       ]

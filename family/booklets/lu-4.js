@@ -53,7 +53,7 @@ module.exports = {
         mc("Which word best completes the sentence? My uncle, ___ drives a bus, knows every road in Sharjah.", ["where", "who", "whose", "which"], 1, "Who refers to a person."),
         mc("Which choice completes the sentence with the past progressive? Salem ___ along the creek when it began to rain.", ["walked", "is walking", "will be walking", "was walking"], 3, "Was walking is the past progressive form."),
         en("Write the future progressive form of \"drive\": Tomorrow at noon, we ___ to Al Ain.", "will be driving"),
-        mc("Which helping verb best completes the sentence? It is cloudy this morning, so it ___ rain later.", ["must", "might", "need", "did"], 1, "Might shows the rain is possible, not certain."),
+        mc("Which helping verb best completes the sentence? It is cloudy this morning, so it ___ rain later.", ["has", "might", "need", "did"], 1, "Might shows the rain is possible, not certain."),
         en("Choose the best helping verb (must, might, can): At the cycling track there is a rule: cyclists ___ wear a helmet.", "must (it shows a rule that has to be followed)"),
         mc("Which phrase has the adjectives in the right order?", ["a big young brown camel", "a brown young big camel", "a young brown big camel", "a big brown young camel"], 0, "The order is size, then age, then colour."),
         en("Finish the sentence with a phrase that begins with a word like on, under or near: The falcon landed ___.", "Answers vary. Example: The falcon landed on Khalid's glove. (The phrase must begin with a word such as on, under or near and tell where.)"),
