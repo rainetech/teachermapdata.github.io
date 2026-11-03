@@ -529,7 +529,7 @@ section("The practice booklets");
   check(plainList.length === 1 && /Grade 4/.test(plainList[0]) && /written for your child's grade level/.test(await textOf(plain.page)), "with no US grade level in the link a child gets the booklet for their own grade");
   await plain.context.close();
   // Language Usage has no Grade 1 booklet by design (its tests start at Grade 2), so a Grade 1 child keeps the single sheet.
-  const noBook = await open(pathLink(1, "lu", { side: "", from: 1 }));
+  const noBook = await open(pathLink(1, "lu", { side: "", from: 0 }));
   check(await noBook.page.evaluate(() => !document.querySelector("#subject-lu .booklets") && !!document.querySelector("#subject-lu [data-sheet]")), "a subject with no booklet for the child's grades keeps the single practice sheet");
   await noBook.context.close();
   const arBook = await open(pathLink(5, "ma", { side: "", from: 3 }), { locale: "ar-AE" });
