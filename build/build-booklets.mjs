@@ -144,7 +144,7 @@ function html(b, lang) {
     body += "<section><h2>" + esc(w.section) + " " + (i + 1) + ": " + esc(areaName(b.subject, s.area, lang)) + "</h2>";
     body += '<p class="std">' + esc(w.standards) + ': <bdi dir="ltr">' + esc(s.standards.join(", ")) + "</bdi></p>";
     body += '<div class="box"' + wrap + "><h3>" + esc(w.example) + '</h3><p><b>' + t(e.question) + "</b></p><ol>" + e.steps.map((st) => "<li>" + t(st) + "</li>").join("") + "</ol><p><b>" + t(e.answer) + "</b></p></div>";
-    if (s.passage) body += '<div class="box passage" dir="ltr" lang="en"><h3>' + esc(s.passage.title) + "</h3>" + s.passage.text.split(/\n\n+/).map((para) => "<p>" + esc(para) + "</p>").join("") + "</div>";
+    if (s.passage) (Array.isArray(s.passage) ? s.passage : [s.passage]).forEach((p) => { body += '<div class="box passage" dir="ltr" lang="en"><h3>' + esc(p.title) + "</h3>" + p.text.split(/\n\n+/).map((para) => "<p>" + esc(para) + "</p>").join("") + "</div>"; });
     body += "<h3>" + esc(w.questions) + '</h3><ol class="q"' + wrap + ">" + s.items.map((item) => "<li>" + t(pick(item.q)) + '<span class="line"></span></li>').join("") + "</ol></section>";
   });
   body += '<div class="answers"><h2>' + esc(w.answers) + "</h2>";

@@ -70,11 +70,11 @@ export function validateBooklet(b, Core, fileName) {
     const need = (ok, text) => { if (!ok) problems.push(at + text); };
     need(Array.isArray(s.standards) && s.standards.length >= 1, "name at least one standard");
     (s.standards || []).forEach((code) => need(pattern.test(code), "standard " + code + " is not a " + b.framework + " code for grade " + b.grade + " (expected like " + pattern.source + ")"));
-    need(Array.isArray(s.items) && s.items.length >= 10 && s.items.length <= 12, "10 to 12 questions (found " + (s.items || []).length + ")");
+    need(Array.isArray(s.items) && s.items.length >= 10 && s.items.length <= 16, "10 to 16 questions (found " + (s.items || []).length + ")");
     const e = s.example;
     need(e && e.en && e.en.question && Array.isArray(e.en.steps) && e.en.steps.length >= 2 && e.en.answer, "a worked example with a question, two steps or more and an answer");
     if (!b.englishOnly) need(e && e.ar && e.ar.question && Array.isArray(e.ar.steps) && e.ar.steps.length >= 2 && e.ar.answer, "the worked example in Arabic too");
-    if (s.passage !== undefined) need(s.passage && typeof s.passage.title === "string" && typeof s.passage.text === "string" && s.passage.text.length >= 200, "a passage is { title, text } with a text of at least 200 characters");
+    if (s.passage !== undefined) (Array.isArray(s.passage) ? s.passage : [s.passage]).forEach((p) => need(p && typeof p.title === "string" && typeof p.text === "string" && p.text.length >= 200, "a passage is { title, text } with a text of at least 200 characters (a section may have an array of two or three passages)"));
     (s.items || []).forEach((item, i) => {
       need(item && item.q && item.q.en && item.a && item.a.en, "question " + (i + 1) + " needs a question and an answer in English");
       if (!b.englishOnly) need(item && item.q && item.q.ar && item.a && item.a.ar, "question " + (i + 1) + " needs a question and an answer in Arabic");
