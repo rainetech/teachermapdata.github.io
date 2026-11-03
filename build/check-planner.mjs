@@ -292,12 +292,13 @@ await page.waitForTimeout(250);
 const two = await groupState();
 check(two.tables === one.tables + 1, "a table can be added to a group: one more table in the room (" + one.tables + " to " + two.tables + ")");
 check(two.groups === one.groups && two.order === one.order, "adding a table makes no new group and moves no student");
-check(two.parts.length === 2 && two.parts[0].seats + two.parts[1].seats === one.desks[0] && two.desks[0] === one.desks[0] && two.caps[0] === one.caps[0], "the group keeps its desks, shared between its two tables (" + two.parts.map((part) => part.seats).join(" + ") + ")");
+check(two.parts.length === 2 && two.parts[0].seats === one.desks[0] && two.parts[1].seats === two.parts[0].seats && two.desks[0] === 2 * one.desks[0] && two.caps[0] === 2 * one.desks[0], "a new table is the same size as the one before it and the first table keeps all its desks (" + two.parts.map((part) => part.seats).join(" + ") + ")");
+check(await page.evaluate(() => { const parts = roomTableParts(0); const k = parts.length - 1; const part = parts[k]; return boxIsClear(roomObstacles({ index: 0, k }), part.table.x, part.table.y, part.geo.width, part.geo.height, TABLE_PLATE_CM); }), "the new table's name plate has clear floor above it, so it never lands on anyone's desk");
 check(two.selection && two.selection.kind === "table" && two.selection.index === 0 && two.selection.part === 1, "the new table is selected, ready to drag");
 const afterAdd = await geometry();
 check(afterAdd.overlaps === 0 && afterAdd.outside === 0, "the new table stands clear of every other table and inside the room");
 const seatNumbers = await page.evaluate(() => [...document.querySelectorAll('[data-classroom-board] [data-drop-zone="seat"][data-table-index="0"]')].map((el) => Number(el.dataset.seatIndex)).sort((a, b) => a - b).join(","));
-check(seatNumbers === Array.from({ length: one.desks[0] }, (_, i) => i).join(","), "the group's seats carry on across its tables, none repeated (" + seatNumbers + ")");
+check(seatNumbers === Array.from({ length: two.desks[0] }, (_, i) => i).join(","), "the group's seats carry on across its tables, none repeated (" + seatNumbers + ")");
 const plates = await page.evaluate(() => [...document.querySelectorAll('[data-classroom-board] [data-layout-kind="table"][data-table-index="0"] .room-table-label')].map((el) => el.textContent));
 check(plates.length === 2 && plates[0] === "Table 1" && plates[1] === "Table 1 \u00b7 B", "the added table carries the group's name and its letter (" + plates.join(" / ") + ")");
 check(await page.evaluate(() => !!document.querySelector('#roomInspector [data-room-action="remove-table"]')), "an added table can be removed from its settings");
@@ -421,6 +422,8 @@ await page.waitForTimeout(200);
 check(await page.evaluate(() => roomTableParts(0).length === 1), "Ctrl+Z takes the added table away again");
 await page.focus('[data-classroom-board] [data-layout-kind="table"][data-table-index="0"][data-table-part="0"]');
 await page.keyboard.press("Enter");
+// A new table is as big as the one before it, so the group's first table is made just big enough for its students: four of those fit the room.
+await page.evaluate(() => { setTableDesks(0, 0, state.tableGroups[0].length); rerenderRoom(); });
 for (let i = 0; i < 5; i += 1) {
   await page.click('#roomInspector [data-room-action="add-table"]:not([disabled])', { timeout: 500 }).catch(() => {});
   await page.waitForTimeout(120);
@@ -435,8 +438,8 @@ check(relaid.overlaps === 0 && relaid.outside === 0 && await page.evaluate(() =>
 await page.focus('[data-classroom-board] [data-layout-kind="table"][data-table-index="0"][data-table-part="3"]');
 await page.keyboard.press("Delete");
 await page.waitForTimeout(200);
-const afterDelete = await page.evaluate(() => ({ parts: roomTableParts(0).length, desks: tableSeatCount(0), order: JSON.stringify(state.tableGroups.map((g) => g.map((p) => p.key))) }));
-check(afterDelete.parts === 3 && afterDelete.desks === capped.desks && afterDelete.order === two.order, "Delete takes an added table away: its desks go back to the table before it and nobody moves");
+const afterDelete = await page.evaluate(() => ({ parts: roomTableParts(0).length, desks: tableSeatCount(0), students: state.tableGroups[0].length, order: JSON.stringify(state.tableGroups.map((g) => g.map((p) => p.key))) }));
+check(afterDelete.parts === 3 && afterDelete.desks < capped.desks && afterDelete.desks >= afterDelete.students && afterDelete.order === two.order, "Delete takes an added table away with its desks, keeps a desk for every student, and nobody moves (" + capped.desks + " to " + afterDelete.desks + ")");
 await page.evaluate(() => { state.classroomLayout.tables.forEach((t) => { delete t.more; delete t.seats; }); initializeClassroomLayout(state.tableGroups.length, false); rerenderRoom(); });
 // One extra table is left in the room for the plan file, the prints and the export below.
 await page.focus('[data-classroom-board] [data-layout-kind="table"][data-table-index="0"][data-table-part="0"]');

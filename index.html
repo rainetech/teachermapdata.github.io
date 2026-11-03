@@ -19166,7 +19166,7 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
         roomTableParts(index).forEach((part) => {
           if (skip && skip.index === index && skip.k === part.k) return;
           if (!Number.isFinite(part.table.x) || !Number.isFinite(part.table.y)) return;
-          out.push({ x: part.table.x, y: part.table.y, w: part.geo.width, h: part.geo.height });
+          out.push({ x: part.table.x, y: part.table.y, w: part.geo.width, h: part.geo.height, label: true });
         });
       });
       (state.classroomLayout.fixtures || []).forEach((fixture) => {
@@ -19181,14 +19181,23 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
 
     // Whether a box this size, with its top left corner here, stands clear of
     // every obstacle by a hand's breadth.
-    function boxIsClear(obstacles, x, y, width, height) {
+    // labelRoom is the height of a table's name plate, which sits above the
+    // table: with it, a box and every table it is checked against keep that
+    // much floor above them, so a plate never lands on someone's desk.
+    function boxIsClear(obstacles, x, y, width, height, labelRoom = 0) {
       const gap = 6;
-      return !obstacles.some((o) => x < o.x + o.w + gap && x + width + gap > o.x && y < o.y + o.h + gap && y + height + gap > o.y);
+      const top = y - labelRoom;
+      const tall = height + labelRoom;
+      return !obstacles.some((o) => {
+        const oy = o.label ? o.y - labelRoom : o.y;
+        const oh = o.label ? o.h + labelRoom : o.h;
+        return x < o.x + o.w + gap && x + width + gap > o.x && top < oy + oh + gap && top + tall + gap > oy;
+      });
     }
 
     // The clear place nearest `near` for a box this size, on a 10 cm grid and
     // inside the room, or the nearest place at all if the room has none.
-    function findFreeSpot(width, height, near, skip = null) {
+    function findFreeSpot(width, height, near, skip = null, labelRoom = 0) {
       const room = roomSize();
       const obstacles = roomObstacles(skip);
       const maxX = Math.max(0, room.width - width);
@@ -19196,11 +19205,11 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       const aim = { x: clampBetween(finiteLayoutNumber(near && near.x), 0, maxX), y: clampBetween(finiteLayoutNumber(near && near.y), 0, maxY) };
       let best = null;
       let bestDistance = Infinity;
-      for (let y = 0; y <= maxY; y += 10) {
+      for (let y = Math.min(maxY, Math.ceil(labelRoom / 10) * 10); y <= maxY; y += 10) {
         for (let x = 0; x <= maxX; x += 10) {
           const distance = (x - aim.x) ** 2 + (y - aim.y) ** 2;
           if (distance >= bestDistance) continue;
-          if (boxIsClear(obstacles, x, y, width, height)) {
+          if (boxIsClear(obstacles, x, y, width, height, labelRoom)) {
             best = { x, y };
             bestDistance = distance;
           }
@@ -19220,9 +19229,12 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       state.manualArrangement = true;
     }
 
-    // A new table for the group, beside its last. The last table hands over
-    // half its desks, so the group keeps the desks it had and every student
-    // keeps their seat: the seats just carry on across the new table.
+    // How much floor a table's name plate needs above it, in centimetres.
+    const TABLE_PLATE_CM = 30;
+
+    // A new table for the group, the same size as its last and beside it, with
+    // empty desks. Nobody moves and no table loses a desk: the group simply has
+    // more places, and its seats carry on across the new table.
     function addTableToGroup(index) {
       if (!state.tableGroups[index]) return;
       const main = roomTable(index);
@@ -19234,38 +19246,41 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
       pushRoomHistory();
       const last = parts[parts.length - 1];
       const counts = parts.map((part) => part.seats);
-      const give = Math.max(1, Math.floor(last.seats / 2));
-      counts[counts.length - 1] = Math.max(1, last.seats - give);
+      const give = Math.max(1, Math.min(MAX_TABLE_DESKS, last.seats));
       counts.push(give);
       const extra = { x: NaN, y: NaN, shape: last.table.shape, rot: last.table.rot, seats: give };
       main.more = (Array.isArray(main.more) ? main.more : []).concat(extra);
       writeDeskCounts(index, counts);
       const geo = tableGeometry(extra.shape, give, extra.rot);
       const skip = { index, k: counts.length - 1 };
-      const spot = findFreeSpot(geo.width, geo.height, { x: last.table.x + last.geo.width + TABLE_PART_GAP, y: last.table.y }, skip);
+      const spot = findFreeSpot(geo.width, geo.height, { x: last.table.x + last.geo.width + TABLE_PART_GAP, y: last.table.y }, skip, TABLE_PLATE_CM);
       Object.assign(extra, spot);
-      const clear = boxIsClear(roomObstacles(skip), spot.x, spot.y, geo.width, geo.height);
+      const clear = boxIsClear(roomObstacles(skip), spot.x, spot.y, geo.width, geo.height, TABLE_PLATE_CM);
       state.roomSelection = { kind: "table", index, part: counts.length - 1 };
-      settleAndRender((counts.length > 2 ? "Another" : "A second") + " table added to " + tableLabel(index) + ": " + tablePartLabel(index, counts.length - 1) + ", " +
-        formatInteger(give) + " desk" + (give === 1 ? "" : "s") + ". The seats carry on across it. " +
+      settleAndRender((counts.length > 2 ? "Another" : "A second") + " table added to " + tableLabel(index) + ": " + tablePartLabel(index, counts.length - 1) + ", with " +
+        formatInteger(give) + " empty desk" + (give === 1 ? "" : "s") + ". Nobody moved and the other tables kept their desks. " +
         (clear ? "Drag it where you want it." : "The room had no clear floor left for it, so it sits on another table: drag it into a gap, or make the room bigger."));
     }
 
-    // Takes one of a group's added tables away. Its desks go back to the
-    // table before it, so the group keeps every desk and every student.
+    // Takes one of a group's added tables away, with its desks. The group keeps
+    // a desk for every student: if the students need more than the tables left
+    // have, the table before it keeps as many of the removed desks as they need.
     function removeGroupTable(index, k) {
       const main = roomTable(index);
       const parts = roomTableParts(index);
       if (!(k >= 1) || k >= parts.length) return;
       pushRoomHistory();
       const counts = parts.map((part) => part.seats);
-      counts[k - 1] += counts[k];
+      const removedLabel = tablePartLabel(index, k);
       counts.splice(k, 1);
+      const students = state.tableGroups[index] ? state.tableGroups[index].length : 0;
+      const kept = counts.reduce((sum, n) => sum + n, 0);
+      if (students > kept) counts[k - 1] = Math.min(MAX_TABLE_DESKS, counts[k - 1] + (students - kept));
       main.more.splice(k - 1, 1);
       if (!main.more.length) delete main.more;
       writeDeskCounts(index, counts);
       state.roomSelection = { kind: "table", index, part: k - 1 };
-      settleAndRender(tablePartLabel(index, k) + " removed. Its desks went back to " + tablePartLabel(index, k - 1) + ", and nobody moved.");
+      settleAndRender(removedLabel + " removed with its desks, and nobody moved.");
     }
 
     // How many desks one of the group's tables has. A group's only table
@@ -20361,8 +20376,8 @@ Suggested next steps: prioritize Intensive Support and Targeted Support students
           <label class="inspector-field">Arrangement <select data-room-input="tableShape" ${where} aria-label="How the desks at this table are pushed together">${shapeOptions}</select></label>
           <label class="inspector-field">Desks <input type="number" inputmode="numeric" min="1" max="${MAX_TABLE_DESKS}" step="1" value="${escapeAttr(part.seats)}" data-room-change="tableDesks" ${where} aria-label="${escapeAttr("Desks at " + tablePartLabel(index, part.k) + (parts.length > 1 ? "; the group's desks are the total of its tables" : "; the group's desks"))}"></label>
           <button class="btn small ghost" type="button" data-room-action="rotate">Turn</button>
-          <button class="btn small ghost" type="button" data-room-action="add-table"${parts.length >= MAX_GROUP_TABLES ? " disabled" : ""} title="${escapeAttr(parts.length >= MAX_GROUP_TABLES ? "A group can sit at up to " + MAX_GROUP_TABLES + " tables" : "Give this group another table; its seats carry on across it")}">Add a table to this group</button>
-          ${part.extra ? `<button class="btn small ghost" type="button" data-room-action="remove-table" title="Take this table away; its desks go back to the table before it">Remove this table</button>` : ""}
+          <button class="btn small ghost" type="button" data-room-action="add-table"${parts.length >= MAX_GROUP_TABLES ? " disabled" : ""} title="${escapeAttr(parts.length >= MAX_GROUP_TABLES ? "A group can sit at up to " + MAX_GROUP_TABLES + " tables" : "Give this group another table with empty desks; its seats carry on across it, and no table loses a desk")}">Add a table to this group</button>
+          ${part.extra ? `<button class="btn small ghost" type="button" data-room-action="remove-table" title="Take this table away, with its desks; nobody loses a seat">Remove this table</button>` : ""}
           <button class="btn small ghost" type="button" data-room-action="shape-all">Same for all tables</button>
           <button class="btn small ghost" type="button" data-room-action="deselect">Done</button>
         `;
