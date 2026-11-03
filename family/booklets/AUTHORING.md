@@ -86,3 +86,32 @@ Arabic is modern standard Arabic, plain and natural, with the numbers as digits.
 - Leave `reviewed` false.
 
 When done, the file must pass `node build/booklet-rules.mjs <file>`.
+
+## Multiple choice and word problems (MAP style)
+
+MAP Growth is mostly multiple choice, with many short real-world problems. A booklet
+therefore practises the same shapes, in original questions (never copy NWEA items):
+
+- Between 25% and 60% of a booklet's questions are multiple choice (aim for about
+  40%). The validator checks this and that the right answer is not always in the
+  same place (use A, B, C and D about evenly).
+- Add this helper next to `it` and write multiple choice with it:
+  `const mc = (qEn, optsEn, correct, whyEn, qAr, optsAr, whyAr) => ({ q: T(qEn, qAr), a: T(whyEn, whyAr), options: { en: optsEn, ar: optsAr }, correct });`
+  `correct` is the index of the right option (0 is A). `why` is the parent's short
+  reason ("4 x 8 = 32."); the PDF prints the letter and the right option before it.
+  In an englishOnly booklet repeat the English in the Arabic slots (as with `en()`).
+- 4 options (3 for KG2 to Grade 2). Options are short and parallel. Build the wrong
+  options from real mistakes (an adjacent fact, the wrong operation, forgetting to
+  regroup, using perimeter for area, a distractor taken from the text), never from
+  silly answers. No "all of the above" or "none of the above". Do not always list
+  numbers in order. Put the right answer in different places.
+- Roughly half of the Mathematics (and Science) questions that are not multiple
+  choice are short word problems with a context from the UAE (dirhams, the souq,
+  dates, falcons, the metro, solar parks) or a short everyday setting, in the style
+  of "Maha packs 24 cookies into boxes of 6. How many boxes does she fill?". Keep
+  some bare calculation for fluency.
+- Keep every question's standard coverage, keep each section's size, and keep every
+  answer correct in both languages. Multiple choice stems for Reading and Language
+  must be answerable from the passage or the sentence alone with exactly one correct
+  option.
+- Worked example: `ma-3.js` is the model (a Grade 3 Maths booklet already converted).

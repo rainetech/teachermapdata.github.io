@@ -77,11 +77,23 @@ export function validateBooklet(b, Core, fileName) {
     if (s.passage !== undefined) (Array.isArray(s.passage) ? s.passage : [s.passage]).forEach((p) => need(p && typeof p.title === "string" && typeof p.text === "string" && p.text.length >= 200, "a passage is { title, text } with a text of at least 200 characters (a section may have an array of two or three passages)"));
     (s.items || []).forEach((item, i) => {
       need(item && item.q && item.q.en && item.a && item.a.en, "question " + (i + 1) + " needs a question and an answer in English");
+      if (item && item.options !== undefined) {
+        const o = item.options;
+        const ok = (list) => Array.isArray(list) && list.length >= 3 && list.length <= 4 && list.every((t) => typeof t === "string" && t.trim()) && new Set(list.map((t) => t.trim())).size === list.length;
+        need(ok(o && o.en), "question " + (i + 1) + ": multiple choice needs 3 or 4 different non-empty options in English");
+        if (!b.englishOnly) need(ok(o && o.ar) && o.ar.length === (o.en || []).length, "question " + (i + 1) + ": multiple choice needs the same number of options in Arabic");
+        need(Number.isInteger(item.correct) && item.correct >= 0 && item.correct < ((o && o.en) || []).length, "question " + (i + 1) + ": `correct` is the index (0 for A) of the right option");
+      }
       if (!b.englishOnly) need(item && item.q && item.q.ar && item.a && item.a.ar, "question " + (i + 1) + " needs a question and an answer in Arabic");
       const key = item && item.q && item.q.en;
       if (key) { need(!seen.has(key), "question " + (i + 1) + " repeats another question in this booklet"); seen.add(key); }
     });
   });
+  // MAP is multiple choice, so a booklet practises that too: a quarter to a half of its questions, with the right answer in more than one place.
+  const items = (b.sections || []).flatMap((sec) => sec.items || []);
+  const mc = items.filter((item) => item && item.options);
+  if (items.length && (mc.length / items.length < 0.25 || mc.length / items.length > 0.6)) bad("between 25% and 60% of the questions should be multiple choice (found " + mc.length + " of " + items.length + ")");
+  if (mc.length >= 4 && new Set(mc.map((item) => item.correct)).size < 3) bad("the right answer to the multiple choice questions should not always sit in the same place (use at least three of A, B, C, D)");
   strings(b.sections).forEach((t) => {
     if (/[–—]|--/.test(t)) bad("a dash used as punctuation: " + t.slice(0, 60));
     if (SENSITIVE.test(t)) bad("sensitive content: " + t.slice(0, 60));

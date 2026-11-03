@@ -35,8 +35,9 @@ const booklets = fs.readdirSync(dir).filter((f) => /^[a-z]{2}-\d{1,2}\.js$/.test
   return data;
 });
 const { validateBooklet } = await import("./booklet-rules.mjs");
+const previewAt = process.argv.indexOf("--preview");
 const problems = [];
-booklets.forEach((b) => problems.push(...validateBooklet(b, Core)));
+if (previewAt === -1) booklets.forEach((b) => problems.push(...validateBooklet(b, Core)));
 if (problems.length) { console.error(problems.join("\n")); process.exit(1); }
 
 // ---------------------------------------------------------------- the wording
@@ -117,6 +118,8 @@ section { break-before: page; }
 ol.q { padding-inline-start: 2.4rem; }
 ol.q li { margin: .55rem 0 1.2rem; break-inside: avoid; }
 ol.q .line { display: block; border-bottom: 1px solid #aab8b8; height: 1.4rem; margin-top: .4rem; }
+.opts { list-style: none; padding: 0; margin: .35rem 0 .2rem; }
+ol.q .opts li { margin: .2rem 0; break-inside: avoid; }
 .answers { break-before: page; }
 .answers h3 { margin-top: 1rem; }
 .answers ol { padding-inline-start: 2.4rem; margin: .2rem 0; font-size: 11pt; }
@@ -134,6 +137,11 @@ function html(b, lang) {
   const pick = (value) => (english ? value.en : value[lang]);
   const wrap = english && lang === "ar" ? ' dir="ltr" lang="en"' : "";
   const t = (text) => Core.ltrRuns(text, lang === "ar" && !english);
+  // Multiple choice: lettered options under the question (Arabic letters in the Arabic booklet).
+  const LETTERS = lang === "ar" && !english ? ["\u0623", "\u0628", "\u062c", "\u062f"] : ["A", "B", "C", "D"];
+  const optionList = (item) => (english ? item.options.en : item.options[lang] || item.options.en);
+  const optionsHTML = (item) => '<ul class="opts">' + optionList(item).map((o, n) => "<li><b>" + LETTERS[n] + ".</b> " + t(o) + "</li>").join("") + "</ul>";
+  const answerText = (item) => (item.options ? LETTERS[item.correct] + ". " + optionList(item)[item.correct] + (pick(item.a) && pick(item.a) !== optionList(item)[item.correct] ? (/[.)!?]$/.test(optionList(item)[item.correct]) ? " " : ". ") + pick(item.a) : "") : pick(item.a));
   let body = "<h1>" + esc(w.title(subjectName, b.grade)) + "</h1>";
   body += '<p class="meta">' + esc(gradeText) + " · " + esc(w.footer) + "</p>";
   body += '<p class="name">' + esc(w.forName) + ': <span></span></p>';
@@ -145,16 +153,39 @@ function html(b, lang) {
     body += '<p class="std">' + esc(w.standards) + ': <bdi dir="ltr">' + esc(s.standards.join(", ")) + "</bdi></p>";
     body += '<div class="box"' + wrap + "><h3>" + esc(w.example) + '</h3><p><b>' + t(e.question) + "</b></p><ol>" + e.steps.map((st) => "<li>" + t(st) + "</li>").join("") + "</ol><p><b>" + t(e.answer) + "</b></p></div>";
     if (s.passage) (Array.isArray(s.passage) ? s.passage : [s.passage]).forEach((p) => { body += '<div class="box passage" dir="ltr" lang="en"><h3>' + esc(p.title) + "</h3>" + p.text.split(/\n\n+/).map((para) => "<p>" + esc(para) + "</p>").join("") + "</div>"; });
-    body += "<h3>" + esc(w.questions) + '</h3><ol class="q"' + wrap + ">" + s.items.map((item) => "<li>" + t(pick(item.q)) + '<span class="line"></span></li>').join("") + "</ol></section>";
+    body += "<h3>" + esc(w.questions) + '</h3><ol class="q"' + wrap + ">" + s.items.map((item) => "<li>" + t(pick(item.q)) + (item.options ? optionsHTML(item) : '<span class="line"></span>') + "</li>").join("") + "</ol></section>";
   });
   body += '<div class="answers"><h2>' + esc(w.answers) + "</h2>";
   b.sections.forEach((s, i) => {
-    body += "<h3>" + esc(w.section) + " " + (i + 1) + ": " + esc(areaName(b.subject, s.area, lang)) + '</h3><ol' + wrap + ">" + s.items.map((item) => "<li>" + t(pick(item.a)) + "</li>").join("") + "</ol>";
+    body += "<h3>" + esc(w.section) + " " + (i + 1) + ": " + esc(areaName(b.subject, s.area, lang)) + '</h3><ol' + wrap + ">" + s.items.map((item) => "<li>" + t(answerText(item)) + "</li>").join("") + "</ol>";
   });
   body += "</div>";
   return '<!doctype html><html lang="' + w.lang + '" dir="' + w.dir + '"><head><meta charset="utf-8"><title>' + esc(w.title(subjectName, b.grade)) + "</title><style>" + CSS + "</style></head><body>" + body + "</body></html>";
 }
 
+// Preview: node build/build-booklets.mjs --preview <dir> ma-3 rd-4 ...  builds just those booklets' PDFs into <dir>
+// (nothing is checked in, no index or manifest is written), to look at a layout while writing.
+if (previewAt !== -1) {
+  const outDir = path.resolve(process.argv[previewAt + 1]);
+  const keys = process.argv.slice(previewAt + 2);
+  const { validateBooklet: check } = await import("./booklet-rules.mjs");
+  const mod = process.env.PLAYWRIGHT_MODULE ? pathToFileURL(process.env.PLAYWRIGHT_MODULE).href : "playwright";
+  const { chromium } = await import(mod);
+  fs.mkdirSync(outDir, { recursive: true });
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  for (const b of booklets.filter((x) => keys.includes(x.key))) {
+    const found = check(b, Core);
+    if (found.length) console.log(found.join("\n"));
+    for (const lang of ["en", "ar"]) {
+      await page.setContent(html(b, lang), { waitUntil: "load" });
+      await page.pdf({ path: path.join(outDir, b.key + "-" + lang + ".pdf"), format: "A4", printBackground: true });
+      console.log("preview " + path.join(outDir, b.key + "-" + lang + ".pdf"));
+    }
+  }
+  await browser.close();
+  process.exit(0);
+}
 // --------------------------------------------------------- hashes and the index
 const sha = (text) => crypto.createHash("sha256").update(text, "utf8").digest("hex");
 const jobs = [];
