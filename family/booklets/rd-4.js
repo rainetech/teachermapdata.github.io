@@ -1,5 +1,6 @@
 // Reading practice booklet, Grade 4 expectations. English only. See AUTHORING.md for the format.
 const T = (en, ar) => ({ en, ar });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const en = (question, answer) => ({ q: T(question, question), a: T(answer, answer) });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 
@@ -35,16 +36,16 @@ module.exports = {
         "Ripe means fully grown and ready to be picked."
       ),
       items: [
-        en("The story says the day would be \"scorching, so hot that the sand would burn bare feet.\" What does scorching mean?", "Extremely hot (the clue is \"so hot that the sand would burn\")."),
-        en("Salem \"raised his palm to shade his eyes.\" Does palm mean the inside of the hand or a kind of tree here? How can you tell?", "The inside of the hand: he used it to shade his eyes."),
-        en("The branches \"waved like green flags in the breeze.\" What two things are being compared?", "The palm branches and green flags."),
-        en("What does shriveled mean in \"shriveled, wrinkled and dry\"? Use the clues around the word.", "Shrunk and wrinkled from losing water."),
-        en("Salem's \"throat was parched.\" What does parched tell you about how he felt?", "Parched means very dry, so he was very thirsty."),
+        mc("The story says the day would be \"scorching, so hot that the sand would burn bare feet.\" What does scorching mean?", ["Pleasantly warm", "Extremely hot", "Slightly cool", "Very bright"], 1, "B. The clue is \"so hot that the sand would burn\"."),
+        mc("Salem \"raised his palm to shade his eyes.\" What does palm mean here?", ["A kind of tree", "A kind of fruit", "A bunch of dates", "The inside of the hand"], 3, "D. He used it to shade his eyes, so it is part of his hand."),
+        mc("The branches \"waved like green flags in the breeze.\" What two things are being compared?", ["Palm branches and green flags", "Salem and Grandfather", "Dates and leaves", "The breeze and the sand"], 0, "A. The branches are compared to flags."),
+        mc("What does shriveled mean in \"shriveled, wrinkled and dry\"?", ["Large and sweet", "Soft and sticky", "Shrunk and wrinkled", "Ripe and glossy"], 2, "C. The dates lost water, so they shrank and wrinkled."),
+        mc("Salem's \"throat was parched.\" How did he feel?", ["Tired of climbing", "Very hungry", "Afraid of the heat", "Very thirsty"], 3, "D. Parched means very dry, so he was very thirsty."),
         en("The author writes, \"the sun was a blazing coin in the sky.\" What does this metaphor help you picture?", "A bright, round, very hot sun."),
         en("The cold water \"felt like a miracle.\" What does this phrase tell you about the water?", "It felt wonderful and was just what he needed."),
-        en("Grandfather says, \"A good harvest cannot be rushed.\" What does rushed mean here?", "Done too quickly, in a hurry."),
+        mc("Grandfather says, \"A good harvest cannot be rushed.\" What does rushed mean here?", ["Done too quickly", "Done with great care", "Shared with others", "Carried in a basket"], 0, "A. Rushed means done in a hurry."),
         en("Grandfather says a farmer must be patient. What does patient mean? Give a clue from the story.", "Able to wait calmly without hurrying (for example, carefully climbing one step at a time)."),
-        en("Which word from the story is the opposite of plump: glossy, shriveled or ripe?", "Shriveled."),
+        mc("Which word from the story is the opposite of plump?", ["Glossy", "Ripe", "Shriveled", "Sweet"], 2, "C. Plump dates are full and round; shriveled dates are shrunk."),
         en("Write your own sentence using palm to mean a kind of tree.", "Answers vary. Example: A tall palm grew beside the well."),
         en("Explain, in your own words, what Grandfather means by \"Then you are a true farmer.\"", "Salem is willing to work hard and be patient for something good, as a real farmer is."),
         en("Say the word miracle slowly and split it into syllables. How many syllables does it have?", "Three: mir-a-cle."),
@@ -70,21 +71,21 @@ module.exports = {
         "The Arabian oryx was lost from the wild, but people worked together to save it."
       ),
       items: [
-        en("What is the main idea of the whole of Text A?", "The Arabian oryx, once gone from the wild, was saved by people and is well suited to desert life."),
-        en("What caused the oryx to disappear from the wild?", "Hunting."),
+        mc("What is the main idea of the whole of Text A?", ["Oryx are the fastest animals in the desert.", "Rangers count oryx every year in Oman.", "The oryx was saved by people and is suited to desert life.", "Hunting is the best way to protect animals."], 2, "C. The text tells how the oryx was lost, saved and how it lives in the desert."),
+        mc("What caused the oryx to disappear from the wild?", ["Hunting", "A lack of plants to eat", "Too much sunlight", "Trucks in the desert"], 0, "A. The text says hunting left none living in the wild."),
         en("What did conservationists do to help the oryx?", "They cared for a small group in protected places and bred them so the herds grew."),
-        en("When were oryx first returned to the wild, and in which country?", "In 1982, in Oman."),
-        en("How does the oryx's pale coat help it?", "It reflects sunlight and keeps the animal cool."),
+        mc("When were oryx first returned to the wild, and in which country?", ["In the 1970s, in the United Arab Emirates", "In 1982, in the United Arab Emirates", "In the 1970s, in Oman", "In 1982, in Oman"], 3, "D. The text says 1982 and Oman."),
+        mc("How does the oryx's pale coat help it?", ["It hides the oryx from hunters.", "It reflects sunlight and keeps it cool.", "It stops the oryx sinking in sand.", "It gives the oryx water."], 1, "B. A pale coat reflects the sunlight."),
         en("Why are the oryx's hooves wide?", "So it does not sink into soft sand."),
         en("How can the oryx go many days without drinking?", "It gets much of its water from the plants it eats."),
-        en("Why does the oryx often feed at night and early morning?", "The air is cooler then."),
+        mc("Why does the oryx often feed at night and in the early morning?", ["It cannot see in the day.", "Rangers bring food then.", "The air is cooler then.", "It drinks water then."], 2, "C. The text says the air is cooler at those times."),
         en("The text has a problem and a solution. What is the problem? What is the solution?", "Problem: no oryx were left in the wild. Solution: people bred them and returned them to the wild."),
-        en("From Text A, what do you think conservationists means?", "People who work to protect animals and nature."),
+        mc("From Text A, what do conservationists do?", ["Work to protect animals and nature", "Hunt animals in the desert", "Count the cars at a reserve", "Sell plants to farmers"], 0, "A. Conservationists cared for and bred the oryx to save it."),
         en("Give two details from Text A that show the oryx is \"wonderfully suited to desert life.\"", "Any two: pale coat reflects sun; wide hooves; goes days without drinking; feeds when cooler; rests in shade."),
         en("Why does the author call the oryx \"a symbol of hope\"?", "Because an animal almost lost has come back, showing that people can make a difference."),
         en("In Text A, \"They bred the animals carefully, and the herds grew.\" What does bred mean here? Which clue helps you?", "Bred means helped the animals to have young (the clue is \"the herds grew\")."),
-        en("Text A and Text B both tell about a release of oryx at a reserve. Which one is a firsthand account, and how can you tell?", "Text B: it is written by a ranger who was there, uses I and my, and tells what the writer saw and felt. Text A is a secondhand account, written by someone reporting facts about the release."),
-        en("Use the table in Text C. How many more oryx were counted in Year 4 than in Year 1?", "27 more (67 minus 40)."),
+        mc("Text A and Text B both tell about a release of oryx. Which one is a firsthand account?", ["Text A, because it gives facts", "Text C, because it has a table", "Text A, because it names Oman", "Text B, because the ranger who was there tells it with I and my"], 3, "D. Text B is written by someone who was there. Text A is secondhand."),
+        mc("Use the table in Text C. How many more oryx were counted in Year 4 than in Year 1?", ["17", "27", "37", "107"], 1, "B. 67 minus 40 is 27."),
         en("Text A says only that \"the numbers are growing.\" What does the table in Text C add to this?", "It gives the exact number counted each year, so you can see how much the herd grew (from 40 to 67 in four years).")
       ]
     },
@@ -104,19 +105,19 @@ module.exports = {
         "On a breezy Saturday afternoon, at the beach."
       ),
       items: [
-        en("Why is the beach a good place to fly a kite? Use a detail from Text A.", "It is breezy (there is wind)."),
+        mc("Why is the beach a good place to fly a kite? Use a detail from Text A.", ["The sand is warm.", "The sea sparkles.", "Hind is there.", "It is breezy, so there is wind."], 3, "D. A kite needs wind, and the afternoon is breezy."),
         en("How does Omar feel after his third try? Give a detail that shows it.", "Frustrated; he throws the spool down, folds his arms and says \"I give up.\""),
-        en("What does Hind notice is wrong with the kite?", "It needs a longer tail."),
+        mc("What does Hind notice is wrong with the kite?", ["It needs a longer tail.", "The string is tangled.", "The kite is broken.", "The kite is too heavy."], 0, "A. Hind says it just needs a longer tail."),
         en("What does the tail do for the kite?", "It keeps the kite steady."),
-        en("What does the phrase \"like a rudder on a boat\" compare?", "A kite's tail and a boat's rudder, since both keep things steady."),
-        en("What did Omar do differently on his last try?", "He waited for a strong gust of wind before letting go."),
+        mc("What does the phrase \"like a rudder on a boat\" compare?", ["The wind and the sea", "A kite's tail and a boat's rudder", "Omar and Hind", "A kite and a boat"], 1, "B. Both the tail and the rudder keep things steady."),
+        mc("What did Omar do differently on his last try?", ["He used a new kite.", "He ran faster across the sand.", "He waited for a strong gust of wind.", "He asked Khalid to help."], 2, "C. He waited for a strong gust before letting go."),
         en("Describe Hind in one or two words and give a detail that shows it.", "Helpful or kind: she fixes the kite with a strip of cloth."),
         en("How is Omar different at the end of Text A from the beginning?", "At first he wants to give up; at the end he is happy and wants to teach his brother."),
-        en("Who is telling Text A: a character in it, or a narrator outside it? How can you tell?", "A narrator outside it, using names and words like he and she."),
-        en("What is the theme (the lesson) of Text A?", "Keep trying and fix one small thing at a time instead of giving up."),
+        mc("Who is telling Text A?", ["Omar, a character in it", "A narrator outside it", "Hind, a character in it", "Grandmother"], 1, "B. The narrator uses names and words like he and she."),
+        mc("What is the theme (the lesson) of Text A?", ["Kites fly best at the beach.", "Cousins should share kites.", "Tails are more important than wind.", "Keep trying and fix one small thing at a time."], 3, "D. Hind says this near the end."),
         en("Which words from Text A best support that theme?", "Hind says, \"You just have to keep trying and fix one small thing at a time.\""),
         en("Why do you think Omar wants to teach Khalid tomorrow?", "He is proud and happy and wants to share what he learned."),
-        en("Text A and Text B are different stories, but they share a similar theme. What is that shared theme?", "Do not give up: keep trying and change one small thing at a time."),
+        mc("Text A and Text B are different stories. What theme do they share?", ["Do not give up: keep trying and change one small thing at a time.", "Ask an adult to do the work for you.", "Gardens are harder than kites.", "Wind and sun help us most."], 0, "A. Omar and Maryam both nearly quit, then fixed one thing at a time and succeeded."),
         en("In Text A, Omar gets help from Hind to fix his problem. How does Maryam solve her problem in Text B?", "Grandmother gives only a hint, and Maryam works it out herself: she watches the shoots, notices the sun is too fierce and moves the pot into the shade."),
         en("Read this poem.\nThe sun climbs up from the sea so blue,\nThe wind comes in and the kite flies too.\nI tug, I run, and I let it go,\nA bright red spot where the soft clouds flow.\nWhich word at the end of a line rhymes with blue, and what do we call a group of lines like these in a poem?", "Too rhymes with blue. A group of lines in a poem is called a stanza (a verse)."),
         en("Read this part of a play.\nCast: Maryam, a girl; Grandmother.\nSetting: A kitchen in Sharjah.\nMARYAM (looking at a tray of cookies, sadly): My cookies are too dark!\nGRANDMOTHER (smiling kindly): We will bake them again together.\nName two features that show this is a play and not a story.", "Any two: a cast of characters is listed; the setting is described at the start; each line begins with the speaker's name; stage directions in brackets tell the actor how to act or speak.")

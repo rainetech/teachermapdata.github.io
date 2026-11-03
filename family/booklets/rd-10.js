@@ -3,6 +3,7 @@ const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
 module.exports = {
@@ -39,15 +40,15 @@ module.exports = {
         "The praise was comforting and welcome."
       ),
       items: [
-        en("The air is described as \"thick enough to chew\". What does this figure of speech suggest about the souq?", "That the smells were very strong and heavy in the air."),
+        mc("The air is described as \"thick enough to chew\". What does this figure of speech suggest about the souq?", ["That the souq sold food that was hard to chew","That the smells were very strong and heavy in the air","That the weather was cold and damp","That the lanes were too crowded to walk through"], 1, "Thick air that can almost be chewed suggests strong, heavy smells."),
         en("Maryam feels she has \"wandered into Aladdin's cave\". What does this allusion suggest about how she sees the souq?", "That it is a magical place full of treasure and wonder."),
-        en("The spices \"jostled for attention\". What does the word \"jostled\" suggest about the spices?", "That they were crowded together and seemed to compete to be noticed."),
+        mc("The spices \"jostled for attention\". What does the word \"jostled\" suggest about the spices?", ["That they were spilling onto the floor","That they were stacked high on the ground","That they were arranged in neat, quiet rows","That they were crowded together and seemed to compete to be noticed"], 3, "Jostled means pushing against one another, so the spices seemed to compete to be noticed."),
         en("The stallholders greet Grandmother \"like a returning queen\". What does this simile show about how she is regarded?", "She is greatly respected and welcomed with honour."),
-        en("Why is the sign THE HONEST SCALE ironic in this scene?", "Its name promises honesty, but the seller is trying to sell cheap, inferior saffron as his finest."),
+        mc("Why is the sign THE HONEST SCALE ironic in this scene?", ["Its name promises honesty, but the seller tries to pass off cheap saffron as his finest","Its name is painted in large letters that nobody can read","Its name suggests the stall sells scales, but it sells only spices","Its name was chosen by Abu Yusuf, who sells at the next stall"], 0, "The sign promises honesty, but Faisal is not being honest about his saffron."),
         en("Faisal \"bowed with a flourish\". Using the context, what does \"flourish\" mean?", "A showy, dramatic gesture (clue: the bow and his grand words)."),
-        en("Grandmother says, \"How generous.\" What is her tone, and which detail from the passage shows it?", "Sarcastic and doubtful; Maryam says, \"She does not believe a word of it.\""),
+        mc("Grandmother says, \"How generous.\" What is her tone?", ["Warm and thankful, because the price is low","Sarcastic and doubtful, because she does not believe the offer","Shy and nervous, because many people are watching","Angry and loud, because she wants to shout"], 1, "Maryam says, \"She does not believe a word of it,\" so the tone is sarcastic and doubtful."),
         en("Grandmother says the saffron is \"like a loaf of bread that is mostly air\". What does this analogy explain about the saffron?", "It looks like plenty but has little real flavour or value."),
-        en("Faisal's cheeks turn \"the colour of the cinnamon sticks\". What does this comparison suggest he feels?", "Embarrassment (his face reddens because he has been found out)."),
+        mc("Faisal's cheeks turn \"the colour of the cinnamon sticks\". What does this comparison suggest he feels?", ["Pleased, because he has made a sale","Hungry, because it is nearly dinner time","Embarrassed, because he has been found out","Cold, because the lane is shaded"], 2, "His face reddens because Grandmother has found that his saffron is not what he said."),
         en("Explain what Grandmother means by \"Your good name is like a saffron thread\".", "A good reputation is fine and precious, and it can break easily, so it must be looked after."),
         en("Hamdan expected Grandmother to shout, but she did not. Explain Maryam's reply, \"Her quiet is louder.\"", "Her calm, controlled words have more effect than shouting would, so Faisal feels the lesson strongly.")
       ]
@@ -73,15 +74,15 @@ module.exports = {
         "Counterargument: some say homework should be banned. Reply: homework builds the habit of working alone."
       ),
       items: [
-        en("What is the author's central claim?", "Growing cities should keep their heritage inside new development rather than clear it away."),
+        mc("What is the author's central claim?", ["Old districts should be photographed and then cleared away","Cities should stop building towers of any kind","Growing cities should keep their heritage inside new development","Visitors should be charged more to see old districts"], 2, "The author argues that a growing city must find room for its history inside its future."),
         en("The author writes that heritage \"is not decoration. It is a working part\". What does this contrast mean?", "Heritage is useful and does real work for a city; it is not only there to look pretty."),
         en("What does the author say traditional builders did to deal with heat? Give two examples.", "Any two: wind towers (barjeel) caught breezes; thick coral stone and gypsum walls kept out the sun; narrow lanes gave shade."),
-        en("Why are modern architects studying these old ideas?", "They need to reduce the energy used by air conditioning."),
+        mc("Why are modern architects studying the old building ideas?", ["They need to reduce the energy used by air conditioning","They want to make buildings taller","They are preparing to demolish the old quarters","They are writing a history of the souq"], 0, "The passage says architects must now reduce the energy used by air conditioning."),
         en("According to the passage, how do residents often feel when familiar places vanish?", "Like strangers in their own city."),
-        en("What is the purpose of the question, \"Would a city of identical glass towers inspire that feeling?\"", "It is a rhetorical question: it makes the reader think and suggests the answer is no."),
+        mc("What is the purpose of the question, \"Would a city of identical glass towers inspire that feeling?\"", ["To ask the reader for facts about glass","To introduce the critics' view","To list the costs of new towers","To make the reader think, suggesting the answer is no"], 3, "It is a rhetorical question: the author expects the reader to agree that the answer is no."),
         en("Why can a restored quarter \"earn its keep\" according to the author?", "Visitors come to see it and spend money in nearby shops, guesthouses and restaurants year after year."),
-        en("What do critics say against restoring old districts?", "It is expensive, and cities cannot stand still while their populations rise (the land could hold homes and schools)."),
-        en("The author calls the critics' view \"a false choice\". Explain what that means here.", "It treats the options as only old buildings or new homes, when planning can have both."),
+        mc("What do critics say against restoring old districts?", ["Visitors do not enjoy old buildings","Old buildings are too hot to live in","It is expensive, and cities cannot stand still while their populations rise","Wind towers no longer work"], 2, "Critics say restoration is expensive and that the land could hold new homes and schools."),
+        mc("The author calls the critics' view \"a false choice\". What does this mean here?", ["The critics have made a mistake in their sums","It treats the options as only old buildings or new homes, when planning can have both","The critics are not telling the truth about the cost","Every old building must be saved"], 1, "The author says careful planning can place new buildings beside old ones."),
         en("What does the book comparison in the last paragraph show about the author's view of history?", "Without the early parts, the later parts make no sense, so a city needs its history to be understood."),
         en("Which of the three reasons relies mainly on factual detail and which mainly on feeling? Explain.", "The first (practical) uses facts about wind towers and thick walls; the second (people) appeals to feelings through memories.")
       ]
@@ -108,14 +109,14 @@ module.exports = {
         "It may symbolise the family's memories and their wish to hold on to the past."
       ),
       items: [
-        en("Who tells the story, and from what point of view?", "One of the grandchildren, in the first person (\"I\"), so we know only what the narrator sees and feels."),
+        mc("Who tells the story, and from what point of view?", ["Grandfather, in the third person","Layla, in the third person","An outside narrator who knows every thought","One of the grandchildren, in the first person (\"I\")"], 3, "The narrator says \"I\", so we know only what this grandchild sees and feels."),
         en("How does the story begin, and how is it organised after that?", "It opens in the present, goes back to last summer (a flashback), then returns to the present evening."),
         en("How does the narrator feel at the start of last summer? Give one detail.", "Bored and unwilling; for example, a tablet full of games and \"a head full of complaints\"."),
-        en("What does Grandfather mean, literally, by \"The water arrives because someone clears the way\"?", "The water only reaches the palms if the channel is kept clear of leaves and silt."),
-        en("How does the rain move the plot forward?", "It blocks the channel and the water is wasted, which is the problem that forces the narrator to act."),
+        mc("What does Grandfather mean, literally, by \"The water arrives because someone clears the way\"?", ["The water flows faster when it rains","The water only reaches the palms if the channel is kept clear of leaves and silt","The water is carried to the palms by hand","The water must be paid for each morning"], 1, "He cleans the falaj every morning so the water can reach the palms."),
+        mc("How does the rain move the plot forward?", ["It blocks the channel, which forces the narrator to act","It sends the cousins back to the city","It makes Grandfather sell the farm","It fills the kitchen with water"], 0, "Mud and branches choke the channel and the water is wasted, so the narrator must help."),
         en("\"With a gurgle like a laugh, the water slipped free.\" What effect does this description have?", "It makes the water seem alive and joyful, showing the happy relief after the hard work."),
         en("What is Grandfather really talking about when he says the family \"only kept the way open\"?", "Looking after something valuable and passing it to the next generation (not owning it)."),
-        en("What does the falaj, the stone channel, symbolise in the story?", "The care and traditions passed down from one generation to the next."),
+        mc("What does the falaj, the stone channel, symbolise in the story?", ["The long distance between the farm and the city","The danger of heavy summer rain","The care and traditions passed down from one generation to the next","The wish to have more free time"], 2, "Each generation clears the channel and hands it on, so it stands for inherited care."),
         en("How does the narrator change between the start of last summer and the end?", "From bored and reluctant to willing and proud to take responsibility for the work."),
         en("Explain the final image: \"mine are now part of the line\".", "The narrator has joined the chain of family members who have looked after the channel, handing it on."),
         en("State a theme of the story and support it with a detail.", "Taking part in caring for what earlier generations began gives life meaning (or: some duties are inherited). Detail: the narrator ends up clearing the channel willingly.")

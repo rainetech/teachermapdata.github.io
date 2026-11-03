@@ -2,6 +2,7 @@
 const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (questionEn, answerEn) => it(questionEn, answerEn, questionEn, answerEn);
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 
 module.exports = {
@@ -23,15 +24,15 @@ module.exports = {
         "Hamdan asked, \"Can we ride the metro to Dubai Mall?\""
       ),
       items: [
-        en("Write this book title correctly: the story of the golden falcon", "The Story of the Golden Falcon (capitalise the first word and the important words, but not small words like of and the in the middle)."),
-        en("Correct the capital letters: my cousin salem lives in abu dhabi near the sea.", "My cousin Salem lives in Abu Dhabi near the sea. (names of people and places have capitals; sea is a general word)"),
-        en("Punctuate it: let us visit the souq said dad", "\"Let us visit the souq,\" said Dad. (a comma inside the quotation marks, and Dad is a name so it has a capital letter)"),
+        mc("Which is the correct way to write this book title?", ["The Story Of The Golden Falcon", "The Story of the Golden Falcon", "the story of the golden falcon", "The story of the golden falcon"], 1, "The first word and the important words have capitals, but small words like of and the in the middle do not."),
+        mc("Which sentence uses capital letters correctly?", ["My cousin Salem lives in Abu Dhabi near the Sea.", "My Cousin Salem lives in Abu Dhabi near the sea.", "My cousin Salem lives in abu dhabi near the sea.", "My cousin Salem lives in Abu Dhabi near the sea."], 3, "Names of people and places have capitals; sea is a general word."),
+        mc("Which sentence is punctuated correctly?", ["\"Let us visit the souq\", said Dad.", "\"Let us visit the souq.\" said Dad.", "\"Let us visit the souq,\" said Dad.", "\"Let us visit the souq,\" said dad."], 2, "The comma goes inside the quotation marks, and Dad is used as a name so it has a capital letter."),
         en("Punctuate it: Maryam said please pass the dates", "Maryam said, \"Please pass the dates.\""),
-        en("Add the missing comma: Hamdan wanted to ride the metro but the train was full.", "Hamdan wanted to ride the metro, but the train was full. (a comma goes before the joining word in a sentence made of two complete parts)"),
+        mc("Which sentence has the comma in the right place?", ["Hamdan wanted to ride the metro, but the train was full.", "Hamdan wanted, to ride the metro but the train was full.", "Hamdan wanted to ride, the metro but the train was full.", "Hamdan wanted to ride the metro but, the train was full."], 0, "A comma goes before the joining word (but) in a sentence made of two complete parts."),
         en("Which sentence needs a comma before \"and\"? A) Noura packed her bag and went to school. B) Noura packed her bag and her brother packed his.", "B needs a comma before \"and\" (Noura packed her bag, and her brother packed his.). In A, \"and\" joins two actions by the same person, so no comma is needed."),
-        en("Choose the correct spelling and write the sentence: The oryx is a (beautiful / beutiful) animal.", "beautiful: The oryx is a beautiful animal."),
-        en("Find and fix the spelling mistake: The mangrove trees grow in shalow water near the coast.", "shallow: The mangrove trees grow in shallow water near the coast."),
-        en("Write the plural of each word: family, day, box, wish.", "families (change y to i and add es), days, boxes, wishes"),
+        mc("Which word completes the sentence correctly? The oryx is a ___ animal.", ["beutiful", "beautifull", "beautiful", "beautyful"], 2, "The correct spelling is beautiful."),
+        mc("Which spelling completes the sentence? The mangrove trees grow in ___ water near the coast.", ["shalow", "shallow", "shallo", "shallew"], 1, "The correct spelling is shallow (two l's)."),
+        mc("What is the plural of the word family?", ["familys", "familyes", "familes", "families"], 3, "Change the y to i and add es: families."),
         en("Correct everything: layla asked can we visit al ain in winter", "Layla asked, \"Can we visit Al Ain in winter?\""),
         en("Explain why Dad has a capital letter in A but dad does not in B. A) I asked Dad for help. B) I asked my dad for help.", "In A, Dad is used as a name (it stands in for the person's name), so it takes a capital letter. In B, my dad is a general word for a family member, with my in front of it, so it does not.")
       ]
@@ -48,24 +49,24 @@ module.exports = {
         "whose"
       ),
       items: [
-        en("Choose who, which, whose or where: This is the beach ___ we found shells.", "where (it tells the place)"),
-        en("Choose who, which, whose or where: My uncle, ___ drives a bus, knows every road in Sharjah.", "who (it refers to a person)"),
-        en("Write the past progressive form of \"walk\": Salem ___ along the creek when it began to rain.", "was walking"),
+        mc("Which word best completes the sentence? This is the beach ___ we found shells.", ["where", "who", "whose", "which"], 0, "Where tells the place."),
+        mc("Which word best completes the sentence? My uncle, ___ drives a bus, knows every road in Sharjah.", ["where", "who", "whose", "which"], 1, "Who refers to a person."),
+        mc("Which choice completes the sentence with the past progressive? Salem ___ along the creek when it began to rain.", ["walked", "is walking", "will be walking", "was walking"], 3, "Was walking is the past progressive form."),
         en("Write the future progressive form of \"drive\": Tomorrow at noon, we ___ to Al Ain.", "will be driving"),
-        en("Choose the best helping verb (must, might, can): It is cloudy this morning, so it ___ rain later.", "might (it shows the rain is possible, not certain)"),
+        mc("Which helping verb best completes the sentence? It is cloudy this morning, so it ___ rain later.", ["must", "might", "need", "did"], 1, "Might shows the rain is possible, not certain."),
         en("Choose the best helping verb (must, might, can): At the cycling track there is a rule: cyclists ___ wear a helmet.", "must (it shows a rule that has to be followed)"),
-        en("Which phrase has the adjectives in the right order? A) a brown young big camel B) a big young brown camel C) a young brown big camel", "B (size, then age, then colour)"),
+        mc("Which phrase has the adjectives in the right order?", ["a big young brown camel", "a brown young big camel", "a young brown big camel", "a big brown young camel"], 0, "The order is size, then age, then colour."),
         en("Finish the sentence with a phrase that begins with a word like on, under or near: The falcon landed ___.", "Answers vary. Example: The falcon landed on Khalid's glove. (The phrase must begin with a word such as on, under or near and tell where.)"),
-        en("Which is a fragment? A) Running across the sand. B) Omar ran across the sand. Then rewrite it as a complete sentence.", "A is a fragment (it has no complete action by someone). Example fix: Omar was running across the sand."),
+        mc("Which group of words is a fragment?", ["Omar ran across the sand.", "Running across the sand.", "The falcon flew home.", "Salem opened the door."], 1, "\"Running across the sand\" has no complete action by someone, so it is a fragment."),
         en("Fix this run-on sentence in two different ways: The metro was crowded Layla found a seat near the door.", "Example 1: The metro was crowded. Layla found a seat near the door. Example 2: The metro was crowded, but Layla found a seat near the door."),
-        en("Choose the right words: Hind has (to / too / two) cousins, and she wants (to / too / two) visit them (to / too / two).", "Hind has two cousins, and she wants to visit them too."),
+        mc("Which sentence uses to, too and two correctly?", ["Hind has too cousins, and she wants to visit them to.", "Hind has to cousins, and she wants too visit them two.", "Hind has two cousins, and she wants to visit them too.", "Hind has two cousins, and she wants too visit them to."], 2, "Two is the number, to goes before visit, and too means also."),
         en("Replace \"said\" with a more exact word: \"Look out!\" said Salem. Then explain why your word is better.", "Example: \"Look out!\" shouted Salem (shouted shows how loudly he spoke; warned also works). A good answer gives an exact word and says what it shows that \"said\" does not."),
         en("Which of these two sentences suits a note to the head teacher, and why? A) Hey, we're gonna be late. B) We will arrive a few minutes late, and we are sorry.", "B. It uses polite, formal English, which suits a note to a head teacher. A is casual and suits talking with friends."),
-        en("Read the sentence: After the long walk, the camels were parched, so Khalid gave them water and they drank deeply. Use the other words in the sentence to work out what \"parched\" means.", "Parched means very dry and thirsty (the clue is that the camels needed water and drank deeply)."),
+        mc("What does \"parched\" mean in this sentence? After the long walk, the camels were parched, so Khalid gave them water and they drank deeply.", ["very tired", "very hungry", "very hot", "very dry and thirsty"], 3, "The clue is that the camels needed water and drank deeply."),
         en("Which reference book would you use to check the meaning of a word, and which would you use to find another word with a similar meaning?", "A dictionary (or glossary) gives the meaning of a word; a thesaurus gives words with a similar meaning."),
         en("Many English words are built from Greek and Latin roots. The Latin root \"port\" means \"carry\". The Greek root \"tele\" means \"far\" and \"scope\" means \"to look at\". What do the words portable and telescope mean?", "Portable means able to be carried. A telescope is an instrument for looking at things that are far away."),
         en("Name the kind of figurative language in each sentence and say what it means. A) The desert sand was a golden blanket. B) Hamdan ran as fast as a falcon. C) The maths quiz was a piece of cake.", "A is a metaphor (the sand is described as being a blanket: it lies smooth and covers the ground). B is a simile (it compares using \"as ... as\": Hamdan ran very fast). C is an idiom (the quiz was very easy; it does not mean real cake)."),
-        en("Write one synonym for \"enormous\" and one antonym for \"ancient\".", "Synonym for enormous: huge, giant or very big. Antonym for ancient: modern or new."),
+        mc("Which word means almost the same as \"enormous\"?", ["huge", "tiny", "ordinary", "narrow"], 0, "Enormous and huge both mean very big."),
         en("Say in your own words what this proverb means: Many hands make light work.", "When many people share a job, it is easier and quicker to finish.")
       ]
     },
@@ -81,13 +82,13 @@ module.exports = {
         "B, D, A, C"
       ),
       items: [
-        en("Put the sentences in order to make a short story: A) At last, she found the key under the cushion. B) One evening, Noura could not find her house key. C) She searched the hall, the kitchen and her bag. D) She smiled and put it safely on its hook.", "B, C, A, D (beginning, middle, solution, ending)"),
+        mc("Which order puts these sentences into a short story? A) At last, she found the key under the cushion. B) One evening, Noura could not find her house key. C) She searched the hall, the kitchen and her bag. D) She smiled and put it safely on its hook.", ["A, B, C, D", "B, A, C, D", "B, C, A, D", "C, B, A, D"], 2, "B is the beginning, C the middle, A the solution and D the ending."),
         en("Write one sentence that states your opinion on this question: Should every classroom have a reading corner?", "A good answer states a clear opinion in a complete sentence. Example: I believe every classroom should have a reading corner because it makes reading feel welcoming."),
         en("Make a plan for an opinion paragraph: \"Every classroom should have a plant.\" Write your opinion, two reasons and one example for each reason.", "A good plan has the opinion, two different reasons, and an example for each. Example: Reason 1: plants make the air feel fresher (example: the aloe plant by the window). Reason 2: caring for a plant teaches responsibility (example: a pupil waters it each Monday)."),
-        en("Which sentence does not belong in a paragraph about falcons? A) Falcons have sharp eyesight. B) Falcons can fly very fast. C) My cousin has a red bicycle. D) Falcons hunt from the sky.", "C (it is not about falcons)"),
-        en("Choose the best linking phrase: Mangroves protect the coast. ___, they give young fish a safe place to grow. (In addition / However / Suddenly)", "In addition (it adds a second reason or fact)"),
+        mc("Which sentence does not belong in a paragraph about falcons?", ["Falcons have sharp eyesight.", "Falcons can fly very fast.", "Falcons hunt from the sky.", "My cousin has a red bicycle."], 3, "The sentence about the bicycle is not about falcons."),
+        mc("Which linking phrase best completes the paragraph? Mangroves protect the coast. ___, they give young fish a safe place to grow.", ["Suddenly", "However", "In addition", "Instead"], 2, "In addition adds a second fact."),
         en("Join the two sentences with a linking word: Camels store fat in their humps. They can travel far without food.", "Example: Camels store fat in their humps, so they can travel far without food. (Because also works if the order is changed.)"),
-        en("Which opening is better for a story, and why? A) There was a girl. B) One morning, Hind heard a tapping sound from the garden wall.", "B. It names a person, a time and something interesting that makes the reader want to know more."),
+        mc("Which opening is better for a story?", ["One morning, Hind heard a tapping sound from the garden wall.", "There was a girl.", "This story is about a girl.", "A girl lived somewhere."], 0, "It names a person, a time and something interesting that makes the reader want to know more."),
         en("Revise this sentence by adding at least two details: The boat went on the creek.", "Answers vary. Example: The small wooden boat drifted gently along the quiet creek at sunrise."),
         en("Write a concluding sentence for this paragraph: The Dubai Metro is fast and clean. Passengers can reach many parts of the city without sitting in traffic. Trains arrive every few minutes.", "A good answer sums up the main idea and does not add a new topic. Example: This is why the metro is a good choice for travelling around the city."),
         en("Edit this paragraph (there are several mistakes): yesterday we visit the date farm. we picked many dates they was sweet.", "Yesterday we visited the date farm. We picked many dates. They were sweet. (capital letters, past tense visited, full stops to separate the sentences, were not was)"),

@@ -2,6 +2,7 @@
 const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
@@ -37,15 +38,15 @@ module.exports = {
         "\"Thrifty\" is positive and \"stingy\" is negative."
       ),
       items: [
-        en("The passage says Rashid's calm was \"contagious\". Using the clue after the colon, what does contagious mean here?", "Spreading from one person to others (it spread from him to the sailors and then to Noura)."),
+        mc("The passage says Rashid's calm was \"contagious\". Using the clue after the colon, what does contagious mean here?", ["Spreading from one person to others", "Hard to notice at first", "Strong enough to frighten people", "Slow to change"], 0, "The clue says it spread from him to the sailors and then to Noura."),
         en("Uncle Rashid speaks \"gruffly, though his eyes were kind\". What does this tell you about his tone and character?", "His voice sounds rough, but he is caring; the roughness is not unkind."),
         en("The planks are described as \"scarred and silvery\", and Rashid said earlier that she has seen fifty years of hard work. What does \"scarred\" suggest about the dhow?", "That it has lived through many years of hard use (and is respected for it)."),
-        en("Rashid says Abu Saeed \"thinks every journey is a Sinbad voyage\". What does this allusion to Sinbad suggest about Abu Saeed's view of journeys?", "He thinks journeys are full of danger and adventure, such as storms and sea monsters."),
-        en("\"Glass towers caught the first light and glowed like lanterns.\" What does this simile suggest about the towers?", "They shone warmly and brightly in the early light."),
+        mc("Rashid says Abu Saeed \"thinks every journey is a Sinbad voyage\". What does this allusion suggest about Abu Saeed's view of journeys?", ["He thinks journeys are slow and dull", "He thinks journeys are full of danger and adventure", "He thinks only sailors enjoy journeys", "He thinks journeys should be written down"], 1, "Rashid explains it means journeys full of storms and sea monsters."),
+        mc("\"Glass towers caught the first light and glowed like lanterns.\" What does this simile suggest about the towers?", ["They were cold and empty", "They were taller than the dhow's mast", "They shone warmly and brightly in the early light", "They were switched off at dawn"], 2, "Lanterns give a warm, bright glow, so the towers shone in the early light."),
         en("The author writes that the engine \"coughed to life\". What does this figure of speech suggest about how the engine started?", "It started roughly and reluctantly, like a person coughing."),
         en("The lap of water is called \"a patient, mocking whisper\". What feeling does the word \"mocking\" add to the moment the engine stops?", "It makes the quiet seem to tease Noura, so she feels uneasy and nervous."),
-        en("What does the word \"abras\" mean? Which words in the same sentence help you?", "Small ferries that carry passengers across the water (the phrase after the comma explains it)."),
-        en("How does the mood of the story change after Rashid says, \"Not a storm, habibti\"?", "It changes from tense and uneasy to relieved and cheerful."),
+        mc("What does the word \"abras\" mean in the passage?", ["Cargo crates stacked on a dhow", "Sailors who work on a quay", "Cranes that lift crates", "Small ferries that carry passengers across the water"], 3, "The phrase after the comma explains it: small ferries that carry passengers across the water."),
+        mc("How does the mood of the story change after Rashid says, \"Not a storm, habibti\"?", ["It changes from tense and uneasy to relieved and cheerful", "It changes from calm to frightened", "It changes from joyful to sad", "It stays tense until the end"], 0, "The problem is small, the engine restarts and the crew cheers."),
         en("Noura's legs \"wobbled, as if the ground itself were swaying\". What does this comparison show?", "After the time on the water, the land felt unsteady to her."),
         en("Explain Noura's final sentence in your own words. Why did the quiet \"fool\" her?", "The silence made her imagine a big danger, but the real problem was small and easy to fix.")
       ]
@@ -71,15 +72,15 @@ module.exports = {
         "Claim: the school should plant more shade trees. Evidence: trees cool the playground, so children can play outside longer."
       ),
       items: [
-        en("Why does the author mention that rain \"vanishes into the sand or runs off to the sea\"?", "To show that rain cannot supply the country's needs, which is why seawater is turned into fresh water."),
+        mc("Why does the author mention that rain \"vanishes into the sand or runs off to the sea\"?", ["To show that desalination plants are no longer needed", "To show that rain cannot supply the country's needs, so seawater is made into fresh water", "To show that the desert never gets any rain at all", "To show that the sea is cleaner than rain"], 1, "Rain is rare and escapes quickly, which is why seawater is turned into fresh water."),
         en("Name two problems with desalination that the author describes.", "Any two: it uses large amounts of energy; it leaves a brine that can harm sea life if not spread out carefully."),
         en("What is happening to underground water, and what could happen when an aquifer drops too low?", "It is pumped faster than nature refills it; salty sea water can creep in and spoil it."),
-        en("What is the central idea of the passage?", "Water security needs both making fresh water and using less (reusing and saving); relying on technology alone is not enough."),
+        mc("What is the central idea of the passage?", ["Desalination plants should be closed because they harm sea life", "Aquifers will refill themselves if left alone", "Water security needs both making fresh water and using less", "Technology alone will solve the water problem"], 2, "The author argues for a second pillar, using less, beside making more water."),
         en("What is the author's point of view about people who say technology alone will solve the problem? Quote the words that show it.", "The author thinks they are too hopeful: \"I believe this view is too hopeful.\""),
-        en("Why does the author say better plants do not solve the problem fully?", "Every litre produced takes energy, and every litre wasted wastes that energy too."),
+        mc("Why does the author say better plants do not solve the problem fully?", ["Better plants cost more than older plants", "Better plants cannot be built near the sea", "Better plants make water that is too salty", "Every litre produced takes energy, and every litre wasted wastes that energy too"], 3, "The author says producing water always takes energy, so wasting it still wastes energy."),
         en("The author calls using less \"a second pillar\". What does this phrase mean?", "A second main support for the strategy, beside making more water."),
         en("Give two pieces of evidence the author offers to support using less water.", "Any two: hotels and offices reuse treated water for toilets and gardens; homes with low-flow taps use noticeably less water."),
-        en("According to the passage, why store extra desalinated water underground?", "So it can be used in an emergency (it builds a reserve)."),
+        mc("According to the passage, why store extra desalinated water underground?", ["So it can be used in an emergency", "So it can be sold to other countries", "So it can be mixed with brine", "So it can refill the sea"], 0, "The passage says storing it builds a reserve for an emergency."),
         en("What do critics say about asking people to save water, and how does the author reply?", "Critics say it is unfair and habits are hard to change; the author says fair prices, clear bills and good fittings can guide people gently."),
         en("Why does the author write \"They have a point\" about the critics?", "To show fairness by admitting the critics are partly right, which makes the argument more convincing.")
       ]
@@ -116,14 +117,14 @@ module.exports = {
       items: [
         en("What does Khalid tell Hind, and why is it not completely true?", "He says he made the probe all by himself, but his brother Salem shaped the foil."),
         en("How does Hind's question, \"Who helped you with that?\", and Khalid's reply move the plot forward?", "It leads to Khalid's lie, which causes the problem he has to solve later."),
-        en("\"The words had stuck in his throat like dry bread.\" What does this simile suggest about how Khalid felt?", "Telling the truth felt uncomfortable and hard, perhaps because he was embarrassed."),
-        en("Why did Khalid's stomach drop when Mrs. Noura asked him to speak at assembly?", "He did not know how the foil had been folded, so he could not explain it and would be found out."),
+        mc("\"The words had stuck in his throat like dry bread.\" What does this simile suggest about how Khalid felt?", ["He was hungry and wanted to eat", "Telling the truth felt hard and uncomfortable", "He was proud of his work", "He was angry with Hind"], 1, "Dry bread is hard to swallow, so saying the truth felt hard for him."),
+        mc("Why did Khalid's stomach drop when Mrs. Noura asked him to speak at assembly?", ["He was afraid of speaking about Mars", "He had forgotten the day of the assembly", "He did not know how the foil had been folded, so he could not explain it", "He wanted Salem to win a prize"], 2, "The text says he could talk about Mars for hours but had no idea how the foil was folded."),
         en("What does Salem's reaction (\"raised his eyebrows but did not laugh\") show about his character?", "He is kind and patient; he helps rather than mocks."),
         en("Khalid says everyone would think his project is worth nothing. How does Salem answer this worry?", "He points out that the Mars, the poster and every fact were Khalid's own; only one piece was hidden."),
         en("What does Khalid's decision to say \"Come with me\" show about how he has changed?", "He has decided to face the problem and tell the truth."),
-        en("Why does Mrs. Noura say that telling the truth \"took more courage than building any probe\"?", "Admitting a mistake is hard, and she values honesty more than a perfect project."),
+        mc("Why does Mrs. Noura say that telling the truth \"took more courage than building any probe\"?", ["Building a probe is easy for everyone", "She wants Khalid to make a second probe", "She thinks the poster was the best in the school", "Admitting a mistake is hard, and she values honesty more than a perfect project"], 3, "Owning up took courage, and she thanks him for it."),
         en("The reader knows about the lie from the start, but Hind and Mrs. Noura do not. How does this affect the way you read Mrs. Noura's praise?", "We know the praise is for work that was not all his, so we feel tension about when the truth will come out."),
-        en("At the end, Khalid feels as if he \"had put down a heavy bag\". What does this show?", "Telling the truth took away his worry and guilt, so he felt lighter."),
+        mc("At the end, Khalid feels as if he \"had put down a heavy bag\". What does this show?", ["Telling the truth took away his worry, so he felt lighter", "He was tired from carrying the poster", "He wanted to leave assembly early", "He felt proud that he had fooled everyone"], 0, "He had carried the worry of the lie, and putting it down brought relief."),
         en("State a theme of the story and give one detail that supports it.", "Honesty brings relief and respect (or: own up to mistakes). Detail: after Khalid admits the truth, Mrs. Noura thanks him and he feels lighter.")
       ]
     }

@@ -3,6 +3,7 @@ const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
 module.exports = {
@@ -41,16 +42,16 @@ By midday the harbour was bustling, and the heat pressed down like a heavy blank
         "Easily broken or damaged."
       ),
       items: [
-        en("Grandfather Hamdan says the plank is \"fragile\" and that \"one crack would spoil\" the work. Using that clue, what does fragile mean?", "Easily broken."),
+        mc("Grandfather Hamdan says the plank is \"fragile\" and that \"one crack would spoil\" the work. Using that clue, what does fragile mean?", ["Heavy and thick","Easily broken","Smooth and shiny","Old and dusty"], 1, "One crack would spoil it, so fragile means easily broken."),
         en("\"The old dhows rested against the quay like tired camels.\" What does this simile suggest about the dhows?", "They were still and resting, as if worn out after long journeys."),
         en("The hammer sound is \"steady as a heartbeat\". What does this tell you about how Grandfather Hamdan worked?", "He hammered in a regular, even rhythm, calmly and without stopping suddenly."),
         en("\"The water was a sheet of glass.\" Is this a simile or a metaphor, and what does it mean?", "A metaphor (it says the water WAS glass, with no \"like\" or \"as\"); the water was very smooth and still."),
-        en("Grandfather Hamdan says some people call the boats \"dusty relics\" but he calls them \"veterans\". Which word has the more respectful feeling, and why?", "\"Veterans\": it suggests experienced, brave survivors, while \"dusty relics\" suggests old things that are no longer useful."),
-        en("Grandfather Hamdan explains that trans- means across and port means to carry. What does \"transport\" mean?", "To carry something across (from one place to another)."),
+        mc("Grandfather Hamdan says some people call the boats \"dusty relics\" but he calls them \"veterans\". Why does \"veterans\" feel more respectful?", ["It means the boats are brand new","It suggests experienced boats that have faced storms and still float","It means the boats are very large","It suggests the boats are dirty and forgotten"], 1, "Veterans suggests experienced survivors, while dusty relics suggests old things no longer useful."),
+        mc("Grandfather Hamdan explains that trans- means across and port means to carry. What does \"transport\" mean?", ["To repair something","To carry something across","To hold something still","To count something carefully"], 1, "Trans- (across) plus port (carry) gives to carry across."),
         en("Grandfather Hamdan says, \"Do not be discouraged.\" Using the sentences around it, what does discouraged most likely mean?", "Feeling like giving up, having lost hope or confidence."),
-        en("The rope \"looked hopeless\". The suffix -less means \"without\". What does hopeless mean here?", "Without hope: it looked as if it could never be untangled."),
+        mc("The rope \"looked hopeless\". The suffix -less means \"without\". What does hopeless mean here?", ["Full of hope","Without hope of being untangled","Very long","Ready to use"], 1, "Hope plus -less means without hope: it looked as if it could never be untangled."),
         en("Maryam turned the word over \"like a shell in her palm\". What does this simile show about how she treated the word?", "She thought about it slowly and carefully, as if looking closely at something interesting."),
-        en("What does Grandfather Hamdan mean when he calls Maryam \"tenacious\", and which of her actions shows it?", "She does not give up easily; she kept working at the knot even when it seemed to grow tighter."),
+        mc("Grandfather Hamdan calls Maryam \"tenacious\". Which of her actions shows this?", ["She lifted the plank gently","She asked what the dhows carried","She kept working at the knot even when it seemed tighter","She sat down on the deck"], 2, "Tenacious means not giving up easily, and she kept working at the knot."),
         en("At the end, the old boat \"no longer looked like a relic\" to Maryam. Explain what changed in the way she saw it.", "At first it was just an old boat, but after helping to repair it she saw it as valuable and ready for the sea.")
       ]
     },
@@ -77,16 +78,16 @@ Still, the best answer may begin at home. Every litre saved is a litre that does
         "Camels' bodies are well suited to long journeys."
       ),
       items: [
-        en("According to the first paragraph, why does the UAE need water from the sea?", "There is very little rain, no flowing rivers and only a limited amount of underground water."),
-        en("What is the first step in a modern desalination plant?", "The seawater is filtered to remove sand and seaweed."),
+        mc("According to the first paragraph, why does the UAE need water from the sea?", ["Rivers flow fast and carry salt","Wells are too deep to dig","There is little rain, no rivers and limited underground water","The sea is closer than the desert"], 2, "The first paragraph says there is very little rain, no rivers and limited underground water."),
+        mc("What is the first step in a modern desalination plant?", ["Boiling the seawater","Pushing water against a membrane","Testing the water","Filtering out sand and seaweed"], 3, "The water is first filtered to remove sand and seaweed."),
         en("In reverse osmosis, what lets water pass through but keeps the salt out?", "A thin sheet called a membrane with very tiny holes."),
-        en("How is the older heat method different from the membrane method?", "It boils the seawater and cools the steam back into water, leaving the salt in the tank; it uses much more energy."),
+        mc("How is the older heat method different from the membrane method?", ["It boils seawater and uses more energy","It uses a membrane with tiny holes","It needs no electricity at all","It leaves the salt in the sea"], 0, "It boils the seawater and collects the steam, which uses a great deal of energy."),
         en("Read: \"they had a dependable supply of water, even in a long, dry summer.\" Using the context, what does dependable mean?", "Able to be relied on; steady and always there."),
-        en("What harm can brine cause, and when?", "It can harm sea plants and animals near the shore if it is poured back into the sea carelessly."),
+        mc("What harm can brine cause, and when?", ["It can make tap water too salty at home","It can harm sea plants and animals near the shore if poured back carelessly","It can stop the membrane from working","It can dry up the wells"], 1, "The passage says careless pouring can harm sea life near the shore."),
         en("Name two ways engineers are trying to solve the problems of desalination.", "Running plants on solar energy, and releasing brine through many small pipes so it mixes quickly with the sea."),
         en("How does the fourth paragraph fit into the whole passage?", "It shows both sides of desalination, its benefits (cities could grow) and its challenges (energy, pollution and brine)."),
-        en("The author writes, \"Desalination is a clever solution, but it is not a magic one.\" What does this mean?", "It helps a great deal but does not solve every problem, so people still need to use water wisely."),
-        en("The author claims that \"the best answer may begin at home.\" Which reason does the author give to support this?", "Every litre saved is a litre that does not need to be made, pumped and carried."),
+        mc("The author writes, \"Desalination is a clever solution, but it is not a magic one.\" What does this mean?", ["It does not work at all","It helps a great deal but does not solve every problem","It is only used for magic shows","It is cheaper than any other idea"], 1, "It helps but is not perfect, so people still need to use water wisely."),
+        mc("The author claims that \"the best answer may begin at home.\" Which reason supports this?", ["Plants grow best in the evening","Pipes are always dripping","Every litre saved does not need to be made, pumped and carried","Homes are close to the sea"], 2, "The author says every litre saved is a litre that does not need to be made, pumped and carried."),
         en("What do you think is the author's main purpose in writing this passage? Give evidence.", "To explain how desalination works and to persuade readers to save water; the last paragraph gives ways families can save water.")
       ]
     },
@@ -123,15 +124,15 @@ Khalid grinned. "Next time?"
         "He changed from unwilling to eager."
       ),
       items: [
-        en("What task did Mrs. Salma give the class?", "Each student had to give a two-minute talk about an animal of the UAE."),
+        mc("What task did Mrs. Salma give the class?", ["A two-minute talk about an animal of the UAE","A poster about the desert","A story about a brother","A reading test about oryx books"], 0, "Each student had to give a two-minute talk about an animal of the UAE."),
         en("\"Hind's stomach twisted like a wrung cloth.\" What does this simile show about how she felt?", "She felt very nervous and uncomfortable about the talk."),
-        en("Who tells this story, and how do you know? Is it first person or third person?", "Third person: an outside narrator tells it, using \"Hind\", \"she\" and \"her\" (not \"I\")."),
+        mc("Who tells this story, and how do you know?", ["Hind, because it says \"I\"","Khalid, because he gives advice","Mrs. Salma, because she speaks last","An outside narrator, because it uses \"Hind\", \"she\" and \"her\""], 3, "It is third person: the narrator uses names and \"she\", never \"I\"."),
         en("What advice did Khalid give Hind, and what attitude did he show?", "He told her to say it louder and pretend the wall was the class; he teased her a little but was kind and helpful."),
-        en("Why could Hind not speak at first when she reached the front?", "She was so nervous that the words on her page blurred and no sound would come out."),
-        en("What did Hind do and remember that helped her to begin?", "She looked at her picture of the oryx and remembered that people had brought the oryx back by not giving up."),
+        mc("Why could Hind not speak at first when she reached the front?", ["She had forgotten her notes","The class was talking loudly","She did not know about oryx","She was so nervous that the words blurred and no sound came out"], 3, "Her nerves made the words blur and no sound came out."),
+        mc("What did Hind do and remember that helped her to begin?", ["She looked at her picture and remembered people had not given up on the oryx","She asked Khalid to speak for her","She read her notes again silently","She remembered the class clapping"], 0, "The picture reminded her that people brought the oryx back by not giving up."),
         en("\"Her voice came out thin as thread.\" What does this tell you about her voice at that moment?", "It was very quiet and shaky."),
-        en("Why does the author include the story of the oryx being brought back from the wild?", "It matches Hind's own situation: like the people who helped the oryx, she keeps going when something is hard."),
-        en("Explain Mrs. Salma's idea of bravery in your own words.", "Being brave does not mean having no fear; it means doing the thing even though you feel nervous."),
+        mc("Why does the author include the story of the oryx being brought back from the wild?", ["To teach the class where oryx live","To show that oryx are fast runners","It matches Hind's situation: she keeps going when something is hard","To explain why Mrs. Salma set the talk"], 2, "Like the people who helped the oryx, Hind did not give up."),
+        mc("Which sentence best explains Mrs. Salma's idea of bravery?", ["Brave people never feel nervous","Bravery is being nervous and speaking anyway","Brave people speak loudly","Bravery means practising alone"], 1, "Mrs. Salma says bravery is being nervous and speaking anyway."),
         en("How is Hind different at the end of the story from the beginning?", "At the start she dreaded speaking in front of the class; at the end she is proud and thinks she might enjoy doing it again."),
         en("State a theme of this story and give one detail that supports it.", "Courage means acting even when you are nervous (or: practice and support help you grow). Detail: Hind spoke anyway and then wanted to try again.")
       ]

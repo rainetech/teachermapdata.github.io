@@ -2,6 +2,7 @@
 const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
@@ -21,16 +22,16 @@ module.exports = {
         "bas-ket (2 syllables)"
       ),
       items: [
-        en("Which word has the long e sound spelled with the vowel team \"ea\": bread, bead or bear?", "bead (in \"bread\" the ea says a short e, and in \"bear\" it says air)."),
+        mc("Which word has the long e sound spelled with the vowel team \"ea\"?", ["bread", "bead", "bear"], 1, "bead (in \"bread\" the ea says a short e, and in \"bear\" it says air)."),
         en("Which vowel team is in the word \"boat\"?", "oa (the letters o and a work together to say a long o)."),
-        en("Which word has the same vowel sound as \"farm\": cart, cat or cake?", "cart (the letters ar in both words make the same r-controlled sound)."),
-        en("Which word has the same vowel sound as \"bird\": hurt, hot or hat?", "hurt (ir and ur both make the same sound)."),
+        mc("Which word has the same vowel sound as \"farm\"?", ["cat", "cake", "cart"], 2, "cart (the letters ar in both words make the same r-controlled sound)."),
+        mc("Which word has the same vowel sound as \"bird\"?", ["hot", "hurt", "hat"], 1, "hurt (ir and ur both make the same sound)."),
         en("How many syllables are in the word \"camel\"?", "2 (cam-el)."),
         en("Split the word \"market\" into its two syllables.", "mar-ket."),
-        en("What is the prefix in the word \"unlock\"?", "un- (it comes at the start of the word and means not or the opposite)."),
+        mc("What is the prefix in the word \"unlock\"?", ["un-", "lock", "-ock"], 0, "un- (it comes at the start of the word and means not or the opposite)."),
         en("What is the suffix in the word \"helpful\"?", "-ful (it comes at the end of the word)."),
-        en("Which common word does not follow the usual sound pattern: said, sad or sand?", "said (the ai in said makes a short e sound, not a long a)."),
-        en("Which word ends in the sound /t/ when you say the -ed ending: jumped, wanted or played?", "jumped (wanted ends in the sound /id/ and played ends in /d/)."),
+        mc("Which common word does not follow the usual sound pattern?", ["sad", "sand", "said"], 2, "said (the ai in said makes a short e sound, not a long a)."),
+        mc("Which word ends in the sound /t/ when you say the -ed ending?", ["jumped", "wanted", "played"], 0, "jumped (wanted ends in the sound /id/ and played ends in /d/)."),
         en("You read a sentence aloud and one word does not make sense. What should you do?", "Go back and reread the sentence, looking at the word again, until it makes sense."),
       ]
     },
@@ -65,24 +66,24 @@ module.exports = {
         "Because the desert night was cold."
       ),
       items: [
-        en("Who went to the date farm with Grandmother?", "Maryam and her cousin Hamdan."),
-        en("Where is the date farm?", "In Al Ain."),
+        mc("Who went to the date farm with Grandmother?", ["Maryam and her cousin Hamdan", "Salem and his sister Noura", "Hamdan and his cousin Layla"], 0, "Maryam and her cousin Hamdan went with Grandmother."),
+        mc("Where is the date farm?", ["In Sharjah", "In Al Ain", "In Hatta"], 1, "The story says the date farm is in Al Ain."),
         en("What did Hamdan see in the shade?", "A tired, thirsty little bird."),
-        en("Why did Grandmother pour water into a small dish?", "Because the bird looked thirsty."),
+        mc("Why did Grandmother pour water into a small dish?", ["Because the basket was heavy", "Because the day was warm", "Because the bird looked thirsty"], 2, "Because the bird looked thirsty."),
         en("How did the children pick the dates?", "Carefully (they picked only the soft, brown ones)."),
         en("Which sentence tells the main idea of the story: (a) Dates grow in Al Ain. (b) Two cousins helped a thirsty bird while they picked dates. (c) Eid sweets are made with dates.", "(b) (it tells what the whole story is about, not just one detail)."),
-        en("What lesson does Grandmother teach at the end of the story?", "When we help others quietly and kindly, we make the world better (be kind and helpful)."),
+        mc("What lesson does Grandmother teach at the end of the story?", ["When we help quietly and kindly, we make the world better", "Dates are best when they are soft and brown", "A ladder is needed to pick dates"], 0, "Grandmother says that helping quietly makes the world better (be kind and helpful)."),
         en("Put these in the order they happen: the bird drinks water; the children pick dates; the children carry the basket home.", "1. The children pick dates. 2. The bird drinks water. 3. The children carry the basket home."),
-        en("Read Text B. Why can the date palm grow well in hot, dry places?", "Its long roots reach deep underground to find water."),
+        mc("Read Text B. Why can the date palm grow well in hot, dry places?", ["Its leaves make a lot of shade", "Its long roots reach deep underground to find water", "Its dates are sweet and soft"], 1, "Its long roots reach deep underground to find water."),
         en("What is the main topic of Text B: (a) how to bake Eid sweets, (b) the date palm, how it grows and how it is used, or (c) a trip to a farm in Al Ain?", "(b) (the whole text tells facts about the date palm)."),
-        en("In Text B, what happens right after the small flowers open?", "They turn into green dates (the word next shows the order)."),
-        en("Text A and Text B are both about dates. Which idea is in Text B but not in Text A: (a) Dates are soft and brown when ready. (b) Palm leaves can be woven into mats and fans. (c) Children can help pick dates.", "(b) (Text A tells about soft, brown dates and children picking them, but only Text B tells about using the leaves)."),
+        mc("In Text B, what happens right after the small flowers open?", ["They turn soft and brown", "Farmers harvest them", "They turn into green dates"], 2, "They turn into green dates (the word next shows the order)."),
+        mc("Text A and Text B are both about dates. Which idea is in Text B but not in Text A?", ["Dates are soft and brown when ready.", "Palm leaves can be woven into mats and fans.", "Children can help pick dates."], 1, "Text A tells about soft, brown dates and children picking them, but only Text B tells about using the leaves."),
         en("In Text C, who feels worried at first, and who feels sure the kite can be saved?", "Salem feels worried, and Noura feels sure (she says \"Don't worry\" in a happy voice)."),
         en("In Text D, which character says the kite is too high, and which character wants to try?", "Layla says it is too high, and Hamdan wants to try (each character has a different point of view)."),
         en("A picture next to Text C shows a red kite stuck at the top of a tall palm tree, with Salem pointing up and Mother holding a long stick. Which part of the story does the picture match best: (a) the kite landing in the tree and the plan to reach it, (b) Salem saying thank you, or (c) the children arriving at the beach?", "(a) (the picture shows the kite in the tree and the long stick, so it helps us see the problem and how it will be solved)."),
         en("Text C and Text D are two versions of the same story. What happens to the kite in both of them?", "The wind pulls the string away and the kite lands in a tree, then a long stick is used to bring it down."),
         en("Text C and Text D are two versions of the same story. Name one way Text D is different from Text C.", "Any one of these: it is set in the desert near Hatta, not on a beach in Sharjah; the children are Hamdan and Layla, not Salem and Noura; the kite is green, not red; Grandfather helps, not Mother."),
-        en("A diagram below Text E shows the sun at the top, an arrow down to a solar panel, and a second arrow from the panel to a light bulb. What does the second arrow show?", "The electricity made by the panel goes to the light bulb (it gives the bulb power)."),
+        mc("A diagram below Text E shows the sun at the top, an arrow down to a solar panel, and a second arrow from the panel to a light bulb. What does the second arrow show?", ["The electricity made by the panel goes to the light bulb", "The sun gets hotter near the bulb", "The light bulb makes new sunlight"], 0, "The electricity made by the panel goes to the light bulb (it gives the bulb power)."),
         en("A photo beside Text E shows many flat panels in long rows, all tilted to face the sun. Which part of the text does the photo match best: (a) the first sentence about rows of solar panels, or (b) the last sentence about clean air?", "(a) (the photo shows what a solar park looks like, with panels in rows)."),
         en("What reason does the author give for the UAE being a good place for solar parks?", "It has many sunny days.")
       ]
@@ -106,22 +107,22 @@ module.exports = {
         "Narrow means not wide."
       ),
       items: [
-        en("\"The soup was scalding. Layla waited because it could burn her tongue.\" What does scalding mean?", "Very hot (the clue is that it could burn her tongue)."),
+        mc("\"The soup was scalding. Layla waited because it could burn her tongue.\" What does scalding mean?", ["Very cold", "Very hot", "Very salty"], 1, "Very hot (the clue is that it could burn her tongue)."),
         en("What does the word \"unhappy\" mean?", "Not happy (the prefix un- means not)."),
-        en("What does the word \"unlock\" mean?", "To open a lock, to undo locking (the prefix un- means the opposite of)."),
-        en("What does the word \"rewrite\" mean?", "To write again (the prefix re- means again)."),
+        mc("What does the word \"unlock\" mean?", ["To close a lock", "To lock again", "To open a lock"], 2, "To open a lock, to undo locking (the prefix un- means the opposite of)."),
+        mc("What does the word \"rewrite\" mean?", ["To write again", "To write less", "To not write"], 0, "To write again (the prefix re- means again)."),
         en("Omar will reread his book tonight. What will he do?", "Read his book again."),
         en("Which two small words make the compound word \"sandstorm\"?", "sand and storm."),
-        en("Which word is a compound word: sandy, sandcastle or sandal?", "sandcastle (it is made of sand and castle)."),
+        mc("Which word is a compound word?", ["sandy", "sandcastle", "sandal"], 1, "sandcastle (it is made of sand and castle)."),
         en("Which word means almost the same as \"huge\": tiny, giant or quiet?", "giant."),
-        en("Which word is the opposite of \"empty\": full, open or small?", "full."),
+        mc("Which word is the opposite of \"empty\"?", ["open", "small", "full"], 2, "full."),
         en("Put these words in order from least hot to most hot: boiling, warm, hot.", "warm, hot, boiling."),
         en("Which word shows the fastest way to move: stroll, hurry or wander?", "hurry (stroll and wander are relaxed ways of moving)."),
         en("Explain why \"happy\" and \"unhappy\" are opposites. What does the prefix do?", "Un- means not, so unhappy means not happy, the opposite of happy."),
         en("In the poem in Text A, which word at the end of line 2 rhymes with \"down\" at the end of line 1? What does the repeated \"drip, drip, drop\" help you hear?", "town rhymes with down. The repeated words give a steady beat and help you hear raindrops falling."),
-        en("In Text B, what does the word \"orbiter\" mean?", "A spacecraft that circles (travels around) a planet. The text and the glossary both say so."),
+        mc("In Text B, what does the word \"orbiter\" mean?", ["A spacecraft that circles a planet", "A spacecraft that lands on a planet", "A tool that studies the weather"], 0, "A spacecraft that circles (travels around) a planet. The text and the glossary both say so."),
         en("Which part of Text B would you read to find out what the Hope Probe studies: the heading \"A Journey to Mars\", the heading \"What Hope Studies\" or the Glossary?", "The heading \"What Hope Studies\" (headings tell what each part is about)."),
-        en("What is the main purpose of Text B: (a) to make you laugh, (b) to tell you facts about the Hope Probe, or (c) to ask you to buy something?", "(b) (the author wants to explain and describe the Hope Probe).")
+        mc("What is the main purpose of Text B?", ["To make you laugh", "To ask you to buy something", "To tell you facts about the Hope Probe"], 2, "The author wants to explain and describe the Hope Probe."),
       ]
     },
     {
@@ -137,12 +138,12 @@ module.exports = {
         en("Add the missing comma to the end of this letter closing: Your friend", "Your friend,"),
         en("Rewrite with the correct capital letters: the children celebrated eid in sharjah.", "The children celebrated Eid in Sharjah."),
         en("Add the missing comma to the start of this letter: Dear Layla", "Dear Layla,"),
-        en("Write \"do not\" as one word, using an apostrophe.", "don't."),
+        mc("Which is \"do not\" written as one word with an apostrophe?", ["don't", "dont", "do'nt"], 0, "don't."),
         en("Write \"we are\" as one word, using an apostrophe.", "we're."),
-        en("Use an apostrophe to show that the bag belongs to Noura.", "Noura's bag."),
-        en("Write the plural of \"child\".", "children."),
+        mc("Which shows that the bag belongs to Noura?", ["Nouras bag", "Nouras' bag", "Noura's bag"], 2, "Noura's bag (add an apostrophe and s to one person's name)."),
+        mc("Which is the plural of \"child\"?", ["childs", "children", "childes"], 1, "children."),
         en("Write the plural of \"tooth\".", "teeth."),
-        en("Which is a complete sentence: (a) The big camel. (b) The camel drank water.", "(b) (it tells who and what happened; (a) is only part of a sentence)."),
+        mc("Which is a complete sentence?", ["The camel drank water.", "The big camel.", "Drank water."], 0, "The camel drank water (it tells who and what happened; the others are only part of a sentence)."),
         en("Which sentence is the best way to make \"The boy ran.\" longer: (a) The boy ran. (b) The happy boy ran quickly to the souq. (c) Ran quickly the.", "(b) (it adds a describing word, how he ran and where)."),
         en("Put these sentences in order to tell a story: Finally he said thank you. First Salem washed his hands. Then Salem ate his lunch.", "First Salem washed his hands. Then Salem ate his lunch. Finally he said thank you."),
       ]

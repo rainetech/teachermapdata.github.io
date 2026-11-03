@@ -2,6 +2,7 @@
 const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
@@ -25,16 +26,16 @@ module.exports = {
         "Extremely hot"
       ),
       items: [
-        en("In the passage, what does \"scorching\" mean? Which clue helps you?", "Extremely hot. The clue is that by noon the sun would be hot enough to burn bare feet."),
-        en("The palms are called \"sturdy\". What does sturdy mean? Which words in the passage help?", "Strong and firm. The clue is that they have stood for years \"even in strong winds\"."),
-        en("What does \"enormous\" mean? Which clue helps you?", "Very big. It took two men to lower one bunch."),
+        mc("In the passage, what does \"scorching\" mean?", ["Pleasantly cool", "Extremely hot", "Very bright", "Dry and dusty"], 1, "Extremely hot. By noon the sun would be hot enough to burn bare feet."),
+        mc("The palms are called \"sturdy\". What does sturdy mean?", ["Old and tall", "Easy to climb", "Heavy with fruit", "Strong and firm"], 3, "Strong and firm. The palms have stood for years \"even in strong winds\"."),
+        mc("What does \"enormous\" mean in the passage?", ["Easily bruised", "Very ripe", "Very big", "Very sweet"], 2, "Very big. It took two men to lower one bunch."),
         en("The dates are \"delicate\". What does delicate mean?", "Easily damaged or bruised. The passage says they bruised easily."),
-        en("Why was Maryam only allowed to gather the dates that had fallen?", "The dates were delicate and bruised easily, so the bunches were left to the workers."),
-        en("The workers were \"exhausted\" by noon. What does exhausted mean?", "Very tired. The clue is that they sat in the shade and drank water."),
+        mc("Why was Maryam only allowed to gather the dates that had fallen?", ["The dates were delicate and bruised easily", "The ropes were too heavy for her", "She was too tired after noon", "Fallen dates were the sweetest"], 0, "The dates were delicate and bruised easily, so the bunches were left to the workers."),
+        mc("The workers were \"exhausted\" by noon. What does exhausted mean?", ["Very hungry", "Very hot", "Very tired", "Very thirsty"], 2, "Very tired. They sat in the shade to rest."),
         en("Grandfather says good things take time to \"ripen\". What does ripen mean here?", "To grow until ready to eat (or ready to enjoy)."),
         en("Which word in the passage is the opposite of delicate?", "Sturdy (strong, not easily harmed)."),
-        en("The word \"palm\" in the passage is a kind of tree. What is a different meaning of palm?", "The inside part of the hand."),
-        en("The word \"unfair\" begins with the prefix un-. What does unfair mean?", "Not fair. The prefix un- means \"not\"."),
+        mc("In the passage, palm is a kind of tree. In which sentence does palm have a different meaning?", ["Salem sat under a tall palm.", "The palm trees were full of dates.", "The workers climbed the palm trunk.", "Hind held the coin in her palm."], 3, "In the last sentence, palm is the inside part of the hand."),
+        mc("The word \"unfair\" begins with the prefix un-. What does unfair mean?", ["Not fair", "Very fair", "Fair again", "Fair before"], 0, "Not fair. The prefix un- means \"not\"."),
         en("Look at the word \"carefully\". What is its root (base) word, and what does the ending -ly do?", "The root is \"care\" (the ending -ful comes first, then -ly). The ending -ly turns it into a word that tells how something is done."),
         en("Grandfather says \"Good things take time to ripen.\" He is talking about dates, but he means more than fruit. What does he mean?", "Many good things, not only fruit, need time and patience before they are ready. Any answer about good things needing time is correct."),
         en("Split these words from the passage into syllables: \"enormous\" and \"exhausted\". How many syllables does each have?", "e-nor-mous has 3 syllables. ex-haust-ed has 3 syllables."),
@@ -59,22 +60,22 @@ module.exports = {
         "Falcons have eyes and wings that help them hunt."
       ),
       items: [
-        en("What is the main idea of the whole of Text A?", "The oryx has ways to live in the desert, and people protected it so its numbers grew again."),
+        mc("What is the main idea of the whole of Text A?", ["Oryx have a white coat and two long horns", "Oryx have ways to live in the desert, and people protected them so their numbers grew", "Oryx are kept in reserves so that visitors can see them", "Oryx drink water every day in the desert"], 1, "The oryx has ways to live in the desert, and people protected it so its numbers grew again."),
         en("What colour is the oryx's coat?", "White (pale)."),
         en("How does its pale colour help the oryx?", "It reflects sunlight and helps the oryx stay cooler."),
-        en("Where does an oryx get moisture when it does not drink?", "From the plants it eats, such as grasses and leaves."),
+        mc("According to Text A, where does an oryx get moisture when it does not drink?", ["From digging in the sand", "From the shade of a tree", "From the water point in the reserve", "From the plants it eats"], 3, "From the plants it eats, such as grasses and leaves."),
         en("What does an oryx do during the hottest part of the day?", "It rests in the shade of a tree or in a shallow hollow it digs in the sand."),
         en("How do wide hooves help the oryx?", "They help it walk on soft sand without sinking."),
-        en("Why were very few wild oryx left many years ago?", "Too many had been hunted."),
-        en("In Text A, what is a \"reserve\"? How do you know?", "An area set aside to keep animals safe. The passage explains this right after the word."),
+        mc("Why were very few wild oryx left many years ago?", ["Too many had been hunted", "The desert had become too hot", "There were no plants to eat", "Rangers had moved them away"], 0, "Too many had been hunted."),
+        mc("In Text A, what is a \"reserve\"?", ["A person who looks after animals", "A herd of oryx walking together", "An area set aside to keep animals safe", "A shallow hollow in the sand"], 2, "An area set aside to keep animals safe. The passage explains this right after the word."),
         en("Which came first: oryx being raised in reserves, or some being returned to the wild?", "Being raised in reserves came first. The word \"Later\" shows the return to the wild came after."),
         en("Is the number of oryx in the UAE growing or getting smaller today?", "Growing."),
         en("How are the white coat and the habit of resting in the shade connected?", "Both help the oryx stay cool in the desert heat."),
         en("Why does the writer call the oryx an important symbol of the country's care for nature?", "Because people worked to save the oryx and bring it back, which shows care for nature. Any answer using this idea is correct."),
-        en("Salem wants to find out how rangers count the herds. Under which heading in Text B should he look? At the end of Text B, where would he look to find what the word \"ranger\" means?", "He should look under the heading WHAT YOU WILL SEE. He would look in the glossary at the end, which says a ranger is a person who looks after a protected area."),
-        en("Use the map of the reserve in Text B. Start at the water point. Which place is directly east of it, and which is directly west of it?", "The shade trees are east of the water point. The visitor hut is west of it."),
+        mc("Salem wants to find out how rangers count the herds. Under which heading in Text B should he look?", ["WHERE TO GO", "WHAT YOU WILL SEE", "WHY IT MATTERS", "GLOSSARY"], 1, "The counting is described under WHAT YOU WILL SEE."),
+        mc("Use the map of the reserve in Text B. Start at the water point. Which place is east of it, and which is west of it?", ["East: the gate; west: the shade trees", "East: the visitor hut; west: the shade trees", "East: the visitor hut; west: the gate", "East: the shade trees; west: the visitor hut"], 3, "The shade trees are east of the water point. The visitor hut is west of it."),
         en("Text B says, \"Because oryx have wide hooves, they cross soft ground easily.\" What is the cause and what is the effect? Then name one thing about wide hooves that both Text A and Text B tell you.", "Cause: oryx have wide hooves. Effect: they cross soft ground easily. Both texts say wide hooves help the oryx walk on soft sand (or soft ground) without trouble."),
-        en("In Text B the writer says, \"I believe a visit to the reserve is the best way to learn about oryx.\" Is this a fact or the writer's point of view? Salem says he would rather learn from a book. How is his view different from the writer's?", "It is the writer's point of view (an opinion), shown by the words \"I believe\" and \"the best way\". The writer prefers a visit, but Salem prefers a book. Different people can have different views.")
+        mc("Which sentence from Text B shows the writer's point of view (an opinion)?", ["I believe a visit to the reserve is the best way to learn about oryx.", "Rangers count the herds each month.", "Visitors stay inside the vehicle so that the animals stay calm.", "The reserve is in the desert, a short drive from the city."], 0, "The words \"I believe\" and \"the best way\" show a view, not a fact."),
       ]
     },
     {
@@ -96,19 +97,19 @@ module.exports = {
         en("What did Hamdan make his kite from?", "Paper, string and two thin sticks."),
         en("Where does the story take place?", "On a beach (by the sea)."),
         en("Who is Noura?", "Hamdan's cousin."),
-        en("Why did the kite keep falling at first?", "Hamdan was running instead of waiting for the wind to lift it."),
-        en("How did Hamdan feel after the kite fell the second time? How do you know?", "Annoyed or frustrated. He frowned and kicked the sand."),
+        mc("Why did the kite keep falling at first?", ["Hamdan ran too fast instead of waiting for the wind to lift it", "The wind was too light", "The string was too short", "Noura was holding the kite down"], 0, "Hamdan was running instead of waiting for the wind to lift the kite."),
+        mc("How did Hamdan feel after the kite fell the second time?", ["Proud", "Sleepy", "Excited", "Annoyed"], 3, "Annoyed. He frowned and kicked the sand."),
         en("What advice did Noura give Hamdan?", "To wait for the wind to lift the kite instead of running too fast."),
         en("What did Hamdan do differently the third time?", "He held the kite high and stood still."),
         en("What happened right after the gust came from the sea?", "The kite trembled, rose and began to climb."),
-        en("Why did Noura say, \"You did listen\"?", "Hamdan did follow her advice in the end, even though he had first said he could do it alone."),
+        mc("Why did Noura say, \"You did listen\"?", ["Hamdan had asked for her help at the start", "Hamdan had kept very quiet", "Hamdan followed her advice in the end", "Hamdan flew the kite for her"], 2, "Hamdan did follow her advice in the end, even though he first said he could do it alone."),
         en("What kind of person is Noura? Give one thing she does or says to show it.", "Kind and patient. She sat beside Hamdan and shared her own experience and advice to help him. Any fitting trait with evidence is correct."),
-        en("The writer says the kite \"was a bright red spot in the sky\". What does this tell you?", "The kite was high up and far away, so it looked small."),
-        en("What lesson does the story teach?", "Listening to others and being patient can help you do something you find hard. Any answer close to this is correct."),
-        en("A poem is made of stanzas, which are groups of lines. How many stanzas does Text B have, how many lines are in each, and which stanza tells how the kite starts to climb?", "Text B has 3 stanzas, each with 4 lines. The kite starts to climb in stanza 2."),
+        mc("The writer says the kite \"was a bright red spot in the sky\". What does this tell you?", ["The kite was very close to Hamdan", "The kite was on fire", "The sun was shining on the kite", "The kite was high and far away, so it looked small"], 3, "The kite was high up and far away, so it looked small."),
+        mc("What lesson does Text A teach?", ["Listening to others and being patient can help with something hard", "It is best to do everything alone", "Kites fly best at the beach", "Cousins should share their toys"], 0, "Listening to others and being patient helped Hamdan."),
+        mc("How many stanzas does the poem in Text B have, and which stanza tells how the kite starts to climb?", ["3 stanzas; stanza 3", "3 stanzas; stanza 2", "4 stanzas; stanza 2", "2 stanzas; stanza 1"], 1, "There are 3 stanzas of 4 lines. The kite starts to climb in stanza 2."),
         en("Text A is told by a narrator, not by Hamdan. At the start, Hamdan says, \"No, I can do it,\" and Noura wants to help. Whose point of view is different from Hamdan's, and what is it? Then say what you would have done in Hamdan's place and why.", "Noura's point of view is different: she thinks helping is a good idea. Hamdan wants to do it alone. The second part is the child's own view, and any answer with a reason is correct."),
         en("Imagine the picture for Text A shows Hamdan standing still on the sand, holding the red kite high, with the sea beside him. Which moment from the story is it? What does the picture show that the words do not say exactly?", "It shows the moment when Hamdan held the kite high and stood still, before the gust came. The picture adds how the beach looks and how Hamdan stands, for example his arms up and the kite in the air. Any sensible detail is correct."),
-        en("A scene is a part of a story in one place and one time, and a chapter is a larger section of a book. Does Text A happen in one scene or in more than one? Which title would suit it as Chapter 1: \"A Kite Takes Flight\" or \"The Date Harvest\"?", "One scene: it all happens on the beach on Saturday, in one place and time. \"A Kite Takes Flight\" suits it.")
+        mc("Which title would suit Text A as Chapter 1?", ["The Date Harvest", "The Oryx Returns", "A Morning at the Souq", "A Kite Takes Flight"], 3, "Text A is about Hamdan getting his kite to fly."),
       ]
     }
   ]

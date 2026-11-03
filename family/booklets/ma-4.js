@@ -1,6 +1,7 @@
 // Mathematics practice booklet, Grade 4 expectations. See ma-3.js for the format.
 const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
+const mc = (qEn, optsEn, correct, whyEn, qAr, optsAr, whyAr) => ({ q: T(qEn, qAr), a: T(whyEn, whyAr), options: { en: optsEn, ar: optsAr }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 
 module.exports = {
@@ -15,14 +16,14 @@ module.exports = {
       example: ex("A ribbon is 3 times as long as a string. The string is 14 cm. How long is the ribbon? Write the equation.", ["3 times as long means multiply: 3 x 14.", "3 x 10 = 30 and 3 x 4 = 12, so 30 + 12 = 42.", "Equation: r = 3 x 14 = 42."], "42 cm", "شريط أطول 3 مرات من خيط. طول الخيط 14 سم. ما طول الشريط؟ اكتب المعادلة.", ["أطول 3 مرات تعني الضرب: 3 × 14.", "3 × 10 = 30 و 3 × 4 = 12 إذن 30 + 12 = 42.", "المعادلة: r = 3 × 14 = 42."], "42 سم"),
       items: [
         it("Write as a multiplication: 24 is 4 times as many as 6.", "4 x 6 = 24", "اكتب بالضرب: 24 تساوي 4 أمثال العدد 6.", "4 × 6 = 24"),
-        it("Maryam has 9 stickers. Noor has 5 times as many. How many does Noor have?", "45", "مع مريم 9 ملصقات ومع نور 5 أمثالها. كم ملصقة مع نور؟", "45"),
+        mc("Maryam has 9 stickers. Noor has 5 times as many. How many stickers does Noor have?", ["14", "4", "45", "54"], 2, "5 times as many means 5 x 9 = 45. (14 adds and 4 subtracts.)", "مع مريم 9 ملصقات ومع نور 5 أمثالها. كم ملصقة مع نور؟", ["14", "4", "45", "54"], "5 أمثال تعني 5 × 9 = 45. (14 ناتج الجمع و 4 ناتج الطرح.)"),
         it("A shirt costs AED 36 and a bag costs 3 times as much. How much do they cost together?", "AED 144 (bag AED 108, plus AED 36)", "قميص ثمنه 36 درهمًا وحقيبة ثمنها 3 أمثاله. كم ثمنهما معًا؟", "144 درهمًا (الحقيبة 108 دراهم زائد 36 درهمًا)"),
-        it("There are 47 students going on a trip and each bus holds 12. How many buses are needed?", "4 buses (47 / 12 = 3 remainder 11, so one more bus is needed)", "يذهب 47 طالبًا في رحلة وتتسع كل حافلة لـ 12. كم حافلة تلزم؟", "4 حافلات (47 ÷ 12 = 3 والباقي 11، فنحتاج إلى حافلة أخرى)"),
+        mc("47 students go on a trip to see falcons and each bus holds 12 students. How many buses are needed?", ["4", "3", "11", "35"], 0, "47 / 12 = 3 remainder 11, and those 11 students still need seats, so 4 buses.", "يذهب 47 طالبًا في رحلة لمشاهدة الصقور وتتسع كل حافلة لـ 12 طالبًا. كم حافلة تلزم؟", ["4", "3", "11", "35"], "47 ÷ 12 = 3 والباقي 11، وما زال 11 طالبًا بحاجة إلى مقاعد، إذن 4 حافلات."),
         it("List all the factor pairs of 24.", "1 x 24, 2 x 12, 3 x 8, 4 x 6", "اكتب كل أزواج العوامل للعدد 24.", "1 × 24 و 2 × 12 و 3 × 8 و 4 × 6"),
-        it("Is 17 prime or composite? How do you know?", "Prime: its only factors are 1 and 17.", "هل 17 عدد أولي أم مركّب؟ وكيف عرفت؟", "أولي: عاملاه الوحيدان هما 1 و 17."),
-        it("Is 36 a multiple of 9? Explain.", "Yes: 9 x 4 = 36.", "هل 36 من مضاعفات 9؟ وضّح.", "نعم: 9 × 4 = 36."),
+        mc("Which of these numbers is prime?", ["27", "29", "21", "33"], 1, "29 has only the factors 1 and 29. The others have more: 27 = 3 x 9, 21 = 3 x 7 and 33 = 3 x 11.", "أي عدد من الأعداد التالية عدد أولي؟", ["27", "29", "21", "33"], "29 له عاملان فقط هما 1 و 29. أما الباقي فله عوامل أكثر: 27 = 3 × 9 و 21 = 3 × 7 و 33 = 3 × 11."),
+        it("Hind packs date cookies into boxes of 9. She has 36 cookies. Can she fill the boxes exactly with none left over? Explain.", "Yes: 36 is a multiple of 9 because 9 x 4 = 36, so she fills 4 boxes.", "تضع هند كعكات التمر في علب تتسع كل علبة لـ 9. لديها 36 كعكة. هل تستطيع ملء العلب تمامًا دون أن يبقى شيء؟ وضّح.", "نعم: 36 من مضاعفات 9 لأن 9 × 4 = 36، إذن تملأ 4 علب."),
         it("Continue the pattern: 5, 11, 17, 23, __, __. What is the rule?", "29, 35; add 6 each time.", "أكمل النمط: 5، 11، 17، 23، __، __. ما القاعدة؟", "29 و 35؛ نضيف 6 في كل مرة."),
-        it("A pattern starts at 2 and the rule is multiply by 2. Write the first five numbers.", "2, 4, 8, 16, 32", "نمط يبدأ من 2 وقاعدته الضرب في 2. اكتب الأعداد الخمسة الأولى.", "2 و 4 و 8 و 16 و 32"),
+        mc("A pattern starts at 3 and the rule is multiply by 2. What are the first four numbers?", ["3, 5, 7, 9", "3, 6, 9, 12", "3, 6, 12, 18", "3, 6, 12, 24"], 3, "3 x 2 = 6, 6 x 2 = 12 and 12 x 2 = 24.", "نمط يبدأ من 3 وقاعدته الضرب في 2. ما الأعداد الأربعة الأولى؟", ["3، 5، 7، 9", "3، 6، 9، 12", "3، 6، 12، 18", "3، 6، 12، 24"], "3 × 2 = 6 و 6 × 2 = 12 و 12 × 2 = 24."),
         it("Ali scores 8 more points than Sami, who scores 3 times as many as Hind. Hind scores 6. How many does Ali score?", "26 (Sami 18, Ali 26)", "يسجّل علي 8 نقاط أكثر من سامي، الذي يسجّل 3 أمثال ما سجلته هند. سجلت هند 6. كم نقطة سجّل علي؟", "26 (سامي 18 وعلي 26)")
       ]
     },
@@ -31,16 +32,16 @@ module.exports = {
       standards: ["4.MD.A.1", "4.MD.A.2", "4.MD.A.3", "4.MD.C.5", "4.MD.C.6", "4.MD.C.7", "4.G.A.1", "4.G.A.2", "4.G.A.3"],
       example: ex("A rectangular football pitch for children is 40 m long and 25 m wide. Find the perimeter and the area.", ["Perimeter = 2 x (40 + 25) = 2 x 65 = 130 m.", "Area = 40 x 25 = 1,000 square metres."], "Perimeter 130 m; area 1,000 square metres", "ملعب كرة قدم للأطفال مستطيل طوله 40 م وعرضه 25 م. أوجد المحيط والمساحة.", ["المحيط = 2 × (40 + 25) = 2 × 65 = 130 م.", "المساحة = 40 × 25 = 1,000 متر مربع."], "المحيط 130 م والمساحة 1,000 متر مربع"),
       items: [
-        it("A rectangle has area 56 square cm and length 8 cm. What is its width?", "7 cm", "مساحة مستطيل 56 سنتمترًا مربعًا وطوله 8 سم. ما عرضه؟", "7 سم"),
+        mc("A rectangular mat in a model of a souq stall has an area of 56 square cm and a length of 8 cm. What is its width?", ["48 cm", "448 cm", "7 cm", "64 cm"], 2, "Width = area / length: 56 / 8 = 7 cm.", "حصيرة مستطيلة في نموذج لدكان في السوق مساحتها 56 سنتمترًا مربعًا وطولها 8 سم. ما عرضها؟", ["48 سم", "448 سم", "7 سم", "64 سم"], "العرض = المساحة ÷ الطول: 56 ÷ 8 = 7 سم."),
         it("Convert: 3 km = ___ m", "3,000 m", "حوّل: 3 كم = ___ م", "3,000 م"),
-        it("Convert: 2 hours 30 minutes = ___ minutes", "150 minutes", "حوّل: ساعتان و 30 دقيقة = ___ دقيقة", "150 دقيقة"),
+        it("The film lasts 2 hours 30 minutes. How many minutes is that?", "150 minutes (2 x 60 + 30)", "يستمر الفيلم ساعتين و 30 دقيقة. كم دقيقة يستمر؟", "150 دقيقة (2 × 60 + 30)"),
         it("A rope is 2 m 40 cm and another is 1 m 85 cm. How much longer is the first, in cm?", "55 cm (240 - 185)", "حبل طوله 2 م و 40 سم وآخر 1 م و 85 سم. بكم سنتيمترًا الأول أطول؟", "55 سم (240 - 185)"),
-        it("How many degrees is a right angle? Name an angle smaller than that.", "90 degrees; an acute angle (for example 45 degrees)", "كم درجة الزاوية القائمة؟ سمِّ زاوية أصغر منها.", "90 درجة؛ زاوية حادة (مثلًا 45 درجة)"),
-        it("A turn of a clock hand from 12 to 3 turns through what angle?", "90 degrees", "دوران عقرب الساعة من 12 إلى 3 يمسح أي زاوية؟", "90 درجة"),
-        it("Two angles on a straight line: one is 120 degrees. What is the other?", "60 degrees (a straight line is 180)", "زاويتان على مستقيم: إحداهما 120 درجة. ما الأخرى؟", "60 درجة (المستقيم 180 درجة)"),
+        it("Khalid and his cousins walk once all the way round a rectangular park that is 120 m long and 80 m wide. How far do they walk?", "400 m (the perimeter is 2 x (120 + 80))", "يمشي خالد وأبناء عمه مرة واحدة حول حديقة مستطيلة طولها 120 م وعرضها 80 م. كم مترًا يمشون؟", "400 م (المحيط = 2 × (120 + 80))"),
+        mc("The minute hand of a clock moves from 12 to 3. Through what angle does it turn?", ["180 degrees", "90 degrees", "45 degrees", "30 degrees"], 1, "From 12 to 3 is a quarter of a full turn, which is a right angle of 90 degrees.", "يتحرك عقرب الدقائق في ساعة من 12 إلى 3. ما الزاوية التي يمسحها؟", ["180 درجة", "90 درجة", "45 درجة", "30 درجة"], "من 12 إلى 3 ربع دورة كاملة، وهي زاوية قائمة قياسها 90 درجة."),
+        mc("Two angles sit side by side on a straight line. One is 120 degrees. What is the other?", ["240 degrees", "90 degrees", "180 degrees", "60 degrees"], 3, "A straight line is 180 degrees, and 180 - 120 = 60 degrees.", "زاويتان متجاورتان على مستقيم. إحداهما 120 درجة. ما الزاوية الأخرى؟", ["240 درجة", "90 درجة", "180 درجة", "60 درجة"], "المستقيم 180 درجة، و 180 - 120 = 60 درجة."),
         it("How many lines of symmetry does a rectangle that is not a square have?", "2", "كم محور تماثل لمستطيل ليس مربعًا؟", "2"),
-        it("Name a triangle that has a right angle.", "A right triangle", "سمِّ مثلثًا فيه زاوية قائمة.", "مثلث قائم الزاوية"),
-        it("Which pair of lines never meet however far they go: parallel or perpendicular?", "Parallel", "أي زوجين من المستقيمات لا يلتقيان مهما امتدّا: المتوازيان أم المتعامدان؟", "المتوازيان")
+        mc("A triangle has angles of 90, 45 and 45 degrees. What kind of triangle is it?", ["Right triangle", "Acute triangle", "Obtuse triangle", "Equilateral triangle"], 0, "It has one angle of 90 degrees, so it is a right triangle.", "مثلث زواياه 90 و 45 و 45 درجة. ما نوع هذا المثلث؟", ["مثلث قائم الزاوية", "مثلث حاد الزوايا", "مثلث منفرج الزاوية", "مثلث متساوي الأضلاع"], "فيه زاوية قياسها 90 درجة، إذن هو مثلث قائم الزاوية."),
+        it("The two tracks of the metro line run side by side along the road and never meet. Are they parallel or perpendicular?", "Parallel", "يسير مساران لخط المترو جنبًا إلى جنب بمحاذاة الطريق ولا يلتقيان أبدًا. هل هما متوازيان أم متعامدان؟", "متوازيان")
       ]
     },
     {
@@ -48,15 +49,15 @@ module.exports = {
       standards: ["4.MD.B.4"],
       example: ex("A line plot shows rope lengths in quarters of a metre: 1/4 m has 3 dots, 2/4 m has 4 dots, 3/4 m has 1 dot. What is the total length of the 2/4 m ropes?", ["There are 4 dots at 2/4.", "4 x 2/4 = 8/4.", "8/4 is the same as 2 metres."], "2 metres", "يبيّن مخطط نقطي أطوال حبال بالأرباع: عند 1/4 م ثلاث نقاط وعند 2/4 م أربع نقاط وعند 3/4 م نقطة. ما الطول الكلي للحبال التي طولها 2/4 م؟", ["هناك 4 نقاط عند 2/4.", "4 × 2/4 = 8/4.", "8/4 يساوي مترين."], "مترين"),
       items: [
-        it("Use the line plot in the example. How many ropes are there in all?", "8", "استعمل المخطط في المثال. كم حبلًا هناك في المجموع؟", "8"),
-        it("Which length is the most common in that line plot?", "2/4 m", "ما الطول الأكثر تكرارًا في ذلك المخطط؟", "2/4 م"),
-        it("How much longer is the longest rope than the shortest in that line plot?", "2/4 m (3/4 - 1/4)", "بكم الحبل الأطول أطول من الأقصر في ذلك المخطط؟", "2/4 م (3/4 - 1/4)"),
-        it("A line plot shows ropes in quarters of a metre: 2 dots at 1/4 m and 3 dots at 2/4 m. What is the total length of all these ropes?", "2 metres (2 x 1/4 = 2/4 and 3 x 2/4 = 6/4, then 2/4 + 6/4 = 8/4)", "يبيّن مخطط نقطي حبالًا بالأرباع من المتر: نقطتان عند 1/4 م و 3 نقاط عند 2/4 م. ما الطول الكلي لهذه الحبال كلها؟", "مترين (2 × 1/4 = 2/4 و 3 × 2/4 = 6/4 ثم 2/4 + 6/4 = 8/4)"),
+        mc("A line plot shows rope lengths: 3 dots at 1/4 m, 4 dots at 2/4 m and 1 dot at 3/4 m. How many ropes are there in all?", ["4", "8", "3", "6"], 1, "Each dot is one rope: 3 + 4 + 1 = 8.", "يبيّن مخطط نقطي أطوال حبال: 3 نقاط عند 1/4 م و 4 نقاط عند 2/4 م ونقطة عند 3/4 م. كم حبلًا هناك في المجموع؟", ["4", "8", "3", "6"], "كل نقطة تمثّل حبلًا واحدًا: 3 + 4 + 1 = 8."),
+        it("In the same line plot (3 dots at 1/4 m, 4 dots at 2/4 m, 1 dot at 3/4 m), which length is the most common?", "2/4 m (it has the most dots)", "في المخطط نفسه (3 نقاط عند 1/4 م و 4 نقاط عند 2/4 م ونقطة عند 3/4 م)، ما الطول الأكثر تكرارًا؟", "2/4 م (لأن له أكثر عدد من النقاط)"),
+        it("In that line plot, how much longer is the longest rope than the shortest?", "2/4 m (3/4 - 1/4)", "في ذلك المخطط، بكم الحبل الأطول أطول من الأقصر؟", "2/4 م (3/4 - 1/4)"),
+        mc("Hamdan makes a line plot of ropes in quarters of a metre: 2 dots at 1/4 m and 3 dots at 2/4 m. What is the total length of all these ropes?", ["5/4 m", "5/8 m", "2 m", "8/8 m"], 2, "2 x 1/4 = 2/4 and 3 x 2/4 = 6/4, then 2/4 + 6/4 = 8/4 = 2 m.", "يرسم حمدان مخططًا نقطيًا لحبال بالأرباع من المتر: نقطتان عند 1/4 م و 3 نقاط عند 2/4 م. ما الطول الكلي لهذه الحبال كلها؟", ["5/4 م", "5/8 م", "مترين", "8/8 م"], "2 × 1/4 = 2/4 و 3 × 2/4 = 6/4 ثم 2/4 + 6/4 = 8/4 = مترين."),
         it("A line plot of rainfall in centimetres, measured to the nearest half, has 3 dots at 1/2 and 2 dots at 1. What is the total?", "3 and 1/2 cm (3 x 1/2 = 1 and 1/2, and 2 x 1 = 2)", "مخطط نقطي لمقدار المطر بالسنتيمتر مقيسًا لأقرب نصف فيه 3 نقاط عند 1/2 ونقطتان عند 1. ما المجموع؟", "3 ونصف سم (3 × 1/2 = 1 ونصف و 2 × 1 = 2)"),
         it("A line plot shows ribbons: 2 dots at 1/4 m, 3 dots at 1/2 m and 1 dot at 3/4 m. How many ribbons are longer than 1/4 m?", "4 (3 ribbons of 1/2 m and 1 ribbon of 3/4 m)", "يبيّن مخطط نقطي أشرطة: نقطتان عند 1/4 م و 3 نقاط عند 1/2 م ونقطة عند 3/4 م. كم شريطًا أطول من 1/4 م؟", "4 (3 أشرطة طول كل منها 1/2 م وشريط واحد طوله 3/4 م)"),
-        it("A line plot shows cups of karak: 3 dots at 1/8 litre and 2 dots at 3/8 litre. How much karak is there in all?", "1 and 1/8 litres (3/8 + 6/8 = 9/8)", "يبيّن مخطط نقطي أكواب كرك: 3 نقاط عند 1/8 لتر ونقطتان عند 3/8 لتر. كم لترًا من الكرك هناك في المجموع؟", "لتر وثُمن اللتر (3/8 + 6/8 = 9/8)"),
-        it("Survey: 12 chose karak, 9 chose juice, 6 chose water. How many more chose karak than water?", "6", "استطلاع: اختار 12 الكرك و 9 العصير و 6 الماء. كم شخصًا زيادة اختار الكرك على الماء؟", "6"),
-        it("In the survey above, what fraction of the 27 people chose juice? Simplify.", "9/27 = 1/3", "في الاستطلاع أعلاه، ما الكسر الذي يمثّل من اختاروا العصير من 27 شخصًا؟ بسّطه.", "9/27 = 1/3"),
+        mc("A line plot shows cups of karak: 3 dots at 1/8 litre and 2 dots at 3/8 litre. How much karak is there in all?", ["5/8 litre", "9/16 litre", "1 litre", "1 and 1/8 litres"], 3, "3 x 1/8 = 3/8 and 2 x 3/8 = 6/8, then 3/8 + 6/8 = 9/8 = 1 and 1/8 litres.", "يبيّن مخطط نقطي أكواب كرك: 3 نقاط عند 1/8 لتر ونقطتان عند 3/8 لتر. كم لترًا من الكرك هناك في المجموع؟", ["5/8 لتر", "9/16 لتر", "لتر واحد", "لتر وثُمن اللتر"], "3 × 1/8 = 3/8 و 2 × 3/8 = 6/8 ثم 3/8 + 6/8 = 9/8 = لتر وثُمن اللتر."),
+        it("At a family gathering 12 people chose karak, 9 chose juice and 6 chose water. How many more people chose karak than water?", "6", "في تجمّع عائلي اختار 12 شخصًا الكرك و 9 العصير و 6 الماء. كم شخصًا زيادة اختار الكرك على الماء؟", "6"),
+        mc("In a survey of 27 people, 12 chose karak, 9 chose juice and 6 chose water. What fraction chose juice, in simplest form?", ["1/3", "3/9", "9/18", "1/9"], 0, "9/27 simplifies to 1/3 (divide the top and bottom by 9).", "في استطلاع شمل 27 شخصًا اختار 12 الكرك و 9 العصير و 6 الماء. ما الكسر الذي يمثّل من اختاروا العصير في أبسط صورة؟", ["1/3", "3/9", "9/18", "1/9"], "9/27 تبسّط إلى 1/3 (اقسم البسط والمقام على 9)."),
         it("Seven plants measure 1/2, 1/2, 3/4, 3/4, 3/4, 1, and 1 and 1/4 of a metre. How many measure 3/4 m?", "3", "سبع نباتات قياساتها بالمتر: 1/2 و 1/2 و 3/4 و 3/4 و 3/4 و 1 و 1 وربع. كم نباتًا قياسه 3/4 م؟", "3")
       ]
     },
@@ -66,17 +67,17 @@ module.exports = {
       example: ex("What is 3/8 + 2/8? What is 3/4 as a fraction with 8 as the denominator?", ["The denominators match, so add the numerators: 3 + 2 = 5, giving 5/8.", "For 3/4: multiply the top and bottom by 2: 6/8."], "5/8 and 6/8", "ما ناتج 3/8 + 2/8؟ وما الكسر المكافئ لـ 3/4 مقامه 8؟", ["المقامان متساويان فنجمع البسطين: 3 + 2 = 5 فيصبح 5/8.", "لـ 3/4: اضرب البسط والمقام في 2: 6/8."], "5/8 و 6/8"),
       items: [
         it("Write in words: 45,208", "Forty-five thousand, two hundred eight", "اكتب بالكلمات: 45,208", "خمسة وأربعون ألفًا ومئتان وثمانية"),
-        it("Round 36,482 to the nearest thousand.", "36,000", "قرّب 36,482 إلى أقرب ألف.", "36,000"),
-        it("Add: 4,325 + 2,678", "7,003", "اجمع: 4,325 + 2,678", "7,003"),
-        it("Subtract: 6,000 - 2,457", "3,543", "اطرح: 6,000 - 2,457", "3,543"),
+        mc("A solar park made 36,482 units of electricity in a month. Rounded to the nearest thousand, how many units is that?", ["36,000", "36,500", "37,000", "30,000"], 0, "The hundreds digit is 4, which is less than 5, so round down to 36,000.", "أنتجت محطة طاقة شمسية 36,482 وحدة كهرباء في شهر. كم وحدة ذلك مقرّبًا إلى أقرب ألف؟", ["36,000", "36,500", "37,000", "30,000"], "رقم المئات هو 4 وهو أقل من 5، فنقرّب إلى أسفل: 36,000."),
+        it("The souq sold 4,325 dates on Friday and 2,678 on Saturday. How many dates is that in all?", "7,003", "باع السوق 4,325 تمرة يوم الجمعة و 2,678 يوم السبت. كم تمرة بيعت في المجموع؟", "7,003"),
+        mc("A date farm has 6,000 dates and sells 2,457. How many dates are left?", ["4,457", "3,643", "3,553", "3,543"], 3, "6,000 - 2,457 = 3,543 (regroup across the zeros).", "في مزرعة تمر 6,000 تمرة وبيعت منها 2,457. كم تمرة بقيت؟", ["4,457", "3,643", "3,553", "3,543"], "6,000 - 2,457 = 3,543 (نعيد التجميع عبر الأصفار)."),
         it("Multiply: 23 x 14", "322", "اضرب: 23 × 14", "322"),
-        it("Divide: 852 / 4", "213", "اقسم: 852 ÷ 4", "213"),
-        it("Compare using <, > or =: 3/5 and 2/5", "3/5 > 2/5", "قارن باستعمال < أو > أو =: 3/5 و 2/5", "3/5 > 2/5"),
-        it("Add: 4/10 + 5/10", "9/10", "اجمع: 4/10 + 5/10", "9/10"),
-        it("Multiply: 3 x 2/5", "6/5 = 1 and 1/5", "اضرب: 3 × 2/5", "6/5 = 1 و 1/5"),
-        it("Write 7/10 as a decimal and 0.35 as a fraction.", "0.7 and 35/100 = 7/20", "اكتب 7/10 كعدد عشري و 0.35 ككسر.", "0.7 و 35/100 = 7/20"),
-        it("Compare using <, > or =: 0.4 and 0.38", "0.4 > 0.38 (0.4 is 0.40, and 40 hundredths is more than 38 hundredths)", "قارن باستعمال < أو > أو =: 0.4 و 0.38", "0.4 > 0.38 (0.4 تساوي 0.40 و 40 جزءًا من مئة أكبر من 38 جزءًا من مئة)"),
-        it("Write 3/10 + 4/100 as a decimal.", "0.34 (3/10 = 30/100, and 30/100 + 4/100 = 34/100)", "اكتب 3/10 + 4/100 كعدد عشري.", "0.34 (3/10 = 30/100 و 30/100 + 4/100 = 34/100)")
+        mc("Four cousins share AED 852 equally. How many dirhams does each cousin get?", ["203", "231", "213", "2,013"], 2, "852 / 4 = 213.", "يتقاسم أربعة أبناء عم مبلغ 852 درهمًا بالتساوي. كم درهمًا يأخذ كل منهم؟", ["203", "231", "213", "2,013"], "852 ÷ 4 = 213."),
+        mc("Which fraction is equal to 2/3?", ["4/6", "2/6", "3/4", "4/9"], 0, "Multiply the top and bottom by 2: 2/3 = 4/6.", "أي كسر يساوي 2/3؟", ["4/6", "2/6", "3/4", "4/9"], "اضرب البسط والمقام في 2: 2/3 = 4/6."),
+        it("Noura used 4/10 of a bag of flour on Monday and 5/10 of the bag on Tuesday. What fraction of the bag did she use?", "9/10", "استعملت نورة 4/10 من كيس دقيق يوم الاثنين و 5/10 من الكيس يوم الثلاثاء. ما الكسر الذي استعملته من الكيس؟", "9/10"),
+        it("Omar drinks 2/5 of a litre of milk each day. How much milk is that in 3 days?", "6/5 = 1 and 1/5 litres (3 x 2/5)", "يشرب عمر 2/5 لتر من الحليب كل يوم. كم لترًا يشرب في 3 أيام؟", "6/5 = لتر وخُمس اللتر (3 × 2/5)"),
+        mc("Which decimal is equal to 3/10 + 4/100?", ["0.7", "0.43", "0.034", "0.34"], 3, "3/10 = 30/100, and 30/100 + 4/100 = 34/100 = 0.34.", "أي عدد عشري يساوي 3/10 + 4/100؟", ["0.7", "0.43", "0.034", "0.34"], "3/10 = 30/100 و 30/100 + 4/100 = 34/100 = 0.34."),
+        mc("Layla has four ribbons that are 0.38 m, 0.4 m, 0.309 m and 0.299 m long. Which ribbon is the longest?", ["0.38 m", "0.4 m", "0.309 m", "0.299 m"], 1, "0.4 is 0.40, which is 40 hundredths. That is more than 38 hundredths.", "مع ليلى أربعة أشرطة أطوالها 0.38 م و 0.4 م و 0.309 م و 0.299 م. أي شريط هو الأطول؟", ["0.38 م", "0.4 م", "0.309 م", "0.299 م"], "0.4 تساوي 0.40 أي 40 جزءًا من مئة، وهذا أكبر من 38 جزءًا من مئة."),
+        it("In the number 7,700, how many times as much is the first 7 worth as the second 7? Explain.", "10 times: the first 7 is 7,000 and the second 7 is 700, and each place is worth 10 times the place to its right.", "في العدد 7,700، كم مرة تساوي قيمة الرقم 7 الأول قيمة الرقم 7 الثاني؟ وضّح.", "10 مرات: الرقم 7 الأول قيمته 7,000 والثاني قيمته 700، وكل منزلة تساوي 10 أمثال المنزلة التي على يمينها.")
       ]
     }
   ]

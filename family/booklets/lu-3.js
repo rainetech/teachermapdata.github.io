@@ -1,6 +1,7 @@
 // Language Usage practice booklet, Grade 3 expectations. English only. See ma-5.js for the format.
 const T = (en, ar) => ({ en, ar });
 const en = (question, answer) => ({ q: T(question, question), a: T(answer, answer) });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 
 module.exports = {
@@ -23,15 +24,15 @@ module.exports = {
       ),
       items: [
         en("Rewrite with correct capital letters: the souq in dubai opens at nine o'clock.", "The souq in Dubai opens at nine o'clock. (A sentence starts with a capital and the name of a city has a capital.)"),
-        en("Which title is written correctly? A) The Falcon And The Desert  B) The Falcon and the Desert", "B (in a title, the first word and the important words have capitals; small words such as and and the do not, unless they come first)."),
-        en("Add the missing comma: Noura lives in Sharjah United Arab Emirates.", "Noura lives in Sharjah, United Arab Emirates. (A comma separates the city from the country in an address.)"),
+        mc("Which title is written correctly?", ["The Falcon And The Desert", "The Falcon and the Desert", "the falcon and the desert", "The Falcon and The Desert"], 1, "In a title, the first word and the important words have capitals, but small words such as and and the do not, unless they come first."),
+        mc("Which sentence has the comma in the right place?", ["Noura lives, in Sharjah United Arab Emirates.", "Noura lives in, Sharjah United Arab Emirates.", "Noura lives in Sharjah United Arab, Emirates.", "Noura lives in Sharjah, United Arab Emirates."], 3, "A comma separates the city from the country: Sharjah, United Arab Emirates."),
         en("Add the missing punctuation: Hamdan said I love date cookies", "Hamdan said, \"I love date cookies.\" (A comma after said, quotation marks round his words, and a full stop inside the marks.)"),
-        en("Write the missing apostrophe: the camels hump was full of fat. (There is one camel.)", "The camel's hump was full of fat. (One owner, so the apostrophe goes before the s.)"),
+        mc("Which is correct? The ___ hump was full of fat. (There is one camel.)", ["camel's", "camels", "camels'", "camels's"], 0, "One owner, so the apostrophe goes before the s: camel's."),
         en("Write the missing apostrophe: the two girls bags were by the door. (There are two girls.)", "The two girls' bags were by the door. (More than one owner with a plural ending in s, so the apostrophe goes after the s.)"),
         en("Write each pair of words as one word with an apostrophe: did not, she is, we will.", "didn't, she's, we'll"),
-        en("Which spelling is correct? A) beleive  B) believe  C) beleave", "B, believe."),
+        mc("Which spelling is correct?", ["beleive", "belive", "believe", "beleave"], 2, "believe (i before e in this word)."),
         en("Add the ending to the base word and write the new word: happy + ness, swim + ing.", "happiness (change the y to i before ness) and swimming (double the m before ing)."),
-        en("Here are guide words at the top of a dictionary page: camel and canal. Which word would you find on that page? A) cap  B) camp  C) cave", "B, camp. (It comes after camel and before canal in alphabetical order.)"),
+        mc("Here are guide words at the top of a dictionary page: camel and canal. Which word would you find on that page?", ["camp", "came", "cap", "cave"], 0, "camp comes after camel and before canal in alphabetical order. (came comes before camel.)"),
         en("Explain why Abu Dhabi and Friday begin with capital letters but city and day do not.", "Abu Dhabi and Friday are the special names of one particular place and one particular day (proper nouns), so they take a capital letter. City and day are general words for any city or any day.")
       ]
     },
@@ -49,14 +50,14 @@ module.exports = {
       items: [
         en("In the sentence \"The tall falcon flew over the creek\", name one adjective and one verb.", "Adjective: tall. Verb: flew."),
         en("Write the plural of each noun: child, fox, baby.", "children, foxes, babies"),
-        en("Which is an abstract noun (a thing you cannot touch)? A) oryx  B) kindness  C) souq", "B, kindness."),
-        en("Choose the right word: Maryam (buyed / bought) a bag of dates yesterday.", "bought (buy is an irregular verb)."),
+        mc("Which is an abstract noun (a thing you cannot touch)?", ["oryx", "creek", "souq", "kindness"], 3, "kindness is a feeling or idea, not something you can touch."),
+        mc("Choose the right word: Maryam ___ a bag of dates yesterday.", ["buyed", "bought", "buy", "buying"], 1, "bought (buy is an irregular verb, and yesterday needs the past tense)."),
         en("Rewrite in the future tense: Khalid walks to the metro station.", "Khalid will walk to the metro station."),
-        en("Choose the right word: The girl and her sister (is / are) at the mall.", "are (two people, so a plural verb)."),
-        en("Choose the right word: This tower is (taller / tallest) than that one. Then: Of the three towers, the blue one is the (taller / tallest).", "taller (comparing two) and tallest (comparing three)."),
-        en("Find the adverb in this sentence: Noura carefully poured the karak.", "carefully (it tells how she poured)."),
-        en("Choose the best joining word: We stayed inside (because / but) the sandstorm was strong.", "because (the storm is the reason)."),
-        en("Choose the best joining word: Hind wanted to swim, (and / but / or) the pool was closed.", "but (the two ideas go against each other)."),
+        mc("Choose the right word: The girl and her sister ___ at the mall.", ["are", "is", "was", "be"], 0, "Two people, so a plural verb: are."),
+        mc("Choose the right word: Of the three towers, the blue one is the ___.", ["taller", "more tall", "tallest", "most tall"], 2, "Comparing three or more uses the -est ending: tallest."),
+        mc("Which word is the adverb in this sentence? Noura carefully poured the karak.", ["Noura", "poured", "karak", "carefully"], 3, "carefully tells how she poured."),
+        mc("Choose the best joining word: We stayed inside ___ the sandstorm was strong.", ["although", "but", "because", "so"], 2, "The storm is the reason, so because fits."),
+        mc("Choose the best joining word: Hind wanted to swim, ___ the pool was closed.", ["and", "but", "or", "because"], 1, "The two ideas go against each other, so but fits."),
         en("Is this a complete sentence? \"Because the bus was late.\" Say yes or no and explain, then fix it if needed.", "No, it is a fragment: it does not say what happened because of the late bus. Fix: Omar was late because the bus was late."),
         en("Join the two sentences into one sentence with the word although: Layla was tired. She finished her homework.", "Although Layla was tired, she finished her homework. (Or: Layla finished her homework although she was tired. Although shows the two ideas go against each other.)"),
         en("Salem is writing a school report. (a) Which sentence suits written work better? A) The oryx is, like, super big and stuff.  B) The Arabian oryx is a large animal with long straight horns. (b) Which sentence gives a stronger picture? A) The wind was loud.  B) The wind howled across the dunes.", "(a) B. Written work uses full, careful sentences, while A sounds like everyday speech with a friend. (b) B. The word howled and the place across the dunes help the reader hear and see it."),
@@ -79,12 +80,12 @@ module.exports = {
       items: [
         en("Write a first sentence that states your opinion on this topic: Should children walk to school when they can?", "A good answer states one clear opinion about the topic in a full sentence. Model: I think children should walk to school when they can."),
         en("Give two reasons that support this opinion: Our school should have a daily reading time.", "A good answer gives two different reasons, each in its own sentence. Model: Reading helps us learn new words. It is also calm and fun."),
-        en("Join these two sentences with a linking word: Mangroves are important. They protect the coast.", "A good answer joins them with a word such as because. Model: Mangroves are important because they protect the coast."),
-        en("Put these sentences in order: (A) Finally, the clean water is sent to homes. (B) First, seawater is taken into a desalination plant. (C) Next, the salt is removed.", "B, C, A (First, Next, Finally show the order)."),
+        mc("Which word best joins the sentences? Mangroves are important ___ they protect the coast.", ["because", "but", "or", "although"], 0, "The second part gives the reason, so because fits."),
+        mc("Put these sentences in order: (A) Finally, the clean water is sent to homes. (B) First, seawater is taken into a desalination plant. (C) Next, the salt is removed. Which order is correct?", ["B, A, C", "A, B, C", "B, C, A", "C, B, A"], 2, "First, Next and Finally show the order: B, C, A."),
         en("Plan a short story about Maryam, who gets lost in the souq. Write a beginning, a middle and an end in note form.", "A good answer has three parts with a character, a setting and a problem. Model: Beginning: Maryam looks at the spices and loses her aunt. Middle: She asks a shopkeeper for help. End: Her aunt finds her and they drink karak."),
         en("You are writing about the Arabian oryx. Sort these facts into two groups: long straight horns, eats grass, white coat, lives in the desert.", "Group 1, how it looks: long straight horns, white coat. Group 2, food and home: eats grass, lives in the desert."),
         en("Make this sentence more exciting by adding detail: The dhow was nice.", "A good answer adds describing words and details that show the picture. Model: The old wooden dhow rocked gently on the shining blue water."),
-        en("Which sentence does not belong, and why? Hamdan's falcon is brown. My bike is red. It hunts in the morning. It rests on a perch at night.", "My bike is red. It is not about the falcon, so it should be taken out."),
+        mc("Hamdan's falcon is brown. It hunts in the morning. My bike is red. It rests on a perch at night. Which sentence does not belong in a piece about the falcon?", ["Hamdan's falcon is brown.", "It hunts in the morning.", "It rests on a perch at night.", "My bike is red."], 3, "My bike is red is not about the falcon, so it should be taken out."),
         en("Add a sentence of your own to the start of a story that tells where and when it happens, for a character named Salem.", "A good answer names the place and the time and introduces Salem. Model: One quiet morning, Salem walked along the beach in Fujairah."),
         en("Write a closing sentence for a piece that says parks are good for families.", "A good answer returns to the opinion and ends the piece. Model: That is why every neighbourhood should have a park."),
         en("Name three things to check when you proofread your own writing.", "Any three of: capital letters at the start of sentences and names, a full stop or other end mark, correct spelling, apostrophes and commas, and that each sentence makes sense."),

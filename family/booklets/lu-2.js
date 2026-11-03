@@ -1,6 +1,7 @@
 // Language Usage practice booklet, Grade 2 expectations. English only. See ma-5.js for the format.
 const T = (en, ar) => ({ en, ar });
 const en = (question, answer) => ({ q: T(question, question), a: T(answer, answer) });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
 
 module.exports = {
@@ -23,15 +24,15 @@ module.exports = {
       ),
       items: [
         en("Rewrite with correct capital letters: on friday hamdan went to abu dhabi.", "On Friday Hamdan went to Abu Dhabi. (A sentence starts with a capital, and so do days, names of people and names of places.)"),
-        en("Rewrite with correct capital letters: we visit our cousins during ramadan.", "We visit our cousins during Ramadan. (Names of holidays and special months start with a capital.)"),
+        mc("Which sentence is written correctly?", ["We visit our cousins during ramadan.", "We visit our cousins during Ramadan.", "we visit our cousins during Ramadan."], 1, "Names of holidays and special months start with a capital, and so does the first word of a sentence."),
         en("Add the missing comma to the greeting of a letter: Dear Layla", "Dear Layla, (A comma goes after the name in a greeting.)"),
         en("Add the missing comma to the closing of a letter: Your friend", "Your friend, (A comma goes after the closing words, and the name is written on the next line.)"),
-        en("Write each pair of words as one word with an apostrophe: is not, we are, I am.", "isn't, we're, I'm"),
-        en("Add the missing apostrophe: A falcons feather was soft.", "A falcon's feather was soft. (The feather belongs to one falcon, so we add 's.)"),
-        en("Which is written correctly? A) Salems bag  B) Salem's bag  C) Salems' bag", "B, Salem's bag. (The bag belongs to Salem.)"),
-        en("Which word is spelled correctly? A) frend  B) friend  C) freind", "B, friend."),
-        en("Which word is spelled correctly? A) sed  B) sayd  C) said", "C, said."),
-        en("Add the correct end mark: Can we go to the beach", "Can we go to the beach? (A sentence that asks something ends with a question mark.)"),
+        mc("Which is the correct short way to write we are?", ["we'r", "wer'e", "we're"], 2, "The apostrophe takes the place of the missing letter a: we're."),
+        mc("Which sentence is correct?", ["A falcon's feather was soft.", "A falcons feather was soft.", "A falcons' feather was soft."], 0, "The feather belongs to one falcon, so we add 's."),
+        mc("Which is written correctly?", ["Salems' bag", "Salems bag", "Salem's bag"], 2, "The bag belongs to Salem, so we add 's."),
+        mc("Which word names a person you like to play with, spelled correctly?", ["friend", "frend", "freind"], 0, "friend."),
+        mc("Which spelling completes the sentence, as in: Hind ___ hello to her friend.", ["sed", "said", "sayd"], 1, "said."),
+        mc("Which end mark goes at the end of this sentence? Can we go to the beach", [".", "?", "!"], 1, "A sentence that asks something ends with a question mark."),
         en("Which word comes first in a dictionary: date or camel?", "camel (c comes before d in the alphabet)."),
         en("Explain why Dubai starts with a capital letter but city does not.", "Dubai is the special name of one place, so it needs a capital letter. City is a word for any city, so it does not.")
       ]
@@ -48,19 +49,19 @@ module.exports = {
         "went (Yesterday Maryam went to the souq.)"
       ),
       items: [
-        en("Choose the right word: A (flock / tower) of birds flew over the creek.", "flock (a flock is a group of birds)."),
+        mc("Which word completes the sentence? A ____ of birds flew over the creek.", ["tower", "flock", "pile"], 1, "A flock is a group of birds."),
         en("Write the plural of each noun: tooth, child, goose.", "teeth, children, geese"),
-        en("Choose the right word: Maryam made the card all by (her / herself).", "herself (the girl did it on her own)."),
-        en("Choose the right word: Yesterday Khalid (eated / ate) a date.", "ate (eat is an irregular verb)."),
+        mc("Which word completes the sentence? Maryam made the card all by ____.", ["herself", "her", "hers"], 0, "Herself shows that the girl did it on her own."),
+        mc("Which word completes the sentence? Yesterday Khalid ____ a date.", ["eated", "eaten", "ate"], 2, "Eat is an irregular verb: the past tense is ate."),
         en("Fix the verb: Yesterday the birds flyed over the creek.", "Yesterday the birds flew over the creek. (The past tense of fly is flew.)"),
         en("Find the adjective in this sentence: The sleepy camel rested in the shade.", "sleepy (it tells what the camel is like)."),
-        en("Find the adverb in this sentence: The oryx ran quickly across the sand.", "quickly (it tells how the oryx ran)."),
-        en("Choose the right word: Noura wrote her name (careful / carefully).", "carefully (it tells how she wrote, so we need the adverb)."),
+        mc("Which word is an adverb in this sentence? The oryx ran quickly across the sand.", ["quickly", "across", "sand"], 0, "Quickly tells how the oryx ran."),
+        mc("Which word completes the sentence? Noura wrote her name ____.", ["careful", "carefully", "care"], 1, "It tells how she wrote, so we need the adverb carefully."),
         en("Join the two sentences into one sentence with the word but: Hamdan wanted to play outside. It was too hot.", "Hamdan wanted to play outside, but it was too hot. (But joins two ideas that go against each other.)"),
-        en("Choose the best joining word: It was raining, (so / but) we stayed inside.", "so (staying inside is the result of the rain)."),
+        mc("Which word completes the sentence? It was raining, ____ we stayed inside.", ["so", "but", "or"], 0, "Staying inside is the result of the rain, so we use so."),
         en("Which is better to say to a teacher? A) Hey, gimme that book.  B) May I please borrow that book?", "B (careful, polite language is used with a teacher)."),
         en("Write one sentence about a camel that uses an adjective and an adverb.", "A good answer is a full sentence with a describing word for the camel and a word that tells how it moves or acts. Model: The tall camel walked gently across the desert."),
-        en("Read: Layla felt nervous before she spoke, but her friends smiled and she soon felt calm. What does the word nervous mean? A) a little afraid  B) very hungry  C) full of joy", "A, a little afraid. (The word but and the later word calm are clues that nervous is the opposite of calm.)"),
+        mc("Read: Layla felt nervous before she spoke, but her friends smiled and she soon felt calm. What does the word nervous mean?", ["very hungry", "a little afraid", "full of joy"], 1, "The word but and the later word calm are clues that nervous is the opposite of calm."),
         en("The prefix un means not. What does each word mean? unhappy, unlock. Then name the root word (the word left when the prefix is taken away) in unfair.", "unhappy means not happy; unlock means to open something that was locked (undo the lock). The root word in unfair is fair."),
         en("Put these words in order from the quietest to the loudest: shout, whisper, talk. Then say which word is the loudest.", "whisper, talk, shout. Shout is the loudest. (Closely related words can have a weaker or stronger meaning.)"),
         en("Your teacher read you a story about an enormous whale shark, and enormous means very, very big. Say or write a sentence about a camel, a mountain or a tower that uses the new word enormous.", "A good answer is a full sentence that uses enormous correctly for something very big. Model: The Hajar mountains are enormous.")
@@ -83,11 +84,11 @@ module.exports = {
         en("Write a last sentence for this opinion piece: I think everyone should visit the Hajar mountains. The views are beautiful. The air is cool.", "A good answer ends the piece and repeats the opinion. Model: That is why I think everyone should visit the Hajar mountains."),
         en("Write two facts about the Arabian oryx.", "A good answer gives two true facts in full sentences. Model: The Arabian oryx has long straight horns. It lives in the desert."),
         en("Put these steps in order: (A) Water the soil. (B) Dig a small hole. (C) Cover the seed with soil. (D) Put the seed in the hole.", "B, D, C, A"),
-        en("Put these sentences in order to make a story: (A) She found her mother by the dates stall. (B) Hind got lost in the souq. (C) Hind hugged her mother and felt happy.", "B, A, C (the problem comes first, then the search, then the ending)."),
-        en("Choose the best word to start this piece: ____ Maryam ate her breakfast. Then she went to school. A) First  B) Last  C) Finally", "A, First. (The word Then follows, so this is the first step.)"),
+        mc("Which order makes the best story? (A) She found her mother by the dates stall. (B) Hind got lost in the souq. (C) Hind hugged her mother and felt happy.", ["C, B, A", "A, B, C", "B, A, C"], 2, "The problem comes first, then the search, then the ending."),
+        mc("Choose the best word to start this piece: ____ Maryam ate her breakfast. Then she went to school.", ["First", "Last", "Finally"], 0, "The word Then follows, so this is the first step."),
         en("Add more detail to this sentence: The falcon flew.", "A good answer adds describing words, or tells where, when or how. Model: The brown falcon flew high over the desert at sunrise."),
         en("Write a sentence that tells how Salem felt when he lost his hat in the wind.", "A good answer says how Salem felt and may tell why. Model: Salem felt sad when the wind blew his hat away."),
-        en("Which sentence does not belong, and why? Hind went to the souq. She bought some saffron. I like football. The saffron smelled sweet.", "I like football. It is not about Hind at the souq, so it should be taken out."),
+        mc("Which sentence does not belong? Hind went to the souq. She bought some saffron. I like football. The saffron smelled sweet.", ["She bought some saffron.", "I like football.", "The saffron smelled sweet."], 1, "I like football is not about Hind at the souq, so it should be taken out."),
         en("Name two things to check when you read over your own writing.", "Any two of: a capital letter at the start of each sentence and for names, an end mark, spelling, and that every sentence makes sense."),
         en("Talking together, parent and child take turns. Parent: say clearly, Yesterday I saw a falcon at the park with my friend. Then say to your child: Ask me one question about what I said. Answer it. Then say: Now tell me something about falcons or parks.", "A good answer: the child waits until the parent has finished, then asks a question about the falcon that fits, such as Where was the falcon? or What colour was it? The child then listens to the reply and adds a related comment, taking turns without interrupting."),
         en("The parent reads aloud this short story, twice if needed: Hamdan and his sister Noura planted a small date palm in their garden. Every day they gave it water. After a month a green leaf grew. They were proud. The child retells the story in their own words.", "A good retell tells who (Hamdan and Noura), what they did (planted a date palm and watered it), what happened (a green leaf grew) and how they felt (proud), in an order that makes sense and in complete sentences."),

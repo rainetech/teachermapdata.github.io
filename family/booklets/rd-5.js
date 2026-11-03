@@ -3,6 +3,7 @@ const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
 module.exports = {
@@ -25,16 +26,16 @@ module.exports = {
         "A metaphor: it shows the road was a long, narrow strip of mud."
       ),
       items: [
-        en("The grandfather says a good trader is \"meticulous\". Using the clue in the next sentence, what does meticulous mean?", "Very careful and exact (he checks every basket carefully)."),
-        en("The first sentence says Hamdan was \"as eager as a falcon waiting for its hood to be lifted\". Is this a simile or a metaphor? How can you tell?", "A simile: it uses \"as ... as\" to compare."),
+        mc("The grandfather says a good trader is \"meticulous\". Using the clue in the next sentence, what does meticulous mean?", ["Very careful and exact","Quick and cheerful","Proud and loud","Strong and tall"], 0, "He checks every basket carefully, so meticulous means very careful and exact."),
+        mc("The first sentence says Hamdan was \"as eager as a falcon waiting for its hood to be lifted\". What kind of comparison is this?", ["A metaphor, because it says Hamdan is a falcon","A simile, because it uses \"as ... as\" to compare","A metaphor, because it mentions a hood","A simile, because it names a bird"], 1, "It uses \"as ... as\", so it is a simile."),
         en("What does that comparison tell you about how Hamdan felt that morning?", "He was very eager and excited, ready to begin."),
         en("The sorting task was \"tedious\". Which clues help you work out the meaning?", "His back ached and the morning seemed never to end, so tedious means boring and tiring."),
-        en("The mother was \"hesitant\". What does hesitant mean here, and which words in the same sentence help?", "Unsure or unable to decide; \"unsure whether to buy it\" helps."),
-        en("The prefix un- is in the word \"unsure\". What does the prefix un- mean, and what does unsure mean?", "Un- means \"not\"; unsure means not sure."),
-        en("\"By noon the souq was a beehive.\" What does this metaphor suggest about the souq?", "It was very busy and crowded, full of people and noise."),
+        mc("The mother was \"hesitant\". What does hesitant mean here?", ["Happy and relaxed","In a great hurry","Unsure or unable to decide","Angry with the seller"], 2, "The same sentence says she was \"unsure whether to buy it\"."),
+        mc("The prefix un- is in the word \"unsure\". What does un- mean, and what does unsure mean?", ["Un- means \"again\"; unsure means sure once more","Un- means \"very\"; unsure means very sure","Un- means \"before\"; unsure means sure ahead of time","Un- means \"not\"; unsure means not sure"], 3, "Un- means \"not\", so unsure means not sure."),
+        mc("\"By noon the souq was a beehive.\" What does this metaphor suggest about the souq?", ["It was very busy and crowded, full of people and noise","It was quiet and empty","It was full of bees and honey","It was small and sweet"], 0, "A beehive is busy and humming, and the next words say the souq was \"humming with shoppers\"."),
         en("The lane is called \"a river of people\". What picture does this give you?", "People moving along in a steady flow, like water."),
-        en("Grandfather says, \"You kept your cool today.\" What does the idiom \"kept your cool\" mean?", "Stayed calm."),
-        en("The passage says the lane was \"silent\" at dawn and later \"humming\". Are these words closer to synonyms or antonyms, and why?", "Antonyms: silent means no sound, while humming means full of sound."),
+        mc("Grandfather says, \"You kept your cool today.\" What does the idiom \"kept your cool\" mean?", ["Felt cold in the heat","Drank something cold","Stayed calm","Walked away from the stall"], 2, "To keep your cool is to stay calm."),
+        mc("The passage says the lane was \"silent\" at dawn and later \"humming\". Are these words synonyms or antonyms?", ["Synonyms, because both describe the souq","Antonyms, because silent means no sound and humming means full of sound","Synonyms, because both are quiet","Antonyms, because both describe the heat"], 1, "Silent means no sound and humming means full of sound, so they are opposites."),
         en("Explain what the author means by comparing patient work to \"a seed in the sand\".", "Like a seed, patient work may take time and look small at first, but it can grow into something good."),
         en("Say the word \"meticulous\" aloud, tapping once for each syllable. How many syllables does it have, and how can you split it?", "4 syllables: me-tic-u-lous."),
         en("The word \"unforgettable\" is long. Split it into a prefix, a root and a suffix (the t doubles before the suffix), and say what the whole word means.", "Prefix un-, root forget, suffix -able. It means not able to be forgotten."),
@@ -62,20 +63,20 @@ module.exports = {
         "Cause: the rain did not come. Effect: the well ran dry."
       ),
       items: [
-        en("In Text A: why do mangrove roots rise above the mud?", "To take in air, because the mud holds very little oxygen."),
-        en("In Text A: how does the mangrove deal with the extra salt in the water?", "Its leaves push the extra salt out."),
+        mc("In Text A: why do mangrove roots rise above the mud?", ["To hold the tree up in the wind","To take in air","To drink fresh water","To hide young fish"], 1, "The mud holds very little oxygen, so the roots take in air."),
+        mc("In Text A: how does the mangrove deal with the extra salt in the water?", ["Its roots take it in and store it","Its bark turns it into sand","Its leaves push the extra salt out","Its flowers wash it away in the rain"], 2, "Its leaves push out the extra salt."),
         en("In Text A: why is a mangrove forest called a \"nursery\"? Use the text to explain.", "Young fish, shrimp and crabs hide safely among the roots while they grow up."),
-        en("In Text A, what is the effect on fishermen of young fish being safe among the roots?", "More young fish grow up, so fishermen later catch more fish nearby."),
+        mc("In Text A, what is the effect on fishermen of young fish being safe among the roots?", ["Fishermen have to build new harbours","Fishermen catch fewer fish nearby","Fishermen see white crystals on the leaves","Fishermen later catch more fish nearby"], 3, "More young fish grow up, so fishermen later catch more fish in nearby waters."),
         en("In Text A: how do mangroves protect the shore?", "Waves lose their strength when they hit the thick roots, so less shore is washed away."),
         en("In Text A: what happened to the fish when many mangroves were cleared? Give the cause and the effect.", "Cause: the trees and their nurseries disappeared. Effect: fish became harder to find."),
-        en("Text A says mangroves \"store carbon\". According to the text, what does this help to do?", "It helps to reduce the warming of the planet."),
+        mc("Text A says mangroves \"store carbon\". According to the text, what does this help to do?", ["Feed the young crabs","Reduce the warming of the planet","Make the waves stronger","Push salt out of the leaves"], 1, "The text says storing carbon helps to reduce the warming of the planet."),
         en("In Text A, paragraph 5 compares two ways of thinking. What are they?", "In the past, people saw the shore as empty land to build on. Now they see it as a living wall that feeds and protects."),
         en("Name two groups of people who help bring the mangroves back, and say what each one does.", "Volunteers plant and check young trees; scientists count crabs and birds each year to see whether the forests are working."),
         en("The author believes mangroves are valuable. Give two reasons from the passage that support this.", "Any two: they are a nursery for young sea animals, they protect the coast from waves, they store carbon, birds feed there."),
         en("What does the last sentence mean: \"a place that looks muddy and plain may be doing a great deal of work\"?", "Something that looks ordinary can still be very useful; mangroves look plain but shelter animals and protect the shore."),
-        en("Text A and Text B are about the same topic. Who is telling each one, and how does each writer's point of view change what is told?", "Text A is told by an outside writer who gives facts and explains how mangroves work and why they matter. Text B is told by Saeed, a fisherman, in the first person (\"I\"), and tells what he saw and felt about his catch."),
-        en("What do Text A and Text B both say happened to the fish after the mangroves were cleared?", "Fish became harder to find (Saeed's nets came back light), because the young fish lost their hiding place."),
-        en("A family wants to join the planting day. Use Text C and Text A to say what time they should arrive and where the seedlings will be planted.", "They should arrive at 9:00 a.m. (Text C). The seedlings are planted at the shore reserve, in the mud at low tide, which is at 9:30 a.m. (Text C and Text A)."),
+        mc("Text A and Text B are about the same topic. How do their points of view differ?", ["Text A is told by an outside writer who gives facts; Text B is told by Saeed, who says \"I\" and tells what he saw","Text A is told by Saeed; Text B is told by an outside writer","Both are told in the first person by fishermen","Both are told by scientists who count crabs"], 0, "Text A explains with facts from outside; Text B is a first-person story by Saeed."),
+        mc("What do Text A and Text B both say happened to the fish after the mangroves were cleared?", ["Fish became easier to find","Fish moved to the harbours","Fish became harder to find","Fish grew larger"], 2, "Text A says fish became harder to find; in Text B Saeed's nets came back light."),
+        mc("A family wants to join the planting day. Use Text C and Text A: what time should they arrive, and where will the seedlings be planted?", ["9:30 a.m. at the harbour","9:30 a.m. at the shore reserve","8:30 a.m. at the harbour","9:00 a.m. at the shore reserve"], 3, "Text C says to arrive at 9:00 a.m., and the planting is at the shore reserve."),
         en("Saeed says small fish are darting around the young roots again. Use Text A to explain why young fish would come back when the trees grow back.", "Text A says young fish hide among the tangled roots, where larger fish cannot easily reach them, so the new trees give them a safe nursery again."),
         en("Which text would you use to find out each of these? (a) How mangrove roots take in air. (b) What to bring on planting day. (c) How one fisherman felt when his nets came back light.", "(a) Text A. (b) Text C. (c) Text B.")
       ]
@@ -96,20 +97,20 @@ module.exports = {
         "Third person: an outsider tells the story, using \"she\" and Layla's name."
       ),
       items: [
-        en("How did Salem feel about his model dhow before the contest?", "He was sure it would win; he was proud of it."),
-        en("Who is telling this story, and which words show the point of view (first or third person)?", "Salem tells it in the first person, using \"I\", \"my\" and \"me\"."),
-        en("At first, why did Salem smirk when he saw Omar's boat?", "He thought it looked plain and that his own was much prettier."),
+        mc("How did Salem feel about his model dhow before the contest?", ["Worried that it would sink","Bored with the project","Sure that it would win","Embarrassed about the paint"], 2, "The story begins: \"I was sure my model dhow would win\"."),
+        mc("Who is telling this story, and what is the point of view?", ["Third person: a narrator outside the story uses \"he\" and \"Salem\"","First person: Salem uses \"I\", \"my\" and \"me\"","First person: Omar uses \"I\" and \"my\"","Third person: Grandfather uses \"he\" and \"him\""], 1, "Salem tells it with \"I\", \"my\" and \"me\", so it is first person."),
+        mc("At first, why did Salem smirk when he saw Omar's boat?", ["He thought Omar's boat looked plain and his own was much prettier","He thought Omar's boat was too fast","He was laughing at a joke","He wanted Grandfather to see his boat"], 0, "He says Omar's boat looked plain and \"Mine was so much prettier\"."),
         en("Why did Salem's boat tip and spin in a circle?", "The tall blue sail caught the breeze and dragged it sideways."),
-        en("\"Omar's glided across the water as smoothly as a gull.\" What does this simile show?", "Omar's boat moved very smoothly and easily."),
+        mc("\"Omar's glided across the water as smoothly as a gull.\" What does this simile show?", ["Omar's boat flew above the water","Omar's boat was white like a gull","Omar's boat made a loud noise","Omar's boat moved smoothly and easily"], 3, "The comparison with a gull shows how smoothly the boat moved."),
         en("Why did Salem's cheeks burn?", "He was embarrassed because everyone laughed."),
-        en("What did Omar do before the contest that helped his boat glide so well?", "He tested his boat four times and changed the sail each time."),
-        en("How is Grandfather's point of view about the two boats different from Salem's at the start?", "Grandfather thinks a boat must work well before it looks grand; Salem cared most about how his boat looked."),
+        mc("What did Omar do before the contest that helped his boat glide so well?", ["He painted his sail bright blue","He added a small weight to the hull","He tested his boat four times and changed the sail each time","He asked Grandfather to choose the winner"], 2, "Grandfather says Omar tested his boat four times and changed the sail each time."),
+        mc("How is Grandfather's point of view about the two boats different from Salem's at the start?", ["Grandfather thinks a boat must work well before it looks grand; Salem cared most about looks","Grandfather cares only about winning; Salem cares about working well","Both care most about how the boat looks","Grandfather thinks the sail should be tall; Salem thinks it should be low"], 0, "Grandfather says a boat must work well before it can look grand; Salem was proud of how his looked."),
         en("Salem's voice \"felt small\" when he asked Omar for help. Why do you think so?", "He felt a little shy or embarrassed after smirking at Omar's plain boat and then needing his help."),
         en("Why did Grandfather wink and say nothing at the end?", "He was pleased and proud that Salem had learned the lesson without needing to be told again."),
-        en("What is a theme of this story? Give one detail that supports it.", "Patience and careful testing matter more than looks (or: learn from mistakes and ask for help). Detail: Omar's plain boat glided well, and Salem's improved after he asked for help."),
+        mc("What is a theme of this story?", ["Winning is the most important thing","Boats with tall sails go fastest","Grandfathers always know best","Patience and careful testing matter more than looks"], 3, "Omar's plain, well-tested boat glided well, and Salem's improved after he asked for help."),
         en("In both Text A and Text B, a character's plan goes wrong in front of others, and then another child helps. What lesson do both stories share?", "Learning from a mistake and accepting help can make your work better (or: testing and patience matter)."),
         en("Compare why the plan went wrong in Text A and in Text B.", "In Text A, Salem cared most about looks, and his tall sail made the boat tip. In Text B, Maryam skipped testing, and the flag's shadow covered the solar panel."),
-        en("Text B is told in three chapters. Which chapter holds the problem, and how does the next chapter depend on it?", "Chapter 2 holds the problem (the car stops in the middle of the track). Chapter 3 solves it, because Maryam and Hind move the flag that was casting the shadow."),
+        mc("Text B is told in three chapters. Which chapter holds the problem, and how does the next chapter depend on it?", ["Chapter 1 holds the problem; Chapter 3 repeats it","Chapter 2 holds the problem (the car stops); Chapter 3 solves it by moving the flag","Chapter 3 holds the problem; Chapter 2 solves it","Chapter 2 holds the problem; Chapter 3 shows the car never finishes"], 1, "The car stops in Chapter 2, and in Chapter 3 the girls move the flag and the car finishes."),
         en("How does Chapter 1 of Text B help you understand what goes wrong in Chapter 2?", "It tells us Maryam tied a tall red flag to the back and did not test the car, which sets up the shadow on the panel and the car stopping."),
         en("The picture at the end of Text B shows two girls grinning beside the car, with the flag at the front. What does the picture add to the ending?", "It shows in a picture that the problem is solved (the flag has been moved) and that Maryam and Hind are happy working together.")
       ]
