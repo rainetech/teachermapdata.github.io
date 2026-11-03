@@ -32,7 +32,8 @@ export function standardPattern(framework, grade) {
   }
   if (framework === "NGSS") {
     const prefix = grade <= 5 ? g : grade <= 8 ? "MS" : "HS";
-    return new RegExp("^" + prefix + "-(PS|LS|ESS|ETS)\\d-\\d$");
+    const extra = grade <= 5 ? "|" + (grade <= 2 ? "K-2" : "3-5") + "-ETS1-\\d" : "";
+    return new RegExp("^(" + prefix + "-(PS|LS|ESS|ETS)\\d-\\d" + extra + ")$");
   }
   return /^$/;
 }

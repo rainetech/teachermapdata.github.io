@@ -28,7 +28,7 @@ module.exports = {
     },
     {
       area: "geo",
-      standards: ["4.MD.A.1", "4.MD.A.2", "4.MD.A.3", "4.MD.C.5", "4.MD.C.6", "4.G.A.1", "4.G.A.2", "4.G.A.3"],
+      standards: ["4.MD.A.1", "4.MD.A.2", "4.MD.A.3", "4.MD.C.5", "4.MD.C.6", "4.MD.C.7", "4.G.A.1", "4.G.A.2", "4.G.A.3"],
       example: ex("A rectangular football pitch for children is 40 m long and 25 m wide. Find the perimeter and the area.", ["Perimeter = 2 x (40 + 25) = 2 x 65 = 130 m.", "Area = 40 x 25 = 1,000 square metres."], "Perimeter 130 m; area 1,000 square metres", "ملعب كرة قدم للأطفال مستطيل طوله 40 م وعرضه 25 م. أوجد المحيط والمساحة.", ["المحيط = 2 × (40 + 25) = 2 × 65 = 130 م.", "المساحة = 40 × 25 = 1,000 متر مربع."], "المحيط 130 م والمساحة 1,000 متر مربع"),
       items: [
         it("A rectangle has area 56 square cm and length 8 cm. What is its width?", "7 cm", "مساحة مستطيل 56 سنتمترًا مربعًا وطوله 8 سم. ما عرضه؟", "7 سم"),
@@ -51,10 +51,10 @@ module.exports = {
         it("Use the line plot in the example. How many ropes are there in all?", "8", "استعمل المخطط في المثال. كم حبلًا هناك في المجموع؟", "8"),
         it("Which length is the most common in that line plot?", "2/4 m", "ما الطول الأكثر تكرارًا في ذلك المخطط؟", "2/4 م"),
         it("How much longer is the longest rope than the shortest in that line plot?", "2/4 m (3/4 - 1/4)", "بكم الحبل الأطول أطول من الأقصر في ذلك المخطط؟", "2/4 م (3/4 - 1/4)"),
-        it("Data: 5, 7, 7, 8, 10. What is the range?", "5 (10 - 5)", "البيانات: 5 و 7 و 7 و 8 و 10. ما المدى؟", "5 (10 - 5)"),
-        it("A line plot of rainfall in half centimetres has 3 dots at 1/2 and 2 dots at 1. What is the total?", "3 and 1/2 cm (3 x 1/2 + 2 x 1 = 1 and 1/2 + 2)", "مخطط نقطي لأمطار بنصف السنتمتر فيه 3 نقاط عند 1/2 ونقطتان عند 1. ما المجموع؟", "3 ونصف سم (3 × 1/2 + 2 × 1 = 1 ونصف + 2)"),
-        it("A bar graph has a scale in fives. One bar is between 15 and 20. What are the possible values?", "16, 17, 18 or 19 (read the bar against the gridlines)", "مقياس مخطط أعمدة بالخمسات. أحد الأعمدة بين 15 و 20. ما القيم الممكنة؟", "16 أو 17 أو 18 أو 19 (اقرأ العمود بمقارنته بخطوط الشبكة)"),
-        it("Which graph is best for showing how a quantity changes over time: bar graph or line graph?", "A line graph", "أي مخطط أفضل لإظهار تغيّر كمية مع الزمن: مخطط الأعمدة أم المخطط الخطي؟", "المخطط الخطي"),
+        it("A line plot shows ropes in quarters of a metre: 2 dots at 1/4 m and 3 dots at 2/4 m. What is the total length of all these ropes?", "2 metres (2 x 1/4 = 2/4 and 3 x 2/4 = 6/4, then 2/4 + 6/4 = 8/4)", "يبيّن مخطط نقطي حبالًا بالأرباع من المتر: نقطتان عند 1/4 م و 3 نقاط عند 2/4 م. ما الطول الكلي لهذه الحبال كلها؟", "مترين (2 × 1/4 = 2/4 و 3 × 2/4 = 6/4 ثم 2/4 + 6/4 = 8/4)"),
+        it("A line plot of rainfall in centimetres, measured to the nearest half, has 3 dots at 1/2 and 2 dots at 1. What is the total?", "3 and 1/2 cm (3 x 1/2 = 1 and 1/2, and 2 x 1 = 2)", "مخطط نقطي لمقدار المطر بالسنتيمتر مقيسًا لأقرب نصف فيه 3 نقاط عند 1/2 ونقطتان عند 1. ما المجموع؟", "3 ونصف سم (3 × 1/2 = 1 ونصف و 2 × 1 = 2)"),
+        it("A line plot shows ribbons: 2 dots at 1/4 m, 3 dots at 1/2 m and 1 dot at 3/4 m. How many ribbons are longer than 1/4 m?", "4 (3 ribbons of 1/2 m and 1 ribbon of 3/4 m)", "يبيّن مخطط نقطي أشرطة: نقطتان عند 1/4 م و 3 نقاط عند 1/2 م ونقطة عند 3/4 م. كم شريطًا أطول من 1/4 م؟", "4 (3 أشرطة طول كل منها 1/2 م وشريط واحد طوله 3/4 م)"),
+        it("A line plot shows cups of karak: 3 dots at 1/8 litre and 2 dots at 3/8 litre. How much karak is there in all?", "1 and 1/8 litres (3/8 + 6/8 = 9/8)", "يبيّن مخطط نقطي أكواب كرك: 3 نقاط عند 1/8 لتر ونقطتان عند 3/8 لتر. كم لترًا من الكرك هناك في المجموع؟", "لتر وثُمن اللتر (3/8 + 6/8 = 9/8)"),
         it("Survey: 12 chose karak, 9 chose juice, 6 chose water. How many more chose karak than water?", "6", "استطلاع: اختار 12 الكرك و 9 العصير و 6 الماء. كم شخصًا زيادة اختار الكرك على الماء؟", "6"),
         it("In the survey above, what fraction of the 27 people chose juice? Simplify.", "9/27 = 1/3", "في الاستطلاع أعلاه، ما الكسر الذي يمثّل من اختاروا العصير من 27 شخصًا؟ بسّطه.", "9/27 = 1/3"),
         it("Seven plants measure 1/2, 1/2, 3/4, 3/4, 3/4, 1, and 1 and 1/4 of a metre. How many measure 3/4 m?", "3", "سبع نباتات قياساتها بالمتر: 1/2 و 1/2 و 3/4 و 3/4 و 3/4 و 1 و 1 وربع. كم نباتًا قياسه 3/4 م؟", "3")
@@ -74,7 +74,9 @@ module.exports = {
         it("Compare using <, > or =: 3/5 and 2/5", "3/5 > 2/5", "قارن باستعمال < أو > أو =: 3/5 و 2/5", "3/5 > 2/5"),
         it("Add: 4/10 + 5/10", "9/10", "اجمع: 4/10 + 5/10", "9/10"),
         it("Multiply: 3 x 2/5", "6/5 = 1 and 1/5", "اضرب: 3 × 2/5", "6/5 = 1 و 1/5"),
-        it("Write 7/10 as a decimal and 0.35 as a fraction.", "0.7 and 35/100 = 7/20", "اكتب 7/10 كعدد عشري و 0.35 ككسر.", "0.7 و 35/100 = 7/20")
+        it("Write 7/10 as a decimal and 0.35 as a fraction.", "0.7 and 35/100 = 7/20", "اكتب 7/10 كعدد عشري و 0.35 ككسر.", "0.7 و 35/100 = 7/20"),
+        it("Compare using <, > or =: 0.4 and 0.38", "0.4 > 0.38 (0.4 is 0.40, and 40 hundredths is more than 38 hundredths)", "قارن باستعمال < أو > أو =: 0.4 و 0.38", "0.4 > 0.38 (0.4 تساوي 0.40 و 40 جزءًا من مئة أكبر من 38 جزءًا من مئة)"),
+        it("Write 3/10 + 4/100 as a decimal.", "0.34 (3/10 = 30/100, and 30/100 + 4/100 = 34/100)", "اكتب 3/10 + 4/100 كعدد عشري.", "0.34 (3/10 = 30/100 و 30/100 + 4/100 = 34/100)")
       ]
     }
   ]

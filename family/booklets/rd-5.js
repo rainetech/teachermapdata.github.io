@@ -1,0 +1,94 @@
+// Reading practice booklet, Grade 5 expectations. English-only: see AUTHORING.md for the format.
+const T = (en, ar) => ({ en, ar });
+const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
+const en = (question, answer) => it(question, answer, question, answer);
+const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
+
+module.exports = {
+  subject: "rd",
+  grade: 5,
+  framework: "CCSS.ELA",
+  englishOnly: true,
+  reviewed: { en: false, ar: false },
+  sections: [
+    {
+      area: "voc",
+      standards: ["RL.5.4", "L.5.4a", "L.5.4b", "L.5.5a", "L.5.5b", "L.5.5c"],
+      passage: {
+        title: "A Morning at the Souq",
+        text: "Hamdan woke before the sun, as eager as a falcon waiting for its hood to be lifted. Today he was helping his grandfather at the old souq in Deira. The narrow lanes were a maze of colour, and the air was thick with the scent of cardamom and frankincense. Grandfather, a patient man, arranged baskets of dates on the front table, each one glossy and sweet.\n\n\"Do not rush,\" Grandfather said. \"A good trader is meticulous. He checks every basket carefully, so that no customer ever finds a bruised date.\"\n\nHamdan nodded and began to sort. The task was tedious, and soon his back ached. He felt as if the morning would never end. Then a woman stopped at the stall. She seemed hesitant, turning a jar of honey over and over, unsure whether to buy it. Grandfather smiled warmly. \"Try one,\" he said, offering her a date. Her face lit up. \"Delicious!\" she said, and bought three kilos.\n\nBy noon the souq was a beehive, humming with shoppers, and the heat was scorching. Hamdan was so tired that he could barely keep his eyes open, yet he was proud. The lane that had been silent at dawn was now a river of people, and he had helped to steer a few of them toward their stall.\n\nWhen the last customer left, Grandfather handed Hamdan a cold glass of laban. \"You kept your cool today,\" he said. \"That is a rare gift, and many adults never learn it.\" Hamdan laughed. Only that morning he had been tapping his fingers and counting the minutes. Now the sun was setting over the creek, and he did not want the day to end. It had been the opposite of boring. The lesson he carried home was a simple one: patient work, like a seed in the sand, can grow into something good."
+      },
+      example: exEn(
+        "Read: \"After the storm, the road was a ribbon of mud.\" Is this a simile or a metaphor, and what does it tell us?",
+        ["A simile compares using \"like\" or \"as\". A metaphor says one thing IS another.", "The sentence says the road \"was\" a ribbon, with no \"like\" or \"as\", so it is a metaphor.", "A ribbon is long and thin, so the road was a long, narrow strip covered in mud."],
+        "A metaphor: it shows the road was a long, narrow strip of mud."
+      ),
+      items: [
+        en("The grandfather says a good trader is \"meticulous\". Using the clue in the next sentence, what does meticulous mean?", "Very careful and exact (he checks every basket carefully)."),
+        en("The first sentence says Hamdan was \"as eager as a falcon waiting for its hood to be lifted\". Is this a simile or a metaphor? How can you tell?", "A simile: it uses \"as ... as\" to compare."),
+        en("What does that comparison tell you about how Hamdan felt that morning?", "He was very eager and excited, ready to begin."),
+        en("The sorting task was \"tedious\". Which clues help you work out the meaning?", "His back ached and the morning seemed never to end, so tedious means boring and tiring."),
+        en("The woman was \"hesitant\". What does hesitant mean here, and which words in the same sentence help?", "Unsure or unable to decide; \"unsure whether to buy it\" helps."),
+        en("The prefix un- is in the word \"unsure\". What does the prefix un- mean, and what does unsure mean?", "Un- means \"not\"; unsure means not sure."),
+        en("\"By noon the souq was a beehive.\" What does this metaphor suggest about the souq?", "It was very busy and crowded, full of people and noise."),
+        en("The lane is called \"a river of people\". What picture does this give you?", "People moving along in a steady flow, like water."),
+        en("Grandfather says, \"You kept your cool today.\" What does the idiom \"kept your cool\" mean?", "Stayed calm."),
+        en("The passage says the lane was \"silent\" at dawn and later \"humming\". Are these words closer to synonyms or antonyms, and why?", "Antonyms: silent means no sound, while humming means full of sound."),
+        en("Explain what the author means by comparing patient work to \"a seed in the sand\".", "Like a seed, patient work may take time and look small at first, but it can grow into something good.")
+      ]
+    },
+    {
+      area: "inf",
+      standards: ["RI.5.1", "RI.5.2", "RI.5.3", "RI.5.4", "RI.5.5", "RI.5.8"],
+      passage: {
+        title: "The Mangroves of the Gulf Coast",
+        text: "Along the calm shores of the UAE grows a forest that stands in salt water. Mangrove trees live where the land meets the sea, and the most common kind here is the grey mangrove. Most plants would die in such salty water, so the mangrove has clever ways to survive. Its leaves push out extra salt, and you can sometimes see white crystals on them. Its roots also rise above the mud like small pencils. These roots take in air, because the mud around them holds very little oxygen.\n\nMangroves matter for two main reasons. First, they are a nursery. Young fish, shrimp and crabs hide among the tangled roots, where larger fish cannot easily reach them. Because the young are safe, more of them grow up, and fishermen later catch more fish in nearby waters. Birds such as herons and flamingos also feed in the shallow water around the trees.\n\nSecond, mangroves protect the coast. Waves lose their strength when they hit the thick roots, so the shore is washed away more gradually. A beach without mangroves can lose sand quickly in a storm, but a shore with mangroves loses much less. Mangroves also store carbon in their wood and mud, which helps to reduce the warming of the planet.\n\nSadly, many mangroves were cleared in the past to make room for roads and harbours. When the trees disappeared, the nurseries disappeared with them, and fish became harder to find. Today people are working to bring the forests back. Volunteers carry young trees to the shore, plant them in the mud at low tide, and check them as they grow. Scientists count crabs and birds each year to see whether the new forests are working.\n\nThe old and new ways of thinking differ clearly. In the past, many people saw the shore as empty land to build on. Now they see it as a living wall that feeds and protects. One lesson stands out: a place that looks muddy and plain may be doing a great deal of work."
+      },
+      example: exEn(
+        "Read: \"The well ran dry because the rain did not come. The farmers then dug a deeper well.\" What was the cause and what was the effect of the well running dry?",
+        ["Ask: what happened? The well ran dry.", "Ask: why did it happen? Because the rain did not come.", "The reason is the cause, and what happened is the effect."],
+        "Cause: the rain did not come. Effect: the well ran dry."
+      ),
+      items: [
+        en("Why do mangrove roots rise above the mud?", "To take in air, because the mud holds very little oxygen."),
+        en("How does the mangrove deal with the extra salt in the water?", "Its leaves push the extra salt out."),
+        en("Why is a mangrove forest called a \"nursery\"? Use the text to explain.", "Young fish, shrimp and crabs hide safely among the roots while they grow up."),
+        en("What is the effect on fishermen of young fish being safe among the roots?", "More young fish grow up, so fishermen later catch more fish nearby."),
+        en("How do mangroves protect the shore?", "Waves lose their strength when they hit the thick roots, so less shore is washed away."),
+        en("What happened to the fish when many mangroves were cleared? Give the cause and the effect.", "Cause: the trees and their nurseries disappeared. Effect: fish became harder to find."),
+        en("The passage says mangroves \"store carbon\". According to the text, what does this help to do?", "It helps to reduce the warming of the planet."),
+        en("Paragraph 5 compares two ways of thinking. What are they?", "In the past, people saw the shore as empty land to build on. Now they see it as a living wall that feeds and protects."),
+        en("Name two groups of people who help bring the mangroves back, and say what each one does.", "Volunteers plant and check young trees; scientists count crabs and birds each year to see whether the forests are working."),
+        en("The author believes mangroves are valuable. Give two reasons from the passage that support this.", "Any two: they are a nursery for young sea animals, they protect the coast from waves, they store carbon, birds feed there."),
+        en("What does the last sentence mean: \"a place that looks muddy and plain may be doing a great deal of work\"?", "Something that looks ordinary can still be very useful; mangroves look plain but shelter animals and protect the shore.")
+      ]
+    },
+    {
+      area: "lit",
+      standards: ["RL.5.1", "RL.5.2", "RL.5.3", "RL.5.4", "RL.5.6"],
+      passage: {
+        title: "The Model Dhow",
+        text: "I was sure my model dhow would win the school boat contest. I had spent two weeks on it, gluing the hull and painting the sail bright blue. Grandfather Khalid watched me work, but he said very little, which annoyed me. I wanted him to say it was the best boat he had ever seen.\n\nOn the morning of the contest, we carried our boats to the long water trough in the courtyard. My friend Omar's boat looked plain. Its sail was a scrap of white cloth, and the hull was narrow and low. I smirked. Mine was so much prettier.\n\nWhen the whistle blew, we each gave our boat a gentle push. Omar's glided across the water as smoothly as a gull. Mine wobbled, tipped to one side, and spun in a clumsy circle. The tall blue sail caught the breeze and dragged it sideways. Everyone laughed, and my cheeks burned.\n\nI wanted to hide among the palm trees. But Grandfather came and crouched beside me. \"Salem, do you know what Omar did last week?\" he asked. \"He tested his boat four times and changed the sail each time. He knew a boat must work well before it can look grand.\"\n\nI felt a flash of anger. Then I looked at my boat, and I looked at Omar's, and I saw that Grandfather was right. Omar had not just been lucky. He had been patient.\n\n\"Can you show me how you changed the sail?\" I asked Omar, even though my voice felt small.\n\nHe grinned. \"Of course. Come on.\"\n\nThat afternoon we sat together, trimming my sail lower and adding a small weight to the hull. When I tried again, my boat floated straight. It did not win, but it finished the course, and I was surprised to find that I was not upset at all. Grandfather winked at me from the shade. He did not need to say a word."
+      },
+      example: exEn(
+        "Read: \"Layla felt her heart pound as she stepped onto the stage. She took a breath and began to read.\" Who is telling this story, and how do you know?",
+        ["Look at the pronouns. The narrator says \"Layla\", \"she\" and \"her\", not \"I\".", "A narrator outside the story who uses \"he\" or \"she\" is using third-person point of view."],
+        "Third person: an outsider tells the story, using \"she\" and Layla's name."
+      ),
+      items: [
+        en("How did Salem feel about his model dhow before the contest?", "He was sure it would win; he was proud of it."),
+        en("Who is telling this story, and which words show the point of view (first or third person)?", "Salem tells it in the first person, using \"I\", \"my\" and \"me\"."),
+        en("At first, why did Salem smirk when he saw Omar's boat?", "He thought it looked plain and that his own was much prettier."),
+        en("Why did Salem's boat tip and spin in a circle?", "The tall blue sail caught the breeze and dragged it sideways."),
+        en("\"Omar's glided across the water as smoothly as a gull.\" What does this simile show?", "Omar's boat moved very smoothly and easily."),
+        en("Why did Salem's cheeks burn?", "He was embarrassed because everyone laughed."),
+        en("What did Omar do before the contest that helped his boat glide so well?", "He tested his boat four times and changed the sail each time."),
+        en("How is Grandfather's point of view about the two boats different from Salem's at the start?", "Grandfather thinks a boat must work well before it looks grand; Salem cared most about how his boat looked."),
+        en("Salem's voice \"felt small\" when he asked Omar for help. Why do you think so?", "He felt a little shy or embarrassed after smirking at Omar's plain boat and then needing his help."),
+        en("Why did Grandfather wink and say nothing at the end?", "He was pleased and proud that Salem had learned the lesson without needing to be told again."),
+        en("What is a theme of this story? Give one detail that supports it.", "Patience and careful testing matter more than looks (or: learn from mistakes and ask for help). Detail: Omar's plain boat glided well, and Salem's improved after he asked for help.")
+      ]
+    }
+  ]
+};

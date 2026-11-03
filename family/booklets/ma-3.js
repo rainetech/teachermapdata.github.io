@@ -36,7 +36,7 @@ module.exports = {
     },
     {
       area: "geo",
-      standards: ["3.MD.C.5", "3.MD.C.6", "3.MD.C.7", "3.MD.D.8", "3.G.A.1", "3.G.A.2", "3.MD.A.1"],
+      standards: ["3.MD.C.5", "3.MD.C.6", "3.MD.C.7", "3.MD.D.8", "3.G.A.1", "3.G.A.2", "3.MD.A.1", "3.MD.A.2"],
       example: ex("A rectangular majlis rug is 4 metres long and 3 metres wide. What is its area? What is its perimeter?", ["Area is the number of square metres that cover it: 4 x 3 = 12.", "Perimeter is the distance round the edge: 4 + 3 + 4 + 3 = 14."], "Area 12 square metres; perimeter 14 metres", "سجادة مجلس مستطيلة طولها 4 أمتار وعرضها 3 أمتار. ما مساحتها؟ وما محيطها؟", ["المساحة هي عدد الأمتار المربعة التي تغطيها: 4 × 3 = 12.", "المحيط هو المسافة حول الحافة: 4 + 3 + 4 + 3 = 14."], "المساحة 12 مترًا مربعًا والمحيط 14 مترًا"),
       items: [
         it("A rectangle is 5 cm long and 2 cm wide. What is its area?", "10 square centimetres", "مستطيل طوله 5 سم وعرضه 2 سم. ما مساحته؟", "10 سنتمترات مربعة"),
@@ -71,7 +71,7 @@ module.exports = {
     {
       area: "num",
       standards: ["3.NBT.A.1", "3.NBT.A.2", "3.NBT.A.3", "3.NF.A.1", "3.NF.A.2", "3.NF.A.3"],
-      example: ex("Round 487 to the nearest ten and to the nearest hundred.", ["Look at the ones digit for the nearest ten: 7 is 5 or more, so round up: 490.", "Look at the tens digit for the nearest hundred: 8 is 5 or more, so round up: 500."], "490 and 500", "قرّب العدد 487 إلى أقرب عشرة وإلى أقرب مئة.", ["انظر إلى رقم الآحاد لأقرب عشرة: 7 أكبر من 5 أو تساويها فنقرّب إلى أعلى: 490.", "انظر إلى رقم العشرات لأقرب مئة: 8 أكبر من 5 أو تساويها فنقرّب إلى أعلى: 500."], "490 و 500"),
+      example: ex("Round 487 to the nearest ten and to the nearest hundred.", ["Look at the ones digit for the nearest ten: 7 is 5 or more, so round up: 490.", "Look at the tens digit for the nearest hundred: 8 is 5 or more, so round up: 500."], "490 and 500", "قرّب العدد 487 إلى أقرب عشرة وإلى أقرب مئة.", ["انظر إلى رقم الآحاد لأقرب عشرة: 7 يساوي 5 أو أكبر منها فنقرّب إلى أعلى: 490.", "انظر إلى رقم العشرات لأقرب مئة: 8 يساوي 5 أو أكبر منها فنقرّب إلى أعلى: 500."], "490 و 500"),
       items: [
         it("Round 364 to the nearest ten.", "360", "قرّب 364 إلى أقرب عشرة.", "360"),
         it("Round 751 to the nearest hundred.", "800", "قرّب 751 إلى أقرب مئة.", "800"),
@@ -82,7 +82,7 @@ module.exports = {
         it("What fraction of the circle is shaded if 3 of 8 equal parts are shaded?", "3/8", "ما الكسر الذي يمثّل الجزء المظلل من الدائرة إذا ظُلّلت 3 من 8 أجزاء متساوية؟", "3/8"),
         it("Which is greater: 1/2 or 1/4? Explain.", "1/2, because halves are bigger pieces than quarters.", "أيهما أكبر: 1/2 أم 1/4؟ وضّح.", "1/2، لأن الأنصاف أجزاء أكبر من الأرباع."),
         it("Write a fraction equal to 1/2 with 4 as the denominator.", "2/4", "اكتب كسرًا يساوي 1/2 مقامه 4.", "2/4"),
-        it("Place 3/4 on a number line from 0 to 1. Between which two quarter marks do you stop?", "At the third mark of four equal parts, just before 1.", "ضع 3/4 على خط أعداد من 0 إلى 1. عند أي علامة من علامات الأرباع تتوقف؟", "عند العلامة الثالثة من أربعة أجزاء متساوية، قبل العدد 1 مباشرة.")
+        it("Place 3/4 on a number line from 0 to 1. At which quarter mark do you stop?", "At the third mark of four equal parts, just before 1.", "ضع 3/4 على خط أعداد من 0 إلى 1. عند أي علامة من علامات الأرباع تتوقف؟", "عند العلامة الثالثة من أربعة أجزاء متساوية، قبل العدد 1 مباشرة.")
       ]
     }
   ]

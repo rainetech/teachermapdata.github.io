@@ -109,17 +109,17 @@ h3 { font-size: 12.5pt; margin: .9rem 0 .25rem; color: #00504f; }
 .meta { color: #4a5670; margin: 0 0 1rem; }
 .name { margin: 1rem 0; }
 .name span { display: inline-block; border-bottom: 1px solid #14213d; min-width: 10rem; }
-.passage { break-inside: auto; }
 .box { border: 1px solid #c9d6d6; border-radius: 8px; padding: .5rem .9rem; margin: .8rem 0; background: #f4f9f9; break-inside: avoid; }
+.box.passage { break-inside: auto; }
 .draft { font-size: 10pt; color: #8a5a00; margin-top: 1.5rem; }
 section { break-before: page; }
 .std { font-size: 10pt; color: #4a5670; margin: 0 0 .6rem; }
-ol.q { padding-inline-start: 1.6rem; }
+ol.q { padding-inline-start: 2.4rem; }
 ol.q li { margin: .55rem 0 1.2rem; break-inside: avoid; }
 ol.q .line { display: block; border-bottom: 1px solid #aab8b8; height: 1.4rem; margin-top: .4rem; }
 .answers { break-before: page; }
 .answers h3 { margin-top: 1rem; }
-.answers ol { padding-inline-start: 1.6rem; margin: .2rem 0; font-size: 11pt; }
+.answers ol { padding-inline-start: 2.4rem; margin: .2rem 0; font-size: 11pt; }
 .footer { font-size: 9pt; color: #4a5670; }
 `;
 
