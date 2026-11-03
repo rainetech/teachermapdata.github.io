@@ -19,7 +19,7 @@ module.exports = {
   sections: [
     {
       area: "alg",
-      standards: ["3.OA.A.1", "3.OA.A.3", "3.OA.A.4", "3.OA.B.5", "3.OA.D.8", "3.OA.D.9"],
+      standards: ["3.OA.A.1", "3.OA.A.2", "3.OA.A.3", "3.OA.A.4", "3.OA.B.5", "3.OA.B.6", "3.OA.C.7", "3.OA.D.8", "3.OA.D.9"],
       example: ex("There are 6 trays with 4 date cookies on each tray. How many cookies are there? Write the multiplication fact and a related division fact.", ["6 groups of 4 is 6 x 4.", "6 x 4 = 24, so there are 24 cookies.", "A related division fact: 24 / 6 = 4."], "24 cookies; 6 x 4 = 24 and 24 / 6 = 4", "هناك 6 صواني، على كل صينية 4 كعكات بالتمر. كم كعكة هناك؟ اكتب عملية الضرب وعملية القسمة المرتبطة بها.", ["6 مجموعات من 4 تعني 6 × 4.", "6 × 4 = 24، إذن هناك 24 كعكة.", "عملية قسمة مرتبطة: 24 ÷ 6 = 4."], "24 كعكة؛ 6 × 4 = 24 و 24 ÷ 6 = 4"),
       items: [
         it("What does 5 x 7 mean? Say it as groups.", "5 groups of 7 (7 + 7 + 7 + 7 + 7)", "ماذا تعني 5 × 7؟ قلها بصورة مجموعات.", "5 مجموعات من 7 (7 + 7 + 7 + 7 + 7)"),
@@ -31,7 +31,9 @@ module.exports = {
         it("Are 3 x 9 and 9 x 3 equal? Which property shows it?", "Yes, both are 27: the order does not change the product (commutative property).", "هل 3 × 9 و 9 × 3 متساويان؟ وأي خاصية توضح ذلك؟", "نعم، كلاهما 27: ترتيب العددين لا يغيّر الناتج (خاصية الإبدال)."),
         it("Maha has 3 packs of 6 stickers and gives 5 away. How many does she have left?", "13 (3 x 6 = 18, then 18 - 5 = 13)", "مع مها 3 علب في كل منها 6 ملصقات، وأعطت 5 ملصقات. كم ملصقة بقي معها؟", "13 (3 × 6 = 18 ثم 18 - 5 = 13)"),
         it("What is the rule? 4, 8, 12, 16, __ What comes next?", "Add 4; the next number is 20.", "ما القاعدة؟ 4، 8، 12، 16، __ ما العدد التالي؟", "نضيف 4؛ والعدد التالي 20."),
-        it("Write a number sentence for: a number times 7 is 56. Use n for the unknown, then solve.", "n x 7 = 56, n = 8", "اكتب جملة عددية: عدد مضروبًا في 7 يساوي 56. استعمل n للمجهول ثم احلّها.", "n × 7 = 56، و n = 8")
+        it("Write a number sentence for: a number times 7 is 56. Use n for the unknown, then solve.", "n x 7 = 56, n = 8", "اكتب جملة عددية: عدد مضروبًا في 7 يساوي 56. استعمل n للمجهول ثم احلّها.", "n × 7 = 56، و n = 8"),
+        it("A baker packs 24 date cookies into boxes of 6. How many boxes does she fill? Write the division sentence.", "4 boxes (24 / 6 = 4)", "تضع خبّازة 24 كعكة بالتمر في علب في كل منها 6. كم علبة تملأ؟ اكتب جملة القسمة.", "4 علب (24 ÷ 6 = 4)"),
+        it("Fluency check: 7 x 8 = ? and 63 / 9 = ?", "56 and 7", "تدريب على الإتقان: 7 × 8 = ؟ و 63 ÷ 9 = ؟", "56 و 7")
       ]
     },
     {

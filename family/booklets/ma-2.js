@@ -19,7 +19,7 @@ module.exports = {
   sections: [
     {
       area: "alg",
-      standards: ["2.OA.A.1", "2.OA.B.2", "2.OA.C.3", "2.OA.C.4"],
+      standards: ["2.OA.A.1", "2.OA.B.2", "2.OA.C.3", "2.OA.C.4", "2.MD.B.6"],
       example: ex("Maryam has 27 stickers. Her cousin gives her 15 more. How many stickers does she have now?", ["Add the tens first: 27 + 10 = 37.", "Then add the ones: 37 + 5 = 42."], "42 stickers", "مع مريم 27 ملصقة. أعطتها ابنة عمها 15 ملصقة أخرى. كم ملصقة معها الآن؟", ["نضيف العشرات أولًا: 27 + 10 = 37.", "ثم نضيف الآحاد: 37 + 5 = 42."], "42 ملصقة"),
       items: [
         it("Add: 8 + 7", "15", "اجمع: 8 + 7", "15"),
@@ -32,25 +32,27 @@ module.exports = {
         it("A tray of fruit has 3 rows with 4 apples in each row. Write an addition sentence for the apples and find how many there are.", "4 + 4 + 4 = 12 apples", "في صينية فاكهة 3 صفوف، في كل صف 4 تفاحات. اكتب جملة جمع للتفاح وأوجد عدده.", "4 + 4 + 4 = 12 تفاحة"),
         it("Khalid has 28 marbles. His uncle's family gives him 15 more and then he gives 9 to his brother. How many marbles does he have now?", "34 (28 + 15 = 43, then 43 - 9 = 34)", "مع خالد 28 كرة زجاجية. أعطته عائلة عمه 15 كرة أخرى ثم أعطى أخاه 9 كرات. كم كرة معه الآن؟", "34 (28 + 15 = 43 ثم 43 - 9 = 34)"),
         it("Can 17 sweets be shared equally between 2 friends with none left over? Explain.", "No. 17 is odd, so 1 sweet is left over.", "هل يمكن توزيع 17 حلوى بالتساوي على صديقين دون أن يبقى شيء؟ وضّح.", "لا. العدد 17 فردي، لذلك تبقى حلوى واحدة."),
-        it("Add: 6 + 4 + 9. Which two numbers make a ten?", "19. 6 and 4 make 10, then 10 + 9 = 19.", "اجمع: 6 + 4 + 9. أي عددين يكوّنان عشرة؟", "19. العددان 6 و 4 يكوّنان 10 ثم 10 + 9 = 19.")
+        it("Add: 6 + 4 + 9. Which two numbers make a ten?", "19. 6 and 4 make 10, then 10 + 9 = 19.", "اجمع: 6 + 4 + 9. أي عددين يكوّنان عشرة؟", "19. العددان 6 و 4 يكوّنان 10 ثم 10 + 9 = 19."),
+        it("On a number line, start at 8 and jump 5 more. Where do you land? Write the addition sentence.", "13 (8 + 5 = 13)", "على خط أعداد، ابدأ من 8 واقفز 5 قفزات أخرى. أين تهبط؟ اكتب جملة الجمع.", "13 (8 + 5 = 13)")
       ]
     },
     {
       area: "geo",
-      standards: ["2.G.A.1", "2.G.A.3", "2.MD.A.1", "2.MD.A.4", "2.MD.B.5", "2.MD.C.7", "2.MD.C.8"],
+      standards: ["2.G.A.1", "2.G.A.2", "2.G.A.3", "2.MD.A.1", "2.MD.A.2", "2.MD.A.3", "2.MD.A.4", "2.MD.B.5", "2.MD.C.7", "2.MD.C.8"],
       example: ex("The short hand of a clock points just past the 3 and the long hand points to the 5. What time is it?", ["The short hand shows the hour: 3.", "The long hand on the 5 means 5 x 5 = 25 minutes."], "3:25", "يشير العقرب القصير في ساعة إلى ما بعد العدد 3 بقليل، ويشير العقرب الطويل إلى العدد 5. كم الساعة؟", ["العقرب القصير يبيّن الساعة: 3.", "العقرب الطويل عند العدد 5 يعني 5 × 5 = 25 دقيقة."], "3:25"),
       items: [
         it("How many sides does a triangle have? How many corners?", "3 sides and 3 corners", "كم ضلعًا للمثلث؟ وكم زاوية؟", "3 أضلاع و 3 زوايا"),
-        it("A hexagon has 6 sides. A pentagon has 5 sides. How many sides do they have together?", "11", "للسداسي 6 أضلاع وللخماسي 5 أضلاع. كم ضلعًا لهما معًا؟", "11"),
+        it("A rectangle is split into 2 rows with 3 equal squares in each row. How many squares are there? Write an addition sentence.", "6 squares (3 + 3 = 6)", "قُسِّم مستطيل إلى صفين في كل منهما 3 مربعات متساوية. كم مربعًا هناك؟ اكتب جملة جمع.", "6 مربعات (3 + 3 = 6)"),
         it("How many flat faces does a cube have?", "6", "كم وجهًا مسطحًا للمكعب؟", "6"),
         it("A rectangular sandwich is cut into 2 equal parts. What is each part called?", "A half", "قُسِّم سندويش مستطيل إلى جزأين متساويين. ماذا يُسمّى كل جزء؟", "نصف"),
         it("A square pizza is cut into 4 equal parts. What is each part called? Do 4 parts make a whole?", "A quarter (one fourth). Yes, 4 quarters make a whole.", "قُسِّمت بيتزا مربعة إلى 4 أجزاء متساوية. ماذا يُسمّى كل جزء؟ وهل تكوّن الأجزاء الأربعة الكل؟", "ربع. نعم، 4 أرباع تكوّن الكل."),
         it("A ribbon is 15 cm long. Another ribbon is 9 cm long. How much longer is the first ribbon?", "6 cm", "شريط طوله 15 سم وشريط آخر طوله 9 سم. بكم سنتمترًا الشريط الأول أطول؟", "6 سم"),
-        it("Which unit is better for measuring the length of your classroom: centimetres or metres?", "Metres", "أي وحدة أنسب لقياس طول صفك: السنتيمتر أم المتر؟", "المتر"),
+        it("Which is the better estimate for the length of a pencil: 15 centimetres or 15 metres? Explain.", "15 centimetres: 15 metres is longer than a classroom.", "أيهما أفضل تقديرًا لطول القلم: 15 سنتمترًا أم 15 مترًا؟ وضّح.", "15 سنتمترًا: فـ 15 مترًا أطول من الصف."),
         it("The long hand points to the 9 and the short hand is just before the 8. What time is it?", "7:45", "يشير العقرب الطويل إلى العدد 9 والعقرب القصير قبل العدد 8 بقليل. كم الساعة؟", "7:45"),
         it("Breakfast is at 7:00 in the morning. Is that a.m. or p.m.? What time is it 5 minutes after 8:55?", "a.m.; 9:00", "الفطور عند الساعة 7:00 في الصباح. هل نكتبها 7:00 a.m. أم 7:00 p.m.؟ وكم الوقت بعد 5 دقائق من الساعة 8:55؟", "a.m. (صباحًا)؛ 9:00"),
         it("Layla buys a notebook for 6 AED and a pencil for 3 AED. She pays with a 10 AED note. How much change does she get?", "1 AED (6 + 3 = 9, then 10 - 9 = 1)", "اشترت ليلى دفترًا بـ 6 دراهم وقلمًا بـ 3 دراهم ودفعت ورقة من فئة 10 دراهم. كم يبلغ الباقي الذي تستلمه؟", "درهم واحد (6 + 3 = 9 ثم 10 - 9 = 1)"),
-        it("Omar has one 10 AED note, one 5 AED note and three 1 AED coins. How much money does he have?", "18 AED (10 + 5 + 3)", "مع عمر ورقة من فئة 10 دراهم وورقة من فئة 5 دراهم وثلاث قطع من فئة درهم. كم درهمًا معه؟", "18 درهمًا (10 + 5 + 3)")
+        it("Omar has one 10 AED note, one 5 AED note and three 1 AED coins. How much money does he have?", "18 AED (10 + 5 + 3)", "مع عمر ورقة من فئة 10 دراهم وورقة من فئة 5 دراهم وثلاث قطع من فئة درهم. كم درهمًا معه؟", "18 درهمًا (10 + 5 + 3)"),
+        it("Maryam measures a table with a 20 cm ruler and gets 4 rulers. Then she measures it with a 10 cm strip and gets 8 strips. Why are the two numbers different?", "The 10 cm strip is a smaller unit, so more of them are needed. Both measure 80 cm.", "تقيس مريم طاولة بمسطرة طولها 20 سم فتحصل على 4 مساطر. ثم تقيسها بشريط طوله 10 سم فتحصل على 8 أشرطة. لماذا اختلف العددان؟", "لأن الشريط ذا 10 سم وحدة أصغر فيلزم منه عدد أكبر. وكلاهما يقيس 80 سم.")
       ]
     },
     {
