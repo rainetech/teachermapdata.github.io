@@ -17,21 +17,21 @@ module.exports = {
       standards: ["RL.6.4", "L.6.4a", "L.6.4b", "L.6.5a", "L.6.5c"],
       passage: {
         title: "Dawn at the Old Harbour",
-        text: `Maryam stepped onto the wooden jetty at dawn, and the creek greeted her with a golden glow. The water was a sheet of glass, and the old dhows rested against the quay like tired camels at the end of a long journey. Her uncle Hamdan, a boat repairer, was already at work. The sound of his hammer drifted across the harbour, steady as a heartbeat.
+        text: `Maryam and her older cousin Noura stepped onto the wooden jetty at dawn, and the creek greeted them with a golden glow. The water was a sheet of glass, and the old dhows rested against the quay like tired camels at the end of a long journey. Her grandfather Hamdan, a boat repairer, was already at work. The sound of his hammer drifted across the harbour, steady as a heartbeat.
 
 "Hand me that plank," he said. "Be careful. It is fragile, and one crack would spoil a whole morning's work."
 
-Maryam lifted it as gently as a bird's egg. Uncle Hamdan nodded. "Good. Some people call these boats dusty relics. I call them veterans. Each one has faced wind, salt and storms, and still it floats."
+Maryam lifted it as gently as a bird's egg. Grandfather Hamdan nodded. "Good. Some people call these boats dusty relics. I call them veterans. Each one has faced wind, salt and storms, and still it floats."
 
 "What did they carry?" Maryam asked.
 
 "Everything," he said. "For hundreds of years, dhows transported dates, pearls, spices and cloth across the sea. Think of the word itself. The prefix trans- means across, and the root port means to carry. So to transport something is to carry it across."
 
-Maryam repeated the word quietly, turning it over like a shell in her palm. Then she noticed a tangle of rope on the deck. She frowned, because it looked hopeless. Her uncle saw her face. "Do not be discouraged," he said. "Every knot has an end, and every end can be found. Be patient, and the rope will give way."
+Maryam repeated the word quietly, turning it over like a shell in her palm. Then she noticed a tangle of rope on the deck. She frowned, because it looked hopeless. Her grandfather saw her face. "Do not be discouraged," he said. "Every knot has an end, and every end can be found. Be patient, and the rope will give way."
 
 She sat down and worked at it for a long while. At first her fingers felt clumsy, and the knot seemed to grow tighter. But she kept going, and at last one loop slid free, then another. When the rope lay straight, she held it up like a trophy.
 
-"You are tenacious," said Uncle Hamdan. "That means you do not give up easily."
+"You are tenacious," said Grandfather Hamdan. "That means you do not give up easily."
 
 By midday the harbour was bustling, and the heat pressed down like a heavy blanket. Maryam's arms ached, yet she felt light inside. The old boat in front of her no longer looked like a relic. It looked ready for the sea, and she had helped to make it so. As the sun sank toward the water, the creek turned the colour of honey, and she knew she would return.`
       },
@@ -41,16 +41,16 @@ By midday the harbour was bustling, and the heat pressed down like a heavy blank
         "Easily broken or damaged."
       ),
       items: [
-        en("Uncle Hamdan says the plank is \"fragile\" and that \"one crack would spoil\" the work. Using that clue, what does fragile mean?", "Easily broken."),
+        en("Grandfather Hamdan says the plank is \"fragile\" and that \"one crack would spoil\" the work. Using that clue, what does fragile mean?", "Easily broken."),
         en("\"The old dhows rested against the quay like tired camels.\" What does this simile suggest about the dhows?", "They were still and resting, as if worn out after long journeys."),
-        en("The hammer sound is \"steady as a heartbeat\". What does this tell you about how Uncle Hamdan worked?", "He hammered in a regular, even rhythm, calmly and without stopping suddenly."),
+        en("The hammer sound is \"steady as a heartbeat\". What does this tell you about how Grandfather Hamdan worked?", "He hammered in a regular, even rhythm, calmly and without stopping suddenly."),
         en("\"The water was a sheet of glass.\" Is this a simile or a metaphor, and what does it mean?", "A metaphor (it says the water WAS glass, with no \"like\" or \"as\"); the water was very smooth and still."),
-        en("Uncle Hamdan says some people call the boats \"dusty relics\" but he calls them \"veterans\". Which word has the more respectful feeling, and why?", "\"Veterans\": it suggests experienced, brave survivors, while \"dusty relics\" suggests old things that are no longer useful."),
-        en("Uncle Hamdan explains that trans- means across and port means to carry. What does \"transport\" mean?", "To carry something across (from one place to another)."),
-        en("Uncle Hamdan says, \"Do not be discouraged.\" Using the sentences around it, what does discouraged most likely mean?", "Feeling like giving up, having lost hope or confidence."),
+        en("Grandfather Hamdan says some people call the boats \"dusty relics\" but he calls them \"veterans\". Which word has the more respectful feeling, and why?", "\"Veterans\": it suggests experienced, brave survivors, while \"dusty relics\" suggests old things that are no longer useful."),
+        en("Grandfather Hamdan explains that trans- means across and port means to carry. What does \"transport\" mean?", "To carry something across (from one place to another)."),
+        en("Grandfather Hamdan says, \"Do not be discouraged.\" Using the sentences around it, what does discouraged most likely mean?", "Feeling like giving up, having lost hope or confidence."),
         en("The rope \"looked hopeless\". The suffix -less means \"without\". What does hopeless mean here?", "Without hope: it looked as if it could never be untangled."),
         en("Maryam turned the word over \"like a shell in her palm\". What does this simile show about how she treated the word?", "She thought about it slowly and carefully, as if looking closely at something interesting."),
-        en("What does Uncle Hamdan mean when he calls Maryam \"tenacious\", and which of her actions shows it?", "She does not give up easily; she kept working at the knot even when it seemed to grow tighter."),
+        en("What does Grandfather Hamdan mean when he calls Maryam \"tenacious\", and which of her actions shows it?", "She does not give up easily; she kept working at the knot even when it seemed to grow tighter."),
         en("At the end, the old boat \"no longer looked like a relic\" to Maryam. Explain what changed in the way she saw it.", "At first it was just an old boat, but after helping to repair it she saw it as valuable and ready for the sea.")
       ]
     },
