@@ -139,7 +139,6 @@ function html(b, lang) {
   body += '<p class="name">' + esc(w.forName) + ': <span></span></p>';
   body += '<div class="box"><h3>' + esc(w.about) + "</h3><p>" + esc(w.aboutText(subjectName, b.grade, fw)) + "</p></div>";
   body += '<div class="box"><h3>' + esc(w.howTitle) + "</h3><ul>" + w.how.map((line) => "<li>" + esc(line) + "</li>").join("") + "</ul></div>";
-  if (!(b.reviewed && b.reviewed[lang])) body += '<p class="draft">' + esc(w.draft) + "</p>";
   b.sections.forEach((s, i) => {
     const e = s.example[english ? "en" : lang];
     body += "<section><h2>" + esc(w.section) + " " + (i + 1) + ": " + esc(areaName(b.subject, s.area, lang)) + "</h2>";
