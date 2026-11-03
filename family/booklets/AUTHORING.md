@@ -76,6 +76,7 @@ Arabic is modern standard Arabic, plain and natural, with the numbers as digits.
   religious practice beyond neutral mention of Ramadan or Eid, politics, or anything
   frightening. No dash used as punctuation (no em dash, en dash or `--`). Use a
   comma, a colon, brackets or a new sentence; the hyphen inside a word is fine.
+- Family company in stories and word problems: never show a girl or woman alone with an adult man, even a relative, and never out of sight of family (no early morning outings or boat trips with just an uncle, driver or neighbour). Put children together (siblings, cousins, friends), or with a parent or grandparent present, in public or family places. Boys and girls do not need to be shown mixing in private settings.
 - Warm, calm and never blaming: do not use the words fail, behind, weak, poor, lazy,
   slow, stupid. Questions are about the work, never about the child.
 - Keep the generic voice: no school, organisation or product names.
