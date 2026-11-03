@@ -1,0 +1,136 @@
+// Reading practice booklet, Grade 9 expectations. English-only: see AUTHORING.md for the format.
+const T = (en, ar) => ({ en, ar });
+const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
+const en = (question, answer) => it(question, answer, question, answer);
+const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
+
+module.exports = {
+  subject: "rd",
+  grade: 9,
+  framework: "CCSS.ELA",
+  englishOnly: true,
+  reviewed: { en: false, ar: false },
+  sections: [
+    {
+      area: "voc",
+      standards: ["RL.9-10.1", "RL.9-10.4", "L.9-10.4a", "L.9-10.5a", "L.9-10.5b"],
+      passage: {
+        title: "The Last Palm in the Row",
+        text: [
+          "Every autumn, Maryam's family drove to the oasis to help with the date harvest, and every autumn her grandmother led the way into the grove as though she were a general inspecting her troops. This year, Maryam walked beside her cousin Hamdan, who carried a ladder over one shoulder and complained about it all the way.",
+          "\"Jidda,\" he groaned, \"why must we always begin with the tallest palm?\"",
+          "\"Because it is the most stubborn,\" said Grandmother, patting the rough trunk. \"Some people would call that a fault. I call it determination. This tree has stood through a hundred summers, and it has never once asked for pity.\"",
+          "Maryam tilted her head back. The palm rose above them like a green fountain frozen in mid-splash, and the clusters of fruit hung from it in heavy amber chains. Far below, a channel of water ran through the grove. Grandmother had explained once that the old falaj system carried water from the mountains by gravity alone, a quiet river that never hurried and never stopped.",
+          "Hamdan climbed the ladder with the caution of a man crossing a frozen lake. Maryam held it steady and watched the light flicker through the fronds. Somewhere above, a bird scolded them in a thin, bitter voice. The air smelled of warm dust and syrup.",
+          "\"Careful,\" Grandmother called. \"A date is a patient fruit. It will not be rushed, and neither should you.\"",
+          "That was typical of her. She was frugal with money, with water and with words, yet she gave advice as generously as other people give sweets. Maryam sometimes thought her grandmother was a living proverb, a person who had boiled a whole life down into a few strong sentences.",
+          "When the baskets were full, the three of them sat in the shade, and Grandmother handed round a flask of cardamom tea. Hamdan wiped his forehead. \"I thought that palm would swallow me,\" he said. \"It felt like a giant that did not want me on its back.\"",
+          "Grandmother laughed. \"It is only a tree. But trees are good teachers. Look at the roots. They go down so deep that no wind can pull them out. A person should be like that: calm above and firm below.\"",
+          "Maryam examined a single date in her palm. It was wrinkled and sticky and no bigger than her thumb, yet it held the whole summer inside it. She remembered that the word \"transplant\" came from the Latin roots for \"across\" and \"plant\", because every young palm in the grove had once been carried across from another place and set into new soil. Her own family, she realised, had done something similar when they moved to the city, and still came back every year to be rooted again.",
+          "\"Jidda,\" she said, \"does the grove ever feel lonely when we leave?\"",
+          "Grandmother considered the question with her head to one side. \"The palms are never alone,\" she said at last. \"They stand shoulder to shoulder, and they wait. A grove does not need company in the way we do. It needs care, and that is what we bring.\"",
+          "On the drive home, the back seat was warm with the smell of dates, and Maryam fell asleep with a sticky smile, dreaming of a tall tree that bent to listen."
+        ].join("\n\n")
+      },
+      example: exEn(
+        "Read: \"The old man was thrifty, so he mended his coat for the tenth time.\" Use the context to work out what \"thrifty\" means.",
+        ["Look at the clues around the word.", "He mends the coat for the tenth time instead of buying a new one.", "A person who does this is careful about spending money, so thrifty means careful with money."],
+        "Thrifty means careful with money."
+      ),
+      items: [
+        en("Grandmother calls the tallest palm \"stubborn\" but then says she prefers the word \"determination\". What is the difference in connotation between the two words?", "\"Stubborn\" sounds like a fault, while \"determination\" sounds like an admirable strength."),
+        en("The palm is described as rising \"like a green fountain frozen in mid-splash\". What kind of figurative language is this, and what does it help the reader picture?", "A simile; a tall palm with fronds spreading outward and drooping like water from a fountain."),
+        en("The falaj is described as \"a quiet river that never hurried and never stopped\". What does this metaphor suggest about how the water moves?", "It flows steadily and continuously, without any rush or break (it needs no pump, only gravity)."),
+        en("Hamdan climbs \"with the caution of a man crossing a frozen lake\". What does this simile tell you about how he climbs?", "He climbs very carefully and nervously."),
+        en("The bird \"scolded them in a thin, bitter voice\". What figure of speech is used, and what feeling does it add?", "Personification (the bird is given a human action); it adds a sharp, unfriendly mood."),
+        en("Grandmother is \"frugal with money, with water and with words\". Using the rest of the sentence as a clue, what does \"frugal\" mean?", "Careful and sparing, using only what is needed (she uses few words but gives plenty of advice)."),
+        en("Maryam thinks her grandmother is \"a living proverb\". Explain this metaphor.", "Her grandmother has turned a long life into short, wise sayings, as a proverb does."),
+        en("The passage says \"transplant\" comes from Latin roots meaning \"across\" and \"plant\". How does this help you understand the word?", "It means to move a plant across from one place to another and set it in new soil."),
+        en("Hamdan says the palm felt like \"a giant that did not want me on its back\". What does this comparison suggest about how he felt?", "He felt the tree was big and unwelcoming, so he felt uneasy."),
+        en("Grandmother says a person should be \"calm above and firm below\". What does the image of roots stand for in this advice?", "Inner strength and steadiness that stop a person being pushed over by trouble."),
+        en("Compare the tone of Grandmother's first speech about the palm with her last speech about the grove. How does it change?", "At first she is proud and firm, praising the stubborn palm; at the end she is gentle and reassuring about the grove.")
+      ]
+    },
+    {
+      area: "inf",
+      standards: ["RI.9-10.1", "RI.9-10.2", "RI.9-10.3", "RI.9-10.5", "RI.9-10.6", "RI.9-10.8"],
+      passage: {
+        title: "Forests That Stand in the Sea",
+        text: [
+          "Along the sheltered coasts of the Gulf, a strange kind of forest grows with its roots in salt water. These are mangroves, small trees whose tangled roots rise above the mud like the legs of a wooden spider. To many visitors they look untidy and even a little dull. I want to argue that this impression is badly mistaken, and that the mangroves of the Emirates deserve far more protection than they have usually received.",
+          "Consider first what the trees do for the sea. The roots form a dense maze where young fish, crabs and shrimp can hide from larger hunters. Scientists who survey mangrove channels often find many more juvenile fish there than in open water nearby. In this way a mangrove forest acts as a nursery, and the fish that grow up in it later swim out to feed the fishing grounds. A local fisherman may never visit the forest, yet he depends on it.",
+          "The trees also do something for the land. Their roots hold the mud in place, so the shoreline wears away less during storms. Some mangroves get rid of extra salt through tiny pores in their leaves, so a leaf can taste salty when it is touched to the tongue. Mangroves can also store carbon, the gas that warms the planet, in the thick mud beneath them. Studies suggest that, acre for acre, coastal wetlands of this kind can lock away more carbon than many inland forests.",
+          "History adds another layer. For centuries, people along this coast cut mangrove wood for building and for fuel. In the twentieth century, however, the pressure grew quickly. Land was cleared for roads, harbours and new neighbourhoods, and in some places large areas of forest disappeared in only a few decades.",
+          "Some people respond that a city must grow and that a stretch of muddy trees cannot be allowed to block a harbour. This view deserves a fair hearing, because housing and trade are real needs. But it rests on a false choice. Planners in several coastal nations have shown that roads and buildings can be placed further back from the shore, leaving the forest as a natural wall against the waves. The cost of such planning is small when compared with the cost of repairing a damaged coast.",
+          "In recent years, the Emirates has begun to take this lesson seriously. Volunteers and government teams have planted millions of young mangrove seedlings, and some of the planted areas now provide nesting places for birds such as herons. Visitors can paddle quietly through the channels in kayaks and see the forest working for themselves.",
+          "The case for mangroves, then, does not depend on beauty, although many people find them beautiful. It depends on service: they shelter young fish, shield the shore and store carbon. A country that values its coast should treat these quiet forests not as an obstacle to progress but as one of the best investments it has."
+        ].join("\n\n")
+      },
+      example: exEn(
+        "Read: \"Libraries should stay open on weekends. Many students are busy with sport and clubs on weekdays, so the weekend is when they can read.\" Which sentence gives the author's claim, and which gives a reason?",
+        ["The claim is what the author wants readers to accept or do.", "The first sentence says libraries should stay open on weekends. That is the claim.", "The second sentence explains why: students are busy on weekdays. That is the reason."],
+        "Claim: libraries should stay open on weekends. Reason: students are busy on weekdays."
+      ),
+      items: [
+        en("What impression of mangroves does the author say many visitors have, and what does the author think of it?", "They look untidy and dull; the author thinks this impression is badly mistaken."),
+        en("Which sentence in the first paragraph states the author's main claim?", "\"I want to argue that this impression is badly mistaken, and that the mangroves of the Emirates deserve far more protection than they have usually received.\""),
+        en("Why does the author call a mangrove forest \"a nursery\"?", "Young fish, crabs and shrimp hide and grow in its roots, then swim out to the fishing grounds."),
+        en("How does the author show that a fisherman \"depends on\" a forest he may never visit?", "The fish raised in the forest later feed the fishing grounds where he works."),
+        en("Name two ways, other than being a nursery, that mangroves help, according to the passage.", "Any two: roots hold mud and reduce shoreline erosion in storms; they store carbon in the mud; they give nesting places for birds."),
+        en("How does the author organise paragraph 4, and what is its purpose in the argument?", "It gives a short history (people cut the wood, then forests were cleared), showing how the forests came under threat."),
+        en("What opposing view does the author describe in paragraph 5, and how does the author treat it?", "That a city must grow and trees must not block a harbour; the author gives it a fair hearing, then says it is a false choice."),
+        en("What evidence does the author give that roads and buildings can exist alongside mangroves?", "Planners in several coastal nations have placed roads and buildings further back from the shore, leaving the forest as a wall against waves."),
+        en("The author says the case for mangroves \"does not depend on beauty\". What does it depend on instead?", "On service: sheltering young fish, shielding the shore and storing carbon."),
+        en("Which detail about the Emirates shows that the lesson is now being taken seriously?", "Volunteers and government teams have planted millions of mangrove seedlings (and some areas now host nesting herons)."),
+        en("The author ends by calling mangroves \"one of the best investments\" a country has. Explain why this choice of word suits the argument.", "An investment brings a lasting return for a small cost; this matches the idea that protection costs little compared with repairing a damaged coast."),
+        en("How does the first person (\"I want to argue\") shape the passage, compared with a purely factual report?", "It shows the author has a clear point of view and is trying to persuade, not just to inform.")
+      ]
+    },
+    {
+      area: "lit",
+      standards: ["RL.9-10.1", "RL.9-10.2", "RL.9-10.3", "RL.9-10.4", "RL.9-10.5"],
+      passage: {
+        title: "The Lantern Maker",
+        text: [
+          "Layla had always believed that a good lantern should be perfect. It should be perfectly round, perfectly bright and perfectly neat, with no crooked seam and no smudge of glue. So when her grandfather said she could help him make lanterns for the neighbourhood festival, she arrived at his workshop early, with her cousin Omar trailing sleepily after her, and rolled up her sleeves like a surgeon.",
+          "The workshop was small and smelled of tin and warm paper. Strips of coloured glass lay along the shelf, and an old brass lamp, polished by years of handling, sat in the window. Grandfather laid a sheet of metal on the bench and showed her how to cut a pattern of stars into it.",
+          "\"Gently,\" he said, in his low, steady voice. \"Let the snips do the work.\"",
+          "Layla did not like gently. She cut quickly, and at last held up her first lantern. One of the stars had a bent point, and the seam on one side was a little uneven.",
+          "She frowned. \"It is ruined.\"",
+          "\"Ruined?\" Grandfather lifted the lantern and turned it in his weathered hands. \"Wait.\"",
+          "He lit the small candle inside, and he switched off the lamp overhead. The room filled with a scatter of golden stars that slid across the walls and over the ceiling. The bent star threw a long, curved ray that crossed the room like a comet.",
+          "Omar, who had been half asleep, sat up. \"That one is my favourite,\" he said.",
+          "Layla stared. \"But it is crooked.\"",
+          "\"The crooked star is the one that made the comet,\" said Grandfather. \"When I was young, I too wanted every line to be straight. Then one day a lantern slipped and dented, and the light that came out of the dent was the best I had ever made. I kept that lantern for years.\"",
+          "He nodded at the brass lamp in the window. Layla looked at it more closely. It had a small dent near the base, and she had not noticed it before.",
+          "\"That one?\" she asked.",
+          "\"That one.\"",
+          "All morning she worked beside him, and this time she did not hurry. She cut each star with care and left each small flaw alone, simply to see what it would do. By noon, a dozen lanterns lined the bench. No two threw the same shadows, and no two were the same.",
+          "At the festival that evening, the lanterns hung from the lamp posts like a string of captured stars. Children pointed and laughed. Omar proudly told everyone which one was his favourite. Layla stood a little apart with her grandfather, watching the light move over the faces of the crowd.",
+          "\"You were right,\" she said quietly. \"The light likes the flaws.\"",
+          "Grandfather smiled and said nothing. He did not need to."
+        ].join("\n\n")
+      },
+      example: exEn(
+        "Read: \"Hind checked her answers three times, then a fourth, and still her pencil hovered.\" What does this sentence suggest about Hind?",
+        ["Notice what Hind does and how often she does it.", "She checks her work again and again and still hesitates.", "This suggests she is anxious and wants everything to be exactly right."],
+        "She is anxious and wants everything to be right."
+      ),
+      items: [
+        en("What belief about lanterns does Layla hold at the start of the story?", "That a good lantern should be perfect: round, bright and neat, with no flaws."),
+        en("The author says Layla \"rolled up her sleeves like a surgeon\". What does this simile show about her attitude?", "She is serious, careful and determined to do the job exactly right."),
+        en("Grandfather says \"Gently\". What does this show about how he wants Layla to work, and how does she respond?", "He wants her to work slowly and carefully; she does not like it and cuts quickly."),
+        en("What is the problem Layla notices in her first lantern, and what does she say about it?", "A star has a bent point and a seam is uneven; she says it is ruined."),
+        en("Describe how Grandfather answers Layla's complaint. Does he argue with her?", "No, he says \"Wait\", lights the candle and lets the light show her."),
+        en("What happens when the lantern is lit in the dark room, and how does this change the meaning of the bent star?", "It throws a long curved ray like a comet, so the flaw makes something beautiful."),
+        en("What does the dented brass lamp tell the reader about Grandfather's own past?", "He once wanted every line straight too, but a dented lantern gave his best light, so he kept it."),
+        en("How does Omar's reaction support the lesson in the story?", "He loves the crooked star best, which shows others can value what Layla thought was a flaw."),
+        en("How does the way Layla works change after her talk with Grandfather?", "She works carefully and without hurrying, and she leaves small flaws alone."),
+        en("Explain the phrase \"a string of captured stars\" in the description of the festival. What does the figurative language add?", "The lanterns look like stars caught and hung up, so the scene seems magical."),
+        en("The lighting of the lantern is the turning point of the story. Explain what Layla believes before it and what she does after it.", "Before, she thinks a flawed lantern is ruined; after, she works carefully and leaves small flaws alone to see what the light does."),
+        en("State a theme of the story and name one detail that supports it.", "Imperfection can be valuable or beautiful. Detail: the bent star makes the comet-shaped ray.")
+      ]
+    }
+  ]
+};

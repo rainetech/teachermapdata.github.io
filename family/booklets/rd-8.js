@@ -18,7 +18,7 @@ module.exports = {
       passage: {
         title: "Dawn on the Creek",
         text: [
-          "Noura had never seen the Creek at dawn. Her uncle Rashid, who captained a small cargo dhow, had promised to take her along, and she crept down the jetty while the sky was still the colour of a pearl. The water lay as flat as glass, and the air smelled of diesel, salt and sweet cardamom tea from a flask on the deck.",
+          "Noura had never seen the Creek at dawn. Her uncle Rashid, who captained a small cargo dhow, had invited her and her father along, and they walked down the jetty together while the sky was still the colour of a pearl. The water lay as flat as glass, and the air smelled of diesel, salt and sweet cardamom tea from a flask on the deck.",
           "\"Mind your step,\" said Uncle Rashid gruffly, though his eyes were kind. \"A dhow is not a palace. She has seen fifty years of hard work, and she shows it.\"",
           "The old boat did show it. Her planks were scarred and silvery, and the rail felt as smooth as a river stone under Noura's palm. Crates of rice, tyres and bright plastic buckets were stacked high, and the sailors moved among them with the ease of people who had done this a thousand times.",
           "As the engine coughed to life, a man on the quay shouted and waved. Rashid only shrugged. \"Abu Saeed thinks every journey is a Sinbad voyage,\" he said, \"full of storms and sea monsters. He worries too much. Today we are only crossing to the far side of the Creek.\"",

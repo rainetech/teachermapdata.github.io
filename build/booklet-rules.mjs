@@ -23,7 +23,7 @@ export function standardPattern(framework, grade) {
   const g = grade === 0 ? "K" : String(grade);
   if (framework === "CCSS.MATH") {
     if (grade <= 8) return new RegExp("^" + g + "\\.[A-Z]{1,3}\\.[A-Z]\\.\\d{1,2}$");
-    return /^[NAFGS]-[A-Z]{2,4}\.[A-Z]\.\d{1,2}$/;
+    return /^[NAFGS]-[A-Z]{1,4}\.[A-Z]\.\d{1,2}$/;
   }
   if (framework === "CCSS.ELA") {
     const band = grade <= 8 ? g : grade <= 10 ? "9-10" : "11-12";

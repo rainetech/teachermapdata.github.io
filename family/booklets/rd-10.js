@@ -1,0 +1,125 @@
+// Reading practice booklet, Grade 10 expectations. English-only: see AUTHORING.md for the format.
+const T = (en, ar) => ({ en, ar });
+const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
+const en = (question, answer) => it(question, answer, question, answer);
+const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
+
+module.exports = {
+  subject: "rd",
+  grade: 10,
+  framework: "CCSS.ELA",
+  englishOnly: true,
+  reviewed: { en: false, ar: false },
+  sections: [
+    {
+      area: "voc",
+      standards: ["RL.9-10.4", "L.9-10.4a", "L.9-10.5a", "L.9-10.5b"],
+      passage: {
+        title: "The Spice Seller's Afternoon",
+        text: [
+          "Maryam and her cousin Hamdan followed their grandmother into the old spice souq, where the air was thick enough to chew. Saffron, cumin and dried limes jostled for attention on every side, and the narrow lane glowed amber beneath its canvas awnings. Maryam felt as though she had wandered into Aladdin's cave, where every open sack held a small fortune.",
+          "\"Stay close,\" said Grandmother, gripping Maryam's wrist with fingers as firm as a clamp. She had shopped here for forty years, and the stallholders greeted her like a returning queen. Even the cats dozing on the doorsteps seemed to lift their heads in respect.",
+          "Above the third stall hung a painted sign: THE HONEST SCALE. Beneath it, a young seller named Faisal bowed with a flourish. \"For the most distinguished customer in the whole souq,\" he announced, \"my finest saffron, at a price so low that I am practically giving it away.\"",
+          "Grandmother raised one eyebrow. \"How generous,\" she said, in a voice as dry as the dust on the pavement. \"Then you will not mind if I examine it.\"",
+          "Faisal's smile flickered. Hamdan leaned towards Maryam. \"Is that a compliment?\" he whispered.",
+          "\"Listen to her tone,\" Maryam whispered back. \"She does not believe a word of it.\"",
+          "Grandmother rolled a few threads between her fingers, sniffed them and held them up to the light. Real saffron, she explained, stains the skin a deep gold and smells faintly of honey. These threads were pale, and they smelled of nothing at all. \"This is like a loaf of bread that is mostly air,\" she said. \"It looks large, but there is nothing in it to feed anyone.\"",
+          "Faisal's cheeks turned the colour of the cinnamon sticks stacked at the back of his stall. \"Perhaps this sack was mixed up with another,\" he muttered.",
+          "\"How fortunate,\" said Grandmother, \"that your finest saffron should be mixed up with your cheapest.\" She did not raise her voice. She did not need to. Maryam noticed that the sign above them, which had looked so grand a minute earlier, now seemed to be telling a joke at its owner's expense.",
+          "From the next stall, an elderly merchant named Abu Yusuf had been watching in silence. He set a small tin on his counter and lifted the lid. Inside lay threads of a deep, glowing red, and the scent of honey rose from them at once. Grandmother bought a generous pinch, paid without bargaining, and turned back to Faisal.",
+          "\"Your good name is like a saffron thread, young man,\" she said gently. \"It is fine, it is precious, and it breaks very easily. Take care of it.\"",
+          "Faisal lowered his eyes and said nothing. He had expected an argument, a raised voice, perhaps a crowd gathering to watch his embarrassment. Instead there was only the soft clink of Abu Yusuf's tin closing, and the long, quiet lesson that followed it. As the three of them walked away through the golden lane, Hamdan grinned. \"I was sure she would shout.\"",
+          "\"Grandmother never needs to shout,\" said Maryam. \"Her quiet is louder.\""
+        ].join("\n\n")
+      },
+      example: exEn(
+        "Read: \"The coach's praise was a warm blanket on a cold day.\" What does the comparison suggest about the praise?",
+        ["An analogy compares two things so that the qualities of one are carried over to the other.", "A warm blanket on a cold day is comforting and welcome.", "So the praise made the player feel comforted and glad."],
+        "The praise was comforting and welcome."
+      ),
+      items: [
+        en("The air is described as \"thick enough to chew\". What does this figure of speech suggest about the souq?", "That the smells were very strong and heavy in the air."),
+        en("Maryam feels she has \"wandered into Aladdin's cave\". What does this allusion suggest about how she sees the souq?", "That it is a magical place full of treasure and wonder."),
+        en("The spices \"jostled for attention\". What does the word \"jostled\" suggest about the spices?", "That they were crowded together and seemed to compete to be noticed."),
+        en("The stallholders greet Grandmother \"like a returning queen\". What does this simile show about how she is regarded?", "She is greatly respected and welcomed with honour."),
+        en("Why is the sign THE HONEST SCALE ironic in this scene?", "Its name promises honesty, but the seller is trying to sell cheap, inferior saffron as his finest."),
+        en("Faisal \"bowed with a flourish\". Using the context, what does \"flourish\" mean?", "A showy, dramatic gesture (clue: the bow and his grand words)."),
+        en("Grandmother says, \"How generous.\" What is her tone, and which detail from the passage shows it?", "Sarcastic and doubtful; Maryam says, \"She does not believe a word of it.\""),
+        en("Grandmother says the saffron is \"like a loaf of bread that is mostly air\". What does this analogy explain about the saffron?", "It looks like plenty but has little real flavour or value."),
+        en("Faisal's cheeks turn \"the colour of the cinnamon sticks\". What does this comparison suggest he feels?", "Embarrassment (his face reddens because he has been found out)."),
+        en("Explain what Grandmother means by \"Your good name is like a saffron thread\".", "A good reputation is fine and precious, and it can break easily, so it must be looked after."),
+        en("Hamdan expected Grandmother to shout, but she did not. Explain Maryam's reply, \"Her quiet is louder.\"", "Her calm, controlled words have more effect than shouting would, so Faisal feels the lesson strongly.")
+      ]
+    },
+    {
+      area: "inf",
+      standards: ["RI.9-10.1", "RI.9-10.2", "RI.9-10.5", "RI.9-10.6", "RI.9-10.8"],
+      passage: {
+        title: "A City That Remembers",
+        text: [
+          "Every fast-growing city faces the same temptation. Land is valuable, towers are profitable, and an old quarter of crumbling walls can look like an obstacle in the way of progress. Some planners therefore argue that the past should be photographed, placed in a museum and then cleared away. I believe this is a serious mistake. A city that grows must find room for its history inside its future, because heritage is not decoration. It is a working part of what makes a place worth living in.",
+          "The first reason is practical. Traditional builders in the Gulf solved the problem of heat long before electricity arrived. Their solutions were clever and cost very little to run. Their wind towers, called barjeel, caught breezes high above the roofs and funnelled them down into the rooms below. Thick walls of coral stone and gypsum kept the sun out, and narrow lanes threw shade across the paths. Modern architects, who must now reduce the energy used by air conditioning, are studying these old ideas closely, and some new buildings borrow them directly. If the old quarters were demolished, the lessons would be lost with them.",
+          "The second reason concerns people. A neighbourhood is not only a set of buildings but a set of memories: the corner where a grandfather mended nets, the shop where a mother bought her first sewing machine, the lane where children raced each other home. Residents who watch such places vanish often feel like strangers in their own city. By contrast, restored districts that now hold cafes, galleries and small workshops give families somewhere to bring visitors and say, \"This is where we come from.\" Would a city of identical glass towers inspire that feeling? I doubt it.",
+          "The third reason is economic. Visitors travel across the world to walk through a lived-in past, and they spend money in the shops, guesthouses and restaurants that grow up around it. A restored quarter can therefore earn its keep year after year, while a tower, once built, adds only one more skyline to a world already full of them.",
+          "Critics make a fair point when they say that restoration is expensive and that cities cannot stand still while their populations rise. Land set aside for old houses could, they argue, hold new homes and schools instead. Yet this presents a false choice. Careful planning can place new buildings beside old ones, reuse historic houses as museums, offices or classrooms, and protect only the places of greatest value. Preservation does not mean freezing a city. It means choosing what to carry forward.",
+          "Consider what is at stake. A city takes generations to build but only a season to demolish, and once a street has been levelled, no amount of money can bring back its stones, its shade or its stories. That is why the decision deserves patience rather than haste.",
+          "Think of a city as a book that is still being written. A sensible author adds new chapters, but she does not tear out the first pages, because without them the later chapters make no sense. The planners of today have the chance to write boldly and still keep the story whole. If they take it, the next generation will inherit both a modern city and the memory of how it began."
+        ].join("\n\n")
+      },
+      example: exEn(
+        "Read: \"Some say homework should be banned. But homework builds the habit of working alone, so I believe a little each night is worth keeping.\" Which part is the counterargument, and which part is the author's reply?",
+        ["A counterargument is an opposing view that the author mentions in order to answer it.", "\"Some say homework should be banned\" is the view the author disagrees with.", "\"But homework builds the habit of working alone\" is the author's reply."],
+        "Counterargument: some say homework should be banned. Reply: homework builds the habit of working alone."
+      ),
+      items: [
+        en("What is the author's central claim?", "Growing cities should keep their heritage inside new development rather than clear it away."),
+        en("The author writes that heritage \"is not decoration. It is a working part\". What does this contrast mean?", "Heritage is useful and does real work for a city; it is not only there to look pretty."),
+        en("What does the author say traditional builders did to deal with heat? Give two examples.", "Any two: wind towers (barjeel) caught breezes; thick coral stone and gypsum walls kept out the sun; narrow lanes gave shade."),
+        en("Why are modern architects studying these old ideas?", "They need to reduce the energy used by air conditioning."),
+        en("According to the passage, how do residents often feel when familiar places vanish?", "Like strangers in their own city."),
+        en("What is the purpose of the question, \"Would a city of identical glass towers inspire that feeling?\"", "It is a rhetorical question: it makes the reader think and suggests the answer is no."),
+        en("Why can a restored quarter \"earn its keep\" according to the author?", "Visitors come to see it and spend money in nearby shops, guesthouses and restaurants year after year."),
+        en("What do critics say against restoring old districts?", "It is expensive, and cities cannot stand still while their populations rise (the land could hold homes and schools)."),
+        en("The author calls the critics' view \"a false choice\". Explain what that means here.", "It treats the options as only old buildings or new homes, when planning can have both."),
+        en("What does the book comparison in the last paragraph show about the author's view of history?", "Without the early parts, the later parts make no sense, so a city needs its history to be understood."),
+        en("Which of the three reasons relies mainly on factual detail and which mainly on feeling? Explain.", "The first (practical) uses facts about wind towers and thick walls; the second (people) appeals to feelings through memories.")
+      ]
+    },
+    {
+      area: "lit",
+      standards: ["RL.9-10.1", "RL.9-10.2", "RL.9-10.3", "RL.9-10.4", "RL.9-10.5"],
+      passage: {
+        title: "The Channel",
+        text: [
+          "Tonight the water runs bright and steady toward the last palm, and I am the one who cleared the way for it. A year ago I would not have believed that.",
+          "Last summer, I did not want to be here. My cousin Layla and I had been sent to my grandfather's farm in the oasis while our parents worked in the city, and I had packed a tablet full of games and a head full of complaints. \"There is nothing to do,\" I told Layla. She only shrugged and went to find Grandmother, who was baking bread in the cool kitchen.",
+          "My grandfather was cleaning the falaj, the old stone channel that carries water down from the hills to the palms. He did it every morning with a flat shovel, lifting out leaves and silt, and every morning his movements were the same. \"The water arrives on its own,\" I said. \"Why do you keep doing this?\"",
+          "He did not look up. \"The water arrives because someone clears the way,\" he said. Then he went back to his shovel, and the matter seemed closed.",
+          "I thought it was one of those sayings that old people enjoy making. For three days I watched him from the shade, scrolling and sighing. On the fourth day a rare summer rain fell in the hills, and by afternoon the channel was choked with mud and branches. The water backed up and began to spill sideways, wasting itself on the sand, while the palms at the far end stood dry.",
+          "Grandfather's knees were too stiff for the job. \"Fetch the shovel,\" he said quietly. I did not want to. But Layla was already holding out two pairs of gloves, and Grandmother was watching from the doorway. So I stepped into the muddy channel, and for two hours the three of us pulled out branches and silt while Grandfather showed us where to dig. My arms ached. My shirt was ruined. And then, with a gurgle like a laugh, the water slipped free and ran on down the stone, past the first palm, the second, the third, and the dry earth darkened as it drank.",
+          "Grandfather wiped his hands on a cloth and sat down heavily on the edge of the channel, breathing hard and smiling at the sky. \"My father cleared this channel,\" he said, \"and his father before him. None of them owned the water. They only kept the way open.\" He looked at me, and for the first time I understood that he was not talking about water at all.",
+          "That is why, this evening, I am standing in the channel again, shovel in hand, while Grandfather rests in the shade with his tea. The water slides past my ankles toward the last palm, which was planted the year my father was born. I do not think I am cleaning a channel any more. I think I am passing something from one pair of hands to the next, and I have only just noticed that mine are now part of the line."
+        ].join("\n\n")
+      },
+      example: exEn(
+        "Read: \"The old clock in the hall had stopped years ago, yet nobody in the house would let it be thrown away.\" What might the clock symbolise?",
+        ["A symbol is an object that stands for a larger idea.", "The clock no longer works, but the family keeps it, so it must matter for another reason.", "It could stand for memories of the past that the family does not want to lose."],
+        "It may symbolise the family's memories and their wish to hold on to the past."
+      ),
+      items: [
+        en("Who tells the story, and from what point of view?", "One of the grandchildren, in the first person (\"I\"), so we know only what the narrator sees and feels."),
+        en("How does the story begin, and how is it organised after that?", "It opens in the present, goes back to last summer (a flashback), then returns to the present evening."),
+        en("How does the narrator feel at the start of last summer? Give one detail.", "Bored and unwilling; for example, a tablet full of games and \"a head full of complaints\"."),
+        en("What does Grandfather mean, literally, by \"The water arrives because someone clears the way\"?", "The water only reaches the palms if the channel is kept clear of leaves and silt."),
+        en("How does the rain move the plot forward?", "It blocks the channel and the water is wasted, which is the problem that forces the narrator to act."),
+        en("\"With a gurgle like a laugh, the water slipped free.\" What effect does this description have?", "It makes the water seem alive and joyful, showing the happy relief after the hard work."),
+        en("What is Grandfather really talking about when he says the family \"only kept the way open\"?", "Looking after something valuable and passing it to the next generation (not owning it)."),
+        en("What does the falaj, the stone channel, symbolise in the story?", "The care and traditions passed down from one generation to the next."),
+        en("How does the narrator change between the start of last summer and the end?", "From bored and reluctant to willing and proud to take responsibility for the work."),
+        en("Explain the final image: \"mine are now part of the line\".", "The narrator has joined the chain of family members who have looked after the channel, handing it on."),
+        en("State a theme of the story and support it with a detail.", "Taking part in caring for what earlier generations began gives life meaning (or: some duties are inherited). Detail: the narrator ends up clearing the channel willingly.")
+      ]
+    }
+  ]
+};
