@@ -117,6 +117,47 @@
       (english && lang === "ar" ? "<p>" + esc(say("sheetEnglishNote")) + "</p>" : "") + "<ol>" + items + '</ol><div class="answers"><h3>' + esc(say("sheetAnswers")) + "</h3><ol>" + answers + "</ol></div></section>";
   }
 
+  // Every goal area as a bar, with the overall score as a line across them. One
+  // colour, in tints: the area suggested for practice is the darkest, the rest
+  // lighter, and nothing is red or green. The numbers are text, so the bars can
+  // be skipped by a screen reader.
+  function areaChart(entry, slot) {
+    const areas = (entry.areas || []).filter((item) => areaOf(entry.subject, item.code));
+    if (areas.length < 2) return "";
+    const values = areas.map((item) => item.rit).concat([entry.rit]);
+    const low = Math.min(...values) - 10;
+    const high = Math.max(...values) + 4;
+    const at = (value) => Math.max(0, Math.min(100, ((value - low) / (high - low)) * 100)).toFixed(1);
+    const rows = areas.map((item) => {
+      const focus = slot.kind === "area" && slot.code === item.code;
+      const name = areaOf(entry.subject, item.code)[lang];
+      return '<li class="ar-row' + (focus ? " is-focus" : "") + '"><span class="ar-name">' + esc(name) + (focus ? ' <em>' + esc(say("areasFocusTag")) + "</em>" : "") +
+        '</span><span class="ar-bar" dir="ltr" aria-hidden="true"><i style="width:' + at(item.rit) + '%"></i><u style="left:' + at(entry.rit) + '%"></u></span><b class="ar-num">' + esc(item.rit) + "</b></li>";
+    }).join("");
+    return '<div class="areas"><h4>' + esc(say("areasHeading", { subject: subjectName(entry.subject) })) + '</h4><ul class="ar-list">' + rows + "</ul><p class=\"ar-note\">" + esc(say("areasNote", { rit: entry.rit })) + "</p></div>";
+  }
+
+  // Where the score sits on the US norms, said plainly: the grade whose typical
+  // score for this time of year it has reached, set beside the child's own grade.
+  function levelWords(level) {
+    if (level.from === level.to) return level.from === 0 ? say("levelKg") : say("levelGradeOne", { n: level.from });
+    return say("levelGradeMany", { a: level.from === 0 ? say("levelKg") : level.from, b: level.to });
+  }
+
+  function levelBlock(entry) {
+    const level = entry.level;
+    if (!level || decoded.grade === null || decoded.grade === undefined) return "";
+    const grade = decoded.grade;
+    const gradeText = grade === 0 ? say("levelKg") : say("levelGradeOne", { n: grade });
+    const params = { subject: subjectName(entry.subject), level: levelWords(level), grade: gradeText };
+    let key;
+    if (level.side === "above") key = "levelAboveTop";
+    else if (level.side === "below") key = "levelBelowBottom";
+    else if (level.from <= grade && grade <= level.to) key = "levelAt";
+    else key = level.to < grade ? "levelBelow" : "levelAbove";
+    return '<div class="level"><h4>' + esc(say("levelHeading")) + "</h4><p>" + esc(say(key, params)) + '</p><p class="ar-note">' + esc(say("levelNote")) + "</p></div>";
+  }
+
   function subjectSection(entry) {
     const name = subjectName(entry.subject);
     const slot = slotFor(entry);
@@ -124,7 +165,7 @@
     html += "<p>" + esc(pctBand(entry)) + "</p>";
     html += meter(entry) + "<p>" + esc(progressText(entry)) + "</p>";
     if (entry.growthPct !== null) html += "<p>" + esc(say("growthPct", { n: entry.growthPct })) + "</p>";
-    html += activityBlock(entry, slot) + "</section>";
+    html += levelBlock(entry) + areaChart(entry, slot) + activityBlock(entry, slot) + "</section>";
     return { html, sheet: sheetBlock(entry, slot) };
   }
 
@@ -132,6 +173,7 @@
     const parts = ['<div class="g-subject">' + esc(subjectName(entry.subject)) + "</div>", '<div class="g-num"><b>' + esc(entry.rit) + "</b><i>" + esc(say("rit")) + " " + esc(say("now")) + "</i></div>"];
     if (Number.isFinite(entry.target)) parts.push('<div class="g-num"><b>' + esc(entry.target) + "</b><i>" + esc(say("target")) + "</i></div>");
     if (entry.ach !== null) parts.push('<div class="g-num"><b>' + esc(entry.ach) + "</b><i>" + esc(say("percentile")) + "</i></div>");
+    if (entry.level && entry.level.side === "") parts.push('<div class="g-num"><b>' + esc(entry.level.from === entry.level.to ? (entry.level.from === 0 ? "K" : entry.level.from) : (entry.level.from === 0 ? "K" : entry.level.from) + "-" + entry.level.to) + "</b><i>" + esc(say("levelGlance")) + "</i></div>");
     return '<button type="button" class="g-card" data-go="subject-' + esc(entry.subject) + '">' + parts.join("") + "</button>";
   }
 
@@ -159,6 +201,8 @@
     html += mapSection();
 
     html += '<section class="card"><h2>' + esc(text.glanceHeading) + '</h2><div class="glance">' + decoded.subjects.map(glance).join("") + "</div></section>";
+
+    html += '<section class="card serious" id="serious"><h2>' + esc(text.seriousHeading) + "</h2><p>" + esc(text.seriousIntro) + "</p><ul>" + text.serious.map((line) => "<li>" + esc(line) + "</li>").join("") + "</ul></section>";
 
     const first = decoded.subjects[0];
     const firstName = subjectName(first.subject);

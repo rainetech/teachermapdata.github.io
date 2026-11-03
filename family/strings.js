@@ -49,6 +49,31 @@ const FamilyStrings = {
     progressTarget: "This is your child's first result in {subject} for this school year: {r}. NWEA's target for the next test is {t}, which is {d} points of growth. Growth will be shown after the next test.",
     progressNone: "Growth will be shown after the next test.",
     growthPct: "Growth percentile: {n}. This compares your child's growth with students who started at a similar score. It is not the same as the achievement percentile.",
+    areasHeading: "The parts of {subject}",
+    areasNote: "The line marks your child's overall score ({rit}). The darkest bar is the part suggested for practice. Each part has fewer questions than the whole test, so small differences are normal.",
+    areasFocusTag: "practise this",
+    levelHeading: "Where this score sits on US norms",
+    levelPhrase: "{grades}",
+    levelGradeOne: "Grade {n}",
+    levelGradeMany: "Grades {a} to {b}",
+    levelKg: "KG2",
+    levelAt: "In {subject}, this score is typical of a child in {level} at this time of year. That matches your child's own grade.",
+    levelAbove: "In {subject}, this score is typical of a child in {level} at this time of year. That is above your child's own grade ({grade}). A strong result: keep them curious and give them harder questions to enjoy.",
+    levelBelow: "In {subject}, this score is typical of a child in {level} at this time of year. That is below your child's own grade ({grade}). It is an honest picture of where the score sits today, and a reason to act early with the teacher, not a reason to worry. Steady practice and careful work can move it.",
+    levelAboveTop: "In {subject}, this score is above the typical score for {level} at this time of year, which is as high as the US norms go. A very strong result.",
+    levelBelowBottom: "In {subject}, this score is below the typical score for {level} at this time of year, the lowest the US norms show. Talk with the teacher about where to start.",
+    levelNote: "This uses US norms as an approximate guide, from one test. It is not an official reading or maths grade level, and it is not a label for your child. A rushed or distracted test can show a lower level than your child can really reach.",
+    levelGlance: "US grade level",
+    seriousHeading: "Helping your child show what they know",
+    seriousIntro: "MAP adjusts to every answer, so it only gives a true picture when your child takes it seriously. A rushed test can show a lower level than your child has really reached.",
+    serious: [
+      "Read every question all the way through, then read all the answer choices before choosing. Many wrong answers come from a missed word, not a missing skill.",
+      "Take your time. There is no prize for finishing first, and very fast answers are the most common reason a score is lower than what a child can do.",
+      "Use scrap paper for maths and for working things out, and check an answer before moving on.",
+      "Try every question. The test gets harder or easier to match your child, so hard questions are normal and are not a sign of trouble.",
+      "Sleep well and have breakfast on test days, and arrive ready to concentrate.",
+      "Talk about the test as a chance to show real learning, and ask for full effort every time."
+    ],
     focusHeading: "One thing to practise at home: {area}",
     focusWhy: "This is the part of {subject} where your child's score was lowest compared with their overall score. Each part of the test has fewer questions than the whole, so treat it as a guide and not a verdict.",
     balancedHeading: "A balanced profile",
@@ -68,6 +93,7 @@ const FamilyStrings = {
     plan: [
       "About 10 minutes at a time, 3 days a week.",
       "Keep it light and friendly. Stop while it is still enjoyable.",
+      "When you practise, ask your child to read each question aloud, underline the key words and say what it is asking before answering.",
       "After two weeks, check in with the teacher about how it is going."
     ],
     askHeading: "Questions to ask the teacher",
@@ -76,7 +102,8 @@ const FamilyStrings = {
       "Which skill matters most for the next few weeks?",
       "How is the classroom helping, and what can we do at home to match it?",
       "When is the next test, and what growth should we expect?",
-      "Is there anything in these results that does not match what you see in class?"
+      "Is there anything in these results that does not match what you see in class?",
+      "Did my child take the test seriously, and did they spend a sensible time on each question?"
     ],
     faqHeading: "Common questions",
     faq: [
@@ -133,6 +160,31 @@ const FamilyStrings = {
     progressTarget: "هذه أول نتيجة لطفلك في {subject} لهذا العام الدراسي: {r}. وهدف NWEA للاختبار القادم هو {t}، أي نمو بمقدار {d} نقطة. سيظهر النمو بعد الاختبار القادم.",
     progressNone: "سيظهر النمو بعد الاختبار القادم.",
     growthPct: "الرتبة المئينية للنمو: {n}. تقارن هذه نمو طفلك بنمو الطلاب الذين بدأوا من درجة مشابهة. وهي ليست الرتبة المئينية للتحصيل نفسها.",
+    areasHeading: "أجزاء {subject}",
+    areasNote: "يشير الخط إلى درجة طفلك الإجمالية ({rit}). والشريط الأغمق هو الجزء المقترح للتدرّب. ولكل جزء أسئلة أقل من الاختبار كله، لذلك فالفروق الصغيرة طبيعية.",
+    areasFocusTag: "تدرّب على هذا",
+    levelHeading: "أين تقع هذه الدرجة على المعايير الأمريكية",
+    levelPhrase: "{grades}",
+    levelGradeOne: "الصف {n}",
+    levelGradeMany: "الصفان {a} و{b}",
+    levelKg: "رياض الأطفال",
+    levelAt: "في {subject}، هذه الدرجة نموذجية لطفل في {level} في هذا الوقت من السنة. وهذا يوافق صف طفلك.",
+    levelAbove: "في {subject}، هذه الدرجة نموذجية لطفل في {level} في هذا الوقت من السنة. وهي أعلى من صف طفلك ({grade}). نتيجة قوية: حافظ على فضوله وأعطه أسئلة أصعب يستمتع بها.",
+    levelBelow: "في {subject}، هذه الدرجة نموذجية لطفل في {level} في هذا الوقت من السنة. وهي أقل من صف طفلك ({grade}). هذه صورة صادقة لموضع الدرجة اليوم، وسبب للتحرك مبكرًا مع المعلم لا للقلق. فالتدرّب المنتظم والعمل المتأنّي يمكنهما أن يرفعاها.",
+    levelAboveTop: "في {subject}، هذه الدرجة أعلى من الدرجة النموذجية لـ {level} في هذا الوقت من السنة، وهو أعلى ما تصل إليه المعايير الأمريكية. نتيجة قوية جدًا.",
+    levelBelowBottom: "في {subject}، هذه الدرجة أقل من الدرجة النموذجية لـ {level} في هذا الوقت من السنة، وهو أدنى ما تُظهره المعايير الأمريكية. تحدّث مع المعلم عن نقطة البداية.",
+    levelNote: "يعتمد هذا على المعايير الأمريكية كدليل تقريبي، ومن اختبار واحد. وهو ليس مستوى صف رسميًا في القراءة أو الرياضيات، وليس وصمة على طفلك. وقد يُظهر الاختبار المتعجَّل أو المشتَّت مستوى أقل مما يستطيع طفلك بلوغه فعلًا.",
+    levelGlance: "مستوى الصف الأمريكي",
+    seriousHeading: "كيف نساعد طفلنا على إظهار ما يعرفه",
+    seriousIntro: "يتكيّف اختبار MAP مع كل إجابة، لذلك لا يعطي صورة حقيقية إلا إذا أخذه طفلك بجدّية. وقد يُظهر الاختبار المتعجَّل مستوى أقل مما بلغه طفلك فعلًا.",
+    serious: [
+      "اقرأ كل سؤال حتى آخره، ثم اقرأ كل الخيارات قبل أن تختار. فكثير من الإجابات الخاطئة سببها كلمة فاتت القارئ لا مهارة ناقصة.",
+      "خذ وقتك. لا جائزة لمن ينتهي أولًا، والإجابات السريعة جدًا هي السبب الأكثر شيوعًا لدرجة أقل مما يستطيعه الطفل.",
+      "استعمل ورقة مسودة للرياضيات ولحل المسائل، وراجع الإجابة قبل الانتقال.",
+      "حاول في كل سؤال. فالاختبار يصعب أو يسهل بما يناسب طفلك، لذلك فالأسئلة الصعبة طبيعية وليست علامة على مشكلة.",
+      "نَم جيدًا وتناول الفطور في أيام الاختبار، واحضر مستعدًا للتركيز.",
+      "تحدّثوا عن الاختبار بوصفه فرصة لإظهار التعلّم الحقيقي، واطلبوا بذل أقصى جهد في كل مرة."
+    ],
     focusHeading: "أمر واحد للتدرّب عليه في البيت: {area}",
     focusWhy: "هذا هو الجزء من {subject} الذي كانت درجة طفلك فيه الأدنى مقارنةً بدرجته الإجمالية. ولكل جزء من الاختبار أسئلة أقل من الاختبار كله، فاعتبره إرشادًا وليس حكمًا.",
     balancedHeading: "مستوى متوازن",
@@ -152,6 +204,7 @@ const FamilyStrings = {
     plan: [
       "نحو 10 دقائق في كل مرة، 3 أيام في الأسبوع.",
       "اجعل الأمر خفيفًا وودودًا. وتوقف وهو ما زال ممتعًا.",
+      "عند التدرّب، اطلب من طفلك أن يقرأ كل سؤال بصوت عالٍ ويضع خطًّا تحت الكلمات المهمة ويقول ما المطلوب قبل أن يجيب.",
       "بعد أسبوعين، تواصل مع المعلم لتسأله عن سير الأمر."
     ],
     askHeading: "أسئلة يمكنك طرحها على المعلم",
@@ -160,7 +213,8 @@ const FamilyStrings = {
       "ما المهارة الأهم خلال الأسابيع القادمة؟",
       "كيف يساعده الصف، وماذا نفعل في البيت ليتوافق مع ذلك؟",
       "متى الاختبار القادم، وما النمو الذي ينبغي أن نتوقعه؟",
-      "هل في هذه النتائج ما لا يتوافق مع ما ترونه في الصف؟"
+      "هل في هذه النتائج ما لا يتوافق مع ما ترونه في الصف؟",
+      "هل أخذ طفلي الاختبار بجدّية، وهل أمضى وقتًا معقولًا في كل سؤال؟"
     ],
     faqHeading: "أسئلة شائعة",
     faq: [

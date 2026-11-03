@@ -42,6 +42,18 @@
   li { margin: .35rem 0; }
   details { border-top: 1px solid var(--line); padding: .5rem 0; }
   summary { font-weight: 700; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+  .level { margin: .9rem 0 0; border-top: 1px dashed var(--line); padding-top: .2rem; }
+  .areas { margin: .9rem 0 0; }
+  .ar-list { list-style: none; padding: 0; margin: .3rem 0; }
+  .ar-row { display: grid; grid-template-columns: 1fr 2.6rem; gap: .15rem .6rem; align-items: center; margin: .6rem 0; }
+  .ar-name { grid-column: 1 / -1; font-weight: 600; }
+  .ar-name em { white-space: nowrap; font-style: normal; font-weight: 700; font-size: .8rem; color: var(--brand); background: var(--soft); border-radius: 999px; padding: .05rem .5rem; margin-inline-start: .35rem; }
+  .ar-bar { position: relative; display: block; height: .95rem; border-radius: 6px; background: var(--line); overflow: hidden; }
+  .ar-bar i { display: block; height: 100%; border-radius: 6px; background: var(--brand); opacity: .4; }
+  .ar-row.is-focus .ar-bar i { opacity: 1; }
+  .ar-bar u { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--ink); text-decoration: none; }
+  .ar-num { text-align: end; }
+  .ar-note { color: var(--muted); font-size: .9rem; margin: .4rem 0 0; }
   .focus { border-top: 1px dashed var(--line); margin-top: .9rem; padding-top: .2rem; }
   .example { background: var(--bg); border-radius: 10px; padding: .5rem .9rem .7rem; margin: .8rem 0; }
   .example .q { font-weight: 700; margin: .3rem 0; }

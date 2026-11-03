@@ -94,7 +94,7 @@ const student = {
 };
 {
   const link = Core.encode(student);
-  check(/^v=1&t=T1-2627&g=4&d=[a-z0-9.~]+$/.test(link), "a link is a version, a term, a grade and one record a subject (" + link + ")");
+  check(/^v=2&t=T1-2627&g=4&d=[a-z0-9._~]+$/.test(link), "a link is a version, a term, a grade and one record a subject (" + link + ")");
   check(!/amal|alpha|90001|test school|school/i.test(link), "no name, ID or school gets into a link, even when the caller passes them");
   check(link.length < 90, "two subjects make a short link (" + link.length + " characters), so the code stays small");
   const back = Core.decode("#" + link);
@@ -109,12 +109,31 @@ const student = {
 }
 section("Reading a bad link");
 {
-  const attempts = [undefined, null, "", "#", "#v=1", "v=1&t=T1-2627&g=4", "#v=2&t=T1-2627&g=4&d=ma.205", "#v=1&t=T9-0000&g=4&d=ma.205", "#v=1&t=T1-2627&g=99&d=ma.205", "#v=1&t=T1-2627&g=4&d=zz.205~ma.", "#v=1&t=T1-2627&g=4&d=ma.abc", "#v=1&t=T1-2627&g=4&d=ma.9999", "#v=1&t=T1-2627&g=4&d=ma.205.0...150", "#v=1&t=T1-2627&g=4&d=" + "ma.205~".repeat(5000), "#v=1&t=<script>alert(1)</script>&g=4&d=ma.205", "%%%&&&===", "#__proto__=1&constructor=2&v=1&d=ma.205"];
+  const attempts = [undefined, null, "", "#", "#v=1", "v=1&t=T1-2627&g=4", "#v=9&t=T1-2627&g=4&d=ma.205", "#v=1&t=T9-0000&g=4&d=ma.205", "#v=1&t=T1-2627&g=99&d=ma.205", "#v=1&t=T1-2627&g=4&d=zz.205~ma.", "#v=1&t=T1-2627&g=4&d=ma.abc", "#v=1&t=T1-2627&g=4&d=ma.9999", "#v=1&t=T1-2627&g=4&d=ma.205.0...150", "#v=1&t=T1-2627&g=4&d=" + "ma.205~".repeat(5000), "#v=1&t=<script>alert(1)</script>&g=4&d=ma.205", "%%%&&&===", "#__proto__=1&constructor=2&v=1&d=ma.205"];
   let threw = 0;
   const outcomes = attempts.map((attempt) => { try { return Core.decode(attempt); } catch (error) { threw += 1; return null; } });
   check(threw === 0, "none of " + attempts.length + " odd, hostile or broken links throws");
   check(outcomes[1].ok === false && outcomes[2].reason === "empty" && outcomes[3].reason === "empty" && outcomes[4].reason === "nodata" && outcomes[5].reason === "nodata" && Core.decode("#t=T1-2627&g=4&d=ma.205").reason === "version", "nothing, an empty fragment, a link with no results and a link with no version are refused, not guessed at");
   check(outcomes[6].ok === false && outcomes[6].reason === "version", "another version of the format is named as such, so the page can say so");
+  // Area scores: carried in a fixed order so no codes are needed, and read back in full.
+  const withAreas = Core.encode({ term: "T1-2627", grade: 4, subjects: [{ subject: "ma", rit: 205, ach: 62, growthPct: 55, base: 198, target: 213, area: "num", areas: { alg: 208, geo: 204, dat: 201, num: 193 } }, { subject: "rd", rit: 198, ach: null, growthPct: null, base: null, target: null, area: "bal", areas: { cmp: 199, lit: 197 } }] });
+  const readAreas = Core.decode(withAreas);
+  check(withAreas.includes("ma.205.62.55.198.213.num.208_204_201_193") && withAreas.includes("~rd.198.....bal._199___197"), "area scores follow the focus area as one field, in a fixed order with blanks for areas not scored (" + withAreas + ")");
+  check(readAreas.ok && readAreas.subjects[0].areas.map((a) => a.code + a.rit).join() === "alg208,geo204,dat201,num193", "the areas read back with their scores, in the order of the area list");
+  check(readAreas.subjects[1].areas.map((a) => a.code + a.rit).join() === "cmp199,lit197", "an area with no score is left out, not shown as zero");
+  check(Core.decode("#v=1&t=T1-2627&g=4&d=ma.205.62.55.198.213.num").ok && Core.decode("#v=1&t=T1-2627&g=4&d=ma.205.62.55.198.213.num").subjects[0].areas.length === 0, "a link from the first format (no areas) still opens, with no area bars");
+  const badAreas = Core.decode("#v=2&t=T1-2627&g=4&d=ma.205.62.55.198.213.num.abc_9999__-5_<b>_300_999_8");
+  check(badAreas.ok && badAreas.subjects[0].areas.every((a) => a.rit >= 100 && a.rit <= 350) && badAreas.subjects[0].areas.length <= 4, "an area score that is not a number, is out of range or is extra is dropped, and no more areas are read than the subject has");
+  // Where the score sits on the US norms.
+  const lv = (level) => Core.decode(Core.encode({ term: "T1-2627", grade: 4, subjects: [{ subject: "rd", rit: 190, level }] })).subjects[0].level;
+  check(JSON.stringify(lv({ side: "", from: 3 })) === '{"side":"","from":3,"to":3}' && JSON.stringify(lv({ side: "", from: 3, to: 4 })) === '{"side":"","from":3,"to":4}', "a grade, or two grades, on the US norms goes into the link and comes back");
+  check(JSON.stringify(lv({ side: "above", from: 12 })) === '{"side":"above","from":12,"to":12}' && JSON.stringify(lv({ side: "below", from: 0 })) === '{"side":"below","from":0,"to":0}', "above the top and below the bottom of the table go in as they are, kindergarten as 0");
+  check(lv(null) === null && lv({ side: "", from: 13 }) === null && ["x", "5-3", "a3-4", "99", "-2", "3-", "4.5", "<b>"].every((bad) => Core.readLevel(bad) === null), "a missing level, or one that is out of range or malformed, is left out");
+  const full = Core.encode({ term: "T1-2627", grade: 7, subjects: ["ma", "rd", "lu", "sc"].map((subject) => ({ subject, rit: 220, ach: 55, growthPct: 50, base: 214, target: 226, area: "bal", areas: Object.fromEntries(Core.AREAS[subject].map((a, n) => [a.code, 210 + n])), level: { side: "", from: 6, to: 7 } })) });
+  const fullQR = QR.encode("https://family.ensdashboards.xyz/nwea#" + full, { ecc: "M" });
+  check(fullQR && fullQR.version <= 14, "the most a link can carry (four subjects, every area) still fits a code a phone reads at 31 mm (version " + (fullQR && fullQR.version) + ", " + (fullQR && fullQR.size) + " modules a side)");
+  check(full.length < 330, "a link for four subjects with every area stays short (" + full.length + " characters)");
+
   check(outcomes[7].ok && outcomes[7].term === "" && outcomes[7].termOrder === null && outcomes[7].warnings.includes("term"), "a bad term does not stop the results, it only turns the term note off");
   check(outcomes[8].ok && outcomes[8].band === null, "a grade outside the bands still shows the results, with no activity set");
   check(outcomes[9].ok === false && outcomes[9].warnings.includes("subject") && outcomes[9].warnings.some((w) => w.startsWith("rit")), "an unknown subject and a record with no RIT are dropped, and said to be");
@@ -296,6 +315,55 @@ section("The family page");
   check(/A balanced profile/.test(text) && /not naming a weakness/.test(text), "a balanced profile says so and names no weakness");
   check(/One thing to practise at home: Numbers and calculating/.test(text) && /Shop and total/.test(text) && /A worked example/.test(text) && /36 x 4/.test(text), "a named area shows its activities and a worked example (Mathematics, Numbers and calculating)");
   check(/One thing to practise at home: Grammar and word usage/.test(text) && /Try these/.test(text), "a Grades 3 to 5 area with an activity set shows its activities");
+  // The parts of each subject, as bars.
+  const areaLink = "#" + Core.encode({ term: "T1-2627", grade: 4, subjects: [{ subject: "ma", rit: 205, ach: 62, growthPct: 55, base: 198, target: 213, area: "num", areas: { alg: 208, geo: 204, dat: 201, num: 193 } }, { subject: "rd", rit: 198, ach: 48, growthPct: 40, base: 196, target: 208, area: "bal", areas: { cmp: 199, voc: 196, inf: 200, lit: 197 } }] });
+  const bars = await open(areaLink);
+  const barInfo = await bars.page.evaluate(() => ({
+    maRows: [...document.querySelectorAll("#subject-ma .ar-row")].map((row) => row.querySelector(".ar-name").textContent.trim() + "|" + row.querySelector(".ar-num").textContent + "|" + row.classList.contains("is-focus")),
+    rdFocus: document.querySelectorAll("#subject-rd .ar-row.is-focus").length,
+    rdRows: document.querySelectorAll("#subject-rd .ar-row").length,
+    widths: [...document.querySelectorAll("#subject-ma .ar-bar i")].map((el) => parseFloat(el.style.width)),
+    lines: [...document.querySelectorAll("#subject-ma .ar-bar u")].map((el) => parseFloat(el.style.left)),
+    opacities: [...document.querySelectorAll("#subject-ma .ar-row")].map((row) => getComputedStyle(row.querySelector("i")).opacity)
+  }));
+  check(barInfo.maRows.length === 4 && barInfo.maRows[3] === "Numbers and calculating practise this|193|true" && barInfo.maRows.filter((row) => row.endsWith("|true")).length === 1, "every scored area is listed with its score, and only the focus area is marked: " + barInfo.maRows.join("; "));
+  check(barInfo.rdRows === 4 && barInfo.rdFocus === 0, "a balanced subject lists its areas and marks none");
+  check(barInfo.widths[0] > barInfo.widths[3] && barInfo.lines.every((x) => Math.abs(x - barInfo.lines[0]) < 0.01), "a higher area score is a longer bar, and the overall score is one line at the same place on every bar");
+  check(barInfo.opacities[3] === "1" && Number(barInfo.opacities[0]) < 1, "the focus bar is the darkest and the others are lighter tints of the same colour");
+  const barText = await textOf(bars.page);
+  check(/The parts of Mathematics/.test(barText) && /The line marks your child's overall score \(205\)/.test(barText) && /small differences are normal/.test(barText), "the area chart says what the line and the dark bar mean, and that small differences are normal");
+  check(!/\b(weakness|weak|worst|red|fail)\b/i.test(await bars.page.evaluate(() => document.querySelector("#subject-ma .areas").innerText)), "the area chart names no weakness and uses no judging word");
+  await bars.context.close();
+  const barsAr = await open(areaLink, { locale: "ar-AE" });
+  const arText = await barsAr.page.evaluate(() => document.querySelector("#subject-ma .areas").innerText);
+  check(/أجزاء الرياضيات/.test(arText) && /تدرّب على هذا/.test(arText) && /193/.test(arText) && (await barsAr.page.evaluate(() => document.documentElement.dir)) === "rtl", "the area chart is in Arabic, right to left, with the same numbers");
+  await barsAr.context.close();
+  const oldLink = await open("#v=1&t=T1-2627&g=4&d=ma.205.62.55.198.213.num");
+  check((await oldLink.page.evaluate(() => document.querySelectorAll(".areas").length)) === 0 && /One thing to practise at home: Numbers and calculating/.test(await textOf(oldLink.page)), "a link from the first format shows no bars and still names the focus area");
+  await oldLink.context.close();
+  // The US grade level, said plainly beside the child's own grade, and the page about taking the test seriously.
+  const levelFor = (grade, level) => "#" + Core.encode({ term: "T1-2627", grade, subjects: [{ subject: "rd", rit: 190, ach: 40, growthPct: null, base: null, target: 200, area: "bal", level }] });
+  const lvBelow = await open(levelFor(4, { side: "", from: 3 }));
+  const belowText = await textOf(lvBelow.page);
+  check(/Where this score sits on US norms/.test(belowText) && /typical of a child in Grade 3 at this time of year/.test(belowText) && /below your child's own grade \(Grade 4\)/.test(belowText) && /not a reason to worry/.test(belowText) && /not a label for your child/.test(belowText), "a score typical of Grade 3 in Grade 4 is said plainly: below the child's own grade, honest, not a label");
+  check(/US grade level/.test(belowText) && await lvBelow.page.evaluate(() => [...document.querySelectorAll(".g-card .g-num")].some((n) => n.querySelector("b").textContent === "3" && /US grade level/.test(n.querySelector("i").textContent))), "the glance card shows the grade level too");
+  await lvBelow.context.close();
+  for (const [grade, level, pattern, label] of [[4, { side: "", from: 4 }, /matches your child's own grade/, "at grade"], [4, { side: "", from: 6 }, /above your child's own grade \(Grade 4\)/, "above grade"], [4, { side: "", from: 3, to: 4 }, /Grades 3 to 4 at this time of year\. That matches/, "a range holding the child's grade"], [9, { side: "above", from: 12 }, /above the typical score for Grade 12/, "above the table"], [2, { side: "below", from: 0 }, /below the typical score for KG2/, "below the table"], [0, { side: "", from: 0 }, /typical of a child in KG2 at this time of year\. That matches/, "kindergarten"]]) {
+    const o = await open(levelFor(grade, level));
+    check(pattern.test(await textOf(o.page)), "grade level wording: " + label);
+    await o.context.close();
+  }
+  const lvAr = await open(levelFor(4, { side: "", from: 3 }), { locale: "ar-AE" });
+  const lvArText = await textOf(lvAr.page);
+  check(/أين تقع هذه الدرجة على المعايير الأمريكية/.test(lvArText) && /الصف 3/.test(lvArText) && /أقل من صف طفلك \(الصف 4\)/.test(lvArText), "the grade level is in Arabic too");
+  await lvAr.context.close();
+  const noLevel = await open("#v=2&t=T1-2627&g=4&d=rd.190.48...200.bal");
+  check(!/Where this score sits on US norms/.test(await textOf(noLevel.page)), "a link without a level shows no level section");
+  await noLevel.context.close();
+  const serious = await open(levelFor(4, { side: "", from: 4 }));
+  const seriousText = await textOf(serious.page);
+  check(/Helping your child show what they know/.test(seriousText) && /Read every question all the way through/.test(seriousText) && /rushed test can show a lower level/.test(seriousText) && /full effort/.test(seriousText) && /Did my child take the test seriously/.test(seriousText) && /read each question aloud, underline the key words/.test(seriousText), "the page asks families to treat the test seriously and read every question through, in the card, the plan and the teacher questions");
+  await serious.context.close();
   // Every slot now has a set, so the gentle fallback is tested on a copy of the page with one set renamed away
   // (and the CSP removed from the copy only, because the edit changes the script's hash).
   const emptied = path.join(os.tmpdir(), "family-emptied.html");
@@ -378,7 +446,7 @@ section("Older and odd links");
   const noTerm = await textOf((await open("#" + link.replace("t=T1-2627&", ""))).page);
   check(!/earlier results/.test(noTerm) && /Mathematics/.test(noTerm), "a link with no term shows the results without a term or a note");
   await old.context.close();
-  for (const [fragment, pattern, label] of [["", /Scan the QR code on your child's goal sheet/, "no link at all"], ["#v=1&t=T1-2627&g=4&d=", /could not be read/, "a link with no results"], ["#v=2&t=T1-2627&g=4&d=ma.205", /different version/, "another version"], ["#v=1&t=T1-2627&g=4&d=ma.abc", /could not be read/, "a broken record"]]) {
+  for (const [fragment, pattern, label] of [["", /Scan the QR code on your child's goal sheet/, "no link at all"], ["#v=1&t=T1-2627&g=4&d=", /could not be read/, "a link with no results"], ["#v=9&t=T1-2627&g=4&d=ma.205", /different version/, "another version"], ["#v=1&t=T1-2627&g=4&d=ma.abc", /could not be read/, "a broken record"]]) {
     const odd = await open(fragment);
     const oddText = await textOf(odd.page);
     check(pattern.test(oddText) && /What is MAP\?/.test(oddText) && odd.errors.length === 0, label + " gets a kind message and what MAP is, and no error");
@@ -472,12 +540,14 @@ const sheetsOf = (page) => page.evaluate(() => {
     const keys = [...new Set(state.filteredRows.map((row) => studentKey(row)))];
     return keys.map((key) => { const rows = latestSubjectRecords(state.filteredRows.filter((row) => studentKey(row) === key)).map((entry) => entry.current); return { link: familyLinkFor(rows), name: rows[0].studentName }; });
   });
-  check(links.every((entry) => entry.link.startsWith("https://dash.test/family.html#v=1&t=T1-2627&g=5&d=")), "the link goes to the family page next to the dashboard, with the version, term and grade (" + links[0].link + ")");
+  check(links.every((entry) => entry.link.startsWith("https://dash.test/family.html#v=2&t=T1-2627&g=5&d=")), "the link goes to the family page next to the dashboard, with the version, term and grade (" + links[0].link + ")");
   check(links.every((entry) => !/amal|alpha|basma|bravo|cyrus|charlie|9000\d|quiet hill|school/i.test(entry.link.split("#")[1])) && links.every((entry) => !entry.link.includes("?")), "and no name, ID or school in the part after the # (and no query for a server to see)");
   const decoded = await page.evaluate((link) => FamilyCore.decode(link.split("#")[1]), links[0].link);
   check(decoded.ok && decoded.subjects.length === 2 && decoded.subjects.every((s) => Number.isFinite(s.rit) && Number.isFinite(s.target) && s.base === null), "each link reads back as two subjects, each with the result and NWEA's projected target for the next test");
   const maRecord = decoded.subjects.find((s) => s.subject === "ma");
   check(maRecord.rit === 187 && maRecord.target === 196 && maRecord.area === "geo", "the first student's Mathematics is 187 with a target of 196 and Geometry as the area, nine below (" + JSON.stringify(maRecord) + ")");
+  check(maRecord.areas.map((x) => x.code + x.rit).join() === "geo178,num189", "and the goal sheet's link carries every area score, one per theme (" + JSON.stringify(maRecord.areas) + ")");
+  check(decoded.subjects.every((x) => x.level && Number.isInteger(x.level.from)), "and where each score sits on the US norms, the same placement the goal sheet states (" + JSON.stringify(decoded.subjects.map((x) => x.level)) + ")");
   const balanced = await page.evaluate((link) => FamilyCore.decode(link.split("#")[1]), links[1].link);
   check(balanced.subjects.every((s) => s.area === "bal"), "a student whose areas are all within 8 of the overall RIT is balanced");
   check(await page.evaluate((link) => /fragment|#/.test(link), links[0].link), "the data is after the #, so it never reaches a server");

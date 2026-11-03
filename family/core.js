@@ -12,7 +12,9 @@
 //      growth percentile . RIT at the start of the window . target RIT . goal area
 // No name, no ID, no school: nothing that says who the child is.
 const FamilyCore = (function () {
-  const FORMAT_VERSION = 1;
+  const FORMAT_VERSION = 2;
+  // Links made by the first format (no area scores) still open.
+  const READABLE_VERSIONS = ["1", "2"];
 
   // How far below the overall RIT a goal area must sit before it is named. An
   // area RIT comes from far fewer questions than the overall score, so inside
@@ -167,12 +169,43 @@ const FamilyCore = (function () {
 
   const clean = (value) => (Number.isFinite(value) ? String(Math.round(value)) : "");
 
+  // The goal-area scores of one subject, in the fixed order of AREAS[subject]
+  // (so no codes are needed), joined by _ with a blank for an area not scored:
+  // "205_198__190". entry.areas is { code: rit }.
+  function areaScores(entry) {
+    const list = AREAS[entry.subject];
+    if (!list || !entry.areas) return "";
+    const values = list.map((area) => clean(entry.areas[area.code]));
+    while (values.length && values[values.length - 1] === "") values.pop();
+    return values.join("_");
+  }
+
+  // Where a score sits on the US norms, as the grade (or grades) whose typical
+  // score it has reached: { side: "above" | "below" | "", from, to } with grades
+  // as numbers (0 is kindergarten). "above"/"below" mean past either end of the
+  // table. Carried as  4   3-4   a12   b0  in the eighth field of a record.
+  function levelCode(level) {
+    if (!level || !Number.isInteger(level.from) || level.from < 0 || level.from > 12) return "";
+    const side = level.side === "above" ? "a" : level.side === "below" ? "b" : "";
+    const to = Number.isInteger(level.to) && level.to > level.from && level.to <= 12 ? "-" + level.to : "";
+    return side + level.from + (side ? "" : to);
+  }
+
+  function readLevel(text) {
+    const match = /^([ab])?(\d{1,2})(?:-(\d{1,2}))?$/.exec(text || "");
+    if (!match) return null;
+    const from = Number(match[2]);
+    const to = match[3] === undefined ? from : Number(match[3]);
+    if (from > 12 || to > 12 || to < from || (match[1] && match[3] !== undefined)) return null;
+    return { side: match[1] === "a" ? "above" : match[1] === "b" ? "below" : "", from, to };
+  }
+
   // student: { term, grade, subjects: [{ subject, rit, ach, growthPct, base, target, area }] }
   function encode(student) {
     const records = (student.subjects || [])
       .filter((entry) => entry && SUBJECTS[entry.subject] && Number.isFinite(entry.rit))
       .map((entry) => {
-        const fields = [entry.subject, clean(entry.rit), clean(entry.ach), clean(entry.growthPct), clean(entry.base), clean(entry.target), /^[a-z]{2,3}$/.test(entry.area || "") ? entry.area : ""];
+        const fields = [entry.subject, clean(entry.rit), clean(entry.ach), clean(entry.growthPct), clean(entry.base), clean(entry.target), /^[a-z]{2,3}$/.test(entry.area || "") ? entry.area : "", areaScores(entry), levelCode(entry.level)];
         while (fields.length > 2 && fields[fields.length - 1] === "") fields.pop();
         return fields.join(".");
       });
@@ -199,7 +232,7 @@ const FamilyCore = (function () {
       const at = part.indexOf("=");
       if (at > 0) pairs[part.slice(0, at)] = part.slice(at + 1);
     });
-    if (pairs.v !== String(FORMAT_VERSION)) { result.reason = "version"; return result; }
+    if (!READABLE_VERSIONS.includes(pairs.v)) { result.reason = "version"; return result; }
     result.term = /^T[123]-\d{4}$/.test(pairs.t || "") && termOrder(pairs.t) !== null ? pairs.t : "";
     result.termOrder = termOrder(result.term);
     if (!result.term) result.warnings.push("term");
@@ -217,7 +250,12 @@ const FamilyCore = (function () {
       const read = (index, low, high) => { const value = whole(f[index], low, high); return value === undefined ? null : value; };
       let area = f[6] || "";
       if (area && area !== "bal" && !(AREAS[subject] || []).some((entry) => entry.code === area)) area = "";
-      const entry = { subject, rit, ach: read(2, 1, 99), growthPct: read(3, 1, 99), base: read(4, 100, 350), target: read(5, 100, 350), area };
+      const areas = [];
+      String(f[7] || "").split("_").slice(0, (AREAS[subject] || []).length).forEach((text, index) => {
+        const value = whole(text, 100, 350);
+        if (value !== null && value !== undefined) areas.push({ code: AREAS[subject][index].code, rit: value });
+      });
+      const entry = { subject, rit, ach: read(2, 1, 99), growthPct: read(3, 1, 99), base: read(4, 100, 350), target: read(5, 100, 350), area, areas, level: readLevel(f[8]) };
       entry.progress = progress(entry);
       result.subjects.push(entry);
     });
@@ -241,7 +279,7 @@ const FamilyCore = (function () {
     return slots;
   }
 
-  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, allSlots };
+  return { FORMAT_VERSION, AREA_GAP_RIT, CLOSE_RIT, ABOVE_RIT, SUBJECTS, BAND_ORDER, BANDS, AREAS, gradeBand, subjectCode, areaCode, slotExists, pickFocusArea, termCode, termOrder, progress, encode, decode, readLevel, levelCode, allSlots };
 })();
 
 if (typeof module !== "undefined" && module.exports) module.exports = FamilyCore;
