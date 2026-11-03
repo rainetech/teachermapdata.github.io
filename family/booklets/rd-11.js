@@ -3,6 +3,7 @@ const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
 module.exports = {
@@ -33,16 +34,16 @@ module.exports = {
         "The writer is being ironic: the committee was so busy praising the plan that it missed an obvious flaw."
       ),
       items: [
-        en("In the first paragraph, the morning souq is \"brisk and businesslike\". Using the clues that follow the colon, what does brisk mean?", "Quick and energetic (shutters rattle up and people have no time to look at anything)."),
+        mc("In the first paragraph, the morning souq is \"brisk and businesslike\". Using the clues that follow the colon, what does brisk mean?", ["Slow and sleepy", "Quiet and tidy", "Quick and energetic", "Crowded and dirty"], 2, "Shutters rattle up and people have no time to look at anything, so brisk means quick and energetic."),
         en("The souq \"dozed under the heat\" at noon. What does the verb \"dozed\" suggest, and what technique is it?", "That the souq was quiet and half asleep; it is personification (a place given a human action)."),
-        en("What does \"coax\" mean in \"coax a better bargain from the stallholders\"?", "To gently persuade (not force) someone to agree."),
-        en("Hamad says, \"I do not bargain. I merely discuss.\" Why is this ironic?", "He then bargains for twenty minutes, so his words say the opposite of what he does."),
+        mc("What does \"coax\" mean in \"coax a better bargain from the stallholders\"?", ["To force someone to agree", "To gently persuade someone", "To loudly refuse an offer", "To secretly copy a price"], 1, "To coax is to gently persuade, not force."),
+        mc("Hamad says, \"I do not bargain. I merely discuss.\" Why is this ironic?", ["He bargains for twenty minutes while saying he does not", "He refuses to sell anything to tourists", "He speaks to customers in a language they do not know", "He charges more than the other stallholders"], 0, "He then bargains for twenty minutes, so his words say the opposite of what he does."),
         en("The narrator describes how he \"shrugged so elaborately\" that a stranger might think he was being cheated. What is the tone of this description, and what does \"elaborately\" add?", "Humorous and affectionate; \"elaborately\" shows his shrugs were exaggerated and full of show."),
         en("Explain \"a fair trade in pride\" in your own words.", "Both buyer and seller go home feeling they won, so neither loses dignity."),
         en("What is the narrator really showing when Hamad says, \"Do you suspect me of kindness? That is slander\"?", "He is modest and hides his kindness by pretending it is an insult (slander is a false, harmful claim)."),
-        en("The grandfather calls the stall \"cosy\" and the grandmother calls it \"cramped\". How do the connotations of the two words differ?", "\"Cosy\" has a warm, pleasant feeling and \"cramped\" a negative, uncomfortable one, though both describe a small space."),
+        mc("The grandfather calls the stall \"cosy\" and the grandmother calls it \"cramped\". How do the connotations of the two words differ?", ["Cosy means larger than cramped", "Cosy sounds uncomfortable and cramped sounds warm", "Both words give exactly the same feeling", "Cosy sounds warm and pleasant; cramped sounds uncomfortable"], 3, "Both describe a small space, but cosy feels warm and cramped feels uncomfortable."),
         en("What does the narrator mean by \"small in the way a held hand is small\"?", "The stall was small but close, warm and comforting, so the smallness is a good thing."),
-        en("At first the narrator thought the \"generous hour\" meant lower prices. What does it turn out to mean?", "The hour when Hamad quietly gives to others, such as the cardamom for the street sweeper."),
+        mc("At first the narrator thought the \"generous hour\" meant lower prices. What does it turn out to mean?", ["The hour when prices are lowest", "The hour when the souq is quietest", "The hour when Hamad quietly gives to others", "The hour when the most tourists arrive"], 2, "It is the hour when Hamad quietly gives, such as the cardamom for the street sweeper."),
         en("The narrator calls the new souq \"an improvement\", then writes \"And yet\". What is the tone of the final paragraph, and which words show it?", "Wistful and nostalgic: \"And yet\" turns the praise into longing for the old warmth.")
       ]
     },
@@ -69,12 +70,12 @@ module.exports = {
       items: [
         en("State the author's thesis in one sentence.", "Heritage words deserve to be saved, but recording them is not enough: a language survives only when people keep using it."),
         en("The essay begins with the claim that a language loses its last speaker \"every few weeks\". What effect does this opening have?", "It creates urgency and concern, drawing the reader into the problem."),
-        en("What opposing view does the author state in the second paragraph?", "That languages naturally change, children choose useful languages, and spending money to preserve old words is sentimental."),
+        mc("What opposing view does the author state in the second paragraph?", ["Languages should never change", "Languages change naturally, and spending money to save old words seems sentimental", "Children should not learn other languages", "Recordings are better than living speakers"], 1, "The paragraph says languages have always changed and that preserving old words looks sentimental to some."),
         en("How does the author respond to the idea that language change is natural?", "By arguing that a word holds knowledge (a season, a direction, a risk) that is lost when the word disappears."),
         en("What does the sailor's term for a wind illustrate?", "That a word can carry a whole body of experience, not just a label."),
-        en("Which phrase shows the author is willing to admit that the opposing side has some merit?", "\"This argument has force.\""),
-        en("Some advocates say the dialect is doomed because teenagers mix Arabic and English. Why does the author find this reasoning unconvincing?", "It generalises from one habit of teenagers to a whole community, and mixing languages can show fluency in both."),
-        en("What does the comparison to \"a pressed flower\" mean?", "A recording keeps a word's form but not its life (the scent), so it is not enough on its own."),
+        mc("Which phrase shows the author is willing to admit that the opposing side has some merit?", ["\"I will argue\"", "\"But the argument misunderstands\"", "\"This argument has force.\"", "\"It is not preserved by admiring it\""], 2, "\"This argument has force\" grants that the other side has a point."),
+        mc("Some advocates say the dialect is doomed because teenagers mix Arabic and English. Why does the author find this reasoning unconvincing?", ["It generalises from one habit to a whole community, and mixing can show fluency in both", "The author thinks teenagers should not use Arabic", "The author thinks English is a danger to every dialect", "The evidence is too old to be useful"], 0, "One habit among teenagers proves little, and mixing two languages can show fluency in both."),
+        mc("What does the comparison to \"a pressed flower\" mean?", ["Recordings are beautiful but fragile", "Recordings should be thrown away", "Recordings make a language grow", "A recording keeps a word's form but not its life"], 3, "A pressed flower keeps the shape but not the scent, so a recording is not enough on its own."),
         en("The author says, \"A single example like this proves little, and I do not claim otherwise.\" Why does admitting this make the argument stronger?", "It shows honesty about the limits of the evidence, so readers trust the writer more."),
         en("Does the author reject recordings and archives? Give the words that show it.", "No. The author says they are valuable: \"I would not abandon them.\""),
         en("How does the falaj comparison in the last paragraph support the thesis?", "A falaj flows only if each generation tends it, just as a language lives only if people use and care for it each day.")
@@ -111,15 +112,15 @@ module.exports = {
         "Because her claim (not minding) is contradicted by how much she remembers; the details show she did mind."
       ),
       items: [
-        en("From whose point of view is the story told, and what is the limit of that point of view?", "First person (the narrator, \"I\"); we only know what she sees, says and chooses to tell us, and cannot know Omar's thoughts directly."),
+        mc("From whose point of view is the story told, and what is the limit of that point of view?", ["Third person, so we can read Omar's thoughts", "First person, so we can read everyone's thoughts", "Third person, told by Layla", "First person, so we only know what the narrator sees and chooses to say"], 3, "The narrator says \"I\", so we cannot know Omar's thoughts directly."),
         en("The narrator says she is \"not the jealous sort\". What details in the first section suggest otherwise?", "She noticed Omar's tidier wires, smooth corners and Mr. Hamdan's two pats, though she says she never checked."),
         en("\"A pat is a cheerful gesture. It means nothing.\" What tone does this show?", "Defensive and a little hurt: she insists it means nothing because it clearly matters to her."),
-        en("How many seconds longer did Falcon take to finish the course than Omar's robot?", "18 seconds (69 seconds minus 51 seconds)."),
+        mc("How many seconds longer did Falcon take to finish the course than Omar's robot?", ["18 seconds", "8 seconds", "9 seconds", "120 seconds"], 0, "1 minute 9 seconds is 69 seconds, and 69 minus 51 is 18 seconds."),
         en("The narrator says she timed the applause \"purely out of habit\". How does this detail work against her claim of not caring?", "She was paying close attention to how much each robot was applauded (eleven seconds against nine), which shows she cared."),
-        en("How does the narrator reveal that she did look at the trophy, although she says she did not?", "She describes its silver colour, the dent in the left handle and the crooked gold star."),
+        mc("How does the narrator reveal that she did look at the trophy, although she says she did not?", ["She says she was proud of it", "She describes its silver colour, the dent in the left handle and the crooked gold star", "She asks Mr. Hamdan about it", "Omar shows it to her"], 1, "Her detailed description shows she looked closely."),
         en("What event in the third section is the turning point of the story?", "The front wheel of Omar's robot drops off and she runs to catch it."),
-        en("What does Omar's line \"Why you kept looking over\" reveal?", "That he noticed she was watching him, so her statement that she did not look is untrue."),
-        en("Why is Omar \"kind enough to smile at the tarmac\"?", "He looks away to let her keep her pride and does not argue with her denial."),
+        mc("What does Omar's line \"Why you kept looking over\" reveal?", ["He is angry with her about the stool", "He did not see the showcase", "He noticed she was watching him, so her claim that she did not look is untrue", "He wants to swap robots"], 2, "He noticed her watching, which contradicts what she says."),
+        mc("Why is Omar \"kind enough to smile at the tarmac\"?", ["He is embarrassed about his robot", "He is laughing at her", "He cannot find his wheel", "He looks away so she can keep her pride"], 3, "He looks away to let her keep her pride and does not argue with her denial."),
         en("The story is divided into three titled parts: Before, The Showcase and After. How does this structure help show the narrator's change?", "Before shows her denial and hidden jealousy, The Showcase builds the tension of her pretended indifference, and After shows her acting kindly by helping with the wheel."),
         en("State a theme of the story and give one detail that supports it.", "Actions show feelings more truly than words (or: pride can be softened by generosity). Detail: she says she does not care, yet she runs to save his wheel and plans to ask him for advice.")
       ]

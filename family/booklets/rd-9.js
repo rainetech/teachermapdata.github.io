@@ -3,6 +3,7 @@ const T = (en, ar) => ({ en, ar });
 const it = (questionEn, answerEn, questionAr, answerAr) => ({ q: T(questionEn, questionAr), a: T(answerEn, answerAr) });
 const en = (question, answer) => it(question, answer, question, answer);
 const ex = (questionEn, stepsEn, answerEn, questionAr, stepsAr, answerAr) => ({ en: { question: questionEn, steps: stepsEn, answer: answerEn }, ar: { question: questionAr, steps: stepsAr, answer: answerAr } });
+const mc = (qEn, optsEn, correct, whyEn) => ({ q: T(qEn, qEn), a: T(whyEn, whyEn), options: { en: optsEn, ar: optsEn }, correct });
 const exEn = (question, steps, answer) => ex(question, steps, answer, question, steps, answer);
 
 module.exports = {
@@ -39,16 +40,16 @@ module.exports = {
         "Thrifty means careful with money."
       ),
       items: [
-        en("Grandmother calls the tallest palm \"stubborn\" but then says she prefers the word \"determination\". What is the difference in connotation between the two words?", "\"Stubborn\" sounds like a fault, while \"determination\" sounds like an admirable strength."),
+        mc("Grandmother calls the tallest palm \"stubborn\" but says she prefers the word \"determination\". How do the two words differ in connotation?", ["Both sound like faults", "\"Stubborn\" sounds like a fault; \"determination\" sounds like a strength", "\"Determination\" sounds like a fault; \"stubborn\" sounds like a strength", "Both simply mean that the palm is old"], 1, "\"Stubborn\" sounds like a fault, while \"determination\" sounds admirable."),
         en("The palm is described as rising \"like a green fountain frozen in mid-splash\". What kind of figurative language is this, and what does it help the reader picture?", "A simile; a tall palm with fronds spreading outward and drooping like water from a fountain."),
-        en("The falaj is described as \"a quiet river that never hurried and never stopped\". What does this metaphor suggest about how the water moves?", "It flows steadily and continuously, without any rush or break (it needs no pump, only gravity)."),
+        mc("The falaj is described as \"a quiet river that never hurried and never stopped\". What does this metaphor suggest about how the water moves?", ["It splashes in every direction", "It moves in sudden, fast bursts", "It flows steadily and continuously, with no rush or break", "It stops and starts to rest"], 2, "\"Never hurried and never stopped\" means a steady, continuous flow."),
         en("Hamdan climbs \"with the caution of a man crossing a frozen lake\". What does this simile tell you about how he climbs?", "He climbs very carefully and nervously."),
         en("The bird \"scolded them in a thin, bitter voice\". What figure of speech is used, and what feeling does it add?", "Personification (the bird is given a human action); it adds a sharp, unfriendly mood."),
-        en("Grandmother is \"frugal with money, with water and with words\". Using the rest of the sentence as a clue, what does \"frugal\" mean?", "Careful and sparing, using only what is needed (she uses few words but gives plenty of advice)."),
+        mc("Grandmother is \"frugal with money, with water and with words\". Using the rest of the sentence as a clue, what does \"frugal\" mean?", ["Careful and sparing, using only what is needed", "Generous and wasteful", "Loud and cheerful", "Slow and forgetful"], 0, "She uses few words but gives plenty of advice, so frugal means careful and sparing."),
         en("Maryam thinks her grandmother is \"a living proverb\". Explain this metaphor.", "Her grandmother has turned a long life into short, wise sayings, as a proverb does."),
-        en("The passage says \"transplant\" comes from Latin roots meaning \"across\" and \"plant\". How does this help you understand the word?", "It means to move a plant across from one place to another and set it in new soil."),
+        mc("The passage says \"transplant\" comes from Latin roots meaning \"across\" and \"plant\". What does the word mean?", ["To pick fruit from a tall tree", "To water a plant by hand", "To plant a seed in the soil where it grew", "To move a plant from one place and set it in new soil"], 3, "Across plus plant: a plant carried from another place into new soil."),
         en("Hamdan says the palm felt like \"a giant that did not want me on its back\". What does this comparison suggest about how he felt?", "He felt the tree was big and unwelcoming, so he felt uneasy."),
-        en("Grandmother says a person should be \"calm above and firm below\". What does the image of roots stand for in this advice?", "Inner strength and steadiness that stop a person being pushed over by trouble."),
+        mc("Grandmother says a person should be \"calm above and firm below\". What does the image of roots stand for in this advice?", ["A wish to leave home", "Inner strength and steadiness that keep a person from being pushed over", "A fear of falling", "Money saved for later"], 1, "Deep roots that no wind can pull out stand for inner strength."),
         en("Compare the tone of Grandmother's first speech about the palm with her last speech about the grove. How does it change?", "At first she is proud and firm, praising the stubborn palm; at the end she is gentle and reassuring about the grove.")
       ]
     },
@@ -73,16 +74,16 @@ module.exports = {
         "Claim: libraries should stay open on weekends. Reason: students are busy on weekdays."
       ),
       items: [
-        en("What impression of mangroves does the author say many visitors have, and what does the author think of it?", "They look untidy and dull; the author thinks this impression is badly mistaken."),
+        mc("What impression of mangroves does the author say many visitors have, and what does the author think of it?", ["They look dangerous; the author agrees", "They look beautiful; the author thinks this is wrong", "They look untidy and dull; the author thinks this is badly mistaken", "They look untidy and dull; the author agrees with this view"], 2, "The author says the impression is badly mistaken."),
         en("Which sentence in the first paragraph states the author's main claim?", "\"I want to argue that this impression is badly mistaken, and that the mangroves of the Emirates deserve far more protection than they have usually received.\""),
-        en("Why does the author call a mangrove forest \"a nursery\"?", "Young fish, crabs and shrimp hide and grow in its roots, then swim out to the fishing grounds."),
+        mc("Why does the author call a mangrove forest \"a nursery\"?", ["Young fish, crabs and shrimp hide and grow among its roots", "Fishermen plant new trees there each spring", "Birds raise their chicks in its branches", "Its roots hold the mud in place"], 0, "Young sea animals shelter in the roots, then swim out to the fishing grounds."),
         en("How does the author show that a fisherman \"depends on\" a forest he may never visit?", "The fish raised in the forest later feed the fishing grounds where he works."),
         en("Name two ways, other than being a nursery, that mangroves help, according to the passage.", "Any two: roots hold mud and reduce shoreline erosion in storms; they store carbon in the mud; they give nesting places for birds."),
         en("How does the author organise paragraph 4, and what is its purpose in the argument?", "It gives a short history (people cut the wood, then forests were cleared), showing how the forests came under threat."),
-        en("What opposing view does the author describe in paragraph 5, and how does the author treat it?", "That a city must grow and trees must not block a harbour; the author gives it a fair hearing, then says it is a false choice."),
+        mc("What opposing view does the author describe in paragraph 5, and how does the author treat it?", ["That mangroves are beautiful; the author ignores it", "That mangroves store carbon; the author doubts it", "That planting seedlings costs too much; the author rejects it at once", "That a city must grow and trees must not block a harbour; the author hears it fairly, then calls it a false choice"], 3, "The author gives it a fair hearing, then says it rests on a false choice."),
         en("What evidence does the author give that roads and buildings can exist alongside mangroves?", "Planners in several coastal nations have placed roads and buildings further back from the shore, leaving the forest as a wall against waves."),
-        en("The author says the case for mangroves \"does not depend on beauty\". What does it depend on instead?", "On service: sheltering young fish, shielding the shore and storing carbon."),
-        en("Which detail about the Emirates shows that the lesson is now being taken seriously?", "Volunteers and government teams have planted millions of mangrove seedlings (and some areas now host nesting herons)."),
+        mc("The author says the case for mangroves \"does not depend on beauty\". What does it depend on instead?", ["Beauty alone", "Service: sheltering young fish, shielding the shore and storing carbon", "Age: how long the forests have stood", "Cost: how cheaply seedlings can be bought"], 1, "The final paragraph says it depends on service."),
+        mc("Which detail about the Emirates shows that the lesson is now being taken seriously?", ["Fishermen now avoid the channels", "Roads were built through the forests", "Volunteers and government teams have planted millions of seedlings", "Visitors can rent kayaks"], 2, "Planting millions of seedlings shows real effort to protect the forests."),
         en("The author ends by calling mangroves \"one of the best investments\" a country has. Explain why this choice of word suits the argument.", "An investment brings a lasting return for a small cost; this matches the idea that protection costs little compared with repairing a damaged coast."),
         en("How does the first person (\"I want to argue\") shape the passage, compared with a purely factual report?", "It shows the author has a clear point of view and is trying to persuade, not just to inform.")
       ]
@@ -118,17 +119,17 @@ module.exports = {
         "She is anxious and wants everything to be right."
       ),
       items: [
-        en("What belief about lanterns does Layla hold at the start of the story?", "That a good lantern should be perfect: round, bright and neat, with no flaws."),
+        mc("What belief about lanterns does Layla hold at the start of the story?", ["A good lantern should be perfect, with no flaws", "A good lantern should be large", "A good lantern should be made quickly", "A good lantern should have coloured glass"], 0, "She believed a good lantern should be perfectly round, bright and neat."),
         en("The author says Layla \"rolled up her sleeves like a surgeon\". What does this simile show about her attitude?", "She is serious, careful and determined to do the job exactly right."),
         en("Grandfather says \"Gently\". What does this show about how he wants Layla to work, and how does she respond?", "He wants her to work slowly and carefully; she does not like it and cuts quickly."),
-        en("What is the problem Layla notices in her first lantern, and what does she say about it?", "A star has a bent point and a seam is uneven; she says it is ruined."),
+        mc("What problem does Layla notice in her first lantern?", ["The candle will not stay lit", "The metal sheet is too small", "The glue has left a smudge", "A star has a bent point and one seam is uneven"], 3, "One star had a bent point and a seam was a little uneven."),
         en("Describe how Grandfather answers Layla's complaint. Does he argue with her?", "No, he says \"Wait\", lights the candle and lets the light show her."),
-        en("What happens when the lantern is lit in the dark room, and how does this change the meaning of the bent star?", "It throws a long curved ray like a comet, so the flaw makes something beautiful."),
+        mc("What happens when the lantern is lit in the dark room, and how does it change the meaning of the bent star?", ["The room fills with smoke, so the lantern is ruined", "The bent star throws a long curved ray like a comet, so the flaw makes something beautiful", "All the stars look the same, so the flaw disappears", "The lantern goes out, so Layla starts again"], 1, "The bent star made the comet-shaped ray."),
         en("What does the dented brass lamp tell the reader about Grandfather's own past?", "He once wanted every line straight too, but a dented lantern gave his best light, so he kept it."),
-        en("How does Omar's reaction support the lesson in the story?", "He loves the crooked star best, which shows others can value what Layla thought was a flaw."),
+        mc("How does Omar's reaction support the lesson in the story?", ["He agrees that the lantern is ruined", "He asks to remake the lantern", "He loves the crooked star best, which shows others can value what Layla saw as a flaw", "He falls asleep again"], 2, "His favourite is the crooked star, so the flaw is valued."),
         en("How does the way Layla works change after her talk with Grandfather?", "She works carefully and without hurrying, and she leaves small flaws alone."),
         en("Explain the phrase \"a string of captured stars\" in the description of the festival. What does the figurative language add?", "The lanterns look like stars caught and hung up, so the scene seems magical."),
-        en("The lighting of the lantern is the turning point of the story. Explain what Layla believes before it and what she does after it.", "Before, she thinks a flawed lantern is ruined; after, she works carefully and leaves small flaws alone to see what the light does."),
+        mc("The lighting of the lantern is the turning point of the story. What does Layla believe before it, and what does she do after it?", ["Before, she wants to finish fast; after, she asks Omar to help", "Before, she is proud of her lantern; after, she cuts the stars again quickly", "Before, she thinks working gently is best; after, she cuts quickly", "Before, she thinks a flawed lantern is ruined; after, she works carefully and leaves small flaws alone"], 3, "She first says it is ruined, then works carefully and leaves small flaws alone."),
         en("State a theme of the story and name one detail that supports it.", "Imperfection can be valuable or beautiful. Detail: the bent star makes the comet-shaped ray.")
       ]
     }
