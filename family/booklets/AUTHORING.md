@@ -125,8 +125,9 @@ Arabic equivalent in step):
 1. **Every open answer shows its working.** Not "23" but "3 x (12 - 7) + 8 = 3 x 5 + 8 = 15 + 8 = 23."
    Not "250 cm" but "2.5 m x 100 = 250 cm (1 m is 100 cm)." At least 5 words.
 2. **Every multiple choice reason says why the right option is right and names the
-   slip a wrong option traps**, using the word "chose": "C. 9. Brackets first: 4 + 5 = 9,
-   then 18 - 9 = 9. If your child chose A (19), they ignored the brackets." Name one or
+   slip a wrong option traps**, using the word "chose": "Brackets first: 4 + 5 = 9,
+   then 18 - 9 = 9. If your child chose A (19), they ignored the brackets." Do not start
+   with the letter or the option: the PDF prints "C. 9." before your text. Name one or
    two of the commonest wrong options, not all. At least 8 words.
 3. **Reading and Language open answers give the parent a script**: what a good answer
    includes, and one question to ask to push it further ("Ask: which words tell you

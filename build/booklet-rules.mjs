@@ -87,6 +87,7 @@ export function validateBooklet(b, Core, fileName) {
       // The answer guide is for a parent: every answer shows its working or what a good answer includes, and every multiple choice answer names the slip a wrong option traps.
       if (item && item.a && typeof item.a.en === "string") {
         const words = item.a.en.trim().split(/\s+/).length;
+        if (item.options !== undefined) need(!/^\s*(?:[A-D]|[أبجد])\.\s/.test(item.a.en + " " + (item.a.ar || "")) && !/^\s*[أبجد]\.\s/.test(item.a.ar || ""), "question " + (i + 1) + ": start the reason with the explanation, not the letter (the PDF prints the letter and the right option before it)");
         if (item.options !== undefined) need(words >= 8 && /\bchose\b/i.test(item.a.en), "question " + (i + 1) + ": the answer explains why, and says what a child who chose a wrong option probably did (\"If your child chose B, ...\")");
         else need(words >= (b.subject === "rd" || b.subject === "lu" ? 10 : 5), "question " + (i + 1) + ": the answer shows its working (or, in Reading and Language, what a good answer includes and one question to ask: \"Ask: ...\")");
       }
