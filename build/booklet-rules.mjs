@@ -84,6 +84,12 @@ export function validateBooklet(b, Core, fileName) {
         if (!b.englishOnly) need(ok(o && o.ar) && o.ar.length === (o.en || []).length, "question " + (i + 1) + ": multiple choice needs the same number of options in Arabic");
         need(Number.isInteger(item.correct) && item.correct >= 0 && item.correct < ((o && o.en) || []).length, "question " + (i + 1) + ": `correct` is the index (0 for A) of the right option");
       }
+      // The answer guide is for a parent: every answer shows its working or what a good answer includes, and every multiple choice answer names the slip a wrong option traps.
+      if (item && item.a && typeof item.a.en === "string") {
+        const words = item.a.en.trim().split(/\s+/).length;
+        if (item.options !== undefined) need(words >= 8 && /\bchose\b/i.test(item.a.en), "question " + (i + 1) + ": the answer explains why, and says what a child who chose a wrong option probably did (\"If your child chose B, ...\")");
+        else need(words >= (b.subject === "rd" || b.subject === "lu" ? 10 : 5), "question " + (i + 1) + ": the answer shows its working (or, in Reading and Language, what a good answer includes and one question to ask: \"Ask: ...\")");
+      }
       if (!b.englishOnly) need(item && item.q && item.q.ar && item.a && item.a.ar, "question " + (i + 1) + " needs a question and an answer in Arabic");
       const key = item && item.q && item.q.en;
       if (key) { need(!seen.has(key), "question " + (i + 1) + " repeats another question in this booklet"); seen.add(key); }

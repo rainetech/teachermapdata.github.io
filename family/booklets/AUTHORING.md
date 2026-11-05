@@ -115,3 +115,24 @@ therefore practises the same shapes, in original questions (never copy NWEA item
   must be answerable from the passage or the sentence alone with exactly one correct
   option.
 - Worked example: `ma-3.js` is the model (a Grade 3 Maths booklet already converted).
+
+## Answer guide: explain, don't just answer
+
+The answer guide is read by a parent who may not know the content, often holding a
+child who disagrees. The validator checks these three things (English; keep the
+Arabic equivalent in step):
+
+1. **Every open answer shows its working.** Not "23" but "3 x (12 - 7) + 8 = 3 x 5 + 8 = 15 + 8 = 23."
+   Not "250 cm" but "2.5 m x 100 = 250 cm (1 m is 100 cm)." At least 5 words.
+2. **Every multiple choice reason says why the right option is right and names the
+   slip a wrong option traps**, using the word "chose": "C. 9. Brackets first: 4 + 5 = 9,
+   then 18 - 9 = 9. If your child chose A (19), they ignored the brackets." Name one or
+   two of the commonest wrong options, not all. At least 8 words.
+3. **Reading and Language open answers give the parent a script**: what a good answer
+   includes, and one question to ask to push it further ("Ask: which words tell you
+   that?"). At least 10 words. Keep Maths and Science open answers to the working.
+   A fill-in with one right answer still gives a short reason.
+
+Keep each reason to one or two short sentences, in plain words a parent can say aloud.
+Do not change questions, options, `correct`, standards, section sizes or examples,
+unless you find an error (then fix it and say so).
