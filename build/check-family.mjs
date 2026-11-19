@@ -130,7 +130,7 @@ section("Reading a bad link");
   check(JSON.stringify(lv({ side: "above", from: 12 })) === '{"side":"above","from":12,"to":12}' && JSON.stringify(lv({ side: "below", from: 0 })) === '{"side":"below","from":0,"to":0}', "above the top and below the bottom of the table go in as they are, kindergarten as 0");
   check(lv(null) === null && lv({ side: "", from: 13 }) === null && ["x", "5-3", "a3-4", "99", "-2", "3-", "4.5", "<b>"].every((bad) => Core.readLevel(bad) === null), "a missing level, or one that is out of range or malformed, is left out");
   const full = Core.encode({ term: "T1-2627", grade: 7, subjects: ["ma", "rd", "lu", "sc"].map((subject) => ({ subject, rit: 220, ach: 55, growthPct: 50, base: 214, target: 226, area: "bal", areas: Object.fromEntries(Core.AREAS[subject].map((a, n) => [a.code, 210 + n])), level: { side: "", from: 6, to: 7 } })) });
-  const fullQR = QR.encode("https://family.ensdashboards.xyz/nwea#" + full, { ecc: "M" });
+  const fullQR = QR.encode("https://family.school-name.example/nwea#" + full, { ecc: "M" });
   check(fullQR && fullQR.version <= 14, "the most a link can carry (four subjects, every area) still fits a code a phone reads at 31 mm (version " + (fullQR && fullQR.version) + ", " + (fullQR && fullQR.size) + " modules a side)");
   check(full.length < 330, "a link for four subjects with every area stays short (" + full.length + " characters)");
 

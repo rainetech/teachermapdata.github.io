@@ -153,6 +153,62 @@ async function main() {
   const baselineTitles = await page.evaluate(() => Object.fromEntries(
     [...document.querySelectorAll("main .section")].map((node) => [node.id, (node.querySelector(".section-header h2") || {}).textContent || ""])
   ));
+  // ---- pictures: the goal sheet with its family code, and the family page ----
+  // A family code is only printed when the page is hosted over https, so the
+  // page is served to itself at an example address. A branded clone points its
+  // code at its own family page; GUIDE_FAMILY_PAGE says which file that is.
+  const indexFile = path.resolve(ROOT, process.env.GUIDE_INDEX || "index.html");
+  const familyFile = process.env.GUIDE_FAMILY_PAGE ? path.resolve(ROOT, process.env.GUIDE_FAMILY_PAGE) : path.join(path.dirname(indexFile), "family.html");
+  if (fs.existsSync(familyFile)) {
+    const HOST = "https://your-dashboard.example";
+    const siteHTML = fs.readFileSync(indexFile, "utf8");
+    const familyHTML = fs.readFileSync(familyFile, "utf8");
+    const hosted = await browser.newContext({ viewport: { width: 1280, height: 900 }, reducedMotion: "reduce", colorScheme: "light" });
+    await hosted.route(HOST + "/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: siteHTML }));
+    const hostedPage = await hosted.newPage();
+    await hostedPage.goto(HOST + "/index.html");
+    await hostedPage.click("#sampleBtn");
+    await hostedPage.waitForFunction(() => document.body.classList.contains("has-data"));
+    await hostedPage.waitForTimeout(400);
+    const sheet = await hostedPage.evaluate(() => {
+      const open = window.open;
+      let html = "";
+      window.open = () => ({ document: { open() {}, write(text) { html += text; }, close() {} }, focus() {}, print() {} });
+      printGoalSheets();
+      window.open = open;
+      const first = studentKey(state.filteredRows[0]);
+      const rows = latestSubjectRecords(state.filteredRows.filter((row) => studentKey(row) === first)).map((entry) => entry.current);
+      return { html, link: familyLinkFor(rows) };
+    });
+    if (sheet.html) {
+      const paper = await hosted.newPage();
+      await paper.setViewportSize({ width: 820, height: 1160 });
+      await paper.setContent(sheet.html);
+      await paper.waitForTimeout(250);
+      const pages = await paper.$$(".sheet");
+      const snap = async (node) => (node ? { src: "data:image/jpeg;base64," + (await node.screenshot({ type: "jpeg", quality: 82 })).toString("base64") } : null);
+      pictures.goalData = await snap(pages[0]);
+      pictures.goalPlan = await snap(pages[1]);
+    }
+    if (sheet.link) {
+      const phone = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, reducedMotion: "reduce", colorScheme: "light" });
+      const address = sheet.link.split("#")[0];
+      await phone.route(address + "**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: familyHTML }));
+      const familyPage = await phone.newPage();
+      await familyPage.goto(sheet.link);
+      await familyPage.waitForTimeout(500);
+      // The sample class sat its tests in a past term, which the family page says in a note. A sheet printed this term has no such note.
+      await familyPage.evaluate(() => document.querySelectorAll(".note[role=note]").forEach((node) => node.remove()));
+      const total = await familyPage.evaluate(() => document.documentElement.scrollHeight);
+      const clip = async (y, height) => ({ src: "data:image/jpeg;base64," + (await familyPage.screenshot({ type: "jpeg", quality: 80, fullPage: true, clip: { x: 0, y, width: 390, height } })).toString("base64") });
+      pictures.familyTop = await clip(0, Math.min(total, 1150));
+      const planAt = await familyPage.evaluate(() => {
+        const heading = [...document.querySelectorAll("h2")].find((node) => /plan/i.test(node.textContent));
+        return heading ? Math.max(0, Math.round(heading.getBoundingClientRect().top + window.scrollY) - 12) : -1;
+      });
+      if (planAt >= 0) pictures.familyPlan = await clip(planAt, Math.min(total - planAt, 1150));
+    }
+  }
   await browser.close();
 
   // ---- the document --------------------------------------------------------
@@ -225,16 +281,47 @@ function buildHTML(data, pictures, baselineTitles) {
   const groupRows = Object.entries(data.groups).map(([group, action]) => "<tr><td>" + escapeHTML(group) + "</td><td>" + escapeHTML(action) + "</td></tr>").join("");
   const posterRows = data.posters.map((poster) => "<tr><td>" + escapeHTML(poster.title) + "</td><td>" + escapeHTML(poster.blurb) + "</td></tr>").join("");
   const contents = [
-    ["1", "What this tool is, and what it never does"],
-    ["2", "Getting your files out of NWEA MAP"],
-    ["3", "Loading a file and choosing what you look at"],
-    ["4", "Reading the numbers"],
-    ["5", "The sections, one by one"],
-    ["6", "Printing, exporting and the classroom wall"],
-    ["7", "Before a data meeting"],
-    ["8", "When something looks wrong"],
-    ["A", "Glossary and reference tables"]
-  ].map(([number, title]) => "<li><span>" + number + "</span>" + escapeHTML(title) + "</li>").join("");
+    ["", "Start here: your first ten minutes", "Do this once and you can use the dashboard"],
+    ["", "Find it fast: I want to...", "The section that answers each question"],
+    ["", "The routine after each test window", "A checklist, about half an hour"],
+    ["", "Seven things worth knowing before you read a number", ""],
+    ["1", "What this tool is, and what it never does", ""],
+    ["2", "Getting your files out of NWEA MAP", ""],
+    ["3", "Loading a file and choosing what you look at", ""],
+    ["4", "Reading the numbers", ""],
+    ["5", "The sections, one by one", ""],
+    ["6", "Printing, exporting and the classroom wall", ""],
+    ["7", "Sharing results with families", ""],
+    ["8", "Before a data meeting", ""],
+    ["9", "When something looks wrong", ""],
+    ["A", "Glossary and reference tables", ""]
+  ].map(([number, title, note]) => "<li><span>" + number + "</span><div>" + escapeHTML(title) + (note ? "<small>" + escapeHTML(note) + "</small>" : "") + "</div></li>").join("");
+
+  // "5.7" for a section, and the name on its header, so the front pages can
+  // point at the right entry whatever the page's sections are called.
+  const chapterNumber = (id) => { const at = chapterOrder.findIndex((section) => section.id === id); return at === -1 ? "" : "5." + (at + 1); };
+  const sectionName = (id) => (bySection[id] ? bySection[id].growthTitle : "");
+  const where = (id) => "<strong>" + escapeHTML(sectionName(id)) + "</strong>";
+  const finderRow = (want, ids, how, chapter) => {
+    const live = ids.filter((id) => bySection[id]);
+    const refs = chapter || live.map(chapterNumber).filter(Boolean).join(", ");
+    return "<tr><td>" + escapeHTML(want) + "</td><td>" + (live.length ? live.map(where).join(", then ") + ". " : "") + how + "</td><td>" + escapeHTML(refs) + "</td></tr>";
+  };
+  const finder = [
+    finderRow("See how my class did, in plain words", ["sec-briefing", "sec-snapshot"], "Read the headlines first, then the cards."),
+    finderRow("Know who needs support first, and why", ["sec-priority"], "Each student is listed with the reason."),
+    finderRow("Know what to do about it this week", ["sec-actions"], "Moves to make, with the students named."),
+    finderRow("See who grew and who did not", ["sec-growth"], "Needs a file with two test windows."),
+    finderRow("Set a target with each student", ["sec-goals"], "Press <em>Print Goal Sheets</em>: two pages a student."),
+    finderRow("Give a family their child's results", ["sec-goals"], "The code on page two of each goal sheet opens a page for the family.", "7"),
+    finderRow("Group the class, or seat the room", ["sec-grouping", "sec-tables"], "Groups by need, then a room plan drawn to scale."),
+    finderRow("See which part of a subject to teach next", ["sec-strands"], "Needs a Class Profile export as well."),
+    finderRow("Celebrate what went well", ["sec-celebration", "sec-posters"], "Names for you; class figures only for the wall."),
+    finderRow("Get ready for a data meeting", ["sec-summary", "sec-quiz"], "The narrative written for you, then the questions a leader will ask.", "8"),
+    finderRow("Look at one student", [], "Click any student's name, anywhere on the page, for their full picture. Print it for a conference.", "6"),
+    finderRow("Look at one class or one subject", [], "Use the filters at the top. Every card, list, poster and export follows them.", "3"),
+    finderRow("Check that the file is sound", ["sec-quality"], "Missing scores, short tests, anything left out.")
+  ].join("");
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escapeHTML(TITLE)} - User guide</title>
 <style>
@@ -259,6 +346,33 @@ function buildHTML(data, pictures, baselineTitles) {
   .contents ol { list-style: none; margin: 0; }
   .contents li { display: flex; gap: 10pt; padding: 6pt 0; border-bottom: 1px solid var(--line); font-size: 12pt; }
   .contents li span { color: var(--brand); font-weight: 800; min-width: 18pt; }
+  .contents li small { display: block; font-size: 9pt; color: var(--muted); }
+  .lead { font-size: 12pt; color: var(--ink); margin-bottom: 10pt; }
+  .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; }
+  .steps > li { counter-increment: step; position: relative; padding: 0 0 2pt 34pt; margin: 0 0 12pt; break-inside: avoid; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 24pt; height: 24pt; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 800; font-size: 12pt; display: flex; align-items: center; justify-content: center; }
+  .steps h3 { margin: 2pt 0 3pt; font-size: 12.5pt; }
+  .steps .time { font-size: 8.5pt; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--green); margin-left: 6pt; }
+  .steps figure img { max-height: 44mm; }
+  .steps figure { margin: 4pt 0 2pt; }
+  .chapter.flow { break-before: auto; margin-top: 16pt; }
+  .steps p { margin-bottom: 4pt; }
+  .finder td:first-child { font-weight: 700; width: 31%; }
+  .finder td:last-child { width: 11%; color: var(--brand-deep); font-weight: 700; white-space: nowrap; }
+  .checklist { list-style: none; margin: 0 0 8pt; padding: 0; }
+  .checklist li { position: relative; padding-left: 20pt; margin-bottom: 5pt; break-inside: avoid; }
+  .checklist li::before { content: ""; position: absolute; left: 0; top: 2pt; width: 10pt; height: 10pt; border: 1.5px solid var(--brand); border-radius: 2pt; }
+  .know { list-style: none; margin: 0; padding: 0; counter-reset: know; }
+  .know li { counter-increment: know; border: 1px solid var(--line); border-left: 4px solid var(--brand); border-radius: 4pt; padding: 7pt 10pt; margin-bottom: 7pt; background: #f9fbff; break-inside: avoid; }
+  .know li strong:first-child { display: block; color: var(--brand-deep); font-size: 11pt; margin-bottom: 2pt; }
+  .know li strong:first-child::before { content: counter(know) ". "; }
+  .say { border: 1px dashed var(--brand); border-radius: 4pt; padding: 8pt 10pt; margin: 8pt 0 10pt; background: #fff; font-style: italic; break-inside: avoid; }
+  .say h4 { font-style: normal; }
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 12pt; align-items: start; break-inside: avoid; }
+  .side figure img { max-height: 120mm; }
+  .phones figure img { max-height: 150mm; border-radius: 10pt; border: 2px solid #c3cbd9; }
+  .sub { margin-top: 2pt; }
+  .sub li { margin-bottom: 2pt; }
   figure { margin: 8pt 0 10pt; break-inside: avoid; }
   figure img { display: block; max-width: 100%; max-height: 190mm; width: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 4pt; }
   .keep { break-inside: avoid; }
@@ -290,7 +404,7 @@ function buildHTML(data, pictures, baselineTitles) {
     <div class="stripe"></div>
     <p class="eyebrow" style="margin-top:28mm">${escapeHTML(TITLE)}</p>
     <h1>User guide</h1>
-    <p class="lede">How to get your files out of NWEA, what every number means, what each section of the dashboard tells you, and what to do about it before the next data conversation.</p>
+    <p class="lede">You do not need training to use this. Follow the five steps on the <em>Start here</em> page once, with your own class, and you can do everything most teachers ever need. The rest is here to look things up: what every number means, what each section tells you, and what to do about it.</p>
   </div>
   <div class="meta">
     <p>Built from the dashboard itself, using its own sample data, so the pictures and the section text are the same ones you see on screen. Every section on the page also carries a <strong>?</strong> in its corner that says the same in three short answers.</p>
@@ -301,6 +415,93 @@ function buildHTML(data, pictures, baselineTitles) {
 <div class="contents">
   <h2>Contents</h2>
   <ol>${contents}</ol>
+</div>
+
+<div class="chapter">
+  <h2>Start here: your first ten minutes</h2>
+  <p class="lead">Five steps. Do them once with your own class and you have used the dashboard. Nothing you click can break anything or change your MAP data, and your file never leaves your computer.</p>
+  <ol class="steps">
+    <li>
+      <h3>Get your file from NWEA <span class="time">2 minutes</span></h3>
+      <p>In MAP Growth, open <em>MAP Reports</em>, choose <em>Achievement Status and Growth</em> for your class, and download it as <em>CSV</em>. Save it; do not open or edit it. Chapter 2 has every click.</p>
+      <p><strong>No file yet?</strong> Skip this step and press <em>Load Sample Data</em> in step 2 to try everything with a made-up class.</p>
+    </li>
+    <li>
+      <h3>Drop it on the page <span class="time">1 minute</span></h3>
+      <p>Open the dashboard and drag the file onto the dashed box, or click the box and choose it.</p>
+      ${figure(pictures.topbar, "")}
+    </li>
+    <li>
+      <h3>Read the ${escapeHTML(sectionName("sec-briefing") || "Briefing")} <span class="time">2 minutes</span></h3>
+      <p>The first thing on the page says, in plain sentences, what your file shows: how the class did, what stands out, and where to look next. If you read nothing else, read this.</p>
+      ${figure(pictures["sec-briefing"], "")}
+    </li>
+    <li>
+      <h3>See who needs what <span class="time">3 minutes</span></h3>
+      <p>Go to ${where("sec-priority")} for the students to look at first, each with the reason, then ${where("sec-actions")} for what to do this week. Click any student's name for their whole picture on one card.</p>
+    </li>
+    <li>
+      <h3>Print what you need <span class="time">2 minutes</span></h3>
+      <p>In ${where("sec-goals")}, press <em>Print Goal Sheets</em> for a two-page sheet for every student: their scores and targets, then a plan they fill in. ${pictures.goalPlan ? "Page two carries a code that opens a page of results for the family (chapter 7). " : ""}${where("sec-posters")} gives you class posters for the wall, with no names on them.</p>
+    </li>
+  </ol>
+  <div class="callout good">
+    <h4>Stuck on a section?</h4>
+    <p>Press the <strong>?</strong> in its corner. It says what the section shows, how to read it and what to do with it, in three short answers. The same text is in chapter 5 with pictures.</p>
+  </div>
+  <div class="callout">
+    <h4>Prefer to watch?</h4>
+    <p>A three-minute walkthrough video shows these steps on screen. The link is on the dashboard's opening panel, next to the link to this guide.</p>
+  </div>
+</div>
+
+<div class="chapter flow">
+  <h2>Find it fast: I want to...</h2>
+  <p>The page opens on the sections most teachers use. <em>More analysis</em> in the <em>Jump to</em> bar shows the rest. The last column is where this guide explains each one.</p>
+  <table class="finder"><thead><tr><th>I want to...</th><th>Go to</th><th>Guide</th></tr></thead><tbody>${finder}</tbody></table>
+</div>
+
+<div class="chapter">
+  <h2>The routine after each test window</h2>
+  <p class="lead">About half an hour, once your class has finished testing. Tick the boxes as you go.</p>
+  <h3>Start of year: one test window</h3>
+  <ul class="checklist">
+    <li><strong>Export and load</strong> the Achievement Status and Growth CSV for your class. Add the Class Profile CSVs if you want the areas inside each subject (chapter 2).</li>
+    <li><strong>Read ${escapeHTML(sectionName("sec-quality"))}</strong> so nothing surprises you later: who has no score, whose test was very short.</li>
+    <li><strong>Read the ${escapeHTML(sectionName("sec-briefing") || "Briefing")}</strong>, then the Starting Point section: where the class begins the year.</li>
+    <li><strong>Open the support list</strong> (${escapeHTML(sectionName("sec-priority"))} becomes the Start-of-Year Support List) and decide who you will see first.</li>
+    <li><strong>Print the goal sheets</strong> from ${escapeHTML(sectionName("sec-goals"))}. Each student writes their own goal on page two. Send the sheet home: the family code is on it.</li>
+    <li><strong>Seat the room</strong> with ${escapeHTML(sectionName("sec-tables"))} if you group by data.</li>
+  </ul>
+  <h3>Mid-year and end of year: two test windows</h3>
+  <ul class="checklist">
+    <li><strong>Export and load</strong> the Achievement Status and Growth CSV comparing the two terms, with the Class Profile CSVs for the current term.</li>
+    <li><strong>Read ${escapeHTML(sectionName("sec-quality"))}</strong> first.</li>
+    <li><strong>Read the ${escapeHTML(sectionName("sec-briefing") || "Briefing")} and ${escapeHTML(sectionName("sec-snapshot"))}</strong>: how many met their growth projection, and where the class sits now.</li>
+    <li><strong>Open ${escapeHTML(sectionName("sec-growth"))}</strong>: who grew more than a typical peer, who grew less. Look for high scorers who are coasting.</li>
+    <li><strong>Work through ${escapeHTML(sectionName("sec-priority"))} and the ${escapeHTML(sectionName("sec-actions"))}</strong>. Write down the three moves you will make this month.</li>
+    <li><strong>Reprint the goal sheets</strong> so each student sees whether they reached the target they set, and sets the next one.</li>
+    <li><strong>Celebrate</strong>: read ${escapeHTML(sectionName("sec-celebration"))} for the names, and print a poster or two for the wall.</li>
+    <li><strong>Before a data meeting</strong>, copy the ${escapeHTML(sectionName("sec-summary"))} into your notes and run ${escapeHTML(sectionName("sec-quiz"))} once (chapter 8).</li>
+  </ul>
+  <div class="callout">
+    <h4>More than one class?</h4>
+    <p>Load all your files together, then use the class filter to work through one class at a time. Everything on the page, including what you print, follows the filter.</p>
+  </div>
+</div>
+
+<div class="chapter">
+  <h2>Seven things worth knowing before you read a number</h2>
+  <p class="lead">These are the points that trip people up. Read them once and the rest of the page reads itself.</p>
+  <ol class="know">
+    <li><strong>A percentile is a position, not a mark.</strong> The 50th percentile means the middle of students in the same grade across the US norms group. It does not mean half the questions were right. MAP adapts to each student, so nearly everyone gets about half their questions right.</li>
+    <li><strong>Achievement and growth are two different questions.</strong> Achievement is where a score sits. Growth is how far it moved. A student on the 85th percentile who barely moved needs attention as much as a student on the 20th who grew fast needs protecting.</li>
+    <li><strong>Growth is judged against students who started in the same place.</strong> NWEA projects a typical gain from each student's own starting score. <em>Met growth</em> means they grew at least that much. A growth percentile of 50 is typical growth from that start, so it is fair to low and high starters alike.</li>
+    <li><strong>The RIT score is the number to quote for progress.</strong> It runs on one scale through every grade, so a gain of 6 points means the same in Grade 3 and Grade 8. Percentiles do not work that way.</li>
+    <li><strong>Small groups get counts, not percentages.</strong> Under ${data.minShare} records the page writes "3 of 4" and not "75%", because one child is a quarter of four. Read the count as a count.</li>
+    <li><strong>A grade level is where one test sits on the US norms, not a reading age.</strong> It is the highest grade whose typical score the student's score has reached. A gap of 3 points or fewer is inside the test's margin of error, and the page will not call a student behind for it.</li>
+    <li><strong>One test is one day.</strong> A very short test, or a result marked "too close to call", is not a verdict. ${escapeHTML(sectionName("sec-quality"))} tells you which results to hold lightly. Use what you know about the student as well.</li>
+  </ol>
 </div>
 
 <div class="chapter">
@@ -411,14 +612,38 @@ function buildHTML(data, pictures, baselineTitles) {
   <h3>Exports</h3>
   <ul>
     <li><strong>Summary TXT</strong> from Class Snapshot or the Class Summary Report - the narrative as plain text for notes or an email.</li>
-    <li><strong>CSV exports</strong> from Grouping, Priority, Celebration, Gap Closure, Growth Goals, Instructional Areas, What Would It Take and Table Groups. Exports always include every row, even when the table on screen shows a page of them, and are the same whatever columns you have hidden: the Grouping, Priority, Celebration and Growth Goals tables (the support list and the strengths list, on a start-of-year file) each have a <em>Columns</em> button that lists their columns as tick-boxes, with <em>Key columns</em> and <em>All columns</em> to switch between a short table and the full one. Your choice for each table is remembered on this device. The table groups export has one row per seat: table, seat, how the table's desks are arranged, the order the strategy placed each student and whether you moved them by hand, then the student's scores and where the table stands, in centimetres from the left and front walls.</li>
+    <li><strong>CSV exports</strong> from Grouping, Priority, Celebration, Gap Closure, Growth Goals, Instructional Areas, What Would It Take and Table Groups.
+      <ul class="sub">
+        <li>An export always holds every row, even when the table on screen shows one page of them.</li>
+        <li>Hiding columns does not change an export. The Grouping, Priority, Celebration and Growth Goals tables (the support list and the strengths list, on a start-of-year file) each have a <em>Columns</em> button that lists their columns as tick-boxes, with <em>Key columns</em> and <em>All columns</em> to switch between a short table and the full one. Your choice for each table is remembered on this device.</li>
+        <li>The table groups export has one row per seat: table, seat, how the table's desks are arranged, the order the strategy placed each student and whether you moved them by hand, then the student's scores and where the table stands, in centimetres from the left and front walls.</li>
+      </ul>
+    </li>
     <li><strong>Copy</strong> buttons on the Summary, the Action Board, a student's spotlight and the quiz results put the text on your clipboard.</li>
   </ul>
   <h3>Printing</h3>
   <ul>
-    <li><strong>Goal sheets</strong> - two pages per student from Growth Goals. Page one is the data: where they are now in each subject, the grade level that score has reached on the US norms (the highest grade whose typical score, in that season, the score has reached, so a Grade 5 student one point under the typical Grade 5 fall score is placed in Grade 4, with the typical scores it rests on printed beside it; a student who has reached the typical score for their own grade or higher simply reads \u201cAt my grade level\u201d), their next step, and the instructional areas inside each subject. Page two is theirs to fill in: the same targets in one line each, the part of each subject to work on first, and ruled space for the goal they set, what they will do about it and how you will help, with a line for both signatures and the date. The sheets keep their explanations short: a one-line note says what US norms are, and that every student has a next target whatever their level. The two pages are a firm limit, so they print back to back on one sheet: a student with many subjects or areas gets a slightly smaller print rather than a third page, and a student with more than eight subjects has the first eight printed (the page tells you when that happens).</li>
+    <li><strong>Goal sheets</strong> - two pages per student, from <em>Print Goal Sheets</em> in Growth Goals. They print back to back on one sheet of paper.
+      <ul class="sub">
+        <li><strong>Page one is the data.</strong> Where the student is now in each subject, their next step, and the instructional areas inside each subject.</li>
+        <li><strong>The grade level on page one</strong> is the highest grade whose typical score, in that season on the US norms, the score has reached, with the typical scores it rests on printed beside it. A Grade 5 student one point under the typical Grade 5 fall score is placed in Grade 4. A student who has reached the typical score for their own grade or higher simply reads \u201cAt my grade level\u201d.</li>
+        <li><strong>Page two is the student's to fill in.</strong> The same targets in one line each, the part of each subject to work on first, and ruled space for the goal they set, what they will do about it and how you will help, with a line for both signatures and the date. When the dashboard is opened from its web address, page two also carries the code for the family (chapter 7).</li>
+        <li><strong>The explanations are kept short.</strong> A one-line note says what US norms are, and that every student has a next target whatever their level.</li>
+        <li><strong>Two pages is a firm limit.</strong> A student with many subjects or areas gets a slightly smaller print, never a third page. A student with more than eight subjects has the first eight printed, and the page tells you when that happens.</li>
+      </ul>
+    </li>
     <li><strong>The action plan</strong> - the Action Board as a printable list of moves with the students named.</li>
-    <li><strong>The seating plan</strong> - two prints from the planner, both drawn to scale: the room at the size you set, single desks pushed into groups with a chair behind each, and your furniture at its real size. A group that needs more room can sit at more than one table: select its table and choose <em>Add a table to this group</em>, and the group keeps its students while its seats carry on across the tables (the extra tables are named Table 1 &middot; B, Table 1 &middot; C, and so on, and each can be moved, turned and given its own number of desks). An assistant gets a desk of their own from <em>Add to room</em>: one desk and a chair, with no student seat. Both appear on both prints. The <em>teacher copy</em> shows every desk with the student's band colour and score, then adds roster pages with each table's students, band, percentile, growth (or NWEA's projected gain for a projection file) and planning group; a table is never split across two pages, and the pages say only that students are grouped according to data and behaviour patterns. The <em>wall plan</em> draws the same room with names only: no score, no colour, nothing a visitor can read as data. Every name is printed in full, in proper case, sized to fit its desk, never cut short. <em>Save plan file</em> in the planner's Room menu keeps the whole plan - the room, the table names and who sits where, by student ID - in a file on your computer; <em>Load plan file</em> brings it back. Both fit A4 or A3, landscape or portrait to match the room's shape; choose A3 for a wall plan so the names print larger. On a laptop screen the planner draws the whole room at once with the settings of the selected table beside it; the grouping controls are one click away under <em>Show grouping controls</em>, and <em>+</em> zooms in to read a small desk.</li>
+    <li><strong>The seating plan</strong> - two prints from the planner, both drawn to scale: the room at the size you set, single desks pushed into groups with a chair behind each, and your furniture at its real size.
+      <ul class="sub">
+        <li><strong>The teacher copy</strong> shows every desk with the student's band colour and score, then adds roster pages with each table's students, band, percentile, growth (or NWEA's projected gain for a projection file) and planning group. A table is never split across two pages, and the pages say only that students are grouped according to data and behaviour patterns.</li>
+        <li><strong>The wall plan</strong> draws the same room with names only: no score, no colour, nothing a visitor can read as data. Every name is printed in full, in proper case, sized to fit its desk, never cut short.</li>
+        <li><strong>A group that needs more room</strong> can sit at more than one table: select its table and choose <em>Add a table to this group</em>. The group keeps its students and its seats carry on across the tables. The extra tables are named Table 1 &middot; B, Table 1 &middot; C, and so on, and each can be moved, turned and given its own number of desks.</li>
+        <li><strong>An assistant</strong> gets a desk of their own from <em>Add to room</em>: one desk and a chair, with no student seat. It appears on both prints.</li>
+        <li><strong>Keeping a plan.</strong> <em>Save plan file</em> in the planner's Room menu keeps the whole plan - the room, the table names and who sits where, by student ID - in a file on your computer. <em>Load plan file</em> brings it back.</li>
+        <li><strong>Paper.</strong> Both prints fit A4 or A3, landscape or portrait to match the room's shape. Choose A3 for a wall plan so the names print larger.</li>
+        <li><strong>On a laptop screen</strong> the planner draws the whole room at once with the settings of the selected table beside it. The grouping controls are one click away under <em>Show grouping controls</em>, and <em>+</em> zooms in to read a small desk.</li>
+      </ul>
+    </li>
     <li><strong>A student one-pager</strong> - open any student's name for their spotlight, then print it for a conference.</li>
     <li><strong>The page itself</strong> - the browser's print command prints the dashboard; the quiz and the seating tools are left out.</li>
   </ul>
@@ -429,7 +654,67 @@ function buildHTML(data, pictures, baselineTitles) {
 </div>
 
 <div class="chapter">
-  <h2>7. Before a data meeting</h2>
+  <h2>7. Sharing results with families</h2>
+  <p class="lead">Every goal sheet can carry one code for the student's family. They scan it with a phone camera and get their child's results explained in plain language, in English and Arabic, with practice to do at home. There is no app, no login and nothing for you to set up.</p>
+  <h3>What you do</h3>
+  <ol>
+    <li>Open the dashboard <strong>from its web address</strong>, not from a copy saved on your computer. The code is only printed from the hosted page.</li>
+    <li>Load your file and filter to the class.</li>
+    <li>In ${where("sec-goals")}, press <em>Print Goal Sheets</em>.</li>
+    <li>Page two of each student's sheet has the code, under the signatures. Send the sheet home, or hand it over at a conference.</li>
+  </ol>
+  <div class="side">
+    ${figure(pictures.goalData, "Page one: the student's scores and next steps.")}
+    ${figure(pictures.goalPlan, "Page two: the plan the student writes, and the code for the family.")}
+  </div>
+  <div class="say">
+    <h4>What to say to a parent</h4>
+    <p>"Point your phone camera at this square and tap the link. It shows how your child did against the target for this term, what the numbers mean, and a few short things you can do at home. It is in English and Arabic. You do not need an app or a password."</p>
+  </div>
+  <h3>What the family sees</h3>
+  <div class="side phones">
+    ${figure(pictures.familyTop, "The top of the family page on a phone.")}
+    <div>
+      <ul>
+        <li><strong>What MAP is</strong>, in a few lines.</li>
+        <li><strong>Results at a glance</strong>: each subject's score set against the target for the term.</li>
+        <li><strong>The grade level</strong> that score has reached on the US norms, stated honestly beside the child's own grade.</li>
+        <li><strong>The areas inside each subject</strong>, as bars with the scores, when the file carries them.</li>
+        <li><strong>How to read the numbers</strong>: RIT, percentile and growth, one short paragraph each.</li>
+        <li><strong>Helping your child show what they know</strong>: take the test seriously and read each question through.</li>
+        <li><strong>A small-step plan</strong> and <strong>questions to ask the teacher</strong>.</li>
+        <li><strong>Practice booklets</strong> to download as PDFs, in English and Arabic, with worked examples and an answer guide that explains each answer for the parent.</li>
+      </ul>
+    </div>
+  </div>
+  <h3>About the practice booklets</h3>
+  <ul>
+    <li>They are <strong>general practice for a grade's expectations</strong>, written to the standards for that grade. They are not made from the child's own MAP questions, and they do not replace the classroom.</li>
+    <li>A child whose score sits below their grade is offered a path of booklets <strong>from the level the score has reached up to their own grade</strong>. A child at grade level gets their grade and one step beyond.</li>
+    <li>The questions mix multiple choice, in the style of the test, with short word problems. About ten minutes, three days a week, is the pace the booklet suggests.</li>
+    <li>The answer guide shows the working and says what a child who picked a wrong option probably did, so a parent can help without knowing the subject.</li>
+  </ul>
+  <h3>What is in the code, and what is not</h3>
+  <div class="callout good">
+    <h4>Privacy</h4>
+    <p>The link holds scores only: no name, no student ID and no school. The scores sit after the <strong>#</strong> in the link, a part of a web address that a phone does not send to any server, so the family page works them out on the phone itself. Nothing is stored anywhere.</p>
+  </div>
+  <ul>
+    <li><strong>Each code belongs to one child.</strong> The student's name is printed at the top of the sheet; check it goes home with the right student.</li>
+    <li><strong>Treat the sheet like a report.</strong> Anyone holding the paper can scan it and see the scores, though not whose they are.</li>
+    <li><strong>The code does not update.</strong> It shows the results in the file you loaded when you printed. Print again after the next test window.</li>
+  </ul>
+  <h3>If no code is printed</h3>
+  <dl>
+    <dt>"Open this page from where it is hosted, not from a file"</dt>
+    <dd>You opened a saved copy of the dashboard. Open it from its web address and print again.</dd>
+    <dt>"These records carry no results to link"</dt>
+    <dd>The students in view have no score in the file. Check the filters and the Data Check.</dd>
+  </dl>
+</div>
+
+<div class="chapter">
+  <h2>8. Before a data meeting</h2>
   <p>Three sections are built for the conversation with a leader rather than for planning.</p>
   <ul>
     <li><strong>Class Summary Report</strong> writes the narrative for you, from the same figures as the cards. Edit it into your own voice and paste it into your notes.</li>
@@ -443,7 +728,7 @@ function buildHTML(data, pictures, baselineTitles) {
 </div>
 
 <div class="chapter">
-  <h2>8. When something looks wrong</h2>
+  <h2>9. When something looks wrong</h2>
   <dl>
     <dt>The file was skipped or nothing loaded</dt>
     <dd>The file needs a RIT or percentile column. Check that it is a MAP export rather than a roster or a summary sheet, and that it is the CSV rather than the PDF or Excel version. Data Check lists any file that was skipped and why.</dd>
