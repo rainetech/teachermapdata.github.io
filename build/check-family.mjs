@@ -613,6 +613,45 @@ const sheetsOf = (page) => page.evaluate(() => {
   const balanced = await page.evaluate((link) => FamilyCore.decode(link.split("#")[1]), links[1].link);
   check(balanced.subjects.every((s) => s.area === "bal"), "a student whose areas are all within 8 of the overall RIT is balanced");
   check(await page.evaluate((link) => /fragment|#/.test(link), links[0].link), "the data is after the #, so it never reaches a server");
+  // The subject filter takes more than one subject, and what is printed and exported follows it.
+  const pick = async (subjects) => {
+    await page.evaluate(() => window.scrollTo(0, 0));
+    if (await page.evaluate(() => document.getElementById("subjectFilterMenu").hidden)) await page.click("#subjectFilterBtn");
+    await page.check("#subjectFilterMenu input[data-subject-all]");
+    for (const subject of subjects) await page.check("#subjectFilterMenu input[value='" + subject + "']");
+    await page.waitForTimeout(300);
+    return page.evaluate(async () => {
+      const oo = window.open; let html = "";
+      window.open = () => ({ document: { open() {}, write(h) { html += h; }, close() {} }, focus() {}, print() {} });
+      printGoalSheets(); window.open = oo;
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const blobs = [];
+      const make = URL.createObjectURL; URL.createObjectURL = (blob) => { blobs.push(blob); return make.call(URL, blob); };
+      const click = HTMLAnchorElement.prototype.click; HTMLAnchorElement.prototype.click = function () {};
+      exportGoals();
+      HTMLAnchorElement.prototype.click = click; URL.createObjectURL = make;
+      const csv = blobs.length ? await blobs[0].text() : "";
+      const first = studentKey(state.filteredRows[0]);
+      const rows = latestSubjectRecords(state.filteredRows.filter((row) => studentKey(row) === first)).map((entry) => entry.current);
+      return {
+        label: document.getElementById("subjectFilterBtn").textContent,
+        inView: [...new Set(state.filteredRows.map((row) => row.subject))].sort().join(),
+        onSheets: ["Mathematics", "Reading"].filter((subject) => [...doc.querySelectorAll(".gs-targets li")].some((line) => line.textContent.includes(subject))).join(),
+        inCSV: ["Mathematics", "Reading"].filter((subject) => csv.includes(subject)).join(),
+        inLink: FamilyCore.decode(familyLinkFor(rows).split("#")[1]).subjects.map((subject) => subject.subject).join()
+      };
+    });
+  };
+  const onlyReading = await pick(["Reading"]);
+  check(onlyReading.label === "Reading" && onlyReading.inView === "Reading", "ticking one subject in the filter shows that subject only (" + onlyReading.label + ")");
+  check(onlyReading.onSheets === "Reading" && onlyReading.inCSV === "Reading" && onlyReading.inLink === "rd", "and the goal sheets, the goal sheet export and the family code carry that subject only (" + JSON.stringify(onlyReading) + ")");
+  const both = await pick(["Reading", "Mathematics"]);
+  check(both.inView === "Mathematics,Reading" && both.onSheets === "Mathematics,Reading" && both.inCSV === "Mathematics,Reading" && both.inLink.split(",").sort().join() === "ma,rd", "ticking two subjects shows, prints and exports both (" + JSON.stringify(both) + ")");
+  check(both.label === "Mathematics + Reading", "and the filter names the subjects it is set to (" + both.label + ")");
+  const cleared = await pick([]);
+  check(cleared.label === "All Subjects" && cleared.inView === "Mathematics,Reading", "All Subjects clears the ticks (" + cleared.label + ")");
+  await page.keyboard.press("Escape");
+  check(await page.evaluate(() => document.getElementById("subjectFilterMenu").hidden), "Escape closes the list");
   // Does the printed code really hold that link?
   const svg = await page.evaluate(() => { const oo = window.open; let html = ""; window.open = () => ({ document: { open() {}, write(h) { html += h; }, close() {} }, focus() {}, print() {} }); printGoalSheets(); window.open = oo; return (html.match(/<div class="gs-qr">(<svg[\s\S]*?<\/svg>)/) || [])[1] || ""; });
   const py = process.env.FAMILY_QR_PYTHONPATH;

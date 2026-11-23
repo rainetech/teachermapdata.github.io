@@ -286,15 +286,20 @@ async function main() {
   await ring("");
   await page.evaluate(() => window.scrollTo(0, 0));
   await wait(500);
-  if (await exists("#subjectFilter")) {
+  if (await exists("#subjectFilterBtn")) {
     await go(".filter-bar", 120);
     await ring(".filter-bar");
-    await page.evaluate(() => window.tour.point("#subjectFilter"));
+    await page.evaluate(() => window.tour.point("#subjectFilterBtn"));
     await say("More than one class or subject? Use the filters.");
-    await page.evaluate(() => { const select = document.getElementById("subjectFilter"); if (select && select.options.length > 1) { select.selectedIndex = 1; select.dispatchEvent(new Event("change", { bubbles: true })); } });
-    await say("Everything follows them: every card, every list, and everything you print.");
-    await page.evaluate(() => { const select = document.getElementById("subjectFilter"); if (select) { select.selectedIndex = 0; select.dispatchEvent(new Event("change", { bubbles: true })); } });
     await ring("");
+    await tap("#subjectFilterBtn");
+    const boxes = await page.evaluate(() => [...document.querySelectorAll("#subjectFilterMenu input[value]")].map((box) => box.value));
+    for (const subject of boxes.slice(0, 2)) await tap("#subjectFilterMenu input[value='" + subject + "']");
+    await say("Tick the subjects you want. You can choose more than one.");
+    await say("Everything follows them: every card, every list, the goal sheets and every export.");
+    await tap("#subjectFilterMenu input[data-subject-all]");
+    await page.keyboard.press("Escape");
+    await wait(300);
   }
   const more = ".section-nav-view[data-view='full']";
   if (await exists(more)) {

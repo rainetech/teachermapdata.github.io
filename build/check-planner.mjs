@@ -777,7 +777,7 @@ check(landed.filter((entry) => entry.tall).every((entry) => entry.active.length 
 
 // The filters have scrolled away; the chip in the strip says some are set and leads back.
 const chipBefore = await lap.evaluate(() => document.getElementById("sectionNavFilters").textContent.trim());
-await lap.selectOption("#subjectFilter", { index: 1 });
+await lap.evaluate(() => { const box = document.querySelector("#subjectFilterMenu input[value]"); box.checked = true; box.dispatchEvent(new Event("change", { bubbles: true })); });
 await lap.waitForTimeout(400);
 const chipAfter = await lap.evaluate(() => ({ text: document.getElementById("sectionNavFilters").textContent.trim(), active: document.getElementById("sectionNavFilters").classList.contains("is-active") }));
 check(chipBefore === "Filters" && /\b1\b/.test(chipAfter.text) && chipAfter.active, "the Filters chip counts the filters that are set (" + chipBefore + ", then " + chipAfter.text + ")");

@@ -710,6 +710,75 @@
       min-width: 0;
     }
 
+    /* A filter that takes more than one value: a button that opens a list of
+       tick-boxes. The list is fixed to the screen, because the filter bar
+       scrolls its own overflow and would cut an ordinary drop-down off. */
+    .multi-select { position: relative; min-width: 0; }
+    .multi-select-btn {
+      width: 100%;
+      min-height: 38px;
+      border: 1px solid var(--line-strong);
+      background: var(--panel);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 7px 28px 7px 9px;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+    }
+    .multi-select-btn::after {
+      content: "";
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      width: 6px;
+      height: 6px;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: translateY(-70%) rotate(45deg);
+      opacity: 0.7;
+    }
+    .multi-select-btn.is-set { border-color: var(--brand); box-shadow: inset 0 0 0 1px var(--brand); }
+    .multi-select-btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+    .multi-select-menu {
+      position: fixed;
+      z-index: 1200;
+      min-width: 190px;
+      max-height: min(360px, 70vh);
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lift);
+      padding: 6px;
+      display: grid;
+      gap: 2px;
+    }
+    .multi-select-menu[hidden] { display: none; }
+    .multi-select-menu label {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 9px;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: nowrap;
+    }
+    .multi-select-menu label:hover { background: var(--panel-soft, rgba(127, 127, 127, 0.12)); }
+    .multi-select-menu label.multi-select-all { border-bottom: 1px solid var(--line); border-radius: 6px 6px 0 0; margin-bottom: 2px; }
+    .multi-select-menu input { width: 17px; height: 17px; min-height: 0; padding: 0; flex: none; accent-color: var(--brand); }
+    .multi-select-hint { color: var(--muted); font-size: 0.74rem; padding: 4px 9px 2px; }
+
     main {
       display: grid;
       gap: 18px;
@@ -5217,8 +5286,10 @@
       .zoom-control .btn { min-width: 44px; }
       .field input,
       .field select,
+      .multi-select-btn,
       .filter-check,
       .room-menu-grid button { min-height: 44px; }
+      .multi-select-menu input { min-height: 0; }
       .section-nav-links button { min-height: 40px; }
       .col-chip { min-height: 40px; }
       th.sortable { padding-top: 14px; padding-bottom: 14px; }
@@ -5292,7 +5363,8 @@
       .filter-bar .filters-more { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
       .filter-bar .field { gap: 2px; }
       .filter-bar .field input,
-      .filter-bar .field select { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
+      .filter-bar .field select,
+      .filter-bar .multi-select-btn { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
       .filter-bar .btn { min-height: 34px; padding-top: 4px; padding-bottom: 4px; }
 
       /* The jump bar is pinned, and one strip high: the chips wrap onto a
@@ -5520,8 +5592,11 @@
           <input id="searchInput" type="search" placeholder="Student name or ID">
         </div>
         <div class="field">
-          <label for="subjectFilter">Subject</label>
-          <select id="subjectFilter"></select>
+          <label id="subjectFilterLabel" for="subjectFilterBtn">Subject</label>
+          <div class="multi-select" id="subjectFilter">
+            <button class="multi-select-btn" id="subjectFilterBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="subjectFilterMenu">All Subjects</button>
+            <div class="multi-select-menu" id="subjectFilterMenu" role="group" aria-labelledby="subjectFilterLabel" hidden></div>
+          </div>
         </div>
         <div class="field">
           <label for="classFilter">Class</label>
@@ -6892,7 +6967,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
         "spotlightBackdrop", "spotlight", "spotlightBody", "spotlightClose",
         "spotlightCopyBtn", "spotlightPrintBtn",
         "csvInput", "sampleBtn", "changeFileBtn", "recordCount", "studentCount", "fileName", "statusLine",
-        "searchInput", "subjectFilter", "dashboardLensSelect", "teacherFilter", "classFilter", "gradeFilter",
+        "searchInput", "subjectFilter", "subjectFilterBtn", "subjectFilterMenu", "dashboardLensSelect", "teacherFilter", "classFilter", "gradeFilter",
         "bandFilter", "metFilter", "groupFilter", "gapFilter", "resetFiltersBtn",
         "invalidToggleWrap", "includeInvalidTests", "includeInvalidLabel",
         "moreFiltersBtn", "moreFilters", "filterActive",
@@ -6918,9 +6993,10 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       els.csvInput.addEventListener("change", handleFileUpload);
       els.sampleBtn.addEventListener("click", loadSample);
       [
-        els.subjectFilter, els.dashboardLensSelect, els.teacherFilter, els.classFilter, els.gradeFilter,
+        els.dashboardLensSelect, els.teacherFilter, els.classFilter, els.gradeFilter,
         els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter, els.tierFilter
       ].filter(Boolean).forEach((control) => control.addEventListener("input", renderAll));
+      bindSubjectFilter();
       // Typing in a large file should not re-render on every keystroke.
       els.searchInput.addEventListener("input", debounce(renderAll, 180));
       [els.groupSizeInput, els.groupStrategySelect, els.groupScoreSelect].forEach((control) => control.addEventListener("input", () => {
@@ -9614,7 +9690,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 
     function populateFilters() {
       const current = getFilters();
-      setOptions(els.subjectFilter, ["", ...unique([...SUBJECTS, ...state.allRows.map((row) => row.subject)])], "All Subjects", current.subject);
+      setSubjectOptions(unique([...SUBJECTS, ...state.allRows.map((row) => row.subject)]));
       setOptions(els.teacherFilter, ["", ...unique(state.allRows.map((row) => row.teacher))], "All Teachers", current.teacher);
       setOptions(els.classFilter, ["", ...unique(state.allRows.map((row) => row.className))], "All Classes", current.className);
       setOptions(els.gradeFilter, ["", ...unique(state.allRows.map((row) => row.studentGrade))], "All Grades", current.grade);
@@ -9636,12 +9712,100 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
       return [...new Set(values.filter((value) => cleanString(value) !== ""))].sort(naturalCompare);
     }
 
+    // ---- The subject filter: any number of subjects at once ----------------
+    // A teacher who has Reading and Language wants both on the page, on the
+    // goal sheets and in every export, and nothing else. No tick means every
+    // subject, and so does every tick: there is one way to say "all".
+    const subjectFilter = { options: [], chosen: [] };
+
+    function chosenSubjects() {
+      return subjectFilter.chosen.filter((subject) => subjectFilter.options.includes(subject));
+    }
+
+    function subjectFilterLabel() {
+      const chosen = chosenSubjects();
+      if (!chosen.length) return "All Subjects";
+      return chosen.length <= 2 ? chosen.join(" + ") : formatInteger(chosen.length) + " subjects";
+    }
+
+    function renderSubjectFilter() {
+      if (!els.subjectFilterMenu || !els.subjectFilterBtn) return;
+      const chosen = chosenSubjects();
+      els.subjectFilterBtn.textContent = subjectFilterLabel();
+      els.subjectFilterBtn.classList.toggle("is-set", chosen.length > 0);
+      els.subjectFilterBtn.title = chosen.length ? chosen.join(", ") : "Every subject. Tick one or more to narrow the page, the goal sheets and the exports.";
+      els.subjectFilterMenu.innerHTML =
+        '<label class="multi-select-all"><input type="checkbox" data-subject-all' + (chosen.length ? "" : " checked") + "> All Subjects</label>" +
+        subjectFilter.options.map((subject) =>
+          '<label><input type="checkbox" value="' + escapeAttr(subject) + '"' + (chosen.includes(subject) ? " checked" : "") + "> " + escapeHTML(subject) + "</label>").join("") +
+        '<div class="multi-select-hint">Tick more than one to see them together.</div>';
+    }
+
+    function setSubjectOptions(values) {
+      subjectFilter.options = values.slice();
+      subjectFilter.chosen = chosenSubjects();
+      renderSubjectFilter();
+    }
+
+    function setChosenSubjects(subjects) {
+      const wanted = subjectFilter.options.filter((subject) => subjects.includes(subject));
+      subjectFilter.chosen = wanted.length === subjectFilter.options.length ? [] : wanted;
+      renderSubjectFilter();
+    }
+
+    function placeSubjectMenu() {
+      const box = els.subjectFilterBtn.getBoundingClientRect();
+      const menu = els.subjectFilterMenu;
+      menu.style.minWidth = Math.max(190, Math.round(box.width)) + "px";
+      menu.style.left = Math.max(8, Math.min(box.left, window.innerWidth - menu.offsetWidth - 8)) + "px";
+      const below = box.bottom + 4;
+      menu.style.top = (below + menu.offsetHeight > window.innerHeight - 8 && box.top - 4 - menu.offsetHeight > 8 ? box.top - 4 - menu.offsetHeight : below) + "px";
+    }
+
+    function toggleSubjectMenu(open) {
+      if (!els.subjectFilterMenu || !els.subjectFilterBtn) return;
+      const show = open === undefined ? els.subjectFilterMenu.hidden : open;
+      els.subjectFilterMenu.hidden = !show;
+      els.subjectFilterBtn.setAttribute("aria-expanded", String(show));
+      if (show) placeSubjectMenu();
+    }
+
+    function bindSubjectFilter() {
+      if (!els.subjectFilter || !els.subjectFilterBtn || !els.subjectFilterMenu) return;
+      // The filter bar blurs what is behind it, which makes it the frame for anything fixed inside it. The list hangs off the page instead.
+      document.body.appendChild(els.subjectFilterMenu);
+      els.subjectFilterBtn.addEventListener("click", () => toggleSubjectMenu());
+      els.subjectFilterMenu.addEventListener("change", (event) => {
+        const box = event.target;
+        if (!box || box.type !== "checkbox") return;
+        if (box.hasAttribute("data-subject-all")) setChosenSubjects([]);
+        else setChosenSubjects(box.checked ? subjectFilter.chosen.concat(box.value) : subjectFilter.chosen.filter((subject) => subject !== box.value));
+        // The list was redrawn; keep the place for a keyboard user.
+        const again = box.hasAttribute("data-subject-all") ? els.subjectFilterMenu.querySelector("[data-subject-all]")
+          : [...els.subjectFilterMenu.querySelectorAll("input[value]")].find((input) => input.value === box.value);
+        if (again) again.focus();
+        placeSubjectMenu();
+        renderAll();
+      });
+      document.addEventListener("click", (event) => {
+        if (!els.subjectFilterMenu.hidden && !els.subjectFilter.contains(event.target) && !els.subjectFilterMenu.contains(event.target)) toggleSubjectMenu(false);
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !els.subjectFilterMenu.hidden) { toggleSubjectMenu(false); els.subjectFilterBtn.focus(); }
+      });
+      // The list is pinned to the screen, so it is moved with its button when the page scrolls or changes size.
+      window.addEventListener("scroll", () => { if (!els.subjectFilterMenu.hidden) placeSubjectMenu(); }, { passive: true });
+      window.addEventListener("resize", () => { if (!els.subjectFilterMenu.hidden) placeSubjectMenu(); });
+    }
+
     function resetFilters(shouldRender = true) {
       state.tableLimits = {};
       els.searchInput.value = "";
-      [els.subjectFilter, els.dashboardLensSelect, els.teacherFilter, els.classFilter, els.gradeFilter, els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter, els.tierFilter].filter(Boolean).forEach((select) => {
+      [els.dashboardLensSelect, els.teacherFilter, els.classFilter, els.gradeFilter, els.bandFilter, els.metFilter, els.groupFilter, els.gapFilter, els.tierFilter].filter(Boolean).forEach((select) => {
         select.value = "";
       });
+      setChosenSubjects([]);
+      toggleSubjectMenu(false);
       if (els.dashboardLensSelect) els.dashboardLensSelect.value = "subject";
       if (shouldRender) renderAll();
     }
@@ -9649,7 +9813,9 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function getFilters() {
       return {
         search: cleanString(els.searchInput?.value).toLowerCase(),
-        subject: els.subjectFilter?.value || "",
+        // Every subject ticked, as a list for the filter and as one label for headings and file names.
+        subjects: chosenSubjects(),
+        subject: chosenSubjects().join(" + "),
         teacher: els.teacherFilter?.value || "",
         className: els.classFilter?.value || "",
         grade: els.gradeFilter?.value || "",
@@ -9672,7 +9838,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
           const haystack = `${row.studentName} ${row.studentID} ${row.studentLastName} ${row.studentFirstName}`.toLowerCase();
           if (!haystack.includes(filters.search)) return false;
         }
-        if (filters.subject && row.subject !== filters.subject) return false;
+        if (filters.subjects.length && !filters.subjects.includes(row.subject)) return false;
         if (filters.teacher && row.teacher !== filters.teacher) return false;
         if (filters.className && row.className !== filters.className) return false;
         if (filters.grade && row.studentGrade !== filters.grade) return false;
