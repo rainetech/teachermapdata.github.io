@@ -422,13 +422,13 @@ function buildHTML(data, pictures, baselineTitles) {
   <p class="lead">Five steps. Do them once with your own class and you have used the dashboard. Nothing you click can break anything or change your MAP data, and your file never leaves your computer.</p>
   <ol class="steps">
     <li>
-      <h3>Get your file from NWEA <span class="time">2 minutes</span></h3>
-      <p>In MAP Growth, open <em>MAP Reports</em>, choose <em>Achievement Status and Growth</em> for your class, and download it as <em>CSV</em>. Save it; do not open or edit it. Chapter 2 has every click.</p>
+      <h3>Get your files from NWEA <span class="time">3 minutes</span></h3>
+      <p>In MAP Growth, open <em>MAP Reports</em> and download two reports for your class as <em>CSV</em>: <strong>Achievement Status and Growth</strong> (one file, with the scores and the growth) and <strong>Class Profile</strong> (one file for each subject, with the areas inside each subject). Save them; do not open or edit them. Chapter 2 has every click.</p>
       <p><strong>No file yet?</strong> Skip this step and press <em>Load Sample Data</em> in step 2 to try everything with a made-up class.</p>
     </li>
     <li>
-      <h3>Drop it on the page <span class="time">1 minute</span></h3>
-      <p>Open the dashboard and drag the file onto the dashed box, or click the box and choose it.</p>
+      <h3>Drop them on the page <span class="time">1 minute</span></h3>
+      <p>Open the dashboard and drag all the files onto the dashed box together, or click the box and select them all.</p>
       ${figure(pictures.topbar, "")}
     </li>
     <li>

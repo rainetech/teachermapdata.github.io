@@ -197,14 +197,14 @@ async function main() {
   await card("<small>" + TITLE.replace(/&/g, "&amp;").replace(/</g, "&lt;") + "</small><h1>From your MAP export to a plan for your class</h1><p>Five steps, about ten minutes. No training needed.</p>", 400);
   const trimStart = (Date.now() - started) / 1000;
   await wait(4600);
-  await card("<small>Step 1</small><h1>Get your file from NWEA</h1><ol><li>Open <strong>MAP Reports</strong>.</li><li>Choose <strong>Achievement Status and Growth</strong> for your class.</li><li>Download it as <strong>CSV</strong>. Do not open or edit it.</li></ol>", 8500);
+  await card("<small>Step 1</small><h1>Get two reports from NWEA, as CSV</h1><ol><li>Open <strong>MAP Reports</strong>.</li><li><strong>Achievement Status and Growth</strong> for your class: one file. It carries the scores and the growth.</li><li><strong>Class Profile</strong> for the same class: one file for each subject. It carries the areas inside each subject.</li><li>Download each as <strong>CSV</strong>. Do not open or edit them.</li></ol>", 13500);
   await uncard();
 
-  // Step 2: the file goes on the page.
+  // Step 2: the files go on the page.
   await ring("#dropZone");
   await page.evaluate(() => window.tour.point("#dropZone"));
-  await say(step(2) + "Open the dashboard and drop the file on this box.");
-  await say("Your file stays on your computer. Nothing is uploaded anywhere.");
+  await say(step(2) + "Open the dashboard and drop all the files on this box, together.");
+  await say("Your files stay on your computer. Nothing is uploaded anywhere.");
   await ring("#sampleBtn", 6);
   await say("No file yet? <em>Load Sample Data</em> lets you try everything with a made-up class.");
   await ring("");
@@ -264,7 +264,7 @@ async function main() {
   await ring("");
   if (still.goalData && still.goalPlan) {
     await page.evaluate((images) => window.tour.show(images), [{ src: still.goalData }, { src: still.goalPlan }]);
-    await say("Two pages for each student: their scores and targets, then a plan they write themselves.");
+    await say("Two pages for each student: their scores, targets and the areas inside each subject, then a plan they write themselves.");
     if (still.family) {
       await page.evaluate((images) => window.tour.show(images), [{ src: still.goalPlan }, { src: still.family, phone: true }]);
       await say("The code on page two is for the family. They scan it with a phone camera.");
@@ -307,6 +307,15 @@ async function main() {
     await page.evaluate((sel) => window.tour.point(sel), more);
     await say("<em>More analysis</em> opens the other sections: grouping, a seating plan, and a check of the file itself.");
     await ring("");
+    // What the Class Profile files add: the areas inside each subject.
+    await tap(more);
+    await wait(700);
+    if (await exists("#sec-strands")) {
+      await go("#sec-strands");
+      await ring("#sec-strands");
+      await say("Because the Class Profile files are loaded, " + (await name("sec-strands", "Instructional Areas")) + " shows which part of each subject to teach next.");
+      await ring("");
+    }
   }
 
   await hush();

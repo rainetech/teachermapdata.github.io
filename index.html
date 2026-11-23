@@ -6684,6 +6684,37 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
 Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,Class,1007,Harris,Sofia,5,2025-09-15,235,96,51,2026-04-21,242,98,47,240,5,7,2,Yes,1.3,72,50%,140%,44,High Growth / High Achievement,High Growth / High Achievement,72,98
 Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,Class,1008,Irwin,Ethan,5,2025-09-15,184,<1,39,2026-04-21,190,15,35,193,9,6,-3,No,-0.8,27,50%,67%,44,Low Growth / Low Achievement,Low Growth / Low Achievement,27,15`;
 
+    // The Class Profile exports that go with the sample above: the same tests,
+    // one file a subject, carrying the instructional areas inside each score.
+    // A teacher loads both kinds together, so the sample does too, and every
+    // section has something to show. (One student has no spring Language test,
+    // so that record has no areas.)
+    const SAMPLE_PROFILES = [
+      { name: "sample-class-profile-reading.csv", text: `StudentID,StudentLastName,StudentFirstName,StudentMiddleInitial,Grade,TermTested,TermRostered,SchoolName,InstructorName,ClassName,Subject,Course,TestName,Status,Reason,PercentRapidGuessed,Duration,DateTested,RitScore,StandardError,AchievementPercentile,InstructionalArea1Name,InstructionalArea1RIT,InstructionalArea2Name,InstructionalArea2RIT,InstructionalArea3Name,InstructionalArea3RIT,InstructionalArea4Name,InstructionalArea4RIT
+1001,Baker,Ava,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Language Arts,Reading,Growth: Reading 2-5 CCSS 2010 V2,Growth Event,N/A,0,44,04/18/2026,207,3.1,55,"Fiction, Poetry, and Drama",210,"Nonfiction",201,"Vocabulary and Literary Devices",209,,
+1002,Chen,Leo,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Language Arts,Reading,Growth: Reading 2-5 CCSS 2010 V2,Growth Event,N/A,0,46,04/18/2026,219,3.1,74,"Fiction, Poetry, and Drama",221,"Nonfiction",220,"Vocabulary and Literary Devices",217,,
+1003,Diaz,Mia,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Language Arts,Reading,Growth: Reading 2-5 CCSS 2010 V2,Growth Event,N/A,0,38,04/18/2026,188,3.1,19,"Fiction, Poetry, and Drama",189,"Nonfiction",186,"Vocabulary and Literary Devices",181,,
+1004,Evans,Noah,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Language Arts,Reading,Growth: Reading 2-5 CCSS 2010 V2,Growth Event,N/A,0,41,04/18/2026,216,3.1,72,"Fiction, Poetry, and Drama",215,"Nonfiction",219,"Vocabulary and Literary Devices",216,,
+` },
+      { name: "sample-class-profile-math.csv", text: `StudentID,StudentLastName,StudentFirstName,StudentMiddleInitial,Grade,TermTested,TermRostered,SchoolName,InstructorName,ClassName,Subject,Course,TestName,Status,Reason,PercentRapidGuessed,Duration,DateTested,RitScore,StandardError,AchievementPercentile,InstructionalArea1Name,InstructionalArea1RIT,InstructionalArea2Name,InstructionalArea2RIT,InstructionalArea3Name,InstructionalArea3RIT,InstructionalArea4Name,InstructionalArea4RIT
+1001,Baker,Ava,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Mathematics,Math K-12,Growth: Math K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,43,04/19/2026,217,3.1,69,"Operations and Algebraic Thinking",219,"Number and Operations",220,"Measurement and Data",212,"Geometry",218
+1002,Chen,Leo,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Mathematics,Math K-12,Growth: Math K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,47,04/19/2026,229,3.1,83,"Operations and Algebraic Thinking",230,"Number and Operations",231,"Measurement and Data",229,"Geometry",226
+1003,Diaz,Mia,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Mathematics,Math K-12,Growth: Math K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,39,04/19/2026,199,3.1,39,"Operations and Algebraic Thinking",192,"Number and Operations",201,"Measurement and Data",200,"Geometry",202
+1004,Evans,Noah,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Adams, Sample",Period 1,Mathematics,Math K-12,Growth: Math K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,37,04/19/2026,208,3.1,50,"Operations and Algebraic Thinking",208,"Number and Operations",202,"Measurement and Data",210,"Geometry",211
+` },
+      { name: "sample-class-profile-language.csv", text: `StudentID,StudentLastName,StudentFirstName,StudentMiddleInitial,Grade,TermTested,TermRostered,SchoolName,InstructorName,ClassName,Subject,Course,TestName,Status,Reason,PercentRapidGuessed,Duration,DateTested,RitScore,StandardError,AchievementPercentile,InstructionalArea1Name,InstructionalArea1RIT,InstructionalArea2Name,InstructionalArea2RIT,InstructionalArea3Name,InstructionalArea3RIT,InstructionalArea4Name,InstructionalArea4RIT
+1005,Foster,Emma,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Language Arts,Language Usage,Growth: Language Usage 2-5 CCSS 2010 V2,Growth Event,N/A,0,42,04/20/2026,207,3.1,62,"Language: Understand, Edit for Mechanics",209,"Language: Understand, Edit for Grammar, Usage",206,"Writing: Write, Revise Texts for Purpose and Audience",201,,
+1006,Garcia,Lucas,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Language Arts,Language Usage,Growth: Language Usage 2-5 CCSS 2010 V2,Growth Event,N/A,0,45,04/20/2026,213,3.1,58,"Language: Understand, Edit for Mechanics",208,"Language: Understand, Edit for Grammar, Usage",215,"Writing: Write, Revise Texts for Purpose and Audience",216,,
+1007,Harris,Sofia,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Language Arts,Language Usage,Growth: Language Usage 2-5 CCSS 2010 V2,Growth Event,N/A,0,49,04/20/2026,236,3.1,94,"Language: Understand, Edit for Mechanics",237,"Language: Understand, Edit for Grammar, Usage",238,"Writing: Write, Revise Texts for Purpose and Audience",235,,
+` },
+      { name: "sample-class-profile-science.csv", text: `StudentID,StudentLastName,StudentFirstName,StudentMiddleInitial,Grade,TermTested,TermRostered,SchoolName,InstructorName,ClassName,Subject,Course,TestName,Status,Reason,PercentRapidGuessed,Duration,DateTested,RitScore,StandardError,AchievementPercentile,InstructionalArea1Name,InstructionalArea1RIT,InstructionalArea2Name,InstructionalArea2RIT,InstructionalArea3Name,InstructionalArea3RIT,InstructionalArea4Name,InstructionalArea4RIT
+1005,Foster,Emma,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Science,Science K-12,Growth: Science K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,41,04/21/2026,211,3.1,65,"Life Science",205,"Earth and Space Science",213,"Physical Science",214,,
+1006,Garcia,Lucas,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Science,Science K-12,Growth: Science K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,40,04/21/2026,216,3.1,71,"Life Science",218,"Earth and Space Science",212,"Physical Science",217,,
+1007,Harris,Sofia,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Science,Science K-12,Growth: Science K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,47,04/21/2026,242,3.1,98,"Life Science",243,"Earth and Space Science",242,"Physical Science",244,,
+1008,Irwin,Ethan,,5,Spring 2025-2026,Spring 2025-2026,Maple School,"Rivera, Sample",Period 2,Science,Science K-12,Growth: Science K-12 2-5 CCSS 2010 V2,Growth Event,N/A,0,35,04/21/2026,190,3.1,15,"Life Science",193,"Earth and Space Science",191,"Physical Science",185,,
+` }
+    ];
+
     const HEADER_ALIASES = {
       termtested: "termTested",
       termrostered: "termRostered",
@@ -7615,7 +7646,7 @@ Spring 2026,Fall 2025,North Valley,Maple School,Rivera,Period 2,Science,Science,
     function loadSample() {
       beginBusy("Loading sample data...");
       runWhenPainted(() => {
-        loadCSVText(SAMPLE_CSV, "sample-asg.csv");
+        loadCSVFiles([{ name: "sample-asg.csv", text: SAMPLE_CSV }].concat(SAMPLE_PROFILES), 0);
         endBusy();
       });
     }
